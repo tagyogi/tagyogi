@@ -1,0 +1,409 @@
+<!--
+	파일정보 : reportList.html
+	파일명 : 레포트관리현황
+	업무명 : 레포트관리 현황 등록 폼
+	생성자 : BSG
+	생성일 : 2023.05.18
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:src="@{/markany/js/MaXHRControl.js}"></script>
+		<script th:src="@{/js/ozws.js}"></script>
+		<script th:src="@{/js/oz.js}"></script>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//INPUT 설정
+				com.fnCodeSelectBox("CM16", "sWorkCd", 2, "" ); //업무구분
+				com.fnCodeSelectBox("CM16", "workType", 1, "" ); //업무구분
+				com.fnCodeSelectBox("SY02", "useYn", 1, "" ); //사용여부
+
+
+				//파일첨부
+				//ibUploadInit.limitFileExt = "ozr"; //확장자 설정
+				//com.fnIbsUploadOne($("#myUploadOzr"));
+				//ibUploadInit.limitFileExt = "odi"; //확장자 설정
+				//com.fnIbsUploadOne($("#myUploadOdi"));
+				ibUploadInit.limitFileExt = "ozr,odi";
+				com.fnIbsUpload($("#myUpload"));
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheet 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					if(obj.col === "btnView"){
+						//보증유형(레포트유형, 보증유형, 보증번호)
+						var nameArr = ["guar_no"];
+					    var valueArr = [$("#guar_no").val()];
+					    ozLoad("GR_영수증_(공제계약자_보관용)", nameArr, valueArr, 1, false, false, "doAfter");
+
+					}else if(obj.col === "btnDown"){
+						
+					}else{
+						for(var elem in rowData){
+							$("#"+elem).val(rowData[elem]);
+						}
+						//버튼활성화
+						fnBtnDis(false, false, true, true);
+					}
+
+				});
+
+				//버튼 초기
+				$("#saveFrm button").prop("disabled", true);
+				$("#btnIns").attr("disabled", false);
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/report/selectReportList.do", param); //param, sheetId 생략 가능
+			};
+
+			//신규버튼
+			var fnIns = function(){
+				$("#saveFrm")[0].reset();
+
+				$("#saveFrm #workType").prop("disabled", false);
+				$("#saveFrm #rptNm").prop("disabled", false);
+				$("#saveFrm #useYn").prop("disabled", false);
+
+				//버튼활성화
+				fnBtnDis(true, true, false, false);
+
+				$("#useYn").val("Y");
+				$("#rptNo").val("");
+			};
+
+			//수정버튼
+			var fnUpt = function(){
+
+				//버튼활성화
+				fnBtnDis(true, true, false, false);
+
+			};
+
+			//취소버튼
+			var fnCan = function(){
+				//선택 row 또는 키 값이 있을경우, 비활성화 후 정보 세팅
+				$("#saveFrm")[0].reset();
+
+				//버튼활성화
+				fnBtnDis(false, true, true, true);
+
+			 	$("#rptNo").val("");
+			};
+
+			//버튼 활성화처리
+			var fnBtnDis = function(bolIns, bolUpt, bolCan, bolSave){
+
+				$("#saveFrm #workType").prop("disabled", bolCan);
+				$("#saveFrm #rptNm").prop("disabled", bolCan);
+				$("#saveFrm #useYn").prop("disabled", bolCan);
+				$("#saveFrm #refVal").prop("disabled", bolCan);
+
+			 	$("#btnIns").attr("disabled", bolIns);
+			 	$("#btnUpt").attr("disabled", bolUpt);
+			 	$("#btnCan").attr("disabled", bolCan);
+			 	$("#btnSave").attr("disabled", bolSave);
+			}
+
+
+			//저장버튼
+			var fnSave = function(){
+
+				//필수체크
+				var valChks = ["workType", "rptNm", "useYn", "refVal"];
+
+				if(com.fnValChk(valChks)){
+					/*
+					//파일여부
+					var fileList = $("#myUploadOzr").IBUpload('fileList');
+					if(fileList.length === 0){
+						alert("레포트 OZR 파일을 첨부하십시오.");
+						return;
+					}
+					//파일여부
+					var fileList = $("#myUploadOdi").IBUpload('fileList');
+					if(fileList.length === 0){
+						alert("레포트 ODI 파일을 첨부하십시오.");
+						return;
+					}
+
+					*/
+					var fileList = $("#myUpload").IBUpload('fileList');
+					if(fileList.length === 0){
+						alert("레포트 파일을 첨부하십시오.");
+						return;
+					}
+
+					//신규, 수정 확인
+					var newYn = $("#rptNo").val();
+					var msg = "저장";
+					var url = "/report/insertReport.do";
+
+					if(newYn !== ""){
+						msg = "수정";
+						url = "/report/updateReport.do";
+					}
+
+					if(confirm(msg + " 하시겠습니까?")){
+						//obj = {url:url, formId:"saveFrm", fileId:"myUploadOzr,myUploadOdi", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						obj = {url:url, formId:"saveFrm", fileId:"myUpload", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				$("#saveFrm")[0].reset();
+
+				//버튼활성화
+				fnBtnDis(false, true, true, true);
+
+				//파일 삭제
+				//$("#myUploadOzr").IBUpload("selectAll");
+				//$("#myUploadOzr").IBUpload("delete");
+				//$("#myUploadOdi").IBUpload("selectAll");
+				//$("#myUploadOdi").IBUpload("delete");
+				$("#myUpload").IBUpload("selectAll");
+				$("#myUpload").IBUpload("delete");
+
+
+				fnSearch();
+			}
+
+
+			/*****************************************************************************************************************************
+			화면설치 체크 영역
+			*****************************************************************************************************************************/
+
+			//설치체크파일정보		[version			, CSIDL		, exeName						, addPath				];
+			var checkFileInfo_1 = 	[ "25043"		, 0x0026	, "TWFFUFNCcm9rZXIuZXhl"	, "c0f3ryzZBcTnc1jNceBfFXI=" ];
+			var checkFileInfo_2 = 	[ "2503"			, 0x0029	, "0veef5ygDSRZ4RMLoCROIGxs"	, "" ];
+			var chkFileArray = new Array(checkFileInfo_1, checkFileInfo_2);
+
+			var programComment_1 = [ "MaEPSBroker"	, "XP, Vista, 7, 8, 8.1, 10"	, "설치체크 프로그램입니다. 해당 프로그램이 미설치 시 아래의 프로그램에 대한 설치체크를 진행 할 수 없습니다."			, "./install/Setup_NoaXOZ.exe"];
+			var programComment_2 = [ "ePageSafer"	, "XP, Vista, 7, 8, 8.1, 10"	, "출력물 위변조방지를 위한 프로그램 입니다."	, "./install/Setup_NoaXOZ.exe" ];
+			var programCommentArray = new Array(programComment_1, programComment_2);
+
+
+			//마크애니 설치 확인
+			function maEPS_InstallCheck() {
+				MDBG("", "start");
+				if (typeof (maResJsonData) !== 'string') {
+					var chkYn = 0;
+					for (var chkFile_i = 0; chkFile_i < maResJsonData.length; chkFile_i++) {
+						var installFlag = maResJsonData[chkFile_i].installFlag;
+						var fileDownloadLink = '';
+						if (installFlag === false) {
+							//alert("미설치");
+							document.location.href = "/markany/installCheck.html";
+
+							//fileDownloadLink = '미설치<br><div id="btn_brokerDownload" class="btn_download" onclick="downloadInstallFile(\''+ programCommentArray[chkFile_i][3] + '\');" tabindex="1"> </div>';
+						} else {
+							//alert("설치됨");
+							chkYn++;
+						}
+						//$("#installTable tr:eq(" + (chkFile_i + 1) + ") td:last").html(fileDownloadLink);
+					}
+
+					//마크애니 체크 완료 후 오즈 확인
+					if(chkYn !== 0){
+						OZCall();
+					}
+				} else {
+					MDBG("", maResJsonData);
+					//$('#installTable').append('<tr"><td colspan="4">' + maResJsonData + '</td></tr>' );
+				}
+
+				if (maOnlyInstallFlag === true) {
+					//alert("설치가 완료되었습니다.");
+				}
+			}
+
+			//마크애니 화면 표시용
+			function maSetInstallPgTable(){
+				//for (var pro_i = 0; pro_i < programCommentArray.length; pro_i++) {
+					//var fileDownloadLink = '체크중';
+					//$('#installTable').append('<tr><td>' + programCommentArray[pro_i][0] + '</td><td>' + programCommentArray[pro_i][1] + '</td><td>' + programCommentArray[pro_i][2] + '</td><td>' + fileDownloadLink + "</td></tr>");
+				//}
+			}
+
+			//오즈 부분
+			var OZUtil = start_OZUtil;
+			var namespace = "exeViewer";
+			var OZViewerID = "OZViewer";
+
+			OZCall = function()
+			{
+				var	protocolversion = 2008;
+				var ztParam = new Object();
+			    ztParam.InstallBase = "<PROGRAMS>/Forcs";
+			    ztParam.InstallNamespace = namespace;
+			    ztParam.DownloadServer = "http://www.kocfc.or.kr/oz80/ozexeviewer/ozrviewer";
+			    ztParam.DownloadPort = 80;
+			    ztParam.DownloadInstruction = "ozrviewer.idf";
+
+			    OZUtil.installViewer(protocolversion, ztParam, installOZWebLauncher, createOZViewer);
+			}
+
+			installOZWebLauncher = function()
+			{
+			    if(confirm("오즈 설치가 필요 합니다. 프로그램 설치 후 다시 시도 하십시오."))
+				{
+			    	document.getElementById('downfrm').src = '/oz80/OnLine_Install_Dialog_UI_SSL.exe';
+				}
+
+			}
+
+			createOZViewer = function()
+			{
+
+			}
+
+			maBrokerInit( maEPS_InstallCheck, 'getVersion', false );
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<div class="collapseCtrl">
+					<button type="type" class="btn-collapse down"><span></span></button>
+<!--					<button type="type" class="btn-collapse close"><span></span></button>-->
+					<button type="type" class="reLoadFrm"></button>
+				</div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>업무구분</dt>
+							<dd style="width:120px;">
+								<select name="sWorkCd" id="sWorkCd" style="width:120px;"></select>
+							</dd>
+						</dl>
+						<dl>
+							<dt>레포트명</dt>
+							<dd style="width:180px;">
+								<input type="search" name="sRptNm" id="sRptNm" style="width:200px;"/>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+
+				<div class="layer-flex mt20 collapseArea">
+					<!-- 내용 좌측 부분 -->
+					<div class="collapseBox" style="width:60%">
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 내용 좌측 부분 끝 -->
+					<!-- 내용 우측 부분 -->
+					<div class="collapseBox fixable" style="width:39%">
+						<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+						<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+						<input type="hidden" name="rptNo" id="rptNo" value=""/>
+						<!-- 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button id="btnIns" onclick="javascript:fnIns();" class="btn style08">신규</button>
+								<button id="btnUpt" onclick="javascript:fnUpt();" class="btn style08">수정</button>
+								<button id="btnCan" onclick="javascript:fnCan();" class="btn style08">취소</button>
+								<button id="btnSave" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+						<!-- 상단 부분 끝 -->
+						<table class="tbl mt10" >
+							<colgroup>
+								<col style="width:100px;">
+								<col style="">
+								<col style="width:100px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>업무구분</th>
+									<td colspan="3">
+										<select name="workType" id="workType" style="width:100px;" title="업무구분" disabled></select>
+									</td>
+								</tr>
+								<tr>
+									<th>레포트명</th>
+									<td colspan="3">
+										<input type="search" name="rptNm" id="rptNm" title="레포트명" style="width:200px;" disabled>
+									</td>
+								</tr>
+								<tr>
+									<th>사용여부</th>
+									<td colspan="3">
+										<select name="useYn" id="useYn" style="width:100px;" title="사용여부" disabled></select>
+									</td>
+								</tr>
+								<tr>
+									<th>관련변수</th>
+									<td colspan="3">
+										<input type="search" name="refVal" id="refVal" title="참조변수" style="width:200px;" disabled>
+									</td>
+								</tr>
+
+								<!--
+								<tr>
+									<th>첨부파일(ozr)</th>
+									<td colspan="3">
+										<div id="myUploadOzr"></div>
+									</td>
+								</tr>
+								<tr>
+									<th>첨부파일(odi)</th>
+									<td colspan="3">
+										<div id="myUploadOdi"></div>
+									</td>
+								</tr>
+								-->
+
+							</tbody>
+						</table>
+						<div id="myUpload" style="height:150px;"></div>
+						</form>
+					</div>
+					<!-- 내용 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+		<iframe id="downfrm" style="display:none;" title="오즈설치용"></iframe> <!-- 오즈설치용 -->
+	</body>
+</html>

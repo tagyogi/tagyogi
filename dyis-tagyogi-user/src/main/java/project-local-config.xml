@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-definition>
+	<service>home</service>
+	<active>local</active>
+    <domain>http://localhost:9099/</domain>
+    <domainHome>http://localhost:9099/</domainHome>
+	
+    <file>
+       	<path>D:\\upload</path>
+       	<imgPath>D:\\upload\\IMG</imgPath>
+       	<rptPath>D:\\upload\\RPT</rptPath>
+   	</file>
+   	
+   	<g2b>
+		<id>z105822157200</id>   
+       	<path>D:\project\KOCFC_2023\GePSClient\</path>
+   	</g2b>
+   	
+   	<bankPay>
+		<url>https://pgtest.bankpay.or.kr:7743/StartBankPay.do</url>      
+		<appNo>12001347</appNo>    
+       	<orgNm>한국콘텐츠공제조합</orgNm>
+       	<recvAcnt>000123456789</recvAcnt> 
+   	</bankPay>
+   	
+   	<iniPay>
+		<mid>INIpayTest</mid>    
+       	<signKey>SU5JTElURV9UUklQTEVERVNfS0VZU1RS</signKey>
+   	</iniPay>
+   	
+
+    <database>
+        <oralce>oralce</oralce>
+    </database>
+    
+</application-definition>

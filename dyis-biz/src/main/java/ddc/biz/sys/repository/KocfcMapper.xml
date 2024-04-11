@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.sys.repository.KocfcMapper"> 
+
+	<!-- 조합정보 정보 조회 --> 
+	<select id="selectKocfcList" parameterType="Map" resultType="camelMap"> 
+		/* KocfcMapper.selectKocfcList */ 
+		SELECT 
+		  		F_GET_PATTERN(APP_DT, 'DT') APP_DT 
+		  		, ASSO_NM 
+				, POST_NO 
+				, DORO_CD 
+				, DORO_NM 
+				, DORO_BUNHO 
+				, DORO_DONG 
+				, DORO_DTL 
+				, DORO_BD_NO 
+				, CEO_NM 
+				, TEL_NO 
+				, FAX_NO 
+				, BIZ_NO 
+				, REMARK 
+				, REG_DTM 
+				, REG_NM 
+				, MOD_DTM 
+				, MOD_NM 
+				, POST_NO||' '||DORO_NM||' ('||DORO_DONG||' '||DORO_BD_NO||')' ADDR_FULL_DORO
+				, PG_RATE
+		  FROM CM_KOCFC 
+		ORDER BY APP_DT DESC
+	</select> 
+	
+	
+	<!-- 조합정보 정보 조회 --> 
+	<select id="selectKocfc" parameterType="Map" resultType="camelMap"> 
+		/* KocfcMapper.selectKocfc */ 
+		SELECT F_GET_PATTERN(APP_DT, 'DT') APP_DT 
+		        , ASSO_NM 
+		        , POST_NO 
+		        , DORO_CD 
+		        , DORO_NM 
+		        , DORO_BUNHO 
+		        , DORO_DONG 
+		        , DORO_DTL 
+		        , DORO_BD_NO 
+		        , CEO_NM 
+		        , TEL_NO 
+		        , FAX_NO 
+		        , BIZ_NO 
+		        , REMARK 
+		        , REG_DTM 
+		        , REG_NM 
+		        , MOD_DTM 
+		        , MOD_NM 
+		        , DORO_NM || '' || DORO_BUNHO || ' (' || DORO_DONG || ' ' || DORO_BD_NO || ')' ADDR1
+                , DORO_DTL ADDR2
+		        , SUBSTR(ASSO_NM, 0, 5)||'^'||BIZ_NO||'^'||ASSO_NM||'^'||TEL_NO AS BANKPAY_KOCFC
+		        , PG_RATE
+		  FROM CM_KOCFC
+		 WHERE APP_DT = (
+		                SELECT MAX(APP_DT)
+		                  FROM CM_KOCFC
+		                )
+	</select> 
+
+	<!-- 조합정보 등록 처리 --> 
+	<insert id="insertKocfc" parameterType="Map"  > 
+		/* KocfcMapper.insertKocfc */ 
+		INSERT INTO CM_KOCFC ( 
+			APP_DT 
+			, ASSO_NM 
+			, POST_NO 
+			, DORO_CD 
+			, DORO_NM 
+			, DORO_BUNHO 
+			, DORO_DONG 
+			, DORO_DTL 
+			, DORO_BD_NO 
+			, CEO_NM 
+			, TEL_NO 
+			, FAX_NO 
+			, BIZ_NO 
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+			, PG_RATE
+		) VALUES ( 
+			REPLACE(#{appDt}, '-', '') 
+			, #{assoNm} 
+			, #{postNo} 
+			, #{doroCd} 
+			, #{doroNm} 
+			, #{doroBunho} 
+			, #{doroDong} 
+			, #{doroDtl} 
+			, #{doroBdNo} 
+			, #{ceoNm} 
+			, #{telNo} 
+			, #{faxNo} 
+			, #{bizNo} 
+			, #{remark} 
+			, REPLACE(#{regDtm}, '-', '') 
+			, #{userNm} 
+			, REPLACE(#{modDtm}, '-', '') 
+			, #{userNm} 
+			, #{pgRate}
+		) 
+	</insert> 
+
+	<!-- 조합정보 수정 처리 --> 
+	<update id="updateKocfc" parameterType="Map"  > 
+		/* KocfcMapper.updateKocfc */ 
+		UPDATE CM_KOCFC 
+		SET 
+			ASSO_NM = #{assoNm} 
+			, POST_NO = #{postNo} 
+			, DORO_CD = #{doroCd} 
+			, DORO_NM = #{doroNm} 
+			, DORO_BUNHO = #{doroBunho} 
+			, DORO_DONG = #{doroDong} 
+			, DORO_DTL = #{doroDtl} 
+			, DORO_BD_NO = #{doroBdNo} 
+			, CEO_NM = #{ceoNm} 
+			, TEL_NO = #{telNo} 
+			, FAX_NO = #{faxNo} 
+			, BIZ_NO = #{bizNo} 
+			, REMARK = #{remark} 
+			, MOD_DTM = REPLACE(#{modDtm}, '-', '') 
+			, MOD_NM = #{modNm} 
+			, PG_RATE = #{pgRate}
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+	</update> 
+
+	<!-- 조합정보 삭제 처리 --> 
+	<delete id="deleteKocfc" parameterType="Map"  > 
+		/* KocfcMapper.deleteKocfc */ 
+		DELETE FROM CM_KOCFC 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+	</delete> 
+
+</mapper>

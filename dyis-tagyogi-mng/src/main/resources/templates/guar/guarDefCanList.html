@@ -1,0 +1,222 @@
+<!--
+	파일정보 : guarDefCanList.html
+	파일명 : guarDefCanList
+	업무명 : 하자발급에 따른 계약/선금급 해제 대상
+	생성자 : 변성균
+	생성일 : 2023-11-02
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			var reloadYn = false;	//공통 리로드 방지
+
+			var refVal = /*[[${menuInfo.refVal}]]*/; //메뉴참조값 현황유형:그리드번호
+			var refVals = refVal.split(":"); //화면유형:그리드번호 <!-- I:30202 -->
+
+			//화면 초기화 처리 호출
+			$(document).ready(function(){
+
+				com.fnCodeSelectBox("GR07", "sOrderCd", 1, ""); //기관구분
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				gridOptList[0].Cfg.HeaderCheck = 1; //헤더체크
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//화면 고정
+					//sheet.setFixedCols(8, 0, 1); //발급
+
+					fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+
+					//fnBtnProc("DTL");
+				});
+
+				//sheet 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					//상세 호출
+					//if(obj.col === "membNm")	fnBtnProc("DTL");
+
+				});
+
+				//sheet 조회 완료 후
+				sheet.bind("onSearchFinish" , function(obj) {
+				//	console.log(row.guarExpDt);
+					//회원건수 체크
+					var rows = sheet.getDataRows();
+					var t = new Date();
+					for(var i=0; i<rows.length; i++){
+						row = rows[i];
+						guarCom.fnIbsStyleSet(sheet, row); //필드색상정의
+						//만기일지난보증표시
+						if(row.guarExpDt !== undefined){
+							var guarExpDt = row.guarExpDt;
+							if(guarExpDt <= t) setColor = "#FF0000";
+							else			   setColor = "#000000";
+							sheet.setCellStyle(sheet.getRowById(row.id), "guarExpDt", {"TextColor" : setColor}, 1);	//만기일표시
+						}
+					}
+
+				});
+
+				//저장후 이벤트
+			    sheet.bind("onAfterSave" , function(obj) {
+					resData = JSON.parse(obj.response.response);
+					alert(resData.resultMsg);
+					fnSearch(); //조회 호출
+				});
+
+
+
+			});
+
+
+			//현황 조회
+			var fnSearch = function(){
+				param = $("#serchFrm").serializeObject();
+				com.fnIbsSearch("/guarList/selectGuarDefCanList.do", JSON.stringify(param)); //param, sheetId 생략 가능
+			};
+
+			//화면 호출(등록, 수정, 삭제)
+			var fnBtnProc = function(type){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				if(rowData === null){
+					alert("대상을 선택 하십시오.");
+					return;
+				}
+
+				menuCd = "1030224"; //발급상세 (guar/guarDtl.html)
+				param = {menuCd:menuCd, paramMap:{guarNo:rowData.guarNo
+												, guarType:rowData.guarType //상품별 주계약화면 변경
+												, listType:"VIEW" //조회용
+												}};	//상세 -> 수정 페이지 이동 판단 위해 추가
+				parent.menuOpen(param);
+
+			};
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+
+				fnSearch();
+			};
+
+
+			//해제 처리
+			var fnExprProc = function(){
+
+				if(confirm("해제 처리하시겠습니까?")){
+					com.fnIbsSave('/guarCan/updateGuarExprRmv.do', sheet, 'N');
+				}
+			}
+
+			//만기해제 처리 콜백
+			var fnExprProcCallBack = function() {
+				fnSearch();
+			}
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="sGenreCd" value=""/> <!-- 장르 하나선택될 경우 배열 오류 처리 -->
+
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt style="width:90px;">조합원명</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>계약건명</dt>
+							<dd style="width:160px;">
+								<input type="search" name="sServNm" id="sServNm" title="계약건명" maxlength="50" style="width:160px" value=""/>
+							</dd>
+
+							<dt>공제기관</dt>
+							<dd style="width:240px;">
+								<select name="sOrderCd" id="sOrderCd" style="width:100px;"></select>
+								<input type="search" name="sOrderNm" id="sOrderNm" maxlength="50" style="width:120px;">
+							</dd>
+						</dl>
+					</div>
+					<div class="row">
+						<dl>
+
+						</dl>
+					</div>
+
+					<div class="row ">
+						<dl>
+							<dt style="width:90px;">보증서번호</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sDocNo" id="sDocNo" title="보증서번호" maxlength="25" style="width:260px" value=""/>
+							</dd>
+						</dl>
+					</div>
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnExprProc();" class="btn style03">해제처리</button>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04" id="btn_excel">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:550px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

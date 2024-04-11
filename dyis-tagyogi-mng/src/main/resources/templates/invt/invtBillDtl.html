@@ -1,0 +1,153 @@
+<!--
+	파일정보 : invt/invtBillDtl.html
+	파일명 : bill
+	업무명 : 출자증권현황 상세
+	생성자 : 윤가영1
+	생성일 : 2023-04-14
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "20103"}
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//화면 처리
+				
+				//동적 첨부파일 생성(동적)
+				com.fnFileSet("GR21", "myUpload"); 
+					
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheetBill", el: "sheetDivBill", options: gridOptList[0] });
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//fnSearch(); //조회 호출
+				};
+			    
+				//sheetDiv 원클릭 처리
+				//sheet.bind("onAfterClick" , function(obj) { //원클릭
+					//rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//alert(rowData.id); 
+				//});
+			});
+			
+			
+			var fnAtthNo = function(){
+				var param = {};
+				obj = {url:"/com/selectAtthNo.do", param:param, callBack:fnAtthNoCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj); 
+				
+			}
+			var fnAtthNoCallBack = function(resData){
+				console.log(resData.maxNo);
+			}
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<div class="contents flex">
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:49%">
+						
+						<div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+							출자증권현황 상세페이지는 출자 구분에 따른 상세화면으로 이동 (업무단 상세화면 공통사용) <br>
+							20: 담보배정정보 상세 / 30: 지분취득,지분처분상세,양도양수 / 31: 출자증권분할정보상세 /<br> 32: 출자증권병합정보상세 / 기타 : 출자정보상세보기
+							<br> 실 개발시, 선택된 항목의 출자구분에 따라 세부내용은 변경될 예정 
+							<br> 이 샘플 페이지의 상세는 일반양도양수 상세화면
+						</div>
+						
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						
+						<!--출자증권목록 : s-->
+						<div class="wrapBox">
+							<section class="area mt25">
+								<div class="fl">
+									<h4 class="title">출자증권목록</h4>
+								</div>
+							</section>
+							<div id="sheetDivBill" style="width:100%;height:150px"></div>
+						</div>
+						<!--출자증권목록 : e-->
+					</div>
+					
+					<!-- 그리드 우측 부분 시작 -->
+					
+					<div class="fixScroll" style="width:49%">	
+						<!--출자증권목록 : s-->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">양도양수설정정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>지분처분일자</th>
+										<td colspan="5">2018-02-12</td>
+									</tr>
+									<tr>
+										<!--처분 혹은 취득 임-->
+										<th>지분처분좌수</th>
+										<td colspan="3">20</td>
+										<th>지분처분금액</th>
+										<td colspan="3">20,000,000</td>
+									</tr>
+									<tr>
+										<th>지분처분사유</th>
+										<td colspan="5"></td>
+									</tr>
+									<tr>
+										<th>입금방법</th>
+										<td colspan="3"></td>
+										<th>입금자</th>
+										<td colspan="3"></td>
+									</tr>
+									<tr>
+										<th>입금은행</th>
+										<td colspan="3"></td>
+										<th>입금계좌</th>
+										<td colspan="3"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--출자증권목록 : e-->
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

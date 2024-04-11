@@ -1,0 +1,187 @@
+<!--
+	파일정보 : serchAddr/serchAddr.html
+	파일명 : serchAddr
+	업무명 : 주소검색 팝업
+	생성자 : BSG
+	생성일 : 2023.04.05
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//fnSearch(); //조회 호출
+				};
+			    
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//$("#div_addr").text(rowData.roadAddrPart1);
+					
+					var buldNo = rowData.buldMnnm;
+					if(rowData.buldSlno != "0") buldNo += "-"+rowData.buldSlno;
+					rowData.doroBunho = buldNo;
+						
+					var lnbrNo = rowData.lnbrMnnm;
+					if(rowData.lnbrSlno != "0") lnbrNo += "-"+rowData.lnbrSlno;
+					rowData.doroBdNo = lnbrNo;
+					
+					if(typeof parent.fnAddrCallBack != undefined && typeof parent.fnAddrCallBack == "function"){
+						parent.fnAddrCallBack(rowData);
+						parent.$("#dialog").dialog("close");
+					}else{
+						opener.fnAddrCallBack(rowData);
+						window.close();
+					}
+				});
+			});
+			
+			var fnChkKeyWord = function(obj){
+				if(obj.value.length >0){
+					//특수문자 제거
+					var expText = /[%=><]/ ;
+					if(expText.test(obj.value) == true){
+						alert("특수문자를 입력 할수 없습니다.") ;
+						obj.value = obj.value.split(expText).join(""); 
+						return false;
+					}
+					
+					//특정문자열(sql예약어의 앞뒤공백포함) 제거
+					var sqlArray = new Array(
+						//sql 예약어
+						"OR", "SELECT", "INSERT", "DELETE", "UPDATE", "CREATE", "DROP", "EXEC",
+			             		 "UNION",  "FETCH", "DECLARE", "TRUNCATE" 
+					);
+					
+					var regex;
+					for(var i=0; i<sqlArray.length; i++){
+						regex = new RegExp( sqlArray[i] ,"gi") ;
+						
+						if (regex.test(obj.value) ) {
+						    alert("\"" + sqlArray[i]+"\"와(과) 같은 특정문자로 검색할 수 없습니다.");
+							obj.value =obj.value.replace(regex, "");
+							return false;
+						}
+					}
+				}
+				return true ;
+			};
+			
+			var fnSearch = function(){
+				// 적용예 (api 호출 전에 검색어 체크) 	
+				if (!fnChkKeyWord(document.serchFrm.keyword)) {
+					return ;
+				}
+			
+				$.ajax({
+					 url :"https://business.juso.go.kr/addrlink/addrLinkApiJsonp.do"  //인터넷망
+					,type:"post"
+					,data:$("#serchFrm").serialize()
+					,dataType:"jsonp"
+					,crossDomain:true
+					,success:function(jsonStr){
+						$("#list").html("");
+						//console.log(jsonStr);
+						var errCode = jsonStr.results.common.errorCode;
+						var errDesc = jsonStr.results.common.errorMessage;
+						
+						var setAddr = [];
+						setAddr.data = jsonStr.results.juso;
+						
+						if(errCode != "0"){
+							alert(errCode+"="+errDesc);
+						}else{
+							if(jsonStr != null){
+								//fnSetAddrList(jsonStr);
+								sheet.loadSearchData(setAddr);
+							}
+						}
+					}
+				    ,error: function(xhr,status, error){
+				    	alert("에러발생");
+				    }
+				});
+			}
+			/*
+			var fnSetAddrList = function(jsonStr){
+				var htmlStr = "";
+				htmlStr += "<table>";
+				$(jsonStr.results.juso).each(function(){
+					htmlStr += "<tr>";
+					htmlStr += "<td>"+this.roadAddr+"</td>"; //도로명전체
+					htmlStr += "<td>"+this.roadAddrPart1+"</td>"; //도로명주소
+					htmlStr += "<td>"+this.roadAddrPart2+"</td>";//참고주소
+					htmlStr += "<td>"+this.jibunAddr+"</td>"; //지번주소
+					htmlStr += "<td>"+this.engAddr+"</td>"; //영문도로명주소
+					htmlStr += "<td>"+this.zipNo+"</td>"; //우편번호
+					htmlStr += "<td>"+this.admCd+"</td>"; //행정구역코드
+					htmlStr += "<td>"+this.rnMgtSn+"</td>"; //도로명코드
+					htmlStr += "<td>"+this.bdMgtSn+"</td>"; //건물관리번호
+					htmlStr += "<td>"+this.detBdNmList+"</td>"; //상세건물명
+					htmlStr += "<td>"+this.bdNm+"</td>"; // 건물명
+					htmlStr += "<td>"+this.bdKdcd+"</td>"; //공동주택여부
+					htmlStr += "<td>"+this.siNm+"</td>"; //시도명
+					htmlStr += "<td>"+this.sggNm+"</td>"; //시군구명
+					htmlStr += "<td>"+this.emdNm+"</td>"; //읍면동명
+					htmlStr += "<td>"+this.liNm+"</td>"; //법정리명
+					htmlStr += "<td>"+this.rn+"</td>"; //도로명
+					htmlStr += "<td>"+this.udrtYn+"</td>"; //지하여부
+					htmlStr += "<td>"+this.buldMnnm+"</td>"; //건물본번
+					htmlStr += "<td>"+this.buldSlno+"</td>"; //건물부번
+					htmlStr += "<td>"+this.mtYn+"</td>"; //산여부
+					htmlStr += "<td>"+this.lnbrMnnm+"</td>"; //지번본번(번지)
+					htmlStr += "<td>"+this.lnbrSlno+"</td>"; //지번부번(호)
+					htmlStr += "<td>"+this.emdNo+"</td>"; //읍면동일련번호
+					htmlStr += "</tr>";
+				});
+				htmlStr += "</table>";
+				$("#list").html(htmlStr);
+			}*/
+			
+		    /*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="currentPage" value="1"/>
+			<input type="hidden" name="countPerPage" value="100"/>
+			<input type="hidden" name="resultType" value="json"/> 
+			<input type="hidden" name="confmKey" value="U01TX0FVVEgyMDIzMDMzMDE3MTA0ODExMzY0Mzg="/>
+			<section class="searchArea">
+				<div class="row">
+					<dl>
+						<dt>검색</dt>
+						<dd style="width:300px;">
+							<input type="text" name="keyword" id="keyword" style="width:300px;"/>
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="searchBtn">
+					<button type="button" onclick="fnSearch();" class="btn search">조회</button>
+				</div>
+			</section>
+			</form>
+			<div class="mt10">
+		    	<div id="sheetDiv" style="width:100%;height:250px"></div>
+			</div>
+		</div><!-- //contentsArea -->
+		
+	</body>
+</html>

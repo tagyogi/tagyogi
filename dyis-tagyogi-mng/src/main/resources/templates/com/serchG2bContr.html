@@ -1,0 +1,391 @@
+<!--
+	파일정보 : serchG2bContr.html
+	파일명 : serchG2bContr
+	업무명 : G2B계약검색
+	생성자 : 권다슬
+	생성일 : 2023-07-13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var guarType = parent.$("#guarType").val(); //보증유형
+			var payTypeCd = ""; //지급구분
+			
+			$(document).ready(function(){
+
+				$("#guarType").val(parent.$("#guarType").val());
+				$("#publicNo").val(parent.$("#publicNo").val());
+				$("#membNo").val(parent.$("#sMembNo").val());
+				$("#bizNo").val(parent.$("#ele_bizNo").text());	//입찰은 필요없어보임(계약에 사용) : '-'은 service에서 제거중
+			
+				obj = {url:"/guarElect/serchG2b.do", formId:"serchFrm", callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxPost(obj);
+
+			});
+
+			//조회 콜백
+			var fnSearchCallBack = function(resData){
+				//com.fnSetKeyVal(resData.data);
+				//console.log(resData);
+				if(resData.resultCode == "9"){
+					alert(resData.resultMsg);
+					return;
+				}
+				
+				if(resData.data.resultCd == "9"){
+					alert("조달청 조회 정보가 없습니다.");
+					return;
+				}
+				
+				var data = resData.data;
+				var guarType = $("#guarType").val();
+	            payTypeCd = data.payTypeCd; //지급구분 1대지급 2직불
+	            
+	            if(guarType == "13"){
+					$("#ele_guarRate").val(data.guarPricRate); //하자보증금율
+				}else{
+					$("#ele_guarRate").val(data.guarAmtRate); //계약보증금율
+				}
+				
+				if(data.orgClsNm === "계약기관"){
+					$("#ele_orgNm").text(data.conNm); //계약기관명
+					$("#ele_orgCeoNm").text(data.conCeoNm); //채권자명
+					$("#ele_orgBizNo").text(com.makeBizNoVal(data.conBizNo)); //사업자번호
+					$("#ele_orgEmpNm").text(data.conEmpNm); //담당자명
+					$("#ele_orgEmpDept").text(data.conEmpDept); //부서명
+					$("#ele_orgEmpTelNo").text(data.conEmpTelNo); //전화번호
+					$("#ele_orgEmpFaxNo").text(data.conEmpFaxNo); //팩스번호
+				
+					$("#ele_conNm").text(data.orgNm); //계약기관명
+					$("#ele_conCeoNm").text(data.orgCeoNm); //채권자명
+					$("#ele_conBizNo").text(com.makeBizNoVal(data.orgBizNo)); //사업자번호
+					$("#ele_conEmpNm").text(data.orgEmpNm); //담당자명
+					$("#ele_conEmpDept").text(data.orgEmpDept); //부서명
+					$("#ele_conEmpTelNo").text(data.orgEmpTelNo); //전화번호
+					$("#ele_conEmpFaxNo").text(data.orgEmpFaxNo); //팩스번호
+				
+				}else{
+					$("#ele_orgNm").text(data.orgNm); //계약기관명
+					$("#ele_orgCeoNm").text(data.orgCeoNm); //채권자명
+					$("#ele_orgBizNo").text(com.makeBizNoVal(data.orgBizNo)); //사업자번호
+					$("#ele_orgEmpNm").text(data.orgEmpNm); //담당자명
+					$("#ele_orgEmpDept").text(data.orgEmpDept); //부서명
+					$("#ele_orgEmpTelNo").text(data.orgEmpTelNo); //전화번호
+					$("#ele_orgEmpFaxNo").text(data.orgEmpFaxNo); //팩스번호
+				
+					$("#ele_conNm").text(data.conNm); //계약기관명
+					$("#ele_conCeoNm").text(data.conCeoNm); //채권자명
+					$("#ele_conBizNo").text(com.makeBizNoVal(data.conBizNo)); //사업자번호
+					$("#ele_conEmpNm").text(data.conEmpNm); //담당자명
+					$("#ele_conEmpDept").text(data.conEmpDept); //부서명
+					$("#ele_conEmpTelNo").text(data.conEmpTelNo); //전화번호
+					$("#ele_conEmpFaxNo").text(data.conEmpFaxNo); //팩스번호
+					
+				}
+				
+				
+				
+				$("#ele_supNm").text(data.supNm); //기관명(회사명)
+				$("#ele_supCeoNm").text(data.supCeoNm); //대표자명
+				$("#ele_supBizNo").text(com.makeBizNoVal(data.supBizNo)); //사업자번호
+				var lawNo = data.supLawNo;
+				if(lawNo != null){
+					$("#ele_supLawNo").text(lawNo.substring(0,6) + "-" + lawNo.substring(6)); //법인번호	
+				}
+				
+				$("#ele_supEmpNm").text(data.supEmpNm); //담당자명
+				$("#ele_supEmpDept").text(data.supEmpDept); //부서명
+				$("#ele_supEmpTelNo").text(data.supEmpTelNo); //전화번호
+				$("#ele_supEmpFaxNo").text(data.supEmpFaxNo); //팩스번호
+				$("#ele_supCoopCd").text(data.supCoopCd); //공동도급여부
+				$("#ele_supCoopRate").text(data.supCoopRate); //지분율
+				
+				$("#ele_servNm").text(data.servNm); //계약건명
+				$("#ele_contrRefNo").text(data.contrRefNo); //계약참조번호
+				$("#ele_contrDt").text(com.fnDateFormat(data.contrDt)); //계약일자
+				$("#ele_contrStaDt").text(com.fnDateFormat(data.contrStaDt)); //착수일자
+				$("#ele_contrEndDt").text(com.fnDateFormat(data.contrEndDt)); //완성일자
+				$("#ele_contrAmt").text(com.addComma(data.contrAmt)); //계약금액
+				$("#ele_guarRate").text(data.guarRate); //보증금율
+				$("#ele_contrClsNm").text(data.contrClsNm); //업무구분
+				$("#ele_contrMeanNm").text(data.contrMeanNm); //계약방법
+				$("#ele_coopCoopNm").text(data.coopCoopNm); //공동계약여부
+				$("#ele_coontrContinueNm").text(data.coontrContinueNm); //장기계속구분
+				
+				
+				
+/*
+				$("#ele_notiDt").text(com.fnDateFormat(data.notiDt)); //
+				$("#ele_notiTm").text(com.fnTimeFormat(data.notiTm)); //
+				
+				if(data.bidMeanCd === "01") $("#ele_bidMeanCd").text("전자입찰"); //입찰방식 
+				if(data.bidMeanCd === "02") $("#ele_bidMeanCd").text("수기(일반)입찰"); //입찰방식
+				$("#ele_etcAmt").text(com.addComma(data.etcAmt)); //
+
+				//url a태그
+				$("#ele_linkURLArea").html('<a href="https://'+data.urlLink+'" target="_blank">'+ data.urlLink +'</a>');
+				$("#ele_notiURLArea").html('<a href="https://'+data.urlNoti+'" target="_blank">'+ data.urlNoti +'</a>');
+				*/
+			}
+
+			//적용
+			function fnElectApply() {
+			    //전자보증정보 설정
+			    //계약정보설정
+			    parent.$("#servNm").val($("#ele_servNm").text());
+			    
+				if(guarType === "13"){
+					parent.$("#orderNm").val($("#ele_orgNm").text());
+			   		parent.$("#orderBizNo").val($("#ele_orgBizNo").text()); //사업자등록번호
+				
+				    parent.$("#contrDt").val($("#ele_contrDt").text());		
+				    parent.$("#contrBegDt").val($("#ele_contrStaDt").text());
+				    parent.$("#contrExpDt").val($("#ele_contrEndDt").text());
+				   
+				    var endDt = $("#ele_contrEndDt").text();
+				    parent.$("#releBegDt").val(endDt);
+				    parent.$("#releEndDt").val(com.fnDateGet(endDt.replace(/\-/g,""), 365));
+				    
+				}else if(guarType === "14"){ //선금급
+					if(payTypeCd === "1"){ //대지급
+						parent.$("#orderNm").val($("#ele_conNm").text());
+				   		parent.$("#orderBizNo").val($("#ele_conBizNo").text()); //사업자등록번호
+						
+					}else{
+						parent.$("#orderNm").val($("#ele_orgNm").text());
+			   			parent.$("#orderBizNo").val($("#ele_orgBizNo").text()); //사업자등록번호
+					
+					}
+					
+					parent.$("#contrDt").val($("#ele_contrDt").text());		
+				    parent.$("#contrBegDt").val($("#ele_contrStaDt").text());
+				    parent.$("#contrExpDt").val($("#ele_contrEndDt").text());
+				    
+				    
+				        
+			   	}else{
+					   
+					parent.$("#orderNm").val($("#ele_conNm").text());
+			   		parent.$("#orderBizNo").val($("#ele_conBizNo").text()); //사업자등록번호
+				
+					parent.$("#contrDt").val($("#ele_contrDt").text());		
+				    parent.$("#contrBegDt").val($("#ele_contrStaDt").text());
+				    parent.$("#contrExpDt").val($("#ele_contrEndDt").text())
+				}   
+			    //최초인경우
+		    	if(parent.$("#guarClassCd").val() == "10"){
+					parent.$("#contrAmt").val($("#ele_contrAmt").text());
+					parent. $("#guarRate").val($("#ele_guarRate").text());	
+				}
+				
+					
+			    //parent.guarCom.fnSetReleDt(); //입찰마감일자 세팅후 보증기간
+				
+			    com.dialpopupClose();;
+			}
+		    /*]]>*/
+		</script>
+
+		<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="guarType" id="guarType" />
+			<input type="hidden" name="publicNo" id="publicNo" value=""/>
+			<input type="hidden" name="membNo" id="membNo" value=""/>
+			<input type="hidden" name="bizNo" id="bizNo" value=""/>
+		</form>
+
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">계약기관정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:100px;">
+				<col style="width:200px;">
+				<col style="width:100px;">
+				<col style="width:200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>계약기관명</th>
+					<td colspan="3"><span id="ele_conNm"></span></td>
+				</tr>
+				<tr>
+					<th>채권자명</th>
+					<td><span id="ele_conCeoNm"></span></td>
+	                <th>사업자번호</th>
+	                <td><span id="ele_conBizNo"></span></td>
+	            </tr>
+	            <tr>
+					<th>담당자명</th>
+					<td><span id="ele_conEmpNm"></span></td>
+	                <th>부서명</th>
+	                <td><span id="ele_conEmpDept"></span></td>
+	            </tr>
+	            <tr>
+					<th>전화번호</th>
+					<td><span id="ele_conEmpTelNo"></span></td>
+	                <th>팩스번호</th>
+	                <td><span id="ele_conEmpFaxNo"></span></td>
+	            </tr>
+			</tbody>     
+		</table>
+		
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">수요기관정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:100px;">
+				<col style="width:200px;">
+				<col style="width:100px;">
+				<col style="width:200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>계약기관명</th>
+					<td colspan="3"><span id="ele_orgNm"></span></td>
+				</tr>
+				<tr>
+					<th>채권자명</th>
+					<td><span id="ele_orgCeoNm"></span></td>
+	                <th>사업자번호</th>
+	                <td><span id="ele_orgBizNo"></span></td>
+	            </tr>
+	            <tr>
+					<th>담당자명</th>
+					<td><span id="ele_orgEmpNm"></span></td>
+	                <th>부서명</th>
+	                <td><span id="ele_orgEmpDept"></span></td>
+	            </tr>
+	            <tr>
+					<th>전화번호</th>
+					<td><span id="ele_orgEmpTelNo"></span></td>
+	                <th>팩스번호</th>
+	                <td><span id="ele_orgEmpFaxNo"></span></td>
+	            </tr>
+			</tbody>     
+		</table>
+		
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">도급업체정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:100px;">
+				<col style="width:200px;">
+				<col style="width:100px;">
+				<col style="width:200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>기관명(회사명)</th>
+					<td><span id="ele_supNm"></span></td>
+					<th>대표자명</th>
+					<td><span id="ele_supCeoNm"></span></td>
+	                
+				</tr>
+				<tr>
+					<th>사업자번호</th>
+	                <td><span id="ele_supBizNo"></span></td>
+	                <th>법인번호</th>
+	                <td><span id="ele_supLawNo"></span></td>
+	            </tr>
+	            <tr>
+					<th>담당자명</th>
+					<td><span id="ele_supEmpNm"></span></td>
+	                <th>부서명</th>
+	                <td><span id="ele_supEmpDept"></span></td>
+	            </tr>
+	            <tr>
+					<th>전화번호</th>
+					<td><span id="ele_supEmpTelNo"></span></td>
+	                <th>팩스번호</th>
+	                <td><span id="ele_supEmpFaxNo"></span></td>
+	            </tr>
+	            <tr>
+					<th>공동도급여부</th>
+					<td><span id="ele_supCoopCd"></span></td>
+	                <th>지분율</th>
+	                <td><span id="ele_supCoopRate"></span></td>
+	            </tr>
+			</tbody>     
+		</table>
+		
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">계약정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:100px;">
+				<col style="width:200px;">
+				<col style="width:100px;">
+				<col style="width:200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>계약건명</th>
+					<td colspan="3"><span id="ele_servNm"></span></td>
+				</tr>
+				<tr>
+					<th>계약참조번호</th>
+					<td><span id="ele_contrRefNo"></span></td>
+					<th>계약일자</th>
+					<td><span id="ele_contrDt"></span></td>
+				</tr>
+				<tr>
+					<th>착수일자</th>
+					<td><span id="ele_contrStaDt"></span></td>
+	                <th>완성일자</th>
+	                <td><span id="ele_contrEndDt"></span></td>
+	            </tr>
+	            <tr>
+					<th>계약금액</th>
+					<td><span id="ele_contrAmt"></span></td>
+	                <th>보증금율</th>
+	                <td><span id="ele_guarRate"></span></td>
+	            </tr>
+	            <tr>
+					<th>업무구분</th>
+					<td><span id="ele_contrClsNm"></span></td>
+	                <th>계약방법</th>
+	                <td><span id="ele_contrMeanNm"></span></td>
+	            </tr>
+	            <tr>
+					<th>공동계약여부</th>
+					<td><span id="ele_coopCoopNm"></span></td>
+	                <th>장기계속구분</th>
+	                <td><span id="ele_coontrContinueNm"></span></td>
+	            </tr>
+	            <tr>
+					<th>지급구분</th>
+					<td><span id="ele_payTypeNm"></span></td>
+	                <th></th>
+	                <td></td>
+	            </tr>
+			</tbody>     
+		</table>
+		
+		<!--하단 버튼 영역-->
+		<div class="layer-flex mt20">
+			<!-- 처리 버튼 영역 -->
+			<div class="" style="width:100%">
+				<section class="area">
+					<div class="fc">
+						<button type="button" onclick="javascript:fnElectApply();" class="btn style03">적용</button>
+						<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style08">취소</button>
+					</div>
+				</section>
+			</div>
+		</div>
+
+	</body>
+</html>

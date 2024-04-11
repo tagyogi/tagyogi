@@ -1,0 +1,592 @@
+<!--
+	파일정보 : guar/guarContrReqDtl.html
+	파일명 : guarContrReqDtl
+	업무명 : 보증약정 신청 상세
+	생성자 : 변성균
+	생성일 : 2023-07-04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "GR11:GR21:GR22", gridNoList : "20112:30105:30106:30107:30110"}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				//동적 첨부파일 생성(동적)
+				com.fnFileViewSet("GR21", "myUpload");
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//IBSheet 설정
+				for(var i = 1; i <= 3; i++ ){
+					gridOptList[i].Cfg.CanEdit = 0;
+					gridOptList[i].Cols[0].Visible = 0;
+				}
+			    gridOptList[4].Cfg.CanEdit = 0;
+
+			    //fnIbsInvtMort(gridOptList[0]); //출자담보정보(공통부)
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheetSure", el: "sheetDivSure", options: gridOptList[1] }); //보증인정보
+			    IBSheet.create({ id: "sheetMort", el: "sheetDivMort", options: gridOptList[2] }); //담보정보
+			    IBSheet.create({ id: "sheetRele", el: "sheetDivRele", options: gridOptList[3] }); //관련조합원정보
+			    //IBSheet.create({ id: "sheetHist", el: "sheetDivHist", options: gridOptList[4] }); //변경이력
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+			});
+
+
+			//검색
+			var fnSearch = function(){
+				//상세정보 조회
+			    var membNo = /*[[${paramMap.membNo}]]*/;
+			    var contrNo = /*[[${paramMap.contrNo}]]*/;
+			    var atthType = /*[[${menuInfo.atthType}]]*/;
+
+			    var param = {membNo : membNo, contrNo : contrNo, atthType: atthType};
+				obj = {url:"/guarContr/selectGuarContr.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//검색콜백 (상세 정보 세팅)
+			var fnSearchCallBack = function(resData){
+				//console.log(resData);
+				var contrType = resData.contr.contrType; //약정유형
+				var contrStat = resData.contr.contrStat; //약정상태
+
+				//화면컨트롤
+				if(resData.contr.reqNm !== null){
+					$("#ele_areaReqWay").css("display", ""); //신청자정보
+				}
+				if(resData.contr.signedContrCont !== null){
+					$("#btn_sign").css("display", ""); //제출서명
+				}
+
+				com.fnSetKeyVal(resData.memb);
+				com.fnSetKeyVal(resData.contr);
+
+
+				//약정 갱신 중일 경우
+				/*
+				if(resData.befContr !== null){
+					$("#ele_areaBef").css("display", "");
+					com.fnSetKeyVal(resData.befContr, "ele_areaBefContrDtl");
+					//상품정보 목록
+					guarCom.fnSetGuarLimitView("GR22", "tbl_befGuarLimitView", resData.befContrLimit);
+				}
+				*/
+
+				guarCom.fnSetGuarLimitView("GR22", "tbl_guarLimit", resData.contr);	//상품정보 목록	//, resData.befContrLimit
+				com.fnIbsUploadViewOne(resData.fileList); //첨부파일설정
+				//sheetInvtMort.loadSearchData(resData.billList); //출자담보현황
+				sheetSure.loadSearchData(resData.suretyList); //보증인정보
+				sheetMort.loadSearchData(resData.mortList); //담보정보
+				sheetRele.loadSearchData(resData.releList); //관련인정보
+				//sheetHist.loadSearchData(resData.histList); //약정이력정보
+
+				//알림톡전용 상태값에 세팅
+				$("#talkProcStat").val($("#procStat").val());
+
+				//알림톡세팅
+				var setParam = {membNo: $("#membNo").val(), setTalk:"Y", setVal:resData.contr.talkNm}
+				com.fnSetPersList(setParam);
+
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+
+				//서명버튼 활성화
+				if($("#agreeSignedContrCont").val() !== ""){
+					$("#btnReqCert").show();
+				}
+
+				//서명버튼 활성화
+				if($("#signedContrCont").val() !== ""){
+					$("#btnSignCert").show();
+				}
+			};
+
+			//전자서명확인
+			var fnCertSign = function(type){
+				var signData;
+
+				if(type === "agree"){
+					signData = $("#agreeSignedContrCont").val();
+				}else{
+					signData = $("#signedContrCont").val();
+				}
+
+				com.fnCertSignVeri(signData);
+
+			}
+
+
+			//레포트 호출
+			var fnReport = function(type){
+				//ARGE : 개인정보동의, CNTR :보증약정서, APPR:약정심사조서
+				var ozNm;
+				var nameArr;
+				var valueArr;
+				if(type === "ARGE"){
+					ozNm = "CM_약정 기업(신용)정보 동의서";
+					nameArr = new Array("contr_no", "memb_no");
+					valueArr = new Array( $("#contrNo").val(), $("#membNo").val() );
+				}else if(type === "CNTR"){
+					ozNm = "GR_보증약정서";
+					nameArr = new Array("contr_no", "memb_no");
+					valueArr = new Array( $("#contrNo").val(), $("#membNo").val() );
+				}else if(type === "APPR"){
+					ozNm = "GR_약정심사조서";
+					nameArr = new Array("contr_no", "memb_no","grade_dt");
+					valueArr = new Array( $("#contrNo").val(), $("#membNo").val(), $("#gradeDt").val() );
+				}
+				/*
+				else if(type === "ASSN"){ // 장애인협회용 약정서 이현지대리 요청에의해 생성 및 비활성화
+					ozNm = "GR_보증약정서_연대";
+					nameArr = new Array("contr_no", "memb_no");
+					valueArr = new Array( $("#contrNo").val(), $("#membNo").val() );
+				}
+				*/
+				ozLoad(ozNm, nameArr, valueArr, 1, false, "pdf");
+
+			}
+
+			//상태처리
+			var msg = "";
+			var procStat = "";
+			var fnProc = function(procStatNum){
+				procStat = procStatNum;
+				var contrNo = $("#contrNo").val(); //약정번호
+				var apprNm =  $("#apprNm").val(); //승인자명
+				var userNm = /*[[${session.userNm}]]*/;
+
+				if((procStat === "51" || procStat === "90")  && apprNm === userNm){
+					alert("심사자와 승인자를 동일할 수 없습니다.");
+					if(userNm !== "관리자"){
+						return;
+					}
+				}
+
+				if(procStat === "30"){
+					$("#talkProcStat").val('30'); //알림톡발송여부를 위해 세팅
+					alert('알림톡발송을 원할시, 알림톡정보란에 수신자정보를 확인해주세요.');
+					msg = "심사완료";
+				}else if(procStat === "51"){ //
+					msg = "승인불가";
+				}else if(procStat === "90"){ //
+					msg = "승인완료";
+				}
+
+				if(confirm(msg + " 처리 하시겠습니까?")){
+					param = {contrNo:contrNo, procStat:procStat, befContrNo:$("#befContrNo").val()};
+					obj = {url:"/guarContr/updateGuarContrProc.do", param:param, callBack:fnProcCallBack, msgYn:"N", loadYn:"N", sessYn:"Y"};
+					com.fnAjaxDef(obj);
+				}
+
+			};
+
+			//처리콜백
+			var fnProcCallBack = function(resData){
+				//console.log(resData);
+				if(resData.resultCode === 0) {
+
+					//알림톡 심사완료확인시
+					if($("#talkProcStat").val() === "30"){
+						/*****************대출지급******************/
+						//저장성공시 알림톡발송
+						/*
+						param1 조합원의 보증약정체결이 완료되었습니다.
+						약정구분: param2
+						약정기한: param3 ~ param4
+						약정좌수: param5좌
+						보증한도: param6원
+						현시점 이후로 보증신청 가능함을 안내드립니다.
+						*/
+
+						//보증인, 담보제공인 정보 가져오기
+						var sureList = [];
+						var sRow = sheetSure.getDataRows();
+						var mRow = sheetMort.getDataRows();
+
+						var sureListSure = sRow.reduce((acc, row) => {
+						  const sureNm  = sheetSure.getValue(row, "sureNm").trim() || '';
+						  const sureTel = sheetSure.getValue(row, "cellNo").trim() || '';
+						  acc.push([sureNm, sureTel]);
+						  return acc;
+						}, []);
+
+						var sureListMort = mRow.reduce((acc, row) => {
+						  const mortNm  = sheetMort.getValue(row, "sureNm").trim() || '';
+						  const mortTel = sheetMort.getValue(row, "cellNo").trim() || '';
+						  acc.push([mortNm, mortTel]);
+						  return acc;
+						}, []);
+
+						var targetList = [...sureListSure,...sureListMort];
+
+						// 전화번호가 있는 배열 중에서 이름, 번호만 각각 추출
+						let nmList = targetList.filter(([nm, cellNo]) => cellNo !== '').map(([nm]) => nm);//.join(":");
+						let cellList = targetList.filter(([nm, cellNo]) => cellNo !== '').map(([, cellNo]) => cellNo);//.join(":");
+
+						if($("#talkTel").val() !== ""){
+							nmList.push($("#talkNm").val());
+							cellList.push($("#talkTel").val());
+						}
+
+						nmList = nmList.join(':');
+						cellList = cellList.join(':');
+
+						/*파라미터세팅*/
+						var paramsArray = [
+							$("#ele_membNm").text()      //조합원명
+							, $("#ele_contrTypeNm").text() //약정구분
+							, $("#ele_contrBegDt").text()  //약정기한1
+							, $("#ele_contrExpDt").text()  //약정기한2
+							, $("#ele_contrNum").text()    //약정좌수
+							, $("#totalLimitAmt").text()   //약정한도
+						];
+
+						// 배열을 콜론으로 구분된 문자열로 합치기
+						var paramVal = paramsArray.join(':');
+						param= {msgSeq:"7", membNo:$("#membNo").val(), param:paramVal, telNo:cellList, telNm:nmList, msgYn: "N"}
+						com.fnSendTalkMsg(param);
+
+					}
+
+					alert(msg + " 처리 되었습니다.");
+				}
+				else alert(resData.resultMsg);
+
+				if(procStat === "90") fnPageMove('1030108');
+				else fnPageMove('1030106');
+
+			};
+
+
+			//화면리로드
+			var fnPageMove = function(menuCd){
+				param = {menuCd:menuCd, paramMap:{membNo:$("#membNo").val()
+													, contrNo:$("#contrNo").val()
+													, contrStat:$("#contrStat").val()
+													, procStat:procStat
+													, atthNo:$("#atthNo").val()
+													, atthType:/*[[${menuInfo.atthType}]]*/
+													}
+							};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			}
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="btn-collapse close"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+			<input type="hidden" name="membNo" id="membNo"/>
+			<input type="hidden" name="contrNo" id="contrNo"/>
+			<input type="hidden" name="befContrNo" id="befContrNo"/>
+			<input type="hidden" name="contrStat" id="contrStat"/>
+			<input type="hidden" name="procStat" id="procStat"/>
+			<input type="hidden" name="atthNo" id="atthNo"/>
+			<input type="hidden" name="gradeDt" id="gradeDt"/>
+			<input type="hidden" name="apprNm" id="apprNm"/>
+			<input type="hidden" name="agreeSignedContrCont" id="agreeSignedContrCont"/>
+			<input type="hidden" name="signedContrCont" id="signedContrCont"/>
+			<input type="hidden" name="signData" id="signData"/>
+
+			<input type="hidden" name="talkProcStat" id="talkProcStat" /> <!-- 처리상태:알림톡전용 -->
+
+			<div class="contents flex">
+				<!-- 처리 버튼 영역 -->
+				<div class="layer-flex">
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<th:block th:if="${#strings.equals(paramMap.procStat , '10') }"> <!--접수 -->
+								<button type="button" onclick="javascript:fnProc('22');" class="btn style01" >접수처리</button> <!-- 심사중 -->
+								</th:block>
+
+								<th:block th:if="${#strings.equals(paramMap.procStat , '22') }"> <!--심사중 -->
+								<button type="button" onclick="javascript:fnProc('10');" class="btn style03" >승인불가</button> <!-- 접수상태 -->
+								<button type="button" onclick="javascript:fnProc('30');" class="btn style03" >심사완료</button> <!-- 심사완료 -->
+								</th:block>
+
+								<th:block th:if="${#strings.equals(paramMap.procStat , '40') }"> <!--제출완료 -->
+								<button type="button" onclick="javascript:fnProc('90');" class="btn style01" >발급</button>
+								</th:block>
+
+								<!-- 2024.01.26 승인처리는 팀장급 이상만 가능하도록 수정 -->
+								<th:block th:if="${#strings.equals(paramMap.procStat , '50') && (session.posCd >= '30' || #strings.equals(session.userId, 'admin'))}">
+								<button type="button" onclick="javascript:fnProc('51');" class="btn style03" >승인불가</button>
+								<button type="button" onclick="javascript:fnProc('90');" class="btn style01" >승인완료</button>
+								</th:block>
+
+								<th:block th:if="${#strings.equals(paramMap.procStat , '51') }"> <!--승인불가 -->
+								<button type="button" onclick="javascript:fnProc('50');" class="btn style03" >승인요청</button>
+								<button type="button" onclick="javascript:fnProc('22');" class="btn style01" >심사중</button>
+								</th:block>
+
+
+								<th:block th:if="${paramMap.procStat >= '20' }">
+								<button type="button" onclick="javascript:fnReport('CNTR');" class="btn style02" >보증약정서</button>
+								<button type="button" onclick="javascript:fnReport('APPR');" class="btn style02" >약정심사조서</button>
+								<button type="button" onclick="javascript:fnReport('ARGE');" class="btn style02"  >기업신용정보동의서</button>
+								</th:block>
+								<button type="button" onclick="javascript:fnPageMove('1030107');" class="btn style08" >수정</button>
+								<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width: 49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">신청 및 심사 정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:100px;">
+								<col style="width:140px;">
+								<col style="width:100px;">
+								<col style="width:140px;">
+								<col style="width:100px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr id="ele_areaReqWay" style="display:none">
+									<th>신청일자</th>
+									<td><span id="ele_reqDt"></span></td>
+									<th>신청자</th>
+									<td><span id="ele_reqNm"></span>&nbsp;
+										<button type="button" id="btnReqCert" onclick="javascript:fnCertSign('agree');" class="btn small style05" style="display:none">서명상세</button>
+
+									</td>
+									<th>전화번호</th>
+									<td><span id="ele_reqTelNo"></span></td>
+								</tr>
+								<tr>
+									<th>신청방법</th>
+									<td><span id="ele_reqWayNm"></span>
+
+									</td>
+									<th>처리상태</th>
+									<td colspan="3"><span id="ele_procStatNm"></span>&nbsp;
+										<button type="button" id="btnSignCert" onclick="javascript:fnCertSign('submit');" class="btn small style05" style="display:none">제출서명</button>
+									</td>
+								</tr>
+								<tr>
+									<th>심사일자</th>
+									<td><span id="ele_judgDtm"></span></td>
+									<th>심사자</th>
+									<td colspan="3"><span id="ele_judgNm"></span></td>
+								</tr>
+								<tr>
+									<th>승인일자</th>
+									<td><span id="ele_examDtm"></span></td>
+									<th>승인자</th>
+									<td><span id="ele_examNm"></span></td>
+									<th>심사승인여부</th>
+									<td><span id="ele_examYn"></span></td>
+								</tr>
+								<tr>
+									<th>발급일자</th>
+									<td><span id="ele_issuDtm"></span></td>
+									<th>발급자</th>
+									<td colspan="3"><span id="ele_issuNm"></span></td>
+								</tr>
+							</tbody>
+						</table>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">약정정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:100px;">
+								<col style="width:140px;">
+								<col style="width:100px;">
+								<col style="width:140px;">
+								<col style="width:100px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>약정구분</th>
+									<td>
+										<span id="ele_contrTypeNm"></span>
+									</td>
+									<th>약정한도유형</th>
+									<td colspan="3">
+										<span id="ele_limitOptYnNm"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>약정번호</th>
+									<td>
+										<span id="ele_contrNo"></span>
+									</td>
+									<th>약정상태</th>
+									<td colspan="3">
+										<span id="ele_contrStatNm"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>약정일자</th>
+									<td>
+										<span id="ele_contrDt"></span>
+									</td>
+									<th>약정기간</th>
+									<td colspan="3">
+										<span id="ele_contrBegDt"></span>&nbsp;~&nbsp;<span id="ele_contrExpDt"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>담보좌수</th>
+									<td><span id="ele_mortNum"></span></td>
+									<th>예수좌수</th>
+									<td><span id="ele_deptNum"></span></td>
+									<th>총좌수</th>
+									<td><span id="ele_totNum"></span></td>
+								</tr>
+								<tr>
+									<th>배정좌수</th>
+									<td><span id="ele_assignNum"></span></td>
+									<th>사용좌수</th>
+									<td><span id="ele_contrUseNum"></span></td>
+									<th>가능좌수</th>
+									<td><span id="ele_remainNum"></span></td>
+								</tr>
+								<tr>
+									<th>약정좌수</th>
+									<td>
+										<span id="ele_contrNum"></span>
+									</td>
+									<th>신용도</th>
+									<td colspan="3">
+										<span id="ele_grade"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>비고</th>
+									<td colspan="5">
+										<span id="ele_remark"></span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">보증상품정보</h4>
+							</div>
+						</section>
+						<table class="tbl" id="tbl_guarLimit"></table>
+
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width: 49%">
+						<!--  <th:block th:include="com/comInvtMort"></th:block> 출자담보정보(공통) -->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">보증인정보</h4>
+								</div>
+								<div class="fr">
+								</div>
+							</section>
+							<div id="sheetDivSure" style="width:100%;height:140px"></div>
+						</div>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">담보정보</h4>
+								</div>
+								<div class="fr">
+								</div>
+							</section>
+							<div id="sheetDivMort" style="width:100%;height:140px"></div>
+						</div>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">관련조합원정보</h4>
+								</div>
+								<div class="fr">
+								</div>
+							</section>
+							<div id="sheetDivRele" style="width:100%;height:140px"></div>
+						</div>
+						<!--
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">변경이력</h4>
+								</div>
+							</section>
+							<div id="sheetDivHist" style="width:100%;height:260px"></div>
+						</div>
+						-->
+
+						<!--알림톡정보 : s-->
+						<div id="alarmBox" class="wrapBox mt10">
+							<th:block th:include="com/comAlarmTalk :: type('dtl')"></th:block> <!--알람톡정보 -->
+							<!--<th:block th:include="com/comAlarmTalk :: type('invtSeprt')"></th:block> -->
+						</div><!-- //wrapbox-->
+						<!--알림톡정보 : e-->
+
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">첨부파일</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnDtlFileUpload('docFile', $('#atthType').val(), $('#atthNo').val(), $('#contrNo').val(), 'GR21');" class="btn small style07">파일저장</button>
+			                    </div>
+							</section>
+							<table class="tbl" id="myUpload"></table>
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

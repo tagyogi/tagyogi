@@ -1,0 +1,604 @@
+<!--
+	시스템구분 : 홈페이지 보증 리스트 조회(공통)
+	파일정보 : guarList.html
+	파일명 : guarList.html
+	업무명 : 홈페이지 보증 리스트 조회(공통)
+	생성자 : 변성균
+	생성일 : 2023.08.11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/ //공통코드
+		var refVal = /*[[${paramMap.refVal}]]*/;	//신청:R, 발급: I, 보증료: F
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//console.log(/*[[${menuInfo}]]*/)
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+		
+			//검색조건
+			$("#txt_serchDt").text("발급일자");
+			if(refVal === "R"){ //신청
+				$("#txt_serchDt").text("신청일자");
+				$("#sSerchStaDt").val(com.fnDateGet(/*[[${today}]]*/, -30)); //발급일자 시작일설정
+				$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //발급일자 종료알 설정
+			}else if(refVal === "I" || refVal === "F"){ //발급 //보증료현황
+				$("#sSerchStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //발급일자 시작일설정
+				$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //발급일자 종료알 설정
+				
+				$("#basDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //기준일자
+			}else if(refVal === "E"){ //만기
+				$("#sSerchStaDt").val(); //발급일자 시작일설정
+				$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //발급일자 종료알 설정
+				
+			}else{
+				
+			}
+			
+				
+			//selectBox
+			com.fnCodeSelectBox("GR01", "sGuarType", 1, ""); 		//보증종류
+			if(refVal === "I"){	//발급현황
+				com.fnCodeSelectBox("GR28", "sGuarStat", 1, "90");		//보증상태
+			}else if(refVal === "E"){	//만기도래
+				com.fnCodeSelectBox("GR28", "sGuarStat", 1, "90");		//보증상태
+			}else{	//보증료현황
+				com.fnCodeSelectBox("GR28", "sGuarStat", 1, "");		//보증상태
+			}
+
+
+			com.fnCodeSelectBox("GR05", "sProcStat", 1, "");		//처리상태
+			$("#sProcStat").find("option[value='40']").remove();	//발급가능 삭제 --> 요청 추가
+			$("#sProcStat").find("option[value='41']").remove();	//기관전송 삭제 --> 요청 추가
+			$("#sProcStat").find("option[value='42']").remove();	//전송반려 삭제 --> 요청 추가
+			$("#sProcStat").find("option[value='80']").remove();	//전송완료 삭제
+			$("#sProcStat").find("option[value='90']").remove();	//발급완료 삭제
+
+			//조합 계좌정보
+			let accInfo = "";
+			let accCnt = 1;
+			kocfcAccList.forEach((item, idx) => {
+				if(item.bankType === "보증료"){
+					if(accCnt === 1) accInfo += "<li class='txt-dept2 mb5'>" + accCnt + ") "+item.bankNm+" " + item.acctNo + " </li>";
+					else 			accInfo += "<li class='txt-dept2'>" + accCnt + ") "+item.bankNm+" " + item.acctNo + " </li>";
+					accCnt++;
+				}
+		  	});
+
+		  	$("#accInfo").html(accInfo);
+
+			fnSerch();
+		});
+
+		var fnSerch = function(){
+
+			var url = "";
+
+			//화면별 검색 일자값 변경
+			if(refVal === "R"){	//신청
+				$("#sGuarReqStaDt").val($("#sSerchStaDt").val());
+				$("#sGuarReqEndDt").val($("#sSerchEndDt").val());
+				url = "/guar/selectGuarReqList.do";
+
+			}else if(refVal === "E"){	//만기
+				
+				url = "/guar/selectGuarExprList.do";
+			}else{	//발급, 보증료
+				$("#sGuarPubStaDt").val($("#sSerchStaDt").val());
+				$("#sGuarPubEndDt").val($("#sSerchEndDt").val());
+				url = "/guar/selectGuarIssuList.do";
+			}
+
+
+			//관리자 서비스 같이쓰기위해 보증종류, 보증상태 리스트로 조회
+			var param = $("#serchFrm").serializeObject();
+
+			//보증종류
+			if($("#sGuarType").val() !== '' && $("#sGuarType").val() !== undefined)	param.sGuarType = $("#sGuarType").val();
+			else																	delete param.sGuarType;
+
+			//보증상태(다른곳에서 호출이 많아 서비스단에서 리스트, string 구분)
+			//if($("#sGuarStat").val() !== '' && $("#sGuarStat").val() !== undefined)	param.sGuarStat = [$("#sGuarStat").val()];
+			//else																	delete param.sGuarStat;
+
+			//처리상태(신청에만)
+			if($("#sProcStat").val() !== '' && $("#sProcStat").val() !== undefined)	param.sProcStat = $("#sProcStat").val();
+			else																	delete param.sProcStat;
+
+			//console.log(param);
+			obj = {url:url, param:param, callBack:fnSerchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+		}
+
+		var fnSerchCallBack = function(resData){
+			//console.log(resData);
+			$("#ele_guarList").empty();
+
+			var noDataCol = "7";	//발급
+			if(refVal === "R")	noDataCol = "6"	//신청현황
+			if(refVal === "F")	noDataCol = "8"	//보증료현황
+
+			if(resData.data.length === 0) $("#ele_guarList").append('<tr data-noData="Y"><td colspan="'+noDataCol+'">정보가 없습니다.</td></tr>');
+
+			$.each(resData.data, function(index, item) {
+				var paramTag  = 'data-guarNo="'+item.guarNo+'" data-guarType="'+item.guarType+'" data-docNo="'+item.docNo+'" data-guarTypeNm="'+item.guarTypeNm+'"';
+					paramTag += ' data-contrNo="'+item.contrNo+'" data-procStat="'+item.procStat+'" data-guarIssueCd="'+ item.guarIssueCd+'" data-guarPubDt="' +item.guarPubDt + '"';
+					paramTag += ' data-guarStat="'+item.guarStat+'" data-payYn="' +item.payYn+'" data-guarReqCd="'+item.guarReqCd+'" data-remainCommAmt="'+item.remainCommAmt+'"';
+
+				var html  = '<tr onmouseover="this.className=\'mOver\'" onmouseout="this.className=\'mOut\'" style="cursor: pointer;" '+paramTag+'>';
+				    html += '<td class="alignC">'+ Number(index + 1) + '</td>'; //번호
+
+					if(refVal === "R"){	//신청 리스트
+						html += '<td class="alignC" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">'; //
+						html += '<span style="display:block;">' + item.guarTypeNm + '</span>';//보증서종류
+						html += '<span style="display:block;">/' + com.fnDateFormat(item.reqDt) + '</span>';//신청일자
+						html += '</td>';
+
+						html += '<td class="alignL" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">';
+						html += '<span style="display:block; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">' + fnAddServNmTag(item.guarIssueCd, item.chgCnt, item.servNm) + '</span>';//계약건명
+						html += '<span style="display:block; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">/' + item.orderNm + '</span>';//피공제기관
+						html += '</td>';
+
+						html += '<td class="alignC">'+ com.fnDateFormat(item.guarApprDt) +'</td>'; //처리일자
+
+						html += '<td class="alignR">';
+						html += '<span style="display:block;">' + com.addComma(item.guarAmt) + '</span>';//보증금액
+						html += '<span style="display:block;">/' + com.addComma(item.commAmt) + '</span>';//보증료
+						html += '</td>';
+
+						html += '<td class="alignC">';	//처리상태
+
+						if(item.procStat === '30'){
+							html += '<button type="button" class="sub-btn btn-color red" onclick="fnPayProc(this)">결제</button>';
+						}else if(item.procStat === '40' && item.guarIssueCd === 'I'){
+							html += '<button type="button" class="sub-btn btn-color" onclick="fnGuarIssue(this)">발급</button>';
+						}else if(item.procStat === '40' && item.guarIssueCd === 'G'){
+							html += '<button type="button" class="sub-btn btn-color" onclick="fnG2bSend(this)">전송</button>';
+						}else{
+							html += item.procStatNm;
+						}
+						html +=	'</td>';
+					}
+
+					if(refVal === "I"){	//발급 (만기도래) 리스트
+						html += '<td class="alignC" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">'; //보증종류
+						html += '<span style="display:block;">' + item.guarTypeNm + '</span>';//보증종류
+						html += '<span style="display:block;">/' +  com.fnDateFormat(item.guarPubDt) + '</span>';//발급일자
+						html +=	'</td>';
+
+						html += '<td class="alignL" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">';
+						html += '<span style="display:block;text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">' + fnAddServNmTag(item.guarIssueCd, item.chgCnt, item.servNm) + '</span>';//계약건명
+						html += '<span style="display:block;text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">/' + item.orderNm + '</span>';//계약건명
+						html += '</td>';
+
+						html += '<td class="alignC">'+ com.fnDateFormat(item.guarApprDt) +'</td>'; //처리일자
+						
+						html += '<td class="alignR">'
+						html += '<span style="display:block;">' + com.addComma(item.guarAmt) + '</span>';//보증금액
+						html += '</td>';
+
+						html += '<td class="alignR">'
+						html += '<span style="display:block;">' + com.addComma(item.guarPrfAmt) + '</span>';//보증실적
+						html += '</td>';
+
+						html += '<td class="alignR">'
+						html += '<span style="display:block;">' + com.addComma(item.commAmt) + '</span>';//보증금액
+						html += '<span style="display:block;">/' + com.addComma(item.remainCommAmt) + '</span>';//잔여보증료
+						html += '</td>';
+
+						html += '<td class="alignC">';	//보증상태
+						html += 	com.fnInputText("GR28",item.guarStat);
+						if(item.payYn === 'H' && item.guarStat !== '31'){
+							html += '</br><button type="button" class="sub-btn btn-color red" onclick="fnPayProc(this)">결제</button>';
+						}
+						html += '</td>';
+
+						//엑셀 다운로드 정보 숨김
+						html += '<td class="alignC" style="display:none;">'+ item.docNo + '</td>'; //보증서번호
+						html += '<td class="alignC" style="display:none;">'+ com.fnDateFormat(item.guarBegDt) + '~' + com.fnDateFormat(item.guarExpDt) + '</td>'; //보증기간
+						html += '<td class="alignR" style="display:none;">'+ com.addComma(item.commAmt) + '</td>'; //보증료
+						html += '<td class="alignC" style="display:none;">'+ com.fnNvlChk(item.reqNm) + '</td>'; //신청자
+					}
+					
+					if(refVal === "E"){	//발급 (만기도래) 리스트
+						html += '<td class="alignC" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">'; //보증종류
+						html += '<span style="display:block;">' + item.guarTypeNm + '</span>';//보증종류
+						html += '<span style="display:block;">/' +  com.fnDateFormat(item.guarPubDt) + '</span>';//발급일자
+						html +=	'</td>';
+
+						html += '<td class="alignL" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">';
+						html += '<span style="display:block;text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">' + fnAddServNmTag(item.guarIssueCd, item.chgCnt, item.servNm) + '</span>';//계약건명
+						html += '<span style="display:block;text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">/' + item.orderNm + '</span>';//계약건명
+						html += '</td>';
+
+						html += '<td class="alignC">'; //만기일자 /만기예정일
+						html += '<span style="display:block;">'+ com.fnDateFormat(item.guarExpDt) +'</span>';//보증종류
+						html += '<span style="display:block;">/'+ com.fnDateFormat(item.guarExpPreDt) +'</span>';//발급일자
+						html += '</td>';
+						
+						html += '<td class="alignR">'
+						html += '<span style="display:block;">' + com.addComma(item.guarAmt) + '</span>';//보증금액
+						
+						html += '</td>';
+
+						html += '<td class="alignC">';	//보증상태
+						html += 	com.fnInputText("GR28",item.guarStat);
+						if(item.payYn === 'H' && item.guarStat !== '31'){
+							html += '</br><button type="button" class="sub-btn btn-color red" onclick="fnPayProc(this)">결제</button>';
+						}
+						html += '</td>';
+
+						//엑셀 다운로드 정보 숨김
+						html += '<td class="alignC" style="display:none;">'+ item.docNo + '</td>'; //보증서번호
+						html += '<td class="alignC" style="display:none;">'+ com.fnDateFormat(item.guarBegDt) + '~' + com.fnDateFormat(item.guarExpDt) + '</td>'; //보증기간
+						html += '<td class="alignR" style="display:none;">'+ com.addComma(item.commAmt) + '</td>'; //보증료
+						html += '<td class="alignC" style="display:none;">'+ com.fnNvlChk(item.reqNm) + '</td>'; //신청자
+					}
+
+					if(refVal === "F"){	//보증료현황 리스트
+						html += '<td class="alignC">'+ com.fnDateFormat(item.guarPubDt) +'</td>'; //발급일자
+						html += '<td class="alignL" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">';
+						html += 	fnAddServNmTag(item.guarIssueCd, item.chgCnt, item.servNm);	//계약건명
+						html += '</td>';
+						html += '<td class="alignL" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">'+ item.orderNm + '</td>'; //피공제기관
+						html += '<td class="alignC">'+ com.fnDateFormat(item.guarApprDt) +'</td>'; //처리일자
+						html += '<td class="alignR">'+ com.addComma(item.guarAmt) + '</td>'; //보증금액
+						html += '<td class="alignR">'+ com.addComma(item.commAmt) + '</td>'; //보증료
+						html += '<td class="alignC">'+ item.procStatNm + '</td>'; //처리상태
+					}
+					html += '</tr>';
+
+				$("#ele_guarList").append(html);
+			});
+
+			//리스트 클릭 이벤트(tr 이벤트 걸면 버튼 or 체크박스 누를떄 같이 눌러서 따로 정의)
+			$("#ele_guarList").find('tr > td').on("click", function(){
+				var noData = $(this).closest('tr').data('noData'.toLowerCase());
+				if(noData === "Y")	return;
+
+				if($(this).find('button').length === 0) {	//버튼이 없으면
+					//data는 소문자로 변환됨. 가독성을 위해 toLowerCase사용
+					var param = {
+						guarNo		: $(this).closest('tr').data('guarNo'.toLowerCase()),
+						guarType	: $(this).closest('tr').data('guarType'.toLowerCase()),
+						contrNo		: $(this).closest('tr').data('contrNo'.toLowerCase()),
+
+						//상세 화면, 버튼 제어를 위한 파라미터(타임리프 문법 쓰기위해)
+						procStat 	: $(this).closest('tr').data('procStat'.toLowerCase()),
+						guarIssueCd : $(this).closest('tr').data('guarIssueCd'.toLowerCase()),
+						guarStat 	: $(this).closest('tr').data('guarStat'.toLowerCase()),
+						payYn 		: $(this).closest('tr').data('payYn'.toLowerCase()),
+						guarReqCd 	: $(this).closest('tr').data('guarReqCd'.toLowerCase()),
+
+						listNm		: /*[[${menuInfo.menuNm}]]*/,	//상세에서 left메뉴 on class주기위해 사용(메인 fnPageLnbSet() 호출시)
+						returnPage	: /*[[${menuInfo.menuCd}]]*/	//돌아올 리스트페이지 정보(상세에서 목록 클릭시 이동할 메뉴 정보)
+					};
+
+					fnView(param);
+				}
+			})
+		}
+
+		//(인터넷, G2B, 오프) + (변경 횟수)  + (계약건명) tag
+		var fnAddServNmTag = function(guarIssueCd, chgCnt, servNm){
+			//계약건명
+			var tag = '';
+			//인터넷, G2B, 창구 태그
+			if(guarIssueCd === "I"){
+				tag += '<span class="tagCss typeI">인</span>';
+			}else if(guarIssueCd === "G"){
+				tag += '<span class="tagCss typeG">G2B</span>';
+			}else if(guarIssueCd === "V"){
+				tag += '<span class="tagCss typeV">오프</span>';
+			}
+			//변경 상태 태그
+			if(chgCnt !== '0'){
+				tag += 	'<span class="tagCss">'+chgCnt+'</span>';
+			}
+			tag += servNm; //계약건명
+
+			return tag;
+		}
+
+
+		//상세페이지 이동
+		var fnView = function(param){
+			//console.log(param);
+			fnPage("2030214", param);
+		}
+
+		//결제창 이동(단건)
+		var fnPayProc = function(obj){
+			var param = {
+				guarCont : $(obj).closest('tr').data('guarTypeNm'.toLowerCase()) //결제상품명
+				, guarNo : $(obj).closest('tr').data('guarNo'.toLowerCase()) //보증번호
+				, remainCommAmt : remainCommAmt = $(obj).closest('tr').data('remainCommAmt'.toLowerCase()) //금액
+				, listNm		: /*[[${menuInfo.menuNm}]]*/
+				, returnPage :  /*[[${menuInfo.menuCd}]]*/ //미결제현황
+			};
+
+			fnPage("2030225", param);
+		}
+
+		//발급
+		var fnGuarIssue = function(obj){
+			var guarType 	= $(obj).closest('tr').data('guarType'.toLowerCase());
+			var guarNo 		= $(obj).closest('tr').data('guarNo'.toLowerCase());
+			var pubDt 	= com.fnNvlChk($(obj).closest('tr').data('guarPubDt'.toLowerCase()), '');
+
+			ozGuar(guarType, "", guarNo, pubDt);
+		}
+
+		//전송처리
+		var fnG2bSend = function(obj) {
+			var param = {
+				guarNo: $(obj).closest('tr').data('guarNo'.toLowerCase())
+			};
+			obj = {url:"/guarElect/sendGuarElect.do", param:param, callBack:fnSerch, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+		}
+
+		//엑셀 다운로드
+		var fnExcel = function(){
+			com.fnExcelToHtml("ele_guarList",/*[[${menuInfo.menuNm + "_" + today}]]*/);
+		};
+		
+		//레포트
+		var fnReport = function(type){
+			var membNo = $("#membNo").val();
+			var guarNo = $("#guarNo").val();
+			var pubDt = $("#guarPubDt").val();
+
+			if(type === "GUAR"){	//보증서출력
+				ozGuar(guarType, "", guarNo, pubDt);
+			}else if(type === "RCPT"){ //영수증
+				var nameArr = new Array("guar_no" , "memb_no", "bas_dt");
+			    var valArr = new Array("", $("#sMembNo").val(), $("#basDt").val());
+				ozLoad("GR_영수증_(공제계약자_보관용)", nameArr, valArr, 1, "pdf", "");
+			}
+		}
+		
+
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+
+                        <form name="serchFrm" id="serchFrm" onSubmit="return false">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="sMembNo" id="sMembNo" th:value="${session.membNo}"/>
+						<input type="hidden" name="sSerchType" id="sSerchType" th:value="${paramMap.refVal}"/>
+
+						<input type="hidden" name="sGuarReqStaDt" id="sGuarReqStaDt" value=""/>	<!-- 신청 시작일 -->
+						<input type="hidden" name="sGuarReqEndDt" id="sGuarReqEndDt" value=""/>	<!-- 신청 시작일 -->
+						<input type="hidden" name="sGuarPubStaDt" id="sGuarPubStaDt" value=""/>	<!-- 발급,보증료현황 시작일 -->
+						<input type="hidden" name="sGuarPubEndDt" id="sGuarPubEndDt" value=""/>	<!-- 발급,보증료현황 시작일 -->
+
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article>
+									<th:block th:if="${#strings.equals(paramMap.refVal, 'R')}"><p class="title-dept1">신청내역검색</p></th:block>
+									<th:block th:if="${#strings.equals(paramMap.refVal, 'I')}"><p class="title-dept1">발급내역검색</p></th:block>
+									<th:block th:if="${#strings.equals(paramMap.refVal, 'F')}"><p class="title-dept1">보증료내역검색</p></th:block>
+                                    <form action="" method="get" name="search">
+										<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+										<div class="search-wrap txt-border-wrap">
+                                            <table class="block">
+                                                <colgroup>
+                                                	<col style="width:10%;">
+                                                	<col style="width:30%;">
+                                                	<col style="width:12%;">
+                                                	<col style="width:13%;">
+                                                	<col style="width:8%;">
+                                                	<col style="width:13%;">
+                                                </colgroup>
+                                                <tbody>
+													<tr>
+                                                        <th id="txt_serchDt">
+															<th:block th:if="${#strings.equals(paramMap.refVal, 'I') }">처리일자</th:block>
+															<th:block th:if="${#strings.equals(paramMap.refVal, 'E') }">만기일자</th:block>
+														</th>
+                                                        <td>
+                                                            <div class="flex-box al-center gap-5">
+                                                                <div class="flex-box al-center">
+                                                                    <input type="text" name="sSerchStaDt" id="sSerchStaDt" value="" class="w-100" title="시작일 입력" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:120px;" autocomplete="off"/>
+                                                                	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sSerchStaDt', 'yyyy-mm-dd','sSerchEndDt', 1)" />
+                                                                </div>
+                                                                ~
+                                                                <div class="flex-box al-center">
+                                                                    <input type="text" name="sSerchEndDt" id="sSerchEndDt" value="" class="w-100" title="종료일 입력" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:120px;" autocomplete="off">
+                                                                    <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sSerchEndDt', 'yyyy-mm-dd','sSerchStaDt', 2)" />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <th class="ko-bold">보증종류</th>
+                                                        <td colspan="3">
+															<select name="sGuarType" id="sGuarType" class=" w-100"></select>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>계약건명</th>
+                                                        <td>
+															<input type="text" name="sServNm" id="sServNm" value="" class="w-100" title="계약건명 입력" maxlength="100">
+                                                        </td>
+                                                        <th>피공제기관</th>
+                                                        <td>
+															<input type="text" name="sOrderNm" id="sOrderNm" value="" class="w-100" title="피공제기관 입력" style="width:160px;" maxlength="50">
+                                                        </td>
+
+                                                        <th:block th:if="${#strings.equals(paramMap.refVal, 'R')}">
+                                                        <th class="ko-bold">처리상태</th>
+                                                        <td>
+															<select name="sProcStat" id="sProcStat" class=" w-100"></select>
+                                                        </td>
+                                                        </th:block>
+
+                                                        <th:block th:if="${!#strings.equals(paramMap.refVal, 'R')}">
+                                                        <th class="ko-bold">보증상태</th>
+                                                        <td>
+															<select name="sGuarStat" id="sGuarStat" class=" w-100"></select>
+                                                        </td>
+                                                        </th:block>
+
+                                                </tbody>
+                                            </table>
+                                            <div class="alignR btn-position">
+												<th:block th:if="${#strings.equals(paramMap.refVal, 'I') or #strings.equals(paramMap.refVal, 'E')}">
+												<button type="button" class="sub-btn btn-color m-w-100 m-mb5 green btn-auto fs-0" onclick="fnExcel()" id="btn_excel">Excel</button>
+												</th:block>
+												<button type="button" class="sub-btn btn-black m-w-100" onclick="fnSerch()">검색</button>
+											</div>
+                                        </div>
+                                    </form>
+                                </article>
+                                
+                                <div>
+                                *보증해제를 위해서는 아래 서류 중 1가지 방법을 선택하시어 조합 메일로 송부 부탁드립니다. (cg@kocfc.or.kr) </br>
+                                &nbsp;&nbsp;&nbsp;1. 실적증명서 </br>
+                                &nbsp;&nbsp;&nbsp;2. 세금계산서 및 이체영수증 </br>
+                                &nbsp;&nbsp;&nbsp;3. 이행완료확인서(아래 보증목록 상세 진입하여 양식 출력 가능합니다.) </br>
+                                	※보증서 발급 당시 계약금액과 정산금액이 달라진 경우, 정산금액 증빙이 가능한 정산계, 준공계 등의 서류도 함께 보내주셔야 합니다.
+								</div>
+                                <article>
+									<!--신청내역리스트-->
+									<th:block th:if="${#strings.equals(paramMap.refVal, 'R')}">
+										<p class="title-dept1">신청내역리스트</p>
+									</th:block>
+									
+									<!--발급내역리스트-->
+									<th:block th:if="${#strings.equals(paramMap.refVal, 'I')}">
+										<div>
+											<div style="display: flex; justify-content: space-between;">
+											<p class="title-dept1">발급내역리스트</p>
+											<div style="display: flex; align-items: center;">
+												<div class="flex-box al-center">
+													<span style="display: inline-block; width: 80px;">기준일자</span>
+                                                    <input type="text" name="basDt" id="basDt" value="" title="기준일자" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:120px;" autocomplete="off">
+                                                    <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'basDt', 'yyyy-mm-dd','basDt', 1)">
+                                                </div>
+												<!--
+												<button type="button" class="sub-btn btn-color orange onlyPc mr5" onclick="fnReport('GUAR');" style="width:120px;">증권일괄출력</button>
+												-->
+												<button type="button" class="sub-btn btn-color orange onlyPc" onclick="fnReport('RCPT');" style="width:120px;">영수증일괄출력</button>
+											</div>
+										</div>
+									</th:block>
+									
+									<!--보증료내역리스트-->
+									<th:block th:if="${#strings.equals(paramMap.refVal, 'F')}">
+										<p class="title-dept1">보증료내역리스트</p>
+									</th:block>
+									
+                                    <div class="table-wrap board">
+                                        <div class="table-scroll v2">
+                                            <table class="border">
+                                                <thead class="back-gray">
+                                                    <tr>
+														<!-- 신청 -->
+														<th:block th:if="${#strings.equals(paramMap.refVal, 'R')}">
+                                                        <th style="width:5%;" scope="col">번호</th>
+                                                        <th style="width:12%;" scope="col">보증종류/신청일자</th>
+                                                        <th style="width:27%;" scope="col">계약건명/피공제기관</th>
+                                                        <th style="width:10%;" scope="col">처리일자</th>
+                                                        <th style="width:12%;" scope="col">보증금액/보증료</th>
+                                                        <th style="width:10%;" scope="col">처리상태</th>
+														</th:block>
+
+														<!-- 발급 / 만기도래현황 -->
+														<th:block th:if="${#strings.equals(paramMap.refVal, 'I')}">
+                                                        <th style="width:5%;" scope="col" data-width="30">번호</th>
+                                                        <th style="width:12%;" scope="col" data-width="60">보증종류/발급일자</th>
+                                                        <th style="width:24%;" scope="col" data-width="200">계약건명/피공제기관</th>
+                                                        <th style="width:8%;" scope="col" data-width="60">처리일자</th>
+														<th style="width:9%;" scope="col" data-width="60">보증금액</th>
+													    <th style="width:9%;" scope="col" data-width="60">보증실적</th>
+													    <th style="width:11%;" scope="col" data-width="60">보증료/잔여보증료</th>
+                                                        <th style="width:6%;" scope="col" data-width="60">보증상태</th>
+
+														<!-- 엑셀 다운로드영역 숨김처리 -->
+                                                        <th scope="col" style="display:None;" data-width="120">보증서번호</th>
+                                                        <th scope="col" style="display:None;" data-width="150">보증기간</th>
+                                                        <th scope="col" style="display:None;" data-width="60">보증료</th>
+                                                        <th scope="col" style="display:None;" data-width="60">신청자</th>
+														</th:block>
+														<!-- 발급 현황 끝 -->
+														
+														<!-- 만기도래현황 -->
+														<th:block th:if="${#strings.equals(paramMap.refVal, 'E') }">
+                                                        <th style="width:5%;" scope="col" data-width="30">번호</th>
+                                                        <th style="width:12%;" scope="col" data-width="60">보증종류/발급일자</th>
+                                                        <th style="width:24%;" scope="col" data-width="200">계약건명/피공제기관</th>
+                                                        <th style="width:8%;" scope="col" data-width="60">만기일자/해지예정일</th>
+														<th style="width:9%;" scope="col" data-width="60">보증금액</th>
+													    <th style="width:6%;" scope="col" data-width="60">보증상태</th>
+
+														<!-- 엑셀 다운로드영역 숨김처리 -->
+                                                        <th scope="col" style="display:None;" data-width="120">보증서번호</th>
+                                                        <th scope="col" style="display:None;" data-width="150">보증기간</th>
+                                                        <th scope="col" style="display:None;" data-width="60">보증료</th>
+                                                        <th scope="col" style="display:None;" data-width="60">신청자</th>
+														</th:block>
+														<!-- 만기도래현황 끝 -->
+
+														<!-- 보증료 -->
+														<th:block th:if="${#strings.equals(paramMap.refVal, 'F')}">
+                                                        <th style="width:5%;" scope="col">번호</th>
+                                                        <th style="width:10%;" scope="col">발급일자</th>
+                                                        <th style="width:20%;" scope="col">계약건명</th>
+                                                        <th style="width:16%;" scope="col">피공제기관</th>
+                                                        <th style="width:10%;" scope="col">처리일자</th>
+                                                        <th style="width:12%;" scope="col">보증금액</th>
+                                                        <th style="width:12%;" scope="col">보증료</th>
+                                                        <th style="width:10%;" scope="col">처리상태</th>
+														</th:block>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ele_guarList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <!-- 신청 -->
+                                <th:block th:if="${#strings.equals(paramMap.refVal, 'R')}">
+								<article>
+									<p class="title-dept1">보증료 납입 안내</p>
+									<ul class="dot-list">
+                                        <li class="dot-dept1-blue">보증료 납입은 홈페이지 결제 또는 무통장입금으로 진행하시면 됩니다.</li>
+                                        <li class="dot-dept1-blue">입금계좌</li>
+                                        <span id="accInfo"></span>
+                                    </ul>
+								</article>
+								</th:block>
+                            </div>
+                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

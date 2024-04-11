@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.sys.repository.EmplGrantMapper"> 
+
+	<!-- 직원권한 정보 조회 --> 
+	<select id="selectEmplGrantList" parameterType="Map" resultType="camelMap"> 
+		/* EmplGrantMapper.selectEmplGrantList */ 
+		SELECT 
+		    (SELECT MENU_NM FROM CM_MENU WHERE MENU_CD = SUBSTR(A.PARENT_CD, 0, 3)) TOP_NM
+		    , (SELECT MENU_NM FROM CM_MENU WHERE MENU_CD = SUBSTR(A.PARENT_CD, 0, 5)) SUB_NM
+		    , MENU_CD
+		    , PARENT_CD
+		    , MENU_NM
+		    , MENU_STEP
+		    , CASE WHEN MENU_STEP = 3 THEN (SELECT PARENT_CD FROM CM_MENU WHERE MENU_CD = A.PARENT_CD) ELSE PARENT_CD END TOP_MENU_CD 
+		    , CASE WHEN MENU_STEP = 3 THEN NVL((SELECT GRANT_YN FROM CM_GRANT CG WHERE CG.MENU_CD = A.MENU_CD AND CG.USER_ID = #{userId}), '0')
+		           ELSE NVL((SELECT MIN(GRANT_YN) FROM CM_GRANT CG WHERE CG.MENU_CD LIKE A.MENU_CD || '%' AND LENGTH(MENU_CD) = 7 AND CG.USER_ID = #{userId}), '0')  END GRANT_YN
+		    , #{userId} USER_ID
+		    , NVL((SELECT COUNT(*) FROM CM_GRANT CG WHERE CG.MENU_CD = A.MENU_CD AND CG.USER_ID = #{userId}), 0) INS_YN /*등록 여부 */
+		  FROM CM_MENU A
+		 WHERE SUBSTR(MENU_CD, 0, 1) IN (1, 9)
+		   AND USE_YN = 'Y'
+		   AND MENU_YN = 'Y'
+		START WITH PARENT_CD IN (1, 2)
+		CONNECT BY PRIOR MENU_CD = PARENT_CD
+		ORDER SIBLINGS BY SUBSTR(MENU_CD, 0, 1), MENU_SEQ
+
+	</select> 
+
+	<!-- 직원권한 등록 처리 --> 
+	<insert id="insertEmplGrant" parameterType="Map"  > 
+		/* EmplGrantMapper.insertEmplGrant */ 
+		INSERT INTO CM_GRANT ( 
+			USER_ID 
+			, MENU_CD 
+			, GRANT_YN 
+			, REG_DTM 
+		) VALUES ( 
+			#{userId} 
+			, #{menuCd} 
+			, #{grantYn} 
+			, SYSDATE 
+		) 
+	</insert> 
+
+	<!-- 직원권한 수정 처리 --> 
+	<update id="updateEmplGrant" parameterType="Map"  > 
+		/* EmplGrantMapper.updateEmplGrant */ 
+		UPDATE CM_GRANT 
+		SET 
+			GRANT_YN = #{grantYn} 
+			, REG_DTM = SYSDATE 
+		WHERE USER_ID = #{userId} 
+		  AND MENU_CD = #{menuCd} 
+	</update> 
+
+
+</mapper>

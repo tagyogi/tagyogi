@@ -1,0 +1,555 @@
+<!--
+	파일정보 : com/comMortAdd.html
+	파일명 : comMortAdd
+	업무명 : 담보정보 팝업
+	생성자 : BSG
+	생성일 : 2023.06.08
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			var procMod = "I"; // I 신규, U 수정
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				com.fnCodeSelectBox("CM08", "sureCd", 1, ""); //입보구분
+				com.fnCodeSelectBox("SY06", "mortYn", 1, ""); //설정여부
+				com.fnCodeSelectBox("CM02", "depBank", 1, ""); //은행정보
+				com.fnCodeSelectBox("CM17", "canResnCd", 0, ""); //담보사유코드
+
+				com.fnCodeRadio("CM10", "ele_mortCdSel", "mortCase", false, "10"); //담보구분
+
+				//담보구분 선택 이벤트
+				$("input[name^=mortCase]").on("click", function(){
+					fnMortView(this.value);
+				});
+
+				//수정시 선택 담보 정보 호출
+				var getRow = parent.selMortRow;
+				if(getRow.sureCd === undefined){
+					fnMortView("10");
+				}else{
+					procMod = "U";
+					
+					$("input:radio[name ='mortCase']:input[value='"+getRow.mortCase+"']").attr("checked", true);
+					fnMortView(getRow.mortCase);
+
+					com.fnSetKeyVal(getRow);
+
+					$("#sureCd").attr("disabled", true);
+					$("#juminNo").attr("readonly", true);
+					$("#sureNm").attr("readonly", true);
+					
+					if(getRow.sureCd == "10"){
+						$("#telNo").attr("readonly", true);
+						$("#cellNo").attr("readonly", true);
+						$("#doroDtl").attr("readonly", true);
+						$("#btn_sureAddr").attr("disabled", true);
+						
+						
+					}
+				}
+
+			});
+
+			//담보구분 선택
+			var fnMortView = function(val){
+				$("[class^=cls_mortCase]").each(function(idx){
+					var clsNm = $(this).attr("class");
+					if(clsNm.indexOf(val) > -1){
+						$(this).css("display", "");
+					}else{
+						$(this).css("display", "none");
+					}
+				});
+
+				if(val !== "00"){
+					$("[class=cls_mortCase]").each(function(idx){
+						$(this).css("display", "");
+					});
+				}
+
+				//내용 초기화
+				var inputs = [];
+				inputs[0] = ["mortAddrFullDoro","mortDoroNm","mortDoroDtl","mortDoroCd","mortDoroBunho","mortDoroDong","mortDoroBdNo","mortAddr1","mortAddr2","mortPostNo","mortAddrPath","remark"];
+				inputs[1] = ["mortCollAmt","mortSecuAmt","mortPriceDt","mortPriceAmt"];
+				inputs[2] = ["mortNm","mortArea","mortSite","mortCollAmt","depBank","depBranch","depAcct","depNm","depAmt","depExpDt"];
+
+				$.each(inputs, function(idx, ele){
+					$.each(ele, function(idx, ele){
+						//console.log(ele);
+						$("#"+ele).val("");
+					});
+				});
+
+			}
+
+			//입보구분
+			var fnSureCdChg = function(obj){
+				var sureCd = obj.value;
+
+				$("#telNo, #cellNo, #sureNm, #doroDtl").attr("readonly", false);
+				$("#btn_sureAddr").attr("disabled", false);
+				
+				if(sureCd === "10"){ //대표자
+					$("#telNo, #cellNo, #sureNm, #doroDtl").attr("readonly", true);
+					$("#btn_sureAddr").attr("disabled", true);
+				}
+				
+				if(sureCd === "10" || sureCd === "20" ){
+				 	$("#div_mort").css("display", "");
+				 	$(".cls_sureType").css("display", "none");
+				}else{
+					$("#div_mort").css("display", "none");
+					$(".cls_sureType").css("display", "");
+				}
+
+				$("#juminNo").css("display", "none");
+				$("#bizNo").css("display", "none");
+				$("#sMembNo").css("display", "none");
+
+				$("#titl_telNm").text("팩스번호");
+				if(sureCd === "30"){
+					$("#titl_jumin").html("<span class='reqMark'>*</span>사업자번호");
+					$("#bizNo").css("display", "");
+				}else if(sureCd === "40"){
+					$("#titl_jumin").html("<span class='reqMark'>*</span>조합원번호");
+					$("#sMembNo").css("display", "");
+				}else{
+					$("#titl_jumin").html("<span class='reqMark'>*</span>주민등록번호");
+					$("#juminNo").css("display", "");
+					$("#titl_telNm").html("<span class='reqMark'>*</span>휴대폰");
+				}
+			};
+
+			//주소 호출
+			var addrTagt = "";
+			var fnAddrSerch = function(tagt){
+				addrTagt = tagt;
+				com.fnAddrSerch('popup');
+			}
+
+			//주소 콜백처리
+			var fnAddrCallBack = function(resData){
+
+				var buldNo = resData.buldMnnm;
+				if(resData.buldSlno !== "0") buldNo += "-"+resData.buldSlno;
+
+				var lnbrNo = resData.lnbrMnnm;
+				if(resData.lnbrSlno !== "0") lnbrNo += "-"+resData.lnbrSlno;
+
+				console.log(resData);
+				if(addrTagt === 1){
+					$("#postNo").val(resData.zipNo); //우편
+					$("#addr1").val(resData.jibunAddr); //지번주소
+
+					$("#doroCd").val(resData.rnMgtSn); //도로코드
+					$("#doroNm").val(resData.roadAddrPart1); //도로명
+					$("#doroBunho").val(resData.doroBunho); //도로번지
+					$("#doroDong").val(resData.emdNm); //주소동
+					$("#doroBdNo").val(resData.doroBdNo); //주소번지
+
+					$("#addrFullDoro").val(resData.roadAddrPart1 + " " + resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+
+				}else{
+					$("#mortPostNo").val(resData.zipNo); //우편
+					$("#mortAddr1").val(resData.jibunAddr); //지번주소
+
+					$("#mortDoroCd").val(resData.rnMgtSn); //도로코드
+					$("#mortDoroNm").val(resData.roadAddrPart1); //도로명
+					$("#mortDoroBunho").val(resData.doroBunho); //도로번지
+					$("#mortDoroDong").val(resData.emdNm); //주소동
+					$("#mortDoroBdNo").val(resData.doroBdNo); //주소번지
+
+					$("#mortAddrFullDoro").val(resData.roadAddrPart1 + " " + resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+				}
+
+				addrTagt = "";
+			};
+
+			//주민번호(사업자번호) 중복체크
+			var fnDuplChk = function(type){
+				if(procMod === "U") return;
+				
+				var chkVal = "";
+				if(type === "biz"){
+					chkVal = $("#bizNo").val().replace(/\-/g,"");
+					if(com.fnIsEmpty(chkVal))	return;
+
+					if(chkVal.length !== 10) {
+						alert("사업자번호가 올바르지 않습니다.");
+						return;
+					}
+					param = {bizNo : chkVal}
+
+				}else{
+					chkVal = $("#juminNo").val().replace(/\-/g,"");
+					if(com.fnIsEmpty(chkVal))	return;
+
+					if(chkVal.length !== 13) {
+						alert("주민등록번호가 올바르지 않습니다.");
+						return;
+					}
+					param = {juminNo : chkVal}
+				}
+
+				param.sureCd = $("#sureCd").val(); //구분값
+				obj = {url:"/guarContr/selectGuarSuretyExst.do", param:param, callBack:fnDuplChkCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+			//주민번호(사업자번호) 중복체크 콜백
+			var fnDuplChkCallBack = function(resData){
+				if(resData.sure !== null && resData.sure !== undefined){
+					if(confirm("기존 보증인 정보가 존재 합니다. 기존 정보로 설정 하시겠습니까?")){
+						com.fnSetKeyVal(resData.sure);
+						
+					}
+				}else{//정보가 없는데 10(대표자)이면 주빈등록번호 초기화 : 조합원의 대표자가 아닌 개인은 개인(20)으로 등록해야함
+					if($("#sureCd").val() === "10"){
+						alert('조합원의 대표자가 아닌 대표자는 등록이 불가능합니다. \n 조합원 등록을 하시거나 개인(20)으로 등록해주세요.');
+						$("#juminNo").val('');
+						return;
+					}
+				}
+			}
+
+			//조합원조회 콜백
+			var fnMembInfoSet = function(membInfo){
+				//console.log(membInfo);
+				$("#sureMembNo").val(membInfo.membNo);
+				$("#sureNm").val(membInfo.membNm);
+				$("#ceoNm").val(membInfo.ceoNm);
+				$("#lawNo").val(membInfo.lawNo);
+				$("#telNo").val(membInfo.telNo);
+				$("#faxNo").val(membInfo.faxNo);
+
+				$("#addr1").val(membInfo.addr1);
+				$("#addr2").val(membInfo.addr2);
+				$("#doroCd").val(membInfo.membNo);
+				$("#doroNm").val(membInfo.doroNm);
+				$("#doroBunho").val(membInfo.doroBunho);
+				$("#doroDong").val(membInfo.doroDong);
+				$("#doroBdNo").val(membInfo.doroBdNo);
+				$("#postNo").val(membInfo.postNo);
+				$("#addrFullDoro").val(membInfo.addrFull);
+				$("#doroDtl").val(membInfo.doroDtl);
+
+			};
+
+			//적용
+			var fnSave = function(){
+				var sureCd = $("#sureCd").val();
+
+				if(sureCd === "10" || sureCd === "20"){
+					if($("#juminNo").val() === ""){
+						alert("주민등록번호를 입력 하십시오.");
+						return;
+					}
+					$("#sureRefNo").val($("#juminNo").val());
+				}else if(sureCd === "30"){
+					if($("#bizNo").val() === ""){
+						alert("사업자번호를 입력 하십시오.");
+						return;
+					}
+					$("#sureRefNo").val($("#bizNo").val());
+				}else if(sureCd === "40"){
+					if($("#sMembNo").val() === ""){
+						alert("조합원번호를 입력 하십시오.");
+						return;
+					}
+					$("#sureRefNo").val($("#sMembNo").val());
+				}
+
+				//필수체크
+				var valChks = ["sureCd", "sureNm", "cellNo", "mortRelation", "mortDt"];
+
+				if(com.fnValChk(valChks)){
+
+					var getSure = $("#saveFrm").serializeObject();
+					parent.fnMortCallBack(getSure);
+					parent.$("#dialog").dialog("close");
+				}
+			}
+
+			//담보설정여부
+			var fnMortYn = function(){
+				if($("#mortYn").val() === "Y") {
+					$("#div_canResn").hide();
+					$("#canResnCd").val("00");
+				}else{
+					$("#div_canResn").show();
+				}
+
+			}
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="sureNo" id="sureNo" />
+			<input type="hidden" name="ceoMembNo" id="ceoMembNo" />
+			<input type="hidden" name="membNo" id="membNo" />
+            <input type="hidden" name="ceoSeq" id="ceoSeq" />
+            <input type="hidden" name="sureSeq" id="sureSeq" />
+            <input type="hidden" name="mortSeq" id="mortSeq" />
+            <input type="hidden" name="sureMembNo" id="sureMembNo" />
+            <input type="hidden" name="sureRefNo" id="sureRefNo" />
+
+			<section class="area">
+				<div class="fl">
+					<h4 class="title">소유자정보(담보제공자)</h4>
+				</div>
+			</section>
+
+			<table class="tbl">
+				<colgroup>
+					<col style="width:110px;">
+					<col style="width:110px;">
+					<col style="width:110px;">
+					<col style="width:110px;">
+					<col style="width:110px;">
+					<col style="width:110px;">
+					<col style="width:110px;">
+					<col style="width:110px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>소유자구분</th>
+						<td colspan="7">
+							<select name="sureCd" id="sureCd" title="입보구분" onChange="fnSureCdChg(this)" style="width:100px;float:left" /></select>
+							<div style="float:left;display:none">&nbsp;(※ 기등록된 정보가 존재할 경우 해당정보를 가져옵니다.)</div>
+						</td>
+					</tr>
+					<tr>
+						<th id="titl_jumin"><span class="reqMark">*</span>주민등록번호</th>
+						<td colspan="3">
+							<input type="search" name="juminNo" id="juminNo" title="주민등록번호" style="width:140px" onKeyup="com.fnOnlyNum(this);com.makeJuminNo(this);" onblur="fnDuplChk('jumin');" maxlength="14"/>
+							<input type="search" name="bizNo" id="bizNo" title="사업자번호" style="width:140px;display:none" onKeyup="com.fnOnlyNum(this);com.makeBizNo(this);" onblur="fnDuplChk('biz');" maxlength="14"/>
+							<input type="search" name="sMembNo" id="sMembNo" title="조합원번호" style="width:100px;display:none" onKeyup="com.fnOnlyNum(this);com.makeJuminNo(this);" onblur="com.fnMembInfo();" maxlength="4"/>
+						</td>
+
+						<th><span class="reqMark">*</span>소유자명</th>
+						<td colspan="3">
+							<input type="search" name="sureNm" id="sureNm" title="보증인명" style="width:140px"  maxlength="30"/>
+						</td>
+					</tr>
+					<tr class="cls_sureType" style="display:none">
+						<th>대표자</th>
+						<td colspan="3">
+							<input type="search" name="ceoNm" id="ceoNm" title="대표자" style="width:140px" onKeyup="com.fnOnlyNum(this);" maxlength="30"/>
+						</td>
+						<th>법인등록번호</th>
+						<td colspan="3">
+							<input type="search" name="lawNo" id="lawNo" title="법인등록번호" style="width:140px" onKeyup="com.fnOnlyNum(this);com.makeJuminNo(this);" maxlength="14"/>
+						</td>
+					</tr>
+					<tr>
+						<th>전화번호</th>
+						<td colspan="3">
+							<input type="search" name="telNo" id="telNo" title="전화번호" style="width:140px" onKeyup="com.fnOnlyNum(this);com.makeTelNo(this);"  maxlength="14"/>
+						</td>
+						<th id="titl_telNm"><span class="reqMark">*</span>휴대폰</th>
+						<td colspan="3">
+							<input type="search" name="cellNo" id="cellNo" title="휴대폰" style="width:140px" onKeyup="com.fnOnlyNum(this);com.makeTelNo(this);"  maxlength="14"/>
+							<input type="search" name="faxNo" id="faxNo" title="팩스번호" style="width:140px;display:none" onKeyup="com.fnOnlyNum(this);com.makeTelNo(this);"  maxlength="14"/>
+						</td>
+					</tr>
+					<tr>
+						<th>주소</th>
+						<td colspan="7">
+							<div class="addressWrap">
+								<input type="hidden" name="addrDiv" id="addrDiv" value="DR" readonly/> <!-- 도로명 -->
+								<input type="hidden" name="addr1" id="addr1" title="" />
+								<input type="hidden" name="addr2" id="addr2" title="" />
+
+								<input type="hidden" name="doroCd" id="doroCd" title="" />
+								<input type="hidden" name="doroNm" id="doroNm" title="" />
+								<input type="hidden" name="doroBunho" id="doroBunho" title="" />
+								<input type="hidden" name="doroDong" id="doroDong" title="" />
+								<input type="hidden" name="doroBdNo" id="doroBdNo" title="" />
+
+								<input type="text" name="postNo" id="postNo" title="우편번호" style="width:70px" readonly/>
+								<button type="button" class="btn icoSearch" onclick="fnAddrSerch(1);">주소검색</button>
+								<input type="text" name="addrFullDoro" id="addrFullDoro" title="도로주소" style="width:400px;" readonly/>
+								<input type="search" name="doroDtl" id="doroDtl" title="도로상세" style="width:200px;" maxlength="50" />
+
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th><span class="reqMark">*</span>관계</th>
+						<td colspan="3">
+							<input type="search" name="mortRelation" id="mortRelation" title="관계" style="width:140px"  maxlength="20"/>
+						</td>
+						<th>담보여부</th>
+						<td colspan="3">
+							<select name="mortYn" id="mortYn" title="담보여부" onChange="fnMortYn()" style="width:120px;float:left;"/></select>
+							<div id="ele_canResn" style="float:left;display:none;padding-left:10px">
+							<select name="canResnCd" id="canResnCd" title="담보사유코드" style="width:100px;float:left" /></select>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th>설정일자</th>
+						<td colspan="3">
+							<input type="search" name="mortDt" id="mortDt" th:value="${today}" title="설정일자" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+							<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'mortDt', 'yyyy-mm-dd')" />
+						</td>
+						<th>해제일자</th>
+						<td colspan="3">
+							<input type="search" name="mortCanDt" id="mortCanDt" title="해제일자" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+							<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'mortCanDt', 'yyyy-mm-dd')" />
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div id="ele_mort">
+				<section class="area">
+					<div class="fl">
+						<h4 class="title">담보설정</h4>
+					</div>
+				</section>
+				<table class="tbl">
+					<colgroup>
+						<col style="width:110px;">
+						<col style="width:110px;">
+						<col style="width:110px;">
+						<col style="width:110px;">
+						<col style="width:110px;">
+						<col style="width:110px;">
+						<col style="width:110px;">
+						<col style="width:110px;">
+					</colgroup>
+					<tbody>
+						<tr>
+							<th>담보구분</th>
+							<td colspan="7">
+								<div id="ele_mortCdSel"></div>
+							</td>
+						</tr>
+						<tr class="cls_mortCase10" >
+							<th>주소</th>
+							<td colspan="7">
+								<div class="addressWrap">
+									<input type="hidden" name="mortAddrDiv" id="mortAddrDiv" value="DR" readonly/> <!-- 도로명 -->
+									<input type="hidden" name="mortAddr1" id="mortAddr1" title="" />
+									<input type="hidden" name="mortAddr2" id="mortAddr2" title="" />
+
+									<input type="hidden" name="mortDoroCd" id="mortDoroCd" title="" />
+									<input type="hidden" name="mortDoroNm" id="mortDoroNm" title="" />
+									<input type="hidden" name="mortDoroBunho" id="mortDoroBunho" title="" />
+									<input type="hidden" name="mortDoroDong" id="mortDoroDong" title="" />
+									<input type="hidden" name="mortDoroBdNo" id="mortDoroBdNo" title="" />
+
+									<input type="text" name="mortPostNo" id="mortPostNo" title="우편번호" style="width:70px" readonly/>
+									<button type="button" class="btn icoSearch" onclick="fnAddrSerch(2);">검색</button>
+									<input type="text" name="mortAddrFullDoro" id="mortAddrFullDoro" title="주소" style="width:400px;" readonly/>
+									<input type="search" name="mortDoroDtl" id="mortDoroDtl" title="상세주소" style="width:200px;" maxlength="50"/>
+
+								</div>
+							</td>
+						</tr>
+
+						<!--부동산정보-->
+						<tr class="cls_mortCase10" >
+							<th>부동산종류</th>
+							<td colspan="3">
+								<input type="search" name="mortNm" id="mortNm" title="부동산종류" style="width:100px"  maxlength="30"/>
+							</td>
+							<th>부동산면적</th>
+							<td colspan="3">
+								건평㎡ <input type="search" name="mortArea" id="mortArea" title="건평" style="width:80px" onKeyup="com.fnOnlyNum(this);com.makeComma(this)"  maxlength="5"/>
+								대지㎡ <input type="search" name="mortSite" id="mortSite" title="대지" style="width:80px" onKeyup="com.fnOnlyNum(this);com.makeComma(this)"  maxlength="5"/>
+							</td>
+						</tr>
+						<tr class="cls_mortCase10" >
+							<th>근저당설정액</th>
+							<td colspan="3">
+								<input type="search" name="mortCollAmt" id="mortCollAmt" title="근저당설정액" style="width:150px" onKeyup="com.fnOnlyNum(this);com.makeComma(this)"  maxlength="15"/>
+							</td>
+							<th>임차보증금</th>
+							<td colspan="3">
+								<input type="search" name="mortSecuAmt" id="mortSecuAmt" title="임차보증금" style="width:150px" onKeyup="com.fnOnlyNum(this);com.makeComma(this)" maxlength="15"/>
+							</td>
+						</tr>
+						<tr class="cls_mortCase10" >
+							<th>감정일자</th>
+							<td colspan="3">
+								<input type="search" name="mortPriceDt" id="mortPriceDt" title="감정일자" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'mortPriceDt', 'yyyy-mm-dd')" />
+							</td>
+							<th>감정가격</th>
+							<td colspan="3">
+								<input type="search" name="mortPriceAmt" id="mortPriceAmt" title="감정가격" style="width:150px" onKeyup="com.fnOnlyNum(this);com.makeComma(this);fnCalcRestAmt()" maxlength="15"/>
+							</td>
+						</tr>
+
+						<!--부동산정보 끝-->
+						<!--예금정보-->
+						<tr class="cls_mortCase20" style="display:none">
+							<th>예금은행</th>
+							<td colspan="3">
+								<select name="depBank" id="depBank" title="예금은행" style="width:120px;" /></select>
+							</td>
+							<th>지점명</th>
+							<td colspan="3">
+								<input type="search" name="depBranch" id="depBranch" title="지점명" style="width:120px"  maxlength="20"/>
+							</td>
+						</tr>
+						<tr class="cls_mortCase20" style="display:none">
+							<th>계좌번호</th>
+							<td colspan="3">
+								<input type="search" name="depAcct" id="depAcct" title="계좌번호" style="width:150px"  maxlength="20"/>
+							</td>
+							<th>예금주</th>
+							<td colspan="3">
+								<input type="search" name="depNm" id="depNm" title="예금주" style="width:120px"  maxlength="20"/>
+							</td>
+						</tr>
+						<tr class="cls_mortCase20" style="display:none">
+							<th>예금액</th>
+							<td colspan="3">
+								<input type="search" name="depAmt" id="depAmt" title="예금액" style="width:150px" onKeyup="com.fnOnlyNum(this);com.makeComma(this);fnCalcRestAmt()" maxlength="15"/>
+							</td>
+							<th>예금만기일</th>
+							<td colspan="3">
+								<input type="search" name="depExpDt" id="depExpDt" title="예금만기일" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'depExpDt', 'yyyy-mm-dd')" />
+							</td>
+						</tr>
+						<!--예금정보 끝-->
+
+						<tr>
+							<th>비고</th>
+							<td colspan="7">
+								<input type="search" name="remark" id="remark" title="비고" maxlength="200"/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="layer-flex mt20">
+				<!-- 처리 버튼 영역 -->
+				<div class="" style="width:100%">
+					<section class="area">
+						<div class="fc">
+							<button type="button" onclick="javascript:fnSave();" class="btn style07">적용</button>
+							<button type="button" onclick="javascript:parent.$('#dialog').dialog('close');" class="btn style08">닫기</button>
+						</div>
+					</section>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div>
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/basicLayout" xml:lang="ko">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			//메뉴 세팅
+			var menuList = /*[[${menuList}]]*/;
+			var menuTopList = /*[[${menuTopList}]]*/;
+			
+			$(document).ready(function(){
+				//console.log(menuList);
+				//console.log(menuTopList);
+				//메뉴 추가 (fragments/main_header)
+				for(var i = 0; i < menuTopList.length; i++){
+					var getMenu = menuTopList[i];
+					var menuCd = getMenu.menuCd; //메뉴Cd
+					
+					//상단 메뉴 추가 (fragments/main_header)
+					topLiAdd = document.createElement("li");
+					topLiAdd.setAttribute("id", "L_"+ (i+1));
+					topLiAdd.setAttribute("class", "topMenu");
+					$(".mainTabArea > ul").append(topLiAdd);
+					
+					document.getElementById("L_"+ (i+1)).innerHTML = "<a href='#;' onclick='gnbMenuSelect("+(i+1)+"); return false;' title='"+getMenu.menuNm+"'>"+getMenu.menuNm+"</a>";
+					
+					//상세 메뉴
+					var subId = "T_"+ (i+1);
+					dlAdd = document.createElement("dl");
+					dlAdd.setAttribute("id", subId);
+					dlAdd.setAttribute("class", "lnb");
+					$(".lnbArea").append(dlAdd);
+					
+					//좌측 상단 타이틀
+					dtAdd = document.createElement("dt");
+					dtAdd.innerText = getMenu.menuNm;
+					dlAdd.appendChild(dtAdd);
+					
+					
+					for(var x = 0; x < menuList.length; x++){
+						var getSubMenu = menuList[x];
+						var subMenuCd = getSubMenu.menuCd;
+						
+						if(menuCd === getSubMenu.topMenuCd && getSubMenu.menuStep === 2 && getSubMenu.menuYn === "Y"){
+							//2depth 메뉴
+							ddAdd = document.createElement("dd");
+							ddAdd.setAttribute("class", "has");
+							
+							aAdd = document.createElement("a");
+							aAdd.innerText = getSubMenu.menuNm;
+							ddAdd.appendChild(aAdd);
+							
+							//3depth 메뉴
+							ulAdd = document.createElement("ul");
+							ulAdd.setAttribute("class", "dep3");
+							
+							//3depth
+							for(var y = 0; y < menuList.length; y++){
+								var getDtlMenu = menuList[y];
+								
+								if(menuCd === getDtlMenu.topMenuCd && subMenuCd === getDtlMenu.parentCd && getDtlMenu.menuStep === 3 && getDtlMenu.menuYn === "Y" && getDtlMenu.grantYn === "1"){
+									
+									//console.log("check : " + subMenuCd+ ":"+getDtlMenu.menuNm + " /" + getDtlMenu.menuCd + "/"+getDtlMenu.parentCd+ "/"+getDtlMenu.topMenuCd);
+									liAdd = document.createElement("li");
+									//liAdd.innerHTML = "<a href='javascript:fnPageCall("+getDtlMenu.menuCd+")' onclick='return false;' title=''>"+getDtlMenu.menuNm+"</a>";
+									liAdd.innerHTML = '<a href="#;" onclick="return false;" id="'+getDtlMenu.menuCd+'" title="'+getDtlMenu.menuNm+'" >'+getDtlMenu.menuNm+'</a>';
+									
+									ulAdd.appendChild(liAdd);
+								}
+							}
+							
+							ddAdd.appendChild(ulAdd); 
+							dlAdd.appendChild(ddAdd);
+						}
+					}
+				}
+				
+				
+				
+				$("#subArea").hide();
+		    	
+		    	$(".prev").hide();
+		        $(".next").hide();
+		        
+		        
+		    	//lnb 화면확인용 스크립트
+		        //대메뉴 클릭
+		        /* $('.lnbArea .lnb dt').click(function() {
+		            $(this).parents('.lnb').toggleClass('active');
+		        }); */
+		        gnbMenuSelect(1);
+		        
+		        //중메뉴 클릭시 
+		        $('.lnbArea .lnb dd > a').click(function() {
+		            var dep2 = $(this).parents('.lnb dd');
+		
+		            if ($(dep2).hasClass('has')) { //3depth있는 메뉴시
+		                $(dep2).toggleClass('active');
+		            } else { //3depth 없는 메뉴시
+		                $('.lnbArea .lnb dd a').removeClass('active');
+		                $(this).toggleClass('active');
+		                
+		                menuOpen($(this));
+		            }
+		        });
+		
+		        //3depth 클릭시
+		        $('.lnbArea .lnb .dep3 a').click(function() {
+		            $('.lnbArea .lnb dd a').removeClass('active');
+		            $(this).toggleClass('active');
+		            
+		            menuOpen($(this));
+		        });
+		
+		        //오른쪽사이드바컨트롤
+		        $('#sideBarBtn').click(function(){
+		            $('.container .contentWrapper').toggleClass('active');
+		            $('#rightSidebar').toggleClass('active');
+		            ($('#sideBarBtn').text() === '펼치기') ? $('#sideBarBtn').text('닫기') : $('#sideBarBtn').text('펼치기');
+		        });
+		        $('#sideBarBtn').trigger("click");
+			
+				
+		    });
+		    
+		    
+		    
+		    $(window).resize(function() {
+		    	setMoveBtn();
+		    });
+		
+		    /*
+		    * lnb컨트롤
+		    */
+		    function showHideLnb(){
+		        $('.container').toggleClass('active');
+		    }
+		    
+		    /*
+		     * gnb  대메뉴관련 함수
+		     */
+		     function gnbMenuSelect(gnbCode){
+		    	var $gnbMenu = $("#T_" + gnbCode);
+		    	
+		    	$('.topMenu').removeClass('active');
+		    	$('#L_' + gnbCode).addClass('active');
+		    	
+		    	$gnbMenu.siblings().removeClass('active');
+		    	$gnbMenu.addClass('active');
+		    	//$gnbMenu.show();
+		    }
+		   
+		    
+		    /*
+		     * MDI 메뉴관련 함수
+		     */
+		    var menuIdx = 0;
+		    var menuArr = new Array();
+		    menuArr.push(0);
+		    
+		    function menuOpen(obj) {
+				//console.log(obj.menuCd)
+				var menuNm, menuCd, title;
+		       
+				if(obj === "9999"){
+					menuNm = "메뉴현황";
+					title = "메뉴현황";
+					menuCd = "";
+					document.frameFrm.menuPage.value = "/sys/menuList";
+				}else if(obj.menuCd !== undefined){
+					menuCd = obj.menuCd; //메뉴코드
+					if(obj.title !== undefined){
+						menuNm = obj.title; //메뉴명		
+						title = obj.title; //메뉴명
+					}else{
+						for(var x = 0; x < menuList.length; x++){
+							var getSubMenu = menuList[x];
+							if(getSubMenu.menuCd === menuCd){
+								menuNm = getSubMenu.menuNm; //메뉴명		
+								title = getSubMenu.menuNm; //메뉴명		
+							}
+						}
+					}
+				    
+					document.frameFrm.paramMap.value = JSON.stringify(obj.paramMap);
+			    }else{
+					menuNm = obj.html();
+			        menuCd = obj.attr("id"); //메뉴코드
+			        title = obj.attr("title");
+				}
+			        
+		        menuIdx++;
+		        menuArr.push(menuIdx);
+		        
+		        var tag = '<a href="javascript:menuSelect(\'' + menuIdx + '\');" class="tab" id="tab' + menuIdx + '" title="' + title + '">' + menuNm + '<span class="close" onclick="closeMenu(\'' + menuIdx + '\'); return false;"></span></a>';
+		    	$(".move-tabs").append(tag);
+		        
+		        var html = '<iframe name="sub' + menuIdx + '" id="sub' + menuIdx + '" class="ifrms" src="" width="100%" style="display:block; height: calc(100vh - 83px); border: 0;" title="sub"></iframe>';
+		        $("#subArea").append(html);
+		        
+		        setMoveBtn();
+		        menuSelect(menuIdx);
+		        
+		        document.frameFrm.menuCd.value = menuCd;
+		        document.frameFrm.target = "sub" + menuIdx;
+		        document.frameFrm.submit();      
+		    	 
+		    }
+		    
+		    function tabOpen(menuNm, title, url) {
+		        menuIdx++;
+		        menuArr.push(menuIdx);
+		        
+		        var tag = '<a href="javascript:menuSelect(\'' + menuIdx + '\');" class="tab" id="tab' + menuIdx + '" title="' + title + '">' + menuNm + '<span class="close" onclick="closeMenu(\'' + menuIdx + '\'); return false;"></span></a>';
+		    	$(".move-tabs").append(tag);
+		        
+		        var html = '<iframe id="sub' + menuIdx + '" name="sub' + menuIdx + '" class="ifrms" src="' + url + '" width="100%" style="display:block; height: calc(100vh - 83px); border: 0;" title="sub"></iframe>';
+		        $("#subArea").append(html);
+		        
+		        setMoveBtn();
+		        
+		        menuSelect(menuIdx);
+		    }
+		    
+		    var curMenuIdx;
+		    function menuSelect(menuIdx) {
+		    	$("#homeArea").hide();
+		    	$(".ifrms").hide();
+		        $("#sub" + menuIdx).show();
+		        
+		        $(".tab").removeClass("active");
+		        $("#tab" + menuIdx).addClass("active");
+		        
+		        if(menuIdx === 0) {
+		        	$("#subArea").hide();
+		        	$(".mainArea").show();
+		        } else {
+		        	$("#subArea").show();
+		        	$(".mainArea").hide();
+		        }
+		        
+		        if(menuIdx > 0) {
+		        	var title = $("#tab" + menuIdx).attr("title");
+		            var navis = title.split("|");
+		            
+		            var tag = '<dt><a></a></dt>';
+		            var i;
+		            for(var i = 0; i < navis.length; i++) {
+		            	if(navis[i]) tag += '<dd>' + navis[i] + '</dd>';
+		            	else break;
+		            }
+		            
+		            // $("#menuTitle").html(navis[i - 1]);
+		            // tag += '<a href="javascript:refreshPage(\'' + menuIdx + '\');"><img src="/admin/images/btn_WF_iconReset_D.png" class="pdl10" alt="iconReset"/></a>';
+		            // $(".pageNav").html(tag);
+		            
+		            curMenuIdx = menuIdx;
+		        } else {
+		        	$("#homeArea").show();
+		        }
+		    }
+		    
+		    function closeMenu(menuIdx) {
+				menuIdx = menuIdx.toString().replace("sub", ""); //서브아이디로 들어오는 경우 
+				
+		    	var ml = Number($(".mList").css("margin-left").replace("px", "")) + $("#tab" + menuIdx).width();
+		    	if(ml > 0) ml = 0;
+		    	$(".mList").css("margin-left", ml + "px");
+		    	
+		        $("#tab" + menuIdx).remove();
+		        $("#sub" + menuIdx).remove();
+		        
+		        for(var i = 0; i < menuArr.length; i++) {
+		            if(menuIdx === menuArr[i]) {
+		                menuArr.splice(i, 1);
+		            }
+		        }
+		        //console.log(menuArr);
+		        menuSelect(menuArr[menuArr.length - 1]);
+		       
+		        
+		        setMoveBtn();
+		    }
+		    
+		    function allMenuClose() {
+		    	if(!confirm("모든 메뉴를 닫으시겠습니까?")) return;
+		    	
+		        for(var i = menuArr.length - 1; i > 0 ; i--) {
+		            closeMenu(menuArr[i]);
+		        }
+		    }
+		    
+		    function setMoveBtn() {
+		    	if($(window).width() - 681 <= $(".mList").width()) {
+		    		$(".prev").show();
+		            $(".next").show();
+		    	} else {
+		    		$(".prev").hide();
+		            $(".next").hide();
+		    	}
+		    }
+		    
+		    var moveUnit = 120;
+		    function movePrev() {
+		    	var ml = Number($(".mList").css("margin-left").replace("px", "")) + moveUnit;
+		    	if(ml > 0) ml = 0;
+		    	$(".mList").css("margin-left", ml + "px");
+		    }
+		    
+		    function moveNext() {
+		    	var ml = Number($(".mList").css("margin-left").replace("px", "")) - moveUnit;
+		    	$(".mList").css("margin-left", ml + "px");
+		    	$(".mList").css("margin-left", ($(window).width() - 681 - $(".mList").width()) + "px");
+		    }
+		    
+		    function refreshPage(menuIdx) {
+		    	$("#sub" + menuIdx).attr("src", $("#sub" + menuIdx).attr("src"));
+		    }
+		    
+		    function logout() {
+		    	location.href = "../admin/logoutProc.do";
+		    }
+		    
+		    function fnPageCall(menuCd) {
+		    	alert(menuCd);
+		    }
+		    
+		    
+		    /*]]>*/
+		</script>
+		
+		<form name="frameFrm" id="frameFrm" method="POST" action="/index/pageCall.do">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<input type="hidden" name="menuCd" id="menuCd" value=""/>
+			<input type="hidden" name="menuPage" id="menuPage" value=""/>
+			<input type="hidden" name="paramMap" id="paramMap" value=""/>
+		</form>	
+		
+		<div class="wrap">
+			<!-- main header start (상단메뉴 영역) -->
+			<header>
+	            <h1>홈페이지 관리시스템</h1>
+	            <div class="mainTabArea">
+					<!-- 메뉴 호출 하여 설정 -->
+	                <ul></ul>
+	            </div>
+	            
+	            <div class="rightArea">
+	                
+	                <div class="userInfo">
+	                    <p><span>[[${session.userNm}]]</span></p>
+	                    <a href="javascript:fnLogOut();" class="btn logout">로그아웃</a>
+	                </div>
+	            </div>
+	        </header><!-- //header --> 
+			<!-- main header end -->
+			
+			<div class="container">
+				<!-- main lnb start (좌측메뉴, 메뉴탭 부분) -->
+				<th:block th:insert="~{/fragments/main_lnb::main-lnb}"></th:block>
+				<!-- main lnb end -->
+				
+				<div class="contentWrapper">
+					<!-- 콘텐츠 시작 -->
+		        	<div id="subArea"></div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

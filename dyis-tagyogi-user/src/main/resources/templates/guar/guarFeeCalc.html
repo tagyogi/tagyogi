@@ -1,0 +1,361 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : guarFeeCalc.html
+	파일명 : guarFeeCalc.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 변성균
+	생성일 : 2023.08.11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<th:block th:layout="comjs">
+		<script th:src="@{/js/guarCom.js}"></script>
+	</th:block>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/ //공통코드
+		var guarType = "";	//guarCom.fnSelectGuarRate 같이 사용하기위한 변수
+		var menuCd = /*[[${menuInfo.menuCd}]]*/;	//guarCom.fnCalcCommAmt 사용
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+
+			//공통코드 selectBox, radioBox 처리
+			com.fnCodeSelectBox("GR01", "guarType", 1, ""); 	//보증상품
+			com.fnCodeSelectBox("MB30", "finalGrade", 1, "");	//등급
+			$("#finalGrade").find("option[value='N']").remove();	//없음 삭제
+			com.fnCodeRadio("GR09", "ele_guarAddCdArea", "guarAddCd", false, "0"); //보증기간가산
+
+			//보증기간가산 클릭 이벤트
+			$("input[name=guarAddCd]").on("click",function(){
+			    if($("#guarBegDt").val().length !== 10 || $("#guarExpDt").val().length !== 10) 	return;
+
+				var addCd = Number($(this).val());
+				$("#guarAddDays").val(addCd);
+			    if(tmpGuarExpDt === undefined) 	tmpGuarExpDt = $("#guarExpDt").val();
+
+			    // 보증종료일계산
+			    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, addCd));
+
+			    // 보증일수 계산
+			    guarCom.fnSetGuarDays();
+			});
+
+			//보증서종류 변경 이벤트
+			$("#guarType").on("change", function(){
+				//초기화
+				$("#serchFrm").find("input[type=text]").val("");	//입력창 초기화
+				$("#reqDt").val(/*[[${today}]]*/);					//신청일자
+				$("input[name=koccaYn]").attr("disabled", false);	//공공기관지원사업 여부(선택가능)
+				$("input[name=koccaYn]").prop("checked", false);	//공공기관지원사업 여부(체크해제)
+				$("input[name=guarAddCd]").eq(0).click();		//보증기간가산 없음 체크
+				tmpGuarExpDt = undefined;
+
+				$("tr[id^='area_']").show();
+
+				//명칭(th) 초기화
+				$("#txt_contrDt").text("입찰일자");
+        		$("#txt_releDt").text("입찰마감일자");
+        		$("#txt_contrTermDt").text("계약기간");
+        		$("#txt_contrAmt").text("계약금액");
+        		$("#txt_guarRate").text("보증금율");
+
+				guarType = $(this).val();
+
+				guarCom.fnSelectGuarRate();	//요율 조회
+
+				if(guarType === "11"){ //입찰
+					//(명칭 처리) 입찰금액
+		            $("#txt_contrAmt").text("입찰금액");
+
+					//(영역 처리) 계약기간, 하자담보기간, 선금금액(약정이자액) 숨기기
+		            $("#area_contrTermDt, #area_releTermDt, #area_repayAmt").hide();
+
+		            //(기타 처리) 공공기관지원사업 여부(선택불가)
+		            $("input[name=koccaYn]").attr("disabled", true);
+				}else if(guarType === "12"){ //이행계약
+					//(영역 처리) 입찰일자(계약기간), 하자담보기간, 선금금액(약정이자액) 숨기기
+		            $("#area_contrDt, #area_releTermDt, #area_repayAmt").hide();
+
+		            //(기타 처리) 공공기관지원사업 여부(선택불가)
+		            $("input[name=koccaYn]").attr("disabled", true);
+				}else if(guarType === "13"){ //하자보수
+					//(명칭 처리) 입찰일자, 입찰마감일자
+					$("#txt_contrDt").text("계약체결일");
+		            $("#txt_releDt").text("검수완료일");
+
+					//(영역 처리) 계약기간, 선금금액(약정이자액) 숨기기
+		            $("#area_contrTermDt, #area_repayAmt").hide();
+
+		            //(기타 처리) 공공기관지원사업 여부(선택불가)
+		            $("input[name=koccaYn]").attr("disabled", true);
+
+				}else if(guarType === "14"){ //선금급
+					//(명칭 처리) 입찰일자, 입찰마감일자, 보증금율
+					$("#txt_contrDt").text("계약체결일자");
+		            $("#txt_releDt").text("지급예정일");
+		            $("#txt_guarRate").text("선금금율");
+
+					//(영역 처리) 하자담보기간 숨기기
+		            $("#area_releTermDt").hide();
+
+		            //(기타 처리) 공공기관지원사업 여부(선택불가)
+		            $("input[name=koccaYn]").attr("disabled", true);
+
+				}else if(guarType === "15" || guarType === "31" || guarType === "32" || guarType === "33" || guarType === "34"){//
+					//(영역 처리) 입찰일자(낙찰일자), 하자담보기간, 선금금액(약정이자액) 숨기기
+		            $("#area_contrDt, #area_releTermDt, #area_repayAmt").hide();
+				}
+			});
+
+			//조합원정보 조회
+			fnSearchGuarFeeCalc();
+		});
+
+		//조합원정보 조회
+		var fnSearchGuarFeeCalc = function(){
+			var param = {membNo : /*[[${session.membNo}]]*/ };
+			obj = {url:"/guar/selectGuarFeeCalc.do", param:param, callBack:fnSearchGuarFeeCalcCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+		}
+
+		//조합원정보 조회 콜백
+		var fnSearchGuarFeeCalcCallBack = function(resData){
+			//console.log(resData);
+			$("#mortCnt").val(resData.memb.mortCnt);
+		}
+
+		//계약일수,약정일수 입력 이벤트
+		var fnAddContrDay = function(){
+			if($("#contrBegDt").val() === "") {
+	            alert("시작일자를 입력해 주십시오.");
+	            $("#contrDays").val("");
+	            $("#contrBegDt").focus();
+	            return;
+	        }
+
+	        $("#contrExpDt").val(com.fnDateGet($("#contrBegDt").val(), guarCom.fnToNumber($("#contrDays").val()) -1 )).focus();
+	        $("#contrDays").focus();
+		}
+
+		//하자담보일수 입력 이벤트
+		var fnAddReleDay = function(){
+			if($("#releBegDt").val() === "") {
+	            alert("시작일자를 입력해 주십시오.");
+	            $("#releDays").val("");
+	            $("#releBegDt").focus();
+	            return;
+	        }
+
+	        $("#releEndDt").val(com.fnDateGet($("#releBegDt").val(), guarCom.fnToNumber($("#releDays").val()) - 1)).focus();
+	        $("#releDays").focus();
+		}
+
+		//보증일수 입력 이벤트
+		var fnAddGuarDay = function(){
+			if($("#guarBegDt").val() === "") {
+	            alert("시작일자를 입력해 주십시오.");
+	            $("#guarDays").val("");
+	            $("#guarBegDt").focus();
+	            return;
+	        }
+
+			//focus는 onblur 이벤트 작동을 위한 코드같음..
+	        $("#guarExpDt").val(com.fnDateGet($("#guarBegDt").val(), guarCom.fnToNumber($("#guarDays").val()) - 1)).focus();
+	        $("#guarDays").focus();
+		}
+
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="serchFrm" id="serchFrm" onSubmit="return false;">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="sMembNo" id="sMembNo" th:value="${session.membNo}"/>
+						<input type="hidden" name="mortCnt" id="mortCnt" value=""/>
+
+						<!-- 요율 -->
+						<input type="hidden" name="commRate" id="commRate" value=""/>
+						<input type="hidden" name="payPreDt" id="payPreDt"/> <!-- 보증료 계산을 위해 사용(빈값) -->
+
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll">
+                                            <table>
+                                                <colgroup>
+                                                	<col style="width:13%;">
+                                                	<col style="width:39%;">
+                                                	<col style="width:13%;">
+                                                	<col style="width:35%;">
+                                                </colgroup>
+                                                <tbody>
+													<tr>
+                                                        <th>보증서종류</th>
+                                                        <td><select name="guarType" id="guarType" class="w-50"></select></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>신청일자</th>
+                                                        <td>
+	                                                        <div class="al-center" style="width: 170px;">
+	                                                            <input type="text" name="reqDt" id="reqDt" th:value="${today}" title="신청일자" maxlength="10" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSelectGuarRate();" onblur="com.fnDateValiChk(this)" style="width:120px" autocomplete="off"/>
+																<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd', '', '', guarCom.fnSelectGuarRate)" />
+	                                                        </div>
+														</td>
+                                                        <th>등급</th>
+                                                        <td><select name="finalGrade" id="finalGrade" class="w-30" onchange="guarCom.fnSelectGuarRate();"></select></td>
+                                                    </tr>
+
+													<tr id="area_contrDt">
+														<th id="txt_contrDt">입찰일자</th>
+														<td>
+															<div class="al-center" style="width: 170px;">
+																<input type="text" name="contrDt" id="contrDt" th:value="${today}" title="계약체결일자" maxlength="10" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off"/>
+																<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'contrDt', 'yyyy-mm-dd')" />
+															</div>
+														</td>
+
+														<th id="txt_releDt">입찰마감일자</th>
+														<td>
+															<div class="al-center" style="width: 170px;">
+																<input type="text" name="releDt" id="releDt" title="낙찰일자" maxlength="10" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetReleDt();" onblur="com.fnDateValiChk(this)" style="width:120px" autocomplete="off"/>
+																<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'releDt', 'yyyy-mm-dd', '', '', guarCom.fnSetReleDt)" />
+															</div>
+														</td>
+													</tr>
+													</th:block>
+
+													<tr id="area_contrTermDt">
+														<th id="txt_contrTermDt" >계약기간</th> <!-- 대출기간 -->
+														<td>	<!--  colspan="3" -->
+															<div class="flex-box al-center">
+									                            <div class="flex-box al-center">
+									                                <input type="text" name="contrBegDt" id="contrBegDt" value="" class="w-100" title="계약기간 시작일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetContrDays();" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off" />
+                                                                	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'contrBegDt', 'yyyy-mm-dd','contrExpDt', 1, guarCom.fnSetContrDays)" />
+									                            </div>
+									                            ~
+									                            <div class="flex-box al-center">
+									                                <input type="text" name="contrExpDt" id="contrExpDt" value="" class="w-100" title="계약기간 종료일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetContrDays();" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off" />
+                                                                    <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'contrExpDt', 'yyyy-mm-dd','contrBegDt', 2, guarCom.fnSetContrDays)" />
+									                            </div>
+									                            (<input type="text" name="contrDays" id="contrDays" title="계약일수" maxlength="4" style="width:60px" onkeyup="fnAddContrDay()"/>일)
+									                        </div>
+														</td>
+													</tr>
+
+													<tr id="area_releTermDt">
+														<th>하자담보기간</th>
+														<td>	<!--  colspan="3" -->
+															<div class="flex-box al-center">
+									                            <div class="flex-box al-center">
+									                                <input type="text" name="releBegDt" id="releBegDt" value="" class="w-100" title="하자담보 시작일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetReleDays();" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off" />
+                                                                	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'releBegDt', 'yyyy-mm-dd','releBegDt', 1, guarCom.fnSetReleDays)" />
+									                            </div>
+									                            ~
+									                            <div class="flex-box al-center">
+									                                <input type="text" name="releEndDt" id="releEndDt" value="" class="w-100" title="하자담보 종료일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetReleDays();" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off" />
+                                                                    <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'releEndDt', 'yyyy-mm-dd','releBegDt', 2, guarCom.fnSetReleDays)" />
+									                            </div>
+									                            (<input type="text" name="releDays" id="releDays" title="하자담보일수" maxlength="4" style="width:60px" onkeyup="fnAddReleDay()"/>일)
+									                        </div>
+														</td>
+													</tr>
+
+													<tr>
+														<th id="txt_contrAmt">계약금액</th>
+														<td>
+															<input type="text" name="contrAmt" id="contrAmt" title="계약금액" maxlength="15" style="width:150px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);guarCom.fnSetGuarAmt();" />
+														</td>
+														<th><span id="txt_guarRate">보증금율</span></th> <!--선금금율-->
+														<td >
+															<input type="text" name="guarRate" id="guarRate" title="보증금율" maxlength="4" style="width:60px" value=""  onkeypress="" onkeyup="guarCom.fnSetGuarAmt();" />&nbsp;%
+														</td>
+													</tr>
+
+													<tr id="area_repayAmt">
+														<th>선금금액</th>
+														<td>
+															<input type="text" name="repayAmt" id="repayAmt" title="선금금액" maxlength="15" style="width:150px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" />
+														</td>
+														<th id="txt_guarRate">약정이자액</th>
+														<td>
+															<input type="text" name="contrInterAmt" id="contrInterAmt" title="약정이자액" maxlength="15" style="width:140px" value="" readonly/>
+															&nbsp;약정이자율
+															<input type="text" name="contrInterRate" id="contrInterRate" title="약정이자율" maxlength="4" style="width:60px" value=""  onkeyup="guarCom.fnSetContrInterAmt();" />&nbsp;%
+														</td>
+													</tr>
+
+													<tr>	<!-- class="reqGuarDelArea" -->
+														<th>보증기간</th>
+														<td>
+															<div class="flex-box al-center">
+									                            <div class="flex-box al-center">
+									                                <input type="text" name="guarBegDt" id="guarBegDt" value="" class="w-100" title="보증 시작일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetGuarDays();" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off" />
+                                                                	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'guarBegDt', 'yyyy-mm-dd','guarExpDt', 1, guarCom.fnSetGuarDays)" />
+									                            </div>
+									                            ~
+									                            <div class="flex-box al-center">
+									                                <input type="text" name="guarExpDt" id="guarExpDt" value="" class="w-100" title="보증 종료일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetGuarDays();" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off" />
+                                                                    <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'guarExpDt', 'yyyy-mm-dd','guarBegDt', 2, guarCom.fnSetGuarDays)" />
+									                            </div>
+									                            (<input type="text" name="guarDays" id="guarDays" title="보증일수" maxlength="4" style="width:60px" onkeyup="fnAddGuarDay();"/>일)
+									                            <input type="hidden" name="guarAddDays" id="guarAddDays" title="보증기간가산일수" value="0"/>
+									                        </div>
+														</td>
+
+														<th>보증기간가산</th>
+														<td><div id="ele_guarAddCdArea"></div></td>
+													</tr>
+
+													<tr>	<!-- class="reqGuarDelArea" -->
+														<th>보증금액</th>
+														<td>
+															<input type="text" name="guarAmt" id="guarAmt" title="보증금액" maxlength="15" style="width:150px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this); guarCom.fnCalcCommAmt();"/>
+														</td>
+														<th>보증료</th>
+														<td>
+															<input type="text" name="commAmt" id="commAmt" title="보증료" maxlength="20" style="width:150px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" readonly/>
+														</td>
+													</tr>
+
+													<tr>
+														<th>기타</th>
+														<td><input type="checkbox" name="koccaYn" value="Y" onclick="guarCom.fnKoccaChange();"/>&nbsp;공공기관지원사업 여부&nbsp;&nbsp;</td>
+													</tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

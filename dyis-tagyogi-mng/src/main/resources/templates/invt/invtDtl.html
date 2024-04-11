@@ -1,0 +1,311 @@
+<!--
+	파일정보: invt/invtDtl.html
+	파일명 : invtDtl
+	업무명 : 출자관리:출자정보상세
+	생성자 : 윤가영1
+	생성일 : 2023-04-13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "IV08", gridNoList : "20110"}
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//화면 처리
+				//동적 첨부파일 생성(동적)
+				com.fnFileViewSet("IV08", "myUpload");
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//그리드 푸터에 합계 옵션추가
+				$.each(gridOptList[0].Cols, function(idx, item){
+					if(item.Name === "billCnt" || item.Name === "billAmt"){
+						item.FormulaRow = "Sum"
+					}
+					if(item.Name === "billTypeNm"){
+						item.FormulaRow = "합계"
+					}
+				});
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+			});
+
+			//검색
+			var fnSearch = function(){
+				//상세정보 조회
+			    var membNo = /*[[${paramMap.membNo}]]*/;
+			    var investNo = /*[[${paramMap.investNo}]]*/;
+			    var atthType = /*[[${menuInfo.atthType}]]*/;
+
+			    var param = {membNo : membNo, investNo : investNo, atthType: atthType};
+				obj = {url:"/invt/selectInvt.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+				//$("#tr_reqWay").css("display", ""); //신청자정보
+				console.log(resData);
+				com.fnSetKeyVal(resData.memb);
+				com.fnSetKeyVal(resData.invtData);
+
+				//첨부파일
+				com.fnIbsUploadViewOne(resData.fileList);
+
+				$.each($("div[id^='docSubmitDt']"), function(idx, item){
+					//var dtTxt = com.fnDateFormat($(item).text(),'-');
+					//$(item).text(dtTxt);
+				});
+
+				//시트값 설정
+				sheet.loadSearchData(resData.data);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+
+			};
+
+			//레포트
+			var fnReport = function(type){
+				var membNo   = $("#membNo").val();
+				var investNo = $("#investNo").val();
+
+				if(type === "IVAPL"){ //출자신청서
+					var nameArr =  ["memb_no","invest_no"];
+					var valArr = [membNo,investNo];
+
+					ozLoad("IV_출자_신청서", nameArr, valArr, 1, false);
+
+				}else if(type === "IVCER"){ //출자증명서
+					var nameArr =  ["memb_no"];
+					var valArr = [membNo];
+
+					ozLoad("IV_출자증명서", nameArr, valArr, 1, false);
+
+				}
+			};
+
+			//수정
+			var fnUpt = function(){
+				param = {menuCd:"1020117", paramMap:{membNo:$("#membNo").val()
+										, investNo:$("#investNo").val()
+										, atthType:/*[[${menuInfo.atthType}]]*/
+										}
+				};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			};
+
+			/*]]>*/
+
+
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" />
+			<input type="hidden" name="investNo" id="investNo" />
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>	<!-- 메뉴관리 > 관련첨부코드 -->
+			<input type="hidden" name="atthNo" id="atthNo" value=""/>
+			<div class="contents flex">
+				<div class="layer-flex">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnReport('IVAPL');" class="btn style02">출자신청서</button>
+								<button type="button" onclick="javascript:fnReport('IVCER')" class="btn style02">증명서출력</button>
+								<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" >수정</button>
+								<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+
+				</div>
+				<div class="layer-flex collapseArea mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+
+						<!--출자정보 : s-->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">출자정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>출자일자</th>
+										<td colspan="3"><div id="ele_investDt"></div></td>
+										<th>출자구분</th>
+										<td colspan="3"><div id="ele_investNm"></div></td>
+									</tr>
+									<tr>
+										<th>액면가</th>
+										<td colspan="3"><div id="ele_faceAmt"></div></td>
+										<th>줄자좌수/금액</th>
+										<td colspan="3">
+											<div id="ele_investNum" style="display: inline-block;" ></div>
+											 / <div id="ele_investAmt" style="display: inline-block;" ></div>
+										</td>
+									</tr>
+									<tr>
+										<th>입금형태</th>
+										<td colspan="3"><div id="ele_payWayNm"></div></td>
+										<th>입금자</th>
+										<td colspan="3"><div id="ele_payNm"></div></td>
+									</tr>
+									<tr>
+										<th>입금은행</th>
+										<td colspan="3"><div id="ele_payBankNm"></div></td>
+										<th>입금계좌</th>
+										<td colspan="3"><div id="ele_payAcct"></div></td>
+									</tr>
+									<tr>
+										<th>비고</th>
+										<td colspan="7"><div id="ele_remark"></div></td>
+									</tr>
+								</tbody>
+							</table>
+						</div><!-- //wrapbox-->
+						<!--출자정보 : e-->
+
+						<!--처리정보 : s-->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">처리정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>처리상태</th>
+										<td><div id="ele_procStatNm"></div></td>
+										<th>처리일자</th>
+										<td><div id="ele_procDt"></div></td>
+										<th>처리자</th>
+										<td><div id="ele_procNm"></div></td>
+									</tr>
+									<tr>
+										<th>처리사유</th>
+										<td colspan="5"><div id="ele_procReason"></div></td>
+									</tr>
+								</tbody>
+							</table>
+						</div><!-- //wrapbox-->
+						<!--처리정보 : e-->
+
+						<!--수정사유 : s-->
+						<section class="area mt15">
+							<div class="fl">
+								<h4 class="title">수정사유</h4>
+							</div>
+						</section>
+						<div>
+							<div id="ele_modReason" style="border: 1px solid #ccc; padding: 20px; box-sizing: border-box;"></div>
+						</div>
+						<!--수정사유 : e-->
+
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+
+						<!--출자증권발행정보 : s-->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">출자증권정보</h4>
+								</div>
+							</section>
+							<!--출자증권정보 리스트 :s-->
+							<div class="">
+						    	<div id="sheetDiv" style="width:100%;height:250px"></div>
+							</div>
+							<!--출자증권정보 리스트 :e-->
+						</div><!-- //wrapbox-->
+						<!--출자증권발행정보 : e-->
+
+						<!--심사서류정보 : s-->
+						<div class="wrapBox">
+							<section class="area mt15">
+								<div class="fl">
+									<h4 class="title">심사서류정보<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnDtlFileUpload('docFile', $('#atthType').val(), $('#atthNo').val(), $('#investNo').val(), 'IV08');" class="btn small style07">파일저장</button>
+			                    </div>
+							</section>
+							<table class="tbl" id="myUpload"></table>
+						</div>
+						<!--심사서류정보 : e-->
+
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-definition>
+	<active>dev</active>
+    <domain>http://dev.dyis.co.kr/</domain>
+    <database>
+        <oralce>oralce</oralce>
+    </database>
+    
+    <devUser>
+        <mac>8C-B0-E9-21-13-E2</mac> <!-- mac주소 -->
+        <mac>8C-B0-E9-21-13-E3</mac> <!-- mac주소 -->
+    
+        <id>bsg</id> <!-- 계정ID -->
+        <id>bsg1</id> <!-- 계정ID -->
+    
+        <name>홍길동</name> <!-- 계정명 -->
+        <name>홍길동1</name> <!-- 계정명 -->
+    
+    </devUser>
+	
+	 
+</application-definition>

@@ -1,0 +1,171 @@
+<!--
+	파일정보 : sample/devCrypt.html
+	파일명 : 암복호화
+	업무명 : 암복호화 설명
+	생성자 : DEV
+	생성일 : 1900.01.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:src="@{/js/crypt/aes.js}"></script>
+		<script th:src="@{/js/crypt/core.min.js}"></script>
+		<script th:src="@{/js/crypt/sha256.min.js}"></script>
+		<script th:src="@{/js/crypt/pbkdf2.js}"></script>
+		
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			//랜덤값 생성
+			var fnRandom = function(){
+				randomNo = "";
+				for(var i = 0; i < 4; i++){
+					randNum = Math.floor(Math.random()*(11)); 
+					randomNo += ""+randNum; 
+				}
+				
+				$("#encKeyVal").val(randomNo);
+			}
+			
+			
+			//암호화
+			var fnEnc = function(){
+				
+				if($("#encKeyVal").val() === ""){
+					alert("랜덤키 값 입력하세요");
+					return;
+				}
+				
+				
+				var encKey = CryptoJS.SHA256($("#encKeyVal").val()).toString(); //랜덤키 암호화
+				$("#encKey").val(encKey);
+				
+				$("#encResult").val(CryptoJS.AES.encrypt($("#encText").val(), encKey));
+			};
+			
+			//복호화
+			var fnDec = function(){
+				obj = {url:"/index/cryptDec.do", formId:"procFrm", callBack:fnDecCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxPost(obj);
+				
+			}
+			
+			//복호화 콜백
+			var fnDecCallBack = function(resData){
+				alert(1);
+			}
+			
+			/*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div th:insert="~{/fragments/subTitle}"></div>
+			<form name="procFrm" id="procFrm" method="post" onSubmit="return false;" action="">
+			<div class="contents flex">
+				
+				<div class="layer-flex">
+					<div class="" style="width:100%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">자바스크립트 내 암호화 처리</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:140px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>암호대상</th>
+									<td colspan="3">
+										<input type="text" name="encText" id="encText" size="50" value="test1234" style="width:150px"/>
+									</td>
+								</tr>
+								<tr>
+									<th>암호키값</th>
+									<td colspan="3">
+										<input type="text" name="encKeyVal" id="encKeyVal" size="8" style="width:150px"/>
+										<input type="text" name="encKey" id="encKey" size="100" readonly style="width:500px"/>
+									</td>
+								</tr>
+								<tr>
+									<th>암호화결과</th>
+									<td colspan="3">
+										<input type="text" name="encResult" id="encResult" size="100" readonly style="width:500px"/>
+									</td>
+								</tr>
+								<tr>
+									<th>복호화</th>
+									<td colspan="3">
+										<input type="text" name="decResult" id="decResult" size="100" readonly style="width:500px"/>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 -->
+				<section class="area mt20">
+					<div class="fc">
+						<button type="button" onclick="javascript:fnRandom();" class="btn style03">랜덤키생성</button>
+						<button type="button" onclick="javascript:fnEnc();" class="btn style01">암호화</button>
+						<button type="button" onclick="javascript:fnDec();" class="btn style02">복호화</button>
+					</div>
+				</section>
+				<div class="layer-flex">
+					<div class="" style="width:100%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">암호화 필드</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:140px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>MB_REQ</th>
+									<td colspan="3">
+										CEO_SSN
+										, PERS_CELL_NO
+										, CEO_POST_NO
+										, CEO_ADDR1
+										, CEO_ADDR2</BR>
+										, CEO_DORO_CD
+										, CEO_DORO_NM
+										, CEO_DORO_BUNHO
+										, CEO_DORO_DONG
+										, CEO_DORO_DTL</BR>
+										, CEO_DORO_BD_NO
+										, CEO_TEL_NO
+										, CEO_EMAIL
+										, PERS_EMAIL
+										, CEO_CELL_NO
+									</td>
+								</tr>
+								<tr>
+									<th>MB_CEO</th>
+									<td colspan="3">
+										JUMIN_NO, CEO_POST_NO, CEO_ADDR1, CEO_ADDR2, DORO_POST_NO, DORO_CD, DORO_NM, DORO_BUNHO, DORO_DONG
+										, DORO_DTL, DORO_BD_NO, CEO_TEL_NO, CEO_CELL_NO
+									</td>
+								</tr>
+								<tr>
+									<th>MB_PERSON</th>
+									<td colspan="3">
+										PERS_TEL_NO, PERS_CELL_NO, PERS_EMAIL
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

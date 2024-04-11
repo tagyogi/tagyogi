@@ -1,0 +1,418 @@
+<!--
+	파일정보 : guarPerfList.html
+	파일명 : guarPerfList
+	업무명 : 보증실적현황 조회
+	생성자 : 변성균
+	생성일 : 2023-04-11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			var reloadYn = false;	//공통 리로드 방지
+
+			var refVal = /*[[${menuInfo.refVal}]]*/; //메뉴참조값 현황유형:그리드번호
+			var refVals = refVal.split(":"); //화면유형:그리드번호 <!-- I:30202 -->
+
+			//화면 초기화 처리 호출
+			$(document).ready(function(){
+
+				//통계화면 활성화여부
+
+				//com.fnCodeCheckBox("GR01", "ele_guarType", "sGuarType", false, "all"); //보증종류--> 요청에 의해 selectBox로 변경
+				//com.fnCodeCheckBox("GR05", "ele_procStat", "sProcStat", false, "all"); //처리상태--> 요청에 의해 selectBox로 변경
+				//com.fnCodeCheckBox("GR02", "ele_guarStat", "sGuarStat", false, "all"); //보증상태--> 요청에 의해 selectBox로 변경
+				com.fnCodeCheckBox("MB02", "ele_genreCd", "sGenreCd", false, "all"); //장르
+
+				com.fnCodeSelectBox("GR01", "sGuarType", 1, ""); //보증종류
+
+				com.fnCodeSelectBox("GR06", "sGuarIssueCd", 1, ""); //발급형태
+				com.fnCodeSelectBox("GR07", "sOrderCd", 1, ""); //기관구분
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    $(".canIns").hide(); //일부해제 버튼 처음엔 안보이게
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//화면 고정
+					sheet.setFixedCols(10, 0, 1); //발급
+
+					//fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+					fnBtnProc("DTL");
+				});
+
+				//sheet 조회 완료 후
+				sheet.bind("onSearchFinish" , function(obj) {
+
+					//회원건수 체크
+					var membs = [];
+					var prfAmt = 0;
+					var feeAmt = 0;
+					var rows = sheet.getDataRows();
+					for(var i=0; i<rows.length; i++){
+						row = rows[i];
+						//if(refVals[0] === "I" && i === 0)		fnIssuedBtnEvent(row);	//발급이면 첫번째 row값으로 버튼 제어 : defalt 그리드값이 없어져서 삭제
+
+						if(membs.indexOf(row.membNo) === -1){
+							membs[membs.length] = row.membNo;
+						}
+						prfAmt += row.guarPrfAmt;
+						feeAmt += row.commAmt;
+
+						guarCom.fnIbsStyleSet(sheet, row); //필드색상정의
+					}
+
+					$("#statTot").html(com.addComma(sheet.getTotalRowCount()) + " <em>건</em>");
+					$("#statMembTot").html(com.addComma(membs.length) + " <em>건</em>");
+					$("#statGuarAmt").html(com.addComma(prfAmt) + " <em>원</em>");
+					$("#statFeeAmt").html(com.addComma(feeAmt) + " <em>원</em>");
+				});
+			});
+
+
+			//현황 조회
+			var fnSearch = function(){
+
+				var procYn = true;
+				if($("#sMembNo").val() === "" && $("#sMembNm").val() === "" && $("#sGuarType").val() === "" && $("#sServNm").val() === "" && $("#sOrderCd").val() === ""
+					&& $("#sOrderNm").val() === "" && $("#sGuarFromAmt").val() === "" && $("#sGuarToAmt").val() === "" && $("#sBelong").val() === ""
+					&& $("#genreCdAll").is(":checked")
+				){
+					if(!confirm("전체 조회시 수분의 시간이 소요됩니다.진행하시겠습니까?")){
+						procYn = false;
+					}
+				}
+
+				if(procYn){
+					param = $("#serchFrm").serializeObject();
+					com.fnIbsSearch("/guarList/selectGuarPerfList.do", JSON.stringify(param)); //param, sheetId 생략 가능
+				}
+			};
+
+			//화면 호출(등록, 수정, 삭제)
+			var fnBtnProc = function(type){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				if(rowData === null){
+					alert("대상을 선택 하십시오.");
+					return;
+				}
+
+				menuCd = "1030224"; //발급상세 (guar/guarDtl.html)
+				param = {menuCd:menuCd, paramMap:{guarNo:rowData.guarNo
+												, guarType:rowData.guarType //상품별 주계약화면 변경
+												, listType:"VIEW" //조회용
+												}};	//상세 -> 수정 페이지 이동 판단 위해 추가
+				parent.menuOpen(param);
+			};
+
+			//삭제
+			var fnDeleteGuar = function(rowData){
+				if(Number(rowData.procStat) > 30) {
+			    	alert("발급 이후에는 삭제하실 수 없습니다.");
+			    	return;
+				}
+
+				if(!confirm("정말로 선택하신 " + com.fnInputText("GR01", rowData.guarType) + "보증 정보를 삭제하시겠습니까?")) return;
+
+				var deleteParam = { guarNo: rowData.guarNo, atthNo: rowData.atthNo, atthType:/*[[${menuInfo.atthType}]]*/ };
+				var obj = {url:"/guar/deleteGuar.do", param:deleteParam, callBack:fnSearch, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+			//상세 검색 창 활성화
+			var fnSearchDtl = function(){
+				if($(".serchDtl").is(":visible")){
+					$(".serchDtl").hide();
+
+					//$("input[name=sGuarType]").prop("checked", false);
+					//$("input[name=sProcStat]").prop("checked", false);
+				}else{
+
+					$(".serchDtl").show();
+
+					$("#ele_serchGuarStat").css("display", "none"); //(검색)보증상태
+					$("#ele_serchProcStat").css("display", "none"); //(검색)처리상태
+
+					if(refVals[0] === "I" || refVals[0] === "G"){ //발급, 보증현황
+						$("#ele_serchGuarStat").css("display", ""); //(검색)보증상태
+					}else if(refVals[0] === "R"){ //신청
+						$("#ele_serchProcStat").css("display", ""); //(검색)처리상태
+					}
+				}
+
+			}
+
+			//보증서종류,처리상태 전체 선택
+			var fnSerchChk = function(val){
+
+				var chkYn;
+				if(val === "sGenreCd"){
+					chkYn = $("#genreCdAll").is(":checked");
+				}
+
+				if(chkYn){
+					$("input[name='"+val+"']").each(function(idx) {
+						$(this).prop("checked", true);
+					});
+				}else{
+					$("input[name='"+val+"']").each(function(idx) {
+						$(this).prop("checked", false);
+					});
+				}
+			}
+
+			//전체선택 해제 처리
+			var fnSerchChkAll = function(val){
+
+				var chkYn = true;
+				$("input[name='"+val+"']").each(function(idx) {
+					if(!$(this).is(":checked") && $(this).val() !== ""){
+						chkYn = false;
+						return;
+					}
+				});
+
+				if(val === "sGenreCd"){
+					$("#genreCdAll").prop("checked", chkYn);
+				}
+			}
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+
+				if(refVals[0] === "G"){
+					$("#sSerchDt").val(com.fnDateGet(/*[[${today}]]*/, -180)); //발급일자 시작일설정
+				}else if(refVals[0] === "D" || refVals[0] === "D"){	//전결현황
+					$("#sSerchDt").val(com.fnDateGet(/*[[${today}]]*/, -90)); //신청일자 시작일설정
+				}else{
+					$("#sSerchDt").val(com.fnDateGet(/*[[${today}]]*/, -30)); //발급일자 시작일설정
+				}
+				$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //발급일자 종료알 설정
+
+				//장르 체크
+				$("#genreCdAll").prop("checked", true);	//전체 체크
+				$("input[name=sGenreCd]").prop("checked", true);	//개별 체크
+
+				fnSearch();
+			};
+
+
+			//발급현황 버튼제어 이벤트
+			var fnIssuedBtnEvent = function(rowData){
+				var procStatVal = Number(rowData.procStat);		//처리상태
+				var guarTypeVal = Number(rowData.guarType);		//보증서종류
+				var guarIssueCdVal = rowData.guarIssueCd;		//신청구분
+				//console.log("처리상태: " + procStatVal + "("+com.fnInputText("GR05", procStatVal)+")/ 보증서종류: " + guarTypeVal + "("+com.fnInputText("GR01", guarTypeVal)+")/ 신청구분: " + guarIssueCdVal + "("+com.fnInputText("GR06", guarIssueCdVal)+")/ 보증상태: " + rowData.guarStat + "("+ com.fnInputText("GR02", rowData.guarStat) +")");
+				//전송 버튼 제어
+				if(guarIssueCdVal === "G") {	//g2b
+			        if(procStatVal >= 40) 		$("#sendBtn").show();
+			        else 						$("#sendBtn").hide();
+			    }else 							$("#sendBtn").hide();
+
+				//변경등록 버튼 제어(42: 전송반려, 80: 전송완료, 90: 발급완료)
+				if([42, 80, 90].includes(procStatVal) && [12, 14, 15, 21, 31, 32, 33, 34].includes(guarTypeVal)){
+			        $("#altBtn").show();	//변경등록 버튼 보이기
+			    } else {
+			        $("#altBtn").hide();	//변경등록 버튼 숨기기
+			    }
+
+			    //기재변경 버튼 제어 (42: 전송반려, 80: 전송완료, 90: 발급완료)
+				if([42, 80, 90].includes(procStatVal))	$("#chgBtn").show();
+				else									$("#chgBtn").hide();
+			}
+
+			var fnClearCancel = function(){
+				var rowData = sheet.getRowValue(sheet.getFocusedRow());
+				var param = rowData.guarNo;
+
+				if(confirm("해제 취소 처리하시겠습니까?")){
+					obj = {url:"/guar/updateGuarInit.do", jParam:param, callBack:fnInitCallBack(), msgYn:"Y", sessYn:"Y", loadYn:"Y" };
+					com.fnAjaxMulti(obj);
+				}
+			}
+
+			var fnInitCallBack = function() {
+				fnSearch();
+			}
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="sGenreCd" value=""/> <!-- 장르 하나선택될 경우 배열 오류 처리 -->
+
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt style="width:90px;">조합원명</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+
+							<dt>보증서종류</dt>
+							<dd style="width:160px;">
+								<select name="sGuarType" id="sGuarType" style="width:160px;"></select>
+							</dd>
+							<dt>발급형태</dt>
+							<dd style="width:80px;">
+								<select name="sGuarIssueCd" id="sGuarIssueCd" style="width:80px;"></select>
+							</dd>
+						</dl>
+					</div>
+					<div class="row">
+						<dl>
+							<dt style="width:90px;">기준일자</dt>
+							<dd style="width:260px;">
+	                        	<input type="text" name="sSerchDt" id="sSerchDt" title="기준일" maxlength="10" style="width:100px" th:value="${today}" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sSerchDt', 'yyyy-mm-dd','sSerchEndDt', 1)" />
+	                     	</dd>
+							<dt>계약건명</dt>
+							<dd style="width:160px;">
+								<input type="search" name="sServNm" id="sServNm" title="계약건명" maxlength="50" style="width:160px" value=""/>
+							</dd>
+							<dt>공제기관</dt>
+							<dd style="width:240px;">
+								<select name="sOrderCd" id="sOrderCd" style="width:100px;"></select>
+								<input type="search" name="sOrderNm" id="sOrderNm" maxlength="50" style="width:120px;">
+							</dd>
+						</dl>
+					</div>
+
+					<div class="row ">
+						<dl>
+							<dt style="width:90px;">보증금액</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sGuarFromAmt" id="sGuarFromAmt" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" style="width:120px" /> ~
+                        		<input type="search" name="sGuarToAmt" id="sGuarToAmt" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" style="width:120px" />
+                            </dd>
+                            <dt>협회/단체</dt>
+							<dd style="width:160px;">
+								<input type="search" name="sBelong" id="sBelong" title="협회/단체" maxlength="50" style="width:160px" value=""/>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<!--<div class="row serchDtl" style="display:none">
+						<dl>
+							<dt>보증서종류</dt>
+							<dd style="width:1000px">
+								<input type="checkbox" name="guarTypeAll" id="guarTypeAll" onclick="fnSerchChk('sGuarType')" checked/>&nbsp;전체&nbsp;&nbsp;
+								<span id="ele_guarType" title="보증상품" onClick="fnSerchChkAll('sGuarType');"></span>
+							</dd>
+						</dl>
+					</div>--><!-- //row -->
+					<!--<div class="row serchDtl" id="ele_serchGuarStat" style="display:none">
+						<dl>
+							<dt>보증상태</dt>
+							<dd style="width:1000px">
+								<input type="checkbox" name="guarStatAll" id="guarStatAll" onclick="fnSerchChk('sGuarStat')" checked/>&nbsp;전체&nbsp;&nbsp;
+								<span id="ele_guarStat" title="보증상태" onClick="fnSerchChkAll('sGuarStat');"></span>
+							</dd>
+						</dl>
+					</div>--><!-- //row -->
+					<!--<div class="row serchDtl" id="ele_serchProcStat" style="display:none">
+						<dl>
+							<dt>처리상태</dt>
+							<dd style="width:1000px">
+								<input type="checkbox" name="procStatAll" id="procStatAll" onclick="fnSerchChk('sProcStat')" checked/>&nbsp;전체&nbsp;&nbsp;
+								<span id="ele_procStat" title="처리상태" onclick="fnSerchChkAll('sProcStat');"></span>
+							</dd>
+						</dl>
+					</div>--><!-- //row -->
+
+					<div class="row serchDtl" style="display:none;">
+						<dl>
+							<dt style="width:90px;">장르</dt>
+							<dd style="width:1000px">
+								<input type="checkbox" name="genreCdAll" id="genreCdAll" onclick="fnSerchChk('sGenreCd')" checked/>&nbsp;전체&nbsp;&nbsp;
+								<span id="ele_genreCd" title="장르" onClick="fnSerchChkAll('sGenreCd');"></span>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnSearchDtl();" class="btn style08">상세검색</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<!--그리드 위 통계-->
+						<div class="statSummary">
+							<ul>
+								<li>
+									<strong>총건수 : </strong>
+									<span id="statTot"><em>건</em></span>
+								</li>
+								<li>
+									<strong>회원건수 : </strong>
+									<span id="statMembTot"><em>건</em></span>
+								</li>
+								<li>
+									<strong>보증실적합 : </strong>
+									<span id="statGuarAmt"><em>원</em></span>
+								</li>
+								<li>
+									<strong>보증료합 : </strong>
+									<span id="statFeeAmt"><em>원</em></span>
+								</li>
+							</ul>
+						</div>
+						<section class="area mt10">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnBtnProc('DTL');" class="btn style08">상세</button>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04" id="btn_excel">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

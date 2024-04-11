@@ -1,0 +1,54 @@
+<!--
+	파일정보 : comHiddenElect.html
+	파일명 : comHiddenElect
+	업무명 : 전자보증용 필드
+	생성자 : 권다슬
+	생성일 : 2023.07.13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<!-- 등록 : 발급구분이 G2B면 등록됨 아래 항목이 등록됨  -->
+		<!-- 수정 : 전자보증 입력란의 데이터(senderId)가 있으면 기존 전자보증 데이터 삭제후 등록됨 -->
+		<!-- 필드 데이터는 com/serchG2bBid 팝업에서 set -->
+		<div id="ele_electArea">
+			<input type="hidden" name="senderId"		id="senderId" />
+			<input type="hidden" name="receiverId"		id="receiverId" />
+			<input type="hidden" name="searchType"		id="searchType" />
+			<input type="hidden" name="sendType"		id="sendType" />
+			<input type="hidden" name="docNm"			id="docNm" />
+			<input type="hidden" name="sendNumber"		id="sendNumber" />
+			<input type="hidden" name="mainClassCd"		id="mainClassCd" />
+			<input type="hidden" name="mainNm"			id="mainNm" />
+			<input type="hidden" name="mainAmt"			id="mainAmt" />
+			<input type="hidden" name="thisAmt"			id="thisAmt" />
+			<input type="hidden" name="amtIdenCd"		id="amtIdenCd" />
+			<input type="hidden" name="mainDt"			id="mainDt" />
+			<input type="hidden" name="mainStartDt"		id="mainStartDt" />
+			<input type="hidden" name="mainEndDt"		id="mainEndDt" />
+			<input type="hidden" name="periodDt"		id="periodDt" />
+			<input type="hidden" name="paymentType"		id="paymentType" />
+			<input type="hidden" name="completeDt"		id="completeDt" />
+			<input type="hidden" name="amountRate"		id="amountRate" />
+			<input type="hidden" name="flawPriceRate"	id="flawPriceRate" />
+			<input type="hidden" name="mortPeriodDt"   	id="mortPeriodDt" />
+			<input type="hidden" name="orgG2bId"      	id="orgG2bId" />
+			<input type="hidden" name="orgNm"          	id="orgNm" />
+			<input type="hidden" name="orgBizNo"      	id="orgBizNo" />
+			<input type="hidden" name="orgCrdtNm"     	id="orgCrdtNm" />
+			<input type="hidden" name="orgChrgNm"     	id="orgChrgNm" />
+			<input type="hidden" name="orgDeptNm"     	id="orgDeptNm" />
+			<input type="hidden" name="orgTelNo"      	id="orgTelNo" />
+			<input type="hidden" name="orgFaxNo"      	id="orgFaxNo" />
+			<input type="hidden" name="wrtType"        	id="wrtType" />
+			<input type="hidden" name="wrtNm"          	id="wrtNm" />
+			<input type="hidden" name="wrtBizNo"      	id="wrtBizNo" />
+			<input type="hidden" name="wrtLawNo"      	id="wrtLawNo" />
+			<input type="hidden" name="wrtCeoNm"      	id="wrtCeoNm" />
+			<input type="hidden" name="wrtChrgNm"     	id="wrtChrgNm" />
+			<input type="hidden" name="wrtDeptNm"     	id="wrtDeptNm" />
+			<input type="hidden" name="wrtTelNo"      	id="wrtTelNo" />
+			<input type="hidden" name="wrtFaxNo"      	id="wrtFaxNo" />
+		</div>
+	</body>
+</html>

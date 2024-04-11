@@ -1,0 +1,358 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : guarChgDescIns.html
+	파일명 : guarChgDescIns.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 권다슬
+	생성일 : 2023.09.06
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/; //공통코드
+		var guarType = /*[[${paramMap.refVal}]]*/; //메뉴참조값 (보증상품)
+		var menuCd = /*[[${menuInfo.menuCd}]]*/;	//guarCom.fnCalcCommAmt 사용
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/, /*[[${paramMap.listNm}]]*/); //lnb세팅
+
+			guarCom.fnGuarIssueCdSelectBox();	//신청방법
+			com.fnCodeCheckBox("GR12", "ele_chgDescType", "chgDescType", false); //보증문구
+
+			//보증문구 클릭이벤트 추가
+			$("input[name='chgDescType']").click(function(){
+				guarCom.fnMakeGuarClassCont();	//보증문구값 생성 및 변경
+			});
+
+			//동적 첨부파일 (다건)
+			com.fnIbsUpload($("#docFile"));
+
+			//보증 정보 화면 설정(guar/comGuarChgDesc.html)
+			fnGuarContrInputSet();
+
+			//기존 보증정보 조회
+			fnSelectGuarChgDesc();
+		});
+
+		//기존 보증정보 조회
+		var fnSelectGuarChgDesc = function(){
+			obj = {url:"/guarChgDesc/selectGuarChgDesc.do", formId:"saveFrm", callBack:fnSelectGuarChgDescCallback, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxPost(obj);
+		}
+
+		//보증정보 조회 콜백
+		var fnSelectGuarChgDescCallback = function(resData){
+			//console.log(resData);
+
+			//약정정보 확인
+			if(com.fnIsEmpty(resData.contrList)){
+				alert("보증약정 정보가 존재하지 않습니다.");
+				fnPage(/*[[${paramMap.returnPage}]]*/)
+				return;
+			}
+
+			//0. 조합원 조기경보 체크
+			guarCom.fnCheckMembCretop(resData.memb.membCretop, /*[[${paramMap.returnPage}]]*/);
+
+			//1-1. 조합원
+			com.fnSetKeyVal(resData.memb);
+
+			//1-2. 약정구분 selectBox 생성(comGuarMemb.html)
+			fnContrTypeSelectBoxSet(resData.contrList);
+
+			//1-3. 조합원(약정정보)
+			com.fnSetKeyVal(resData.contr, "area_comGuarMemb");
+			$("#finalGrade").val(resData.contr.finalGrade);			//신용도
+			//$("#contrType").val(resData.contr.contrType);			//약정구분
+
+			//1-4. 조합원(보증한도, 보증사용액, 보증가능액)
+			com.fnSetKeyVal(resData.contrLimit, "area_comGuarMemb");
+
+			//2. 보증신청정보(신청자 selectBox)
+			guarCom.fnSelCpSelectBox(resData.persList, resData.guar.reqNm); //전체
+			if(!com.fnIsEmpty(resData.guar.reqType)){	//직접입력이 아니면 readonly 처리
+				$("#reqNm").prop("readonly", true);		//신청자명
+				$("#reqTel").prop("readonly", true);	//신청자연락처
+			}
+
+			//3-1. 보증정보
+			com.fnSetKeyVal(resData.guar);
+			uptCheckValGuar(resData.guar);	//comGuarChgDesc.html (comGuarReq.html)
+
+			//3.2. 추가정보
+			$("#befGuarNo").val(resData.guar.guarNo);
+			$("#reqDt").val(/*[[${today}]]*/);	//신청일자 오늘로(guarCom.fnSelectGuarRate 보증료 조회 전에 set 필수)
+
+			//3-3. g2b 관련
+			guarCom.fnGuarIssueChg($("#guarIssueCd").val());	//해당사항없음 or input + 검색 조회 버튼
+			if(!com.fnIsEmpty(resData.guar.publicNo))	$("#g2bYn").val("Y");	//기존 계약번호가 있으면 등록때 검색했다고 판단
+			$("#checkedPublicNo").val(resData.guar.publicNo);	//계약번호 변경 체크를 위해 저장
+
+			//5. 기재변경등록 관련 데이터 수정
+			$("#commAmt").val(guarCom.fnGetMinCommAmt("Y"));	//기재변경 보증료 7000원 --> (주석처리)홈페이지는 보증 수수료 0원으로 넣고 관리자 페이지에서 보증료 추가
+
+			//6. 요율정보
+			//var paramData = {data: resData.comRate};
+			//guarCom.fnSelectRateNoCalcCallBack(paramData);
+		}
+
+		//저장
+		var fnSave = function(){
+			//필수체크
+			var valChks = ["reqNm","reqTel","reqDt","orderNm","servNm","guarBegDt","guarExpDt"];
+
+			if(guarType !== "11")						valChks.push(...["contrBegDt", "contrExpDt", "contrDays"]);
+			if(guarType === "11" || guarType === "13")	valChks.push(...["releDt"]);
+			if(guarType === "13")						valChks.push(...["releBegDt", "releEndDt", "releDays"]);
+			if(guarType !== "14")						valChks.push(...["contrDt"]);
+
+			if(com.fnValChk(valChks)){
+
+			    if($("#contrNo").val() === "") {
+			        alert("해당보증 약정 정보가 존재하지 않습니다.");
+			        return;
+			    }
+
+			    if($("input[name='chgDescType']:checked").length <= 0){
+			        alert("변경구분을 선택해주십시오.");
+			        return;
+			    }
+
+
+			    if($("#guarIssueCd option:selected").val() === "G" ) {
+					if($("#g2bYn").val() !== "Y"){
+						alert("전자보증정보를 조회 하십시오.");
+						return;
+					}
+
+					if($("#checkedPublicNo").val() !== $("#publicNo").val()){
+						alert("계약번호가 변경 입력되었습니다.(조회된 계약번호: "+$("#checkedPublicNo").val()+")\n 다시 조회 하시거나 이전 계약번호로 변경하십시오.");
+						return;
+					}
+			    }
+
+
+				if(confirm("입력하신 "+ guarCom.fnSelectGuarTypeNm(guarType) + " 기재변경 정보를 등록하시겠습니까?")){
+					//전자서명 처리
+					var chgCont = "";	//변경구분
+					$("input[name=chgDescType]:checked").each(function(){
+						if(chgCont !== "")	chgCont += ",";
+						chgCont += com.fnInputText("GR12", $(this).val());
+					});
+
+					let plan = "보증 기재변경 신청" + "\n" +
+					           "조합원명 : " + $("#membNm").val() + "\n" +
+						       "보증번호 : " + $("#guarNo").val() + "\n" +
+						       "변경내용 : " + chgCont + "\n" +
+						       "신청일자 : " + $("#reqDt").val() + "\n" +
+						       "신청자명 : " + $("#reqNm").val();
+
+					alert(plan);
+					param = {plan:plan, idn:/*[[${session.bizNo}]]*/};
+					com.fnCertSign(param); //전자서명 처리
+
+					//등록 테스트
+					//var test = {signData: "test"};
+					//fnCertSingCallBack(test);	//테스트
+				}
+			}
+		}
+
+		//서명 콜백(전자서명 포함 저장)
+		var fnCertSingCallBack = function(resData){
+			//console.log(resData);
+			$("#signedGuarCont").val(resData.signData);
+
+			var param = $("#saveFrm").serializeObject();
+
+			var guarClassNm = "";	//보증문구
+			$("input[name=chgDescType]:checked").each(function(){
+				if(guarClassNm !== "")	guarClassNm += ", ";
+				guarClassNm += com.fnInputText("GR12", $(this).val());
+			});
+			param.guarClassNm = guarClassNm;
+
+			obj = {url:"/guarChgDesc/insertGuarChgDesc.do", jParam: param, fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxMulti(obj);
+		}
+
+		//저장 콜백
+		var fnSaveCallBack = function(resData){
+			fnPage('2030201');	//신청 목록으로 이동
+		}
+
+		//목록 버튼 클릭 이벤트
+		var fnGoListPage = function(){
+			fnPage(/*[[${paramMap.returnPage}]]*/);
+		}
+
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="saveFrm" id="saveFrm" onSubmit="return false">
+							<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+							<!-- 조회용 -->
+							<input type="hidden" name="membNo" 			id="membNo" 	  th:value="${session.membNo}"/>
+							<input type="hidden" name="sMembNo" 		id="sMembNo" 	  th:value="${session.membNo}"/>
+							<input type="hidden" name="atthType" 		id="atthType" 	  th:value="${menuInfo.atthType}"/>
+							<input type="hidden" name="guarNo" 			id="guarNo" 	  th:value="${paramMap.guarNo}"/>
+							<input type="hidden" name="contrNo" 		id="contrNo" 	  th:value="${paramMap.contrNo}"/>
+							<input type="hidden" name="guarType" 		id="guarType" 	  th:value="${paramMap.refVal}"/>
+							<input type="hidden" name="befCommType" 	id="befCommType"  value="R"/>	<!-- selectGuarChg에서 사용됨(BEF_COMM_AMT 계산) -->
+							<input type="hidden" name="sGuarType" 		id="sGuarType" 	  th:value="${paramMap.refVal}"/>
+							<input type="hidden" name="sRefContrNoYn" 	id="sRefContrNoYn"   value="Y"/>	<!-- 참조약정 제외 조회 -->
+
+							<!-- 데이터 저장용 -->
+							<input type="hidden" name="membNm"       	id="membNm"       value="" />
+                			<input type="hidden" name="ceoNm"        	id="ceoNm"        value="" />
+							<input type="hidden" name="commRate"     	id="commRate"	  value="" />
+			                <input type="hidden" name="orgRate"      	id="orgRate"      value="" />
+			                <input type="hidden" name="initGuarSeq"		id="initGuarSeq"  value="" />
+			                <!--<input type="hidden" name="guarIssueCd" 	id="guarIssueCd"  value="" />-->
+			                <input type="hidden" name="contrAmt" 		id="contrAmt"	  value="" />
+			                <input type="hidden" name="guarRate" 		id="guarRate"	  value="" />
+
+			                <input type="hidden" name="finalGrade"   	id="finalGrade"	  value="" />
+			                <input type="hidden" 						id="mortCnt"	  value="" />	<!-- 담보갯수 -->
+               				<input type="hidden" name="exemLimitAmt" 	id="exemLimitAmt" value="" />	<!-- 출자면제보증한도 - 요율조회할때 가져옴 fnSelectRateNoCalcCallBack  -->
+
+							<input type="hidden" name="initDocNo"  		id="initDocNo"    value="" />
+							<input type="hidden" name="initReqDt"  		id="initReqDt"    value="" />	<!-- 최초 신청일 -->
+               				<input type="hidden" name="guarStat"		id="guarStat" 	  value=""/> 	<!-- 보증상태 : GR02 -->
+							<input type="hidden" name="guarClassCd"		id="guarClassCd"  value=""/> 	<!-- 신청유형 : GR03 -->
+							<input type="hidden" name="guarReqCd"		id="guarReqCd" 	  value=""/> 	<!-- 신청유형 : GR04 -->
+							<input type="hidden" name="reqType" 		id="reqType"/> 					<!-- 신청유형 -->
+							<input type="hidden" name="reqSeq"  		id="reqSeq"/> 					<!-- 신청순번 -->
+							<input type="hidden" name="signedGuarCont"	id="signedGuarCont"	/>			<!-- 전자서명 -->
+
+							<input type="hidden" name="befGuarNo"  		id="befGuarNo"	  value="" />
+							<input type="hidden" name="commAmt"  		id="commAmt"	  value="" />
+							<input type="hidden" name="commCalc"  		id="commCalc"/> 				<!-- 보증료 산식 -->
+							<input type="hidden" name="calcCommAmt"  	id="calcCommAmt"/> 				<!-- 계산 보증료 -->
+
+						    <input type="hidden" name="chgCnt" 			id="chgCnt" />		<!-- 변경차수 -->
+						    <input type="hidden" name="guarClassCont"  	id="guarClassCont"/> 	<!-- 보증문구 -->
+
+							<!-- 기재변경은 수정 불가능 => 20231211, 수정가능하게 변경-->
+						    <input type="hidden" name="g2bYn"			id="g2bYn" />				<!-- 조회여부 -->
+							<input type="hidden" name="checkedPublicNo"	id="checkedPublicNo" />	<!-- 적용눌러서 확인된 계약번호 -->
+
+	                        <section id="content" class="content">
+	                            <!-- 여기서부터 content -->
+	                            <div>
+									<!-- 조합원 및 약정정보 -->
+	                                <article>
+										<th:block th:include="guar/comGuarMemb :: type(search)"></th:block>
+	                                </article>
+
+	                                <article>
+	                                    <p class="title-dept1">보증서 신청정보</p>
+	                                    <div class="table-wrap info">
+	                                        <div class="table-scroll">
+	                                            <table summary="보증서 신청정보">
+	                                                <colgroup>
+	                                                    <col width="13%">
+								                        <col width="39%">
+								                        <col width="13%">
+								                        <col width="35%">
+	                                                </colgroup>
+	                                                <tbody>
+	                                                    <tr>
+	                                                        <th>신청유형</th>
+	                                                        <td>재발급</td>
+	                                                        <th>처리상태</th>
+	                                                        <td>신청</td>
+	                                                    </tr>
+	                                                    <!--<tr>
+	                                                        <th>신청방법</th>
+	                                                        <td><span id="ele_guarIssueCdNm"></span></td>
+	                                                        <th>계약번호</th>
+	                                                        <td>
+																<div id="ele_g2bNone">해당사항없음</div>
+																<div id="ele_g2b" style="display:none">
+																	<span id="ele_publicNo"></span>
+																</div>
+															</td>
+	                                                    </tr>-->
+	                                                    <tr>
+	                                                        <th>신청방법</th>
+	                                                        <td><select name="guarIssueCd" id="guarIssueCd" title="발급구분" style="width:120px" onchange="guarCom.fnGuarIssueChg(this.value);"></select></td>
+	                                                        <th>계약번호</th>
+	                                                        <td>
+																<div id="ele_g2bNone">해당사항없음</div>
+																<div id="ele_g2b" style="display:none">
+																	<input type="text" name="publicNo" id="publicNo" maxlength="30" style="width:200px" />
+																	<button type="button" name="btnG2b" id="btnG2b" class="address-btn3" onclick="guarCom.fnG2bSearch()"></button>
+																</div>
+															</td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th><span class="reqMark">*</span>신청자명</th>
+	                                                        <td>
+																<select name="selCp" id="selCp" title="신청자" style="width:150px"></select>
+																<input type="text" name="reqNm" id="reqNm" title="신청자명" style="width:120px" maxlength="20"/>
+															</td>
+	                                                        <th><span class="reqMark">*</span>신청자연락처</th>
+	                                                        <td><input type="text" name="reqTel" id="reqTel" title="신청자연락처" style="width:130px" maxlength="13" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)"/></td>
+	                                                    </tr>
+									                    <tr>
+									                        <th>보증문구</th>
+									                        <td colspan="3">
+									                        	<div id="ele_chgDescType" title="보증문구"></div>
+									                        </td>
+									                    </tr>
+	                                                </tbody>
+	                                            </table>
+	                                        </div>
+	                                    </div>
+	                                </article>
+
+	                                <article>
+										<th:block th:include="guar/comGuarChgDesc"></th:block> <!-- 계약정보 -->
+	                                </article>
+
+	                                <article>
+	                                    <p class="title-dept1">첨부파일</p>
+										<div id="docFile" style="height:140px;"></div>
+	                                </article>
+
+	                                <div class="btn-wrap flex-box jc-end gap-10 m-col">
+	                                    <button type="button" class="sub-btn2 btn-color" onclick="fnSave()">신청</button>
+	                                    <button type="button" class="sub-btn2 btn-white" onclick="fnGoListPage()">목록</button>
+	                                </div>
+	                            </div>
+	                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

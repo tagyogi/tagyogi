@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	
+	<head th:replace="~{/fragments/header :: main-head}"></head>
+	
+	<th:block layout:fragment="script">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			//엔터키 이벤트 처리
+			
+			$(document).ready(function(){
+		    	//세션 존재할 경우
+		   		if([[${session.userId}]] !==  null){
+					common.fnAction("/index/main.do");
+				}
+				
+				//쿠키값 가져오기
+				var cookiesNm = "kocfcId=";
+				var cookieData = document.cookie;
+				var start = cookieData.indexOf(cookiesNm);
+	
+				if(start !== -1){
+					start += cookiesNm.length;
+					end = cookieData.indexOf(";", start);
+					if(end == -1) end = cookieData.length;
+					$("#userId").val(cookieData.substring(start, end));
+					$("#saveId").attr("checked", true);
+				}
+	
+		    });
+		    
+		    //로그인 처리
+		    function fnLogin(){
+				if($("#userId").val() == ""){
+					alert("아이디를 입력 하십시오.");
+					$("#userId").focus();
+					return;
+				}   
+				if($("#userPw").val() == ""){
+					alert("비밀번호를 입력 하십시오.");
+					$("#userId").focus();
+					return;
+				}
+				
+				param = {userId: $("#userId").val(), userPw : $("#userPw").val()};
+				common.fnAjaxDef("/login/loginProc.do", param, fnLoginCallBack, "N");
+			}
+		    
+		    //로그인 처리 콜백 
+		    function fnLoginCallBack(resData){
+				alert(resData.resultMsg);
+				if(resData.resultCode == 0){
+					//아이디 쿠기 저장 
+					if($("#saveId").is(":checked")){
+						var expire = new Date();
+						expire.setDate(expire.getDate()+7);
+						
+						cookies = "kocfcId="+$("#userId").val()+"; path=/";
+						cookies += ";expires="+expire.toGMTString() + ";";
+						
+						document.cookie = cookies;
+					};
+			    
+		    		//메인 페이지 이동
+					common.fnAction("/index/main.do");
+				}
+			}
+			
+			 /*]]>*/
+		</script>
+	</th:block>
+	<form name="frm" id="frm" method="post" onsubmit="return false;">
+	<th:block layout:fragment="content">
+		<div class="loginBody">
+	        <!-- Login wrapper -->
+	        <div class="login-wrapper">
+                <!--로그인박스 header-->
+                <div class="login-header">
+                    <a href="#" class="loginLogo">콘텐츠공제 관리시스템</a>
+                </div>
+
+                <!--로그인박스 본문-->
+                <ul class="loginBox">
+                    <li class="left">
+                        <p>
+                            <small>콘텐츠공제조합</small>
+                            <span><b>콘텐츠공제 관리시스템</b>에</span>
+                            오신 것을 환영합니다.
+                        </p>
+                        <div class="copyright">
+                            <img src="../images/icon-login.png" alt="copyright">
+                            <p>Copyright (c) KOCFC. All Rights Reserved.</p>
+                        </div>
+                    </li>
+                    <li class="right">
+                        <div class="">
+                            <p class="loginTitle">담당자 로그인</p>
+                            <span class="info">아이디와 비밀번호를 입력해주세요</span>
+                            <input type="text" name="userId" id="userId" placeholder="아이디" />
+                            <input type="password" name="userPw" id="userPw" title="비밀번호" placeholder="비밀번호" />
+
+                            <div class="save">
+                                <label class="checkbox">
+                                    <input type="checkbox" name="saveId" id="saveId"><span class="text">아이디저장</span>
+                                </label>
+                            </div>
+
+                            <div class="loginBtn">
+                                <button type="submit" onclick="fnLogin()">로그인</button>
+                            </div>
+
+                        </div>
+                    </li>
+                </ul>
+	
+	        </div>
+	    </div>
+	</th:block>
+	</form>
+</html>

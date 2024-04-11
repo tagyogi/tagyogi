@@ -1,0 +1,405 @@
+<!--
+	파일정보 : lend/lendInterList.html
+	파일명 : lendInter현황
+	업무명 : 대출이자 현황
+	생성자 : 김대성
+	생성일 : 2023-05-03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "LD01:LD04:CM01:CM02", gridNoList : "40301:40305:40306:40307"}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//초기화
+				var getEnum = com.fnBankIbSelectBox(); //조합은행 정보
+				
+				$("#btn_lendDt").click(function(){ com.fnDateCalVisible($("#ele_lendDt")); }); //달력버튼처리
+				$("#sLendStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //
+
+
+				//코드값 처리
+				com.fnCodeSelectBox("LD01", "sLendType", 2, "", "1"); //전체
+				com.fnCodeSelectBox("LD04", "sLendStat", 2, "", "1"); //선택
+				com.fnCodeCheckBox("LD04", "ele_lendStat", "sLendStats", false, "all", "1"); //대출상태
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				gridOptList[1].Cfg.CanEdit = 0;
+
+				//그리드 옵션추가 (납입목록)
+				gridOptList[2].Cfg.CanEdit = 1; //이자납입현항 수정 가능
+				$.each(gridOptList[2].Cols, function(idx, item){
+					let name =  item.Name;
+					/*
+					if(name === "SEQ" || name === "payAcct" ) return;
+					if(name === "delChk"){
+						item.Visible = 1;
+					}else{
+						item.CanEdit = 1;	//수정가능하게
+					}
+					*/
+					//입출금계좌 (조합원계좌)
+					var getEnum = com.fnBankIbSelectBox();
+					if(name === "payBankVal"){ 
+						item.Enum = getEnum.enumNm;
+						item.EnumKeys = getEnum.enumKeys;
+						item.OnChange = fnCtrlbankAcct;//계좌세팅
+					}
+				});
+				
+				//납입상세
+				gridOptList[3].Cfg.CanEdit = 1; //이자납입현항 수정 가능
+				$.each(gridOptList[3].Cols, function(idx, item){
+					let name =  item.Name;
+					/*
+					if(name === "SEQ" || name === "payAcct" ) return;
+					if(name === "delChk"){
+						item.Visible = 1;
+					}else{
+						item.CanEdit = 1;	//수정가능하게
+					}
+					*/
+				});
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetInter", el: "sheetDivInter", options: gridOptList[1] }); //이자현황
+			    IBSheet.create({ id: "sheetInPay", el: "sheetDivInPay", options: gridOptList[2] }); //납입목록
+			    IBSheet.create({ id: "sheetInHit", el: "sheetDivInHit", options: gridOptList[3] }); //납입상세
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					sheetInter.removeAll();//마스터 값이 없을 경우
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+				//	console.log(rowData);
+					$("#lendNo").val(rowData.lendNo);
+					$("#membNo").val(rowData.membNo);
+					$("#paySeq").val("");
+					
+					fnSearchInter();
+
+				});
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+					
+					fnView("V");
+					
+				});
+
+				//sheetDiv 원클릭 처리
+				sheetInPay.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					
+					if(obj.col === "delChk") com.fnIbsStatusChg(sheetInPay, "D");
+					
+					sheetInHit.removeAll();
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					
+			//		alert(rowData.paySeq);
+			//		console.log(rowData);
+					$("#lendNo").val(rowData.lendNo);
+					$("#paySeq").val(rowData.paySeq);
+
+					if(obj.col !==""){
+						fnSearchHit();
+					}
+				});
+			});
+	
+			//입출금은행,계좌 (조합원계좌) sheetInPay
+			var fnCtrlbankAcct = function(evtParam){
+				var rowId = evtParam.row.id;
+				//var rowIdx = evtParam.sheet.getRowIndex(rowId);
+				var payBank = sheetInPay.getValue(sheetInPay.getRowById(rowId), "payBankVal");
+				var bankCd  = payBank.split(",")[0];
+				var bankNm  = payBank.split(",")[1];
+				
+				sheetInPay.setValue(sheetInPay.getRowById(rowId), "payBank", bankCd);
+				sheetInPay.setValue(sheetInPay.getRowById(rowId), "payAcct", bankNm);
+				
+			}
+			
+			
+			//이자현황 조회 (대상 LD_INTER_PAY, LD_INTER_HIST, LD_INTER)
+			var fnSearchInter = function(){
+			//	alert(rowData.lendNo);
+			//	console.log(rowData);
+
+			    var param = {sMembNo : $("#membNo").val(), lendNo : $("#lendNo").val(), paySeq : $("#paySeq").val()};
+				obj = {url:"/lendInter/selectLendInterDtlList.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+				
+				//시트값 설정
+				sheetInter.loadSearchData(resData.data);
+				sheetInPay.loadSearchData(resData.pay);
+				sheetInHit.loadSearchData(resData.hist);
+
+			};
+
+			//납입상세내역 조회
+			var fnSearchHit = function(){
+			
+				var param = {paySeq : $("#paySeq").val(), lendNo : $("#lendNo").val()};
+				com.fnIbsSearch("/lendInter/selectLendInterHistList.do", param, sheetInHit); //param, sheetId 생략 가능
+			};
+
+			//화면 호출(등록, 상세)
+			var fnView = function(type){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+			//	console.log(rowData);
+
+				if(type === "P" || type === "V"){
+				if(rowData === null) {
+					alert("선택된 내역이 없습니다.");
+					return;
+					}
+				}
+
+				if(type === "P") menuCd = "1040308"; //lend/lendInterPayIns 이자납입
+				if(type === "V") menuCd = "1040207";
+				
+				param = {menuCd:menuCd, paramMap:{
+												lendType:rowData.lendType, lendNo:rowData.lendNo,  atthType:/*[[${menuInfo.atthType}]]*/ 
+												}
+						 };
+				parent.menuOpen(param);
+			};
+
+			var fnSearch = function(){
+				//상세정보 조회
+				sheetInPay.removeAll();
+				sheetInter.removeAll();
+				sheetInHit.removeAll();
+
+				$("#lendNo").val("");
+				$("#membNo").val("");
+				$("#paySeq").val("");
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/lend/selectLendList.do", param); //param, sheetId 생략 가능
+
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				$("#sLendStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //
+
+				sheet.removeAll();
+				sheetInPay.removeAll();
+				sheetInter.removeAll();
+				sheetInHit.removeAll();
+
+				fnSearch();
+			};
+
+
+			//대출상태 선택
+			var fnSerchChk = function(val){
+				var chkYn;
+				if(val === "sLendStats"){
+					chkYn = $("#sLendStatAll").is(":checked");
+				}
+
+				if(chkYn){
+					$("input[name='"+val+"']").each(function(idx) {
+						$(this).prop("checked", true);
+					});
+				}else{
+					$("input[name='"+val+"']").each(function(idx) {
+						$(this).prop("checked", false);
+					});
+				}
+			}
+
+			//전체선택 해제 처리
+			var fnSerchChkAll = function(val){
+
+				var chkYn = true;
+				$("input[name='"+val+"']").each(function(idx) {
+					if(!$(this).is(":checked") && $(this).val() !== ""){
+						chkYn = false;
+						return;
+					}
+				});
+
+				if(val === "sLendStats"){
+					$("#sLendStatAll").prop("checked", chkYn);
+				}
+			}
+			
+			//납입정보 수정
+			var fnPaySave = function(){
+				if(confirm("삭제 대상은 납부상세 정보도 함께 삭제 됩니다. 수정 하시겠습니까?")){
+					var param = $("#serchFrm").serializeObject();
+					param.interPay = sheetInPay.getSaveJson(); //납입정보
+					
+					obj = {url:"/lendInter/updateLendInterPayProc.do", callBack:fnPaySaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+					com.fnAjaxMulti(obj);
+				}
+			}
+			
+			//저장콜백
+			var fnPaySaveCallBack = function(resData){
+				fnSearchInter();
+			};
+			
+			//납입상세정보 수정
+			var fnPayDtlSave = function(){
+				if(confirm("수정 하시겠습니까?")){
+					var param = $("#serchFrm").serializeObject();
+					param.interPayDtl = sheetInHit.getSaveJson(); //납입정보
+					
+					obj = {url:"/lendInter/updateLendInterDtlProc.do", callBack:fnPayDtlSaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+					com.fnAjaxMulti(obj);
+				}
+			}
+			
+			//저장콜백
+			var fnPayDtlSaveCallBack = function(resData){
+				let reLoadFrm = window.frames.name;
+				top.document[reLoadFrm].location.reload();
+			};
+			
+
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<div class="collapseCtrl">
+					<button type="type" class="btn-collapse down"><span></span></button>
+					<button type="type" class="reLoadFrm"></button>
+				</div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="lendNo" id="lendNo" value=""/>
+				<input type="hidden" name="membNo" id="membNo" value=""/>
+				<input type="hidden" name="paySeq" id="paySeq" value=""/>
+				<input type="hidden" name="sLendStats" value=""/> <!-- 장르 하나선택될 경우 배열 오류 처리 -->
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>대출상태</dt>
+							<dd style="width:340px;">
+								<input type="checkbox" name="sLendStatAll" id="sLendStatAll" onclick="fnSerchChk('sLendStats')" checked/>&nbsp;전체&nbsp;&nbsp;
+								<span id="ele_lendStat" title="대출상태" onClick="fnSerchChkAll('sLendStats');"></span>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+					<div class="row">
+						<dl>
+							<dt>대출일자</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sLendStaDt" id="sLendStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sLendStaDt', 'yyyy-mm-dd','sLendEndDt', 1)" />
+	                        	<input type="search" name="sLendEndDt" id="sLendEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sLendStaDt','sLendEndDt','T');" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sLendEndDt', 'yyyy-mm-dd', 'sLendStaDt', 2)" />
+	                        	
+							</dd>
+							<dt>대출종류</dt>
+							<dd style="width:200px;">
+								<select name="sLendType" id="sLendType" style="width:150px;"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt10 collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width: 55%">
+						<!-- 그리드 상단 부분 -->
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="">
+							<section class="area">
+								<h4 class="title fl">대출현황</h4>
+								<div class="fr">
+									<button type="button" onclick="javascript:fnView('P');" class="btn small style08">이자납입</button>
+									<button type="button" onclick="javascript:fnView('V');" class="btn small style08">상세</button>
+									<button type="button" onclick="javascript:fnExcel();" class="btn small style04">엑셀</button>
+								</div>
+							</section>
+							<div class="mt5">
+					    		<div id="sheetDiv" style="width:100%;height:300px"></div>
+					    	</div>
+					    	<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">이자현황</h4>
+								</div>
+							</section>
+							<div id="sheetDivInter" style="width:100%;height:342px"></div>
+							</div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox fixable" style="width: 44%">
+					    <div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">납입목록</h4>
+								</div>
+								<div class="fr">
+									<!--
+									<button type="button" onclick="javascript:fnPaySave();" class="btn small style03">수정</button>
+									-->
+								</div>
+							</section>
+							<div id="sheetDivInPay" style="width:100%;height:300px"></div>
+						</div>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">납입상세목록</h4>
+								</div>
+								<div class="fr">
+									<!--
+									<button type="button" onclick="javascript:fnPayDtlSave();" class="btn small style03">수정</button>
+									-->
+								</div>
+							</section>
+							<div id="sheetDivInHit" style="width:100%;height:342px"></div>
+						</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

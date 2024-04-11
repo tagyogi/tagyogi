@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-definition>
+	<service>admin</service>
+	<active>dev</active>
+    <domain>http://adm.dyis.co.kr/</domain>
+    <domainHome>http://175.125.91.224/</domainHome>
+    
+   	<file>
+       	<path>/home/kocfc/upload</path>
+       	<imgPath>/home/kocfc/upload/IMG</imgPath>
+       	<rptPath>/home/kocfc/app/oz80/WEB-INF/repository_files</rptPath>
+   	</file>
+   	
+   	<g2b>
+		<id>z105822157200</id>   
+       	<path>/home/kocfc/stdcli/</path>
+       	<pathRecv>/home/kocfc/stdcli/g2bAPI/fileRep/receive/</pathRecv>
+   	</g2b>
+   	
+   	<mgwr>
+		<path>/home/megaware/ESB/</path>
+       	<pathSend>/home/megaware/ESB/send/</pathSend>
+       	<pathRecv>/home/megaware/ESB/recv/</pathRecv>
+   	</mgwr>
+	
+	<bankPay>
+		<url>https://pgtest.bankpay.or.kr:7743/StartBankPay.do</url>      
+		<appNo>12001347</appNo>    
+       	<orgNm>한국콘텐츠공제조합</orgNm>
+   	</bankPay>
+   	
+   	<iniPay>
+		<url>https://stgstdpay.inicis.com/stdjs/INIStdPay.js</url>
+		<mid>INIpayTest</mid>    
+       	<signKey>SU5JTElURV9UUklQTEVERVNfS0VZU1RS</signKey>
+   	</iniPay>
+   	
+    <database>
+        <oralce>oralce</oralce>
+    </database>
+    
+    <kakao>
+        <key>f8c54040490f492c4606dffd3ff3f4eddaa52a5b</key>
+    </kakao>
+
+</application-definition>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.service.repository.LogProcMapper"> 
+
+	<!-- logProc 정보 조회 --> 
+	<select id="selectLogProcList" parameterType="Map" resultType="camelMap"> 
+		/* LogProcMapper.selectLogProcList */ 
+		SELECT 
+			USER_ID 
+			, PROC_DTM 
+			, PROC_MTH 
+			, PROC_VAL 
+			, CONN_REF 
+			, CONN_IP 
+		  FROM CM_LOG_PROC 
+		<where> 
+		</where> 
+		ORDER BY 
+	</select> 
+
+	<!-- logProc 상세 조회 --> 
+	<select id="selectLogProc" parameterType="Map" resultType="camelMap"> 
+		/* LogProcMapper.selectLogProc*/ 
+		SELECT 
+			USER_ID 
+			, PROC_DTM 
+			, PROC_MTH 
+			, PROC_VAL 
+			, CONN_REF 
+			, CONN_IP 
+		  FROM CM_LOG_PROC 
+		<where> 
+		</where> 
+	</select> 
+
+	<!-- logProc 등록 처리 --> 
+	<insert id="insertLogProc" parameterType="Map"  > 
+		/* LogProcMapper.insertLogProc */ 
+		INSERT INTO CM_LOG_PROC ( 
+			USER_ID 
+			, PROC_DTM 
+			, PROC_MTH 
+			, PROC_VAL 
+			, CONN_REF 
+			, CONN_IP 
+		) VALUES ( 
+			#{userId} 
+			, SYSDATE 
+			, #{procMth} 
+			, #{procVal} 
+			, #{connRef} 
+			, #{connIp} 
+		) 
+	</insert> 
+
+
+</mapper>

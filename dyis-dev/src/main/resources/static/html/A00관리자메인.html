@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="Keywords" content="한국콘텐츠공제조합">
+    <meta name="title" content="한국콘텐츠공제조합">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>한국콘텐츠공제조합</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+    header .mdiTabArea {padding-left: 0;}
+    header .mdiTabArea a.tab {margin-left:0;}
+    header .mdiTabArea a.tab.home {position: relative;z-index:1;}
+    header .mdiTabArea {padding-right: 380px;}
+    </style>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/jquery-ui-1.10.3.js"></script>
+    
+    <script type="text/javascript">
+    $(document).ready(function(){
+    	$("#subArea").hide();
+    	
+    	$(".prev").hide();
+        $(".next").hide();
+        
+        
+    	//lnb 화면확인용 스크립트
+        //대메뉴 클릭
+        /* $('.lnbArea .lnb dt').click(function() {
+            $(this).parents('.lnb').toggleClass('active');
+        }); */
+        gnbMenuSelect(1);
+        
+        //중메뉴 클릭시 
+        $('.lnbArea .lnb dd > a').click(function() {
+            var dep2 = $(this).parents('.lnb dd');
+
+            if ($(dep2).hasClass('has')) { //3depth있는 메뉴시
+                $(dep2).toggleClass('active');
+            } else { //3depth 없는 메뉴시
+                $('.lnbArea .lnb dd a').removeClass('active');
+                $(this).toggleClass('active');
+                
+                menuOpen($(this));
+            }
+        });
+
+        //3depth 클릭시
+        $('.lnbArea .lnb .dep3 a').click(function() {
+            $('.lnbArea .lnb dd a').removeClass('active');
+            $(this).toggleClass('active');
+            
+            menuOpen($(this));
+        });
+
+        //오른쪽사이드바컨트롤
+        $('#sideBarBtn').click(function(){
+            $('.container .contentWrapper').toggleClass('active');
+            $('#rightSidebar').toggleClass('active');
+            ($('#sideBarBtn').text() == '펼치기') ? $('#sideBarBtn').text('닫기') : $('#sideBarBtn').text('펼치기');
+        });
+        $('#sideBarBtn').trigger("click");
+
+    });
+    
+    
+    $(window).resize(function() {
+    	setMoveBtn();
+    });
+
+    /*
+    * lnb컨트롤
+    */
+    function showHideLnb(){
+        $('.container').toggleClass('active');
+    }
+    
+
+    /*
+     * gnb  대메뉴관련 함수
+     */
+     function gnbMenuSelect(gnbCode){
+    	var $gnbMenu = $("#T_" + gnbCode);
+    	
+    	$('.topMenu').removeClass('active');
+    	$('#L_' + gnbCode).addClass('active');
+    	
+    	$gnbMenu.siblings().removeClass('active');
+    	$gnbMenu.addClass('active');
+    	//$gnbMenu.show();
+    }
+   
+    
+    /*
+     * MDI 메뉴관련 함수
+     */
+    var menuIdx = 0;
+    var menuArr = new Array();
+    menuArr.push(0);
+    
+    function menuOpen(obj) {
+    	var menuNm = obj.html();
+        var url = obj.attr("href");
+        var title = obj.attr("title");
+        
+        menuIdx++;
+        menuArr.push(menuIdx);
+        
+        var tag = '<a href="javascript:menuSelect(\'' + menuIdx + '\');" class="tab" id="tab' + menuIdx + '" title="' + title + '">' + menuNm + '<span class="close" onclick="closeMenu(\'' + menuIdx + '\'); return false;"></span></a>';
+    	$(".move-tabs").append(tag);
+        
+        var html = '<iframe id="sub' + menuIdx + '" class="ifrms" src="' + url + '" width="100%" style="display:block; height: 84vh; border: 0;"></iframe>';
+        $("#subArea").append(html);
+        
+        setMoveBtn();
+        
+        menuSelect(menuIdx);
+    }
+    
+    function tabOpen(menuNm, title, url) {
+        menuIdx++;
+        menuArr.push(menuIdx);
+        
+        var tag = '<a href="javascript:menuSelect(\'' + menuIdx + '\');" class="tab" id="tab' + menuIdx + '" title="' + title + '">' + menuNm + '<span class="close" onclick="closeMenu(\'' + menuIdx + '\'); return false;"></span></a>';
+    	$(".move-tabs").append(tag);
+        
+        var html = '<iframe id="sub' + menuIdx + '" name="sub' + menuIdx + '" class="ifrms" src="' + url + '" width="100%" style="display:block; height: 84vh; border: 0;"></iframe>';
+        $("#subArea").append(html);
+        
+        setMoveBtn();
+        
+        menuSelect(menuIdx);
+    }
+    
+    var curMenuIdx;
+    function menuSelect(menuIdx) {
+    	$("#homeArea").hide();
+    	$(".ifrms").hide();
+        $("#sub" + menuIdx).show();
+        
+        $(".tab").removeClass("active");
+        $("#tab" + menuIdx).addClass("active");
+        
+        if(menuIdx == 0) {
+        	$("#subArea").hide();
+        	$(".mainArea").show();
+        } else {
+        	$("#subArea").show();
+        	$(".mainArea").hide();
+        }
+        
+        if(menuIdx > 0) {
+        	var title = $("#tab" + menuIdx).attr("title");
+            var navis = title.split("|");
+            
+            var tag = '<dt><a></a></dt>';
+            var i;
+            for(i = 0; i < navis.length; i++) {
+            	if(navis[i]) tag += '<dd>' + navis[i] + '</dd>';
+            	else break;
+            }
+            
+            // $("#menuTitle").html(navis[i - 1]);
+            // tag += '<a href="javascript:refreshPage(\'' + menuIdx + '\');"><img src="/admin/images/btn_WF_iconReset_D.png" class="pdl10" /></a>';
+            // $(".pageNav").html(tag);
+            
+            curMenuIdx = menuIdx;
+        } else {
+        	$("#homeArea").show();
+        }
+    }
+    
+    function closeMenu(menuIdx) {
+    	var ml = Number($(".mList").css("margin-left").replace("px", "")) + $("#tab" + menuIdx).width();
+    	if(ml > 0) ml = 0;
+    	$(".mList").css("margin-left", ml + "px");
+    	
+        $("#tab" + menuIdx).remove();
+        $("#sub" + menuIdx).remove();
+        
+        for(var i = 0; i < menuArr.length; i++) {
+            if(menuIdx == menuArr[i]) {
+                menuArr.splice(i, 1);
+            }
+        }
+        
+        for(var i = menuArr.length - 1; i >= 0 ; i--) {
+        	if(menuArr[i] < menuIdx) {
+                menuSelect(menuArr[i]);
+                break;
+            }
+        }
+        
+        setMoveBtn();
+    }
+    
+    function allMenuClose() {
+    	if(!confirm("정말로 모든 메뉴를 닫으시겠습니까?")) return;
+    	
+        for(var i = menuArr.length - 1; i > 0 ; i--) {
+            closeMenu(menuArr[i]);
+        }
+    }
+    
+    function setMoveBtn() {
+    	if($(window).width() - 681 <= $(".mList").width()) {
+    		$(".prev").show();
+            $(".next").show();
+    	} else {
+    		$(".prev").hide();
+            $(".next").hide();
+    	}
+    }
+    
+    var moveUnit = 120;
+    function movePrev() {
+    	var ml = Number($(".mList").css("margin-left").replace("px", "")) + moveUnit;
+    	if(ml > 0) ml = 0;
+    	$(".mList").css("margin-left", ml + "px");
+    }
+    
+    function moveNext() {
+    	var ml = Number($(".mList").css("margin-left").replace("px", "")) - moveUnit;
+    	$(".mList").css("margin-left", ml + "px");
+    	$(".mList").css("margin-left", ($(window).width() - 681 - $(".mList").width()) + "px");
+    }
+    
+    function refreshPage(menuIdx) {
+    	$("#sub" + menuIdx).attr("src", $("#sub" + menuIdx).attr("src"));
+    }
+    
+    function logout() {
+    	location.href = "../admin/logoutProc.do";
+    }
+    </script>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <h1>건축사등록원 관리시스템</h1>
+            <div class="mainTabArea">
+                <ul>
+                    <li id="L_1" class="topMenu active"><a href="#;" onclick="gnbMenuSelect('1'); return false;" title="조합원업무">조합원업무</a></li>
+                    <li id="L_2" class="topMenu "><a href="#;" onclick="gnbMenuSelect('2'); return false;" title="출자업무">출자업무</a></li>
+                    <li id="L_3" class="topMenu "><a href="#;" onclick="gnbMenuSelect('3'); return false;" title="보증업무">보증업무</a></li>
+                    <li id="L_4" class="topMenu "><a href="#;" onclick="gnbMenuSelect('4'); return false;" title="융자업무">융자업무</a></li>
+					<li id="L_5" class="topMenu "><a href="#;" onclick="gnbMenuSelect('5'); return false;" title="보상/구상">보상/구상</a></li>
+					<li id="L_6" class="topMenu "><a href="#;" onclick="gnbMenuSelect('6'); return false;" title="경영지원">경영지원</a></li>
+                    <li id="L_7" class="topMenu "><a href="#;" onclick="gnbMenuSelect('7'); return false;" title="공제환경관리">공제환경관리</a></li>
+                    <li id="L_8" class="topMenu "><a href="#;" onclick="gnbMenuSelect('8'); return false;" title="시스템관리">시스템관리</a></li>
+                </ul>
+            	<!-- <ul>
+            		<c:forEach var="topMenu" items="${menuList}">
+            		<c:if test="${topMenu.HRK_MNU_ID eq '0' && topMenu.IDCT_YN eq 'Y' && topMenu.MN_URL_YN ne 'N'}">
+	                    <c:choose>
+	                        <c:when test="${empty topMenu.MNU_URL_VAL}">
+	                            <c:set var="href" value="#;" />
+	                        </c:when>
+	                        <c:otherwise>
+	                            <c:set var="href" value="${topMenu.MNU_URL_VAL}" />
+	                        </c:otherwise>
+	                    </c:choose>
+	                    <li id="L_${topMenu.MNU_ID}" class="topMenu"><a onclick="gnbMenuSelect('${topMenu.MNU_ID}'); return false;" title="${topMenu.MNU_NM}">${topMenu.MNU_NM}</a></li>
+	                </c:if>
+	            	</c:forEach>
+            	</ul> -->
+            </div>
+            
+            <div class="rightArea">
+                
+                <div class="userInfo">
+                    <p>관리자님<span>(홍길동)</span></p>
+                    <a href="javascript:logout();" class="btn logout">로그아웃</a>
+                </div>
+            </div>
+        </header><!-- //header -->
+
+        <div class="container">
+            <div class="lnbArea">
+                <dl id="T_1" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>조합원업무</dt>
+                    <dd class="has">
+                        <a href="#" class="">퍼블리싱가이드</a>
+                        <ul class="dep3">
+                            <li><a href="./A01목록조회.html" onclick="return false;" title="">조회화면</a></li>
+                            <li><a href="./A02상세조회.html" onclick="return false;" title="">상세화면</a></li>
+                            <li><a href="./A03레이아웃.html" onclick="return false;" title="">레이아웃</a></li>
+                            <li><a href="./A04html팝업.html" onclick="return false;" title="">html팝업</a></li>
+                            <li><a href="./A05다이얼로그팝업.html" onclick="return false;" title="">다이얼로그팝업</a></li>
+                        </ul>
+                    </dd>
+                    <dd class="has">
+                        <a href="#" class="">공제가입관리</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">공제가입상담</a></li>
+                            <li><a href="#;" onclick="return false;" title="">공제가입등록</a></li>
+                        </ul>
+                    </dd>
+                    <dd class="has">
+                        <a href="#" class="">조합원관리</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">조합원관리</a></li>
+                            <li><a href="#;" onclick="return false;" title="">기재변경관리</a></li>
+                            <li><a href="#;" onclick="return false;" title="">조합원협황</a></li>
+                            <li><a href="#;" onclick="return false;" title="">업무거래현황</a></li>
+                            <li><a href="#;" onclick="return false;" title="">업무정지현황</a></li>
+                            <li><a href="#;" onclick="return false;" title="">가압류현호아</a></li>
+                            <li><a href="#;" onclick="return false;" title="">라벨지출력</a></li>
+                            <li><a href="#;" onclick="return false;" title="">조합원별요율관리</a></li>
+                            <li><a href="#;" onclick="return false;" title="">조합원별융자이율관리</a></li>
+                            <li><a href="#;" onclick="return false;" title="">조합원계좌관리</a></li>
+                        </ul>
+                    </dd>
+                </dl>
+                <dl id="T_2" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>출자업무</dt>
+                    <dd class="" style="display:none;">
+                        <a href="#;" onclick="return false;" title="">하위메뉴1</a>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                    <dd class="has">
+                        <!--3depth 까지있는 영역은 has class 추가-->
+                        <a href="#" class="">하위메뉴3</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                        </ul>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                </dl>
+                <dl id="T_3" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>보증업무</dt>
+                    <dd class="" style="display:none;">
+                        <a href="#;" onclick="return false;" title="">하위메뉴1</a>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                    <dd class="has">
+                        <!--3depth 까지있는 영역은 has class 추가-->
+                        <a href="#" class="">하위메뉴3</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                        </ul>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                </dl>
+                <dl id="T_4" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>융자업무</dt>
+                    <dd class="" style="display:none;">
+                        <a href="#;" onclick="return false;" title="">하위메뉴1</a>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                    <dd class="has">
+                        <!--3depth 까지있는 영역은 has class 추가-->
+                        <a href="#" class="">하위메뉴3</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                        </ul>
+                    </dd>
+                </dl>
+                <dl id="T_5" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>보상/구상</dt>
+                    <dd class="" style="display:none;">
+                        <a href="#;" onclick="return false;" title="">하위메뉴1</a>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                    <dd class="has">
+                        <!--3depth 까지있는 영역은 has class 추가-->
+                        <a href="#" class="">하위메뉴3</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                        </ul>
+                    </dd>
+                </dl>
+                <dl id="T_6" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>경영지원</dt>
+                    <dd class="" style="display:none;">
+                        <a href="#;" onclick="return false;" title="">하위메뉴1</a>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                    <dd class="has">
+                        <!--3depth 까지있는 영역은 has class 추가-->
+                        <a href="#" class="">하위메뉴3</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                        </ul>
+                    </dd>
+                </dl>
+                <dl id="T_7" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>공제환경관리</dt>
+                    <dd class="" style="display:none;">
+                        <a href="#;" onclick="return false;" title="">하위메뉴1</a>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                    <dd class="has">
+                        <!--3depth 까지있는 영역은 has class 추가-->
+                        <a href="#" class="">하위메뉴3</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                        </ul>
+                    </dd>
+                </dl>
+                <dl id="T_8" class="lnb">
+                    <!-- 페이지 로드 할때 현재 페이지 active -->
+                    <dt>시스템관리</dt>
+                    <dd class="" style="display:none;">
+                        <a href="#;" onclick="return false;" title="">하위메뉴1</a>
+                    </dd>
+                    <dd>
+                        <a id="test" href="#;" onclick="return false;" title="하위메뉴2">하위메뉴2</a>
+                    </dd>
+                    <dd class="has">
+                        <!--3depth 까지있는 영역은 has class 추가-->
+                        <a href="#" class="">하위메뉴3</a>
+                        <ul class="dep3">
+                            <li><a href="#;" onclick="return false;" title="">서브메뉴</a></li>
+                        </ul>
+                    </dd>
+                </dl>
+                <!-- 프로그램으로 메뉴개발할 부분 -->
+                <!-- <c:forEach items="${menuList}" var="menu1">
+                <c:if test="${menu1.IDCT_YN eq 'Y'}">
+                <dl id="T_${menu1.MNU_ID}" class="lnb">
+                	<dt>${menu1.MNU_NM}</dt>
+                	<c:forEach items="${menuList}" var="menu2">
+                    <c:if test="${menu2.HRK_MNU_ID eq menu1.MNU_ID && menu2.IDCT_YN eq 'Y' && (menu2.MN_URL_YN eq 'Y' || empty menu2.MN_URL_YN )}">
+                	<dd <c:if test="${menu2.LRK_YN > 0}">class="has"</c:if>>
+                	    <a href="${menu2.MNU_URL_VAL}" onclick="return false;" title="${menu2.MNU_NM}">${menu2.MNU_NM}</a>
+                	    
+                	    <c:if test="${menu2.LRK_YN > 0}">
+                	    <ul class="dep3">
+                            <c:forEach items="${menuList}" var="menu3">
+                            <c:if test="${menu3.HRK_MNU_ID eq menu2.MNU_ID && menu3.IDCT_YN eq 'Y' && (menu3.MN_URL_YN eq 'Y' || empty menu3.MN_URL_YN )}">
+                            <li><a href="${menu3.MNU_URL_VAL}" onclick="return false;" title="${menu3.MNU_NM}">${menu3.MNU_NM}</a></li>
+                            </c:if>
+                            </c:forEach>
+                        </ul>
+                        </c:if>
+                	
+                	</c:if>
+                	</c:forEach>
+                </dl>
+                </c:if>
+                </c:forEach> -->
+                
+            </div><!-- //lnbArea -->
+            
+            <!-- 선택탭메뉴 시작 -->
+           	<div id="selTabArea">
+           		<div class="mdiTabArea">
+	                <a href="javascript:showHideLnb();" class="collapse tab">lnb닫기</a>
+                    <a href="javascript:menuSelect(0);" class="home tab">홈</a>
+	                <div class="mList">
+	                    <!--움직일 탭메뉴 : move-tabs-->
+	                    <div class="move-tabs">
+	                        <!--
+	                        <a href="javascript:;" class="tab active">최초신고 <span class="close"></span></a>
+	                        <a href="javascript:;" class="tab">변경신고<span class="close"></span></a>
+	                        -->
+	                    </div>
+	                </div>
+	            </div><!-- // mdiTabArea -->
+	            <div class="ctrl-btns">
+                    <button type="button" class="prev" onclick="movePrev()">&lt;</button>
+                    <button type="button" class="next" onclick="moveNext()">&gt;</button>
+                    <button type="button" class="allClose" onclick="allMenuClose()">모두닫기 X</button>
+                </div>
+           	</div>
+            
+            <div class="contentWrapper">
+            	
+            	<!-- 콘텐츠 시작 -->
+	            <div class="contentsArea">
+	                
+	                <div id="subArea">
+	                    <div class="contentsTop">
+	                        <h2 id="menuTitle">제목자리</h2>
+                            <ul class="function_menu_area">
+                                <li><button type="button" class="button btnMid gray_gradation">변경등록</button></li>
+                                <li><button type="button" class="button btnMid gray_gradation">기재변경</button></li>
+                                <li><button type="button" class="button btnMid gray_gradation">입력</button></li>
+                                <li><button type="button" class="button btnMid gray_gradation">수정</button></li>
+                                <li><button type="button" class="button btnMid gray_gradation">삭제</button></li>
+                                <li><button type="button" class="button btnMid gray_gradation">상세보기</button></li>
+                            </ul>
+	                        
+                            <ul class="page_menu_area">
+                                <!-- <li><button type="button" class="btn_bookmark">bookmark</button></li> -->
+                                <li><button type="button" class="btn_print">print</button></li>
+                                <li><button type="button" class="btn_excel">excel</button></li>
+                                <li><button type="button" class="btn_refresh">refresh</button></li>
+                                <!-- <li><button type="button" class="btn_delete">delete</button></li> -->
+                            </ul>
+	                    </div><!-- //contentsTop -->
+	                    
+	                    <div id="subArea">
+	                        <iframe id="sub0" class="ifrms" width="100%" style="display:block; height: 84vh; border: 0;"></iframe>
+	                    </div>
+	                </div>
+	                
+	                <div class="mainArea">
+		                <div class="inner" style="margin-top:0px;">
+		
+							<div class="layer " style="">
+								<div class="col vat leftArea">
+									<div class="layer">
+										<div class="col dateArea">
+											<dl class="toDay">
+												<dd>2022.12</dd>
+												<dt>21</dt>
+											</dl>
+											<p>수(Wed)</p>
+										</div><!-- //dateArea -->
+										<div class="col userInfoArea">
+											<dl class="userInfo">
+												<dt style="font-size:14pt;padding-top:35px;height:65px;">관리자</dt>
+												<dd>홍길동</dd>
+											</dl>
+											<div class="userIfoUtile">
+												<div class="rowGrp">
+													<a href="javascript:;">개인정보수정</a>
+													<a href="javascript:;">자주찾는서비스 설정</a>
+												</div>
+												<p>최근접속일시 <span>2022.12.21 11:13</span></p>
+											</div>
+										</div><!-- //userInfoArea -->
+									</div><!-- //layer -->
+		
+									<!-- <div class="memberStatusArea">
+										<div class="msTop">
+											<p class="title">회원 현황</p>
+											<a href="" class="btnMore"title="더보기">+</a>
+										</div>
+										<div class="msConts">
+											<ul class="dataArea">
+												<li class="rowGrp">건축사 <span class="fr">20,226</span></li>
+												<li class="rowGrp">실무수련자 <span class="fr">19,918</span></li>
+												<li class="rowGrp">　</li>
+												<li class="rowGrp">전체회원 <span class="fr">40,144</span></li>
+											</ul>
+										</div>
+									</div>  -->
+                                    <!-- //memberStatusArea -->
+								</div><!-- //leftArea -->
+		
+								<div class="col vat rightArea">
+									<div class="noticeArea">
+										<dl class="notice">
+											<dt class="icon01"></dt>
+											<dt>심사알림</dt>
+											<dd>1</dd>
+										</dl><!-- // -->
+										<dl class="notice">
+											<dt class="icon02"></dt>
+											<dt>업무알림</dt>
+											<dd>2</dd>
+										</dl><!-- // -->
+										<dl class="notice">
+											<dt class="icon03"></dt>
+											<dt>입금알림</dt>
+											<dd>0</dd>
+										</dl><!-- // -->
+										<dl class="notice">
+											<dt class="icon04"></dt>
+											<dt>확인알림</dt>
+											<dd>8</dd>
+										</dl><!-- // -->
+									</div><!-- //noticeArea -->
+		
+									<!-- <div class="quickMenuArea">
+										<p class="title">자주 찾는 서비스</p>
+										<ul class="quickMenu">
+											<li><a href="javascript:;">회원로그인</a></li>
+											<li><a href="javascript:;">서비스1</a></li>
+											<li><a href="javascript:;">서비스2</a></li>
+											<li><a href="javascript:;">서비스3</a></li>
+										</ul>
+										<ul class="quickMenu">
+											<li><a href="javascript:;">협회 홈페이지</a></li>
+											<li><a href="javascript:;">서비스4</a></li>
+											<li><a href="javascript:;">서비스5</a></li>
+											<li><a href="javascript:;">서비스6</a></li>
+										</ul>
+									</div> -->
+                                    <!-- //quickMenuArea -->
+								</div><!-- //rightArea -->
+							</div><!-- //layer -->
+		
+							<div class="lblGrid " ><!-- 해더고정 케이스 " scrolly "  클레스 추가 및 높이 지정 style="height:200px;" -->
+								<div class="lblGrid_header">
+									<table class="tbl">
+										<colgroup>
+											<col style="width: 40px;">
+											<col style="width: auto;">
+											<col style="width: 80px;">
+											<col style="width: 80px;">
+										</colgroup>
+										<thead>
+											<tr>
+												<th>번호</th>
+												<th>게시판명</th>
+												<th>전체글수</th>
+												<th>새글수</th>
+											</tr>
+										</thead>
+									</table>
+								</div><!-- //lblGrid_header -->
+								<div class="lblGrid_body">
+									<table class="tbl">
+										<colgroup>
+											<col style="width: 40px;">
+											<col style="width: auto;">
+											<col style="width: 80px;">
+											<col style="width: 80px;">
+										</colgroup>
+										<tbody>
+											<tr>
+												<td>1</td>
+												<td class="tal">공지사항</td>
+												<td>36</td>
+												<td>0</td>
+											</tr><!-- //tr -->
+											<tr>
+												<td>2</td>
+												<td class="tal">질의응답</td>
+												<td>3,985</td>
+												<td>2</td>
+											</tr><!-- //tr -->
+											<tr>
+												<td>3</td>
+												<td class="tal">자료실</td>
+												<td>12</td>
+												<td>0</td>
+											</tr><!-- //tr -->
+										</tbody>
+									</table>
+								</div><!-- //lblGrid_body -->
+							</div><!-- //lblGrid -->
+		
+						</div><!-- //inner -->
+					</div>
+	                
+	            </div><!-- //contentsArea -->
+            
+            </div><!-- //contentWrapper -->
+
+            <div id="rightSidebar">
+                <button type="button" id="sideBarBtn">펼치기</button>
+                <ul>
+                    <li id="comStatus">
+                        <p>민원신청현황</p>
+                        <div>
+                            <button type="button">새로고침</button><span>(최초갱신시각 16:38)</span>
+                            <ul>
+                                <li><span>60일 경과미수수료</span><small>579건</small></li>
+                                <li><span>60일 경과미수수료</span><small>579건</small></li>
+                                <li><span>60일 경과미수수료</span><small>579건</small></li>
+                                <li><span>60일 경과미수수료</span><small>579건</small></li>
+                                <li><span>60일 경과미수수료</span><small>579건</small></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li id="myMemo">
+                        <p>업무메모장</p>
+                        <div>
+                            <ul>
+                                <li></li>
+                            </ul>
+                            <textarea name="myMemo" id="" cols="30" rows="12"></textarea>
+                            <div class="mt10">
+                                <a href="javascript:;" class="btn style05">지우기</a>
+                                <a href="javascript:;" class="btn style05">저장</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div> <!-- // rightSidebar -->
+        </div><!-- // container -->
+    </div><!-- // wrap -->
+
+
+</body></html>
+            

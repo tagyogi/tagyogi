@@ -1,0 +1,79 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : kakaoChPop.html
+	파일명 : kakaoChPop.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xml:lang="ko">
+   
+<head>
+   <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/content.css">
+    <script src="/js/jquery-1.10.2.min.js"></script>
+	<script src="/js/jquery-3.3.1.min.js"></script>
+	<script src="/js/jquery-ui-1.10.3.js"></script>
+	<script src="/js/jquery.modal.js"></script>
+	<script src="/js/main.js"></script>
+	<script src="/js/common.js"></script>
+</head>
+<body>
+    <!-- 업무 안내 영역 끝 -->
+    <div class="popWrap">
+		<ul class="kakaoCh">
+            <li>
+                <div>
+                    <span class="ko-medium color-up">방법1</span>
+                    <span class="ko-bold">QR코드로 추가하기</span>
+                </div>
+                <div class="img-wrap">
+                    <img src="../images/qrcode_120.png" alt="QR코드">
+                </div>
+                <ul class="icon-wrap">
+                    <li>
+                        <span class="icon glass"></span>
+                        <span>카톡 상단 검색창 클릭</span>
+                    </li>
+                    <li><span class="icon scan"></span>
+                        <span>스캐너로 QR코드 스캔</span>
+                    </li>
+                    <li>
+                        <span class="icon plus"></span>
+                        <span>홈에서 채널추가</span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <div>
+                    <span class="ko-medium color-up">방법2</span>
+                    <span class="ko-bold">채널명 검색해서 추가하기</span>
+                </div>
+                <div class="ch-box">
+                    <span>한국콘텐츠공제조합</span>
+                </div>
+                <ul class="icon-wrap">
+                    <li>
+                        <span class="icon kakao"></span>
+                        <span>카카오톡 실행</span>
+                    </li>
+                    <li><span class="icon glass"></span>
+                        <span>검색창에 채널명 입력</span>
+                    </li>
+                    <li>
+                        <span class="icon plus"></span>
+                        <span>채널<br>추가</span>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</body>
+</html>

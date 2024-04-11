@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="Generator" content="EditPlus®">
+    <meta name="Keywords" content="한국콘텐츠공제조합">
+    <meta name="title" content="한국콘텐츠공제조합">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>한국콘텐츠공제조합</title>
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <!--<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">-->
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/jquery-ui-1.10.3.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            //lnb 화면확인용 스크립트
+            //대메뉴 클릭
+            $('.lnbArea .lnb dt').click(function() {
+                $(this).parents('.lnb').toggleClass('active');
+            });
+
+            //중메뉴 클릭시 
+            $('.lnbArea .lnb dd > a').click(function() {
+                var dep2 = $(this).parents('.lnb dd');
+
+                if ($(dep2).hasClass('has')) { //3depth있는 메뉴시
+                    $(dep2).toggleClass('active');
+                } else { //3depth 없는 메뉴시
+                    $('.lnbArea .lnb dd a').removeClass('active');
+                    $(this).toggleClass('active');
+                }
+            });
+
+            //3depth 클릭시
+            $('.lnbArea .lnb .dep3 a').click(function() {
+                $('.lnbArea .lnb dd a').removeClass('active');
+                $(this).toggleClass('active');
+            });
+
+            // 다이얼로그 샘플 팝업
+            $('#dialog').dialog({
+                autoOpen: true,
+                title: '팝업 타이틀',
+                modal: true,
+                width: '1100',
+                height: '400'
+            });
+
+        });
+
+        /*$("#dialog").dialog({
+            title: "",
+            classes: {
+                "ui-dialog": "bgGray"
+            },
+            resizable: true,
+            width: 650,
+            height: 700,
+            modal: true,
+            close: function(event, ui) {
+                dialogClose();
+            },
+            beforeClose: function(event, ui) {
+                $("#popFrm").attr("src", "")
+            }
+        }).focus();*/
+
+        function dialogClose() {
+            $("#dialog").dialog("close");
+            $("#dialog").dialog('destroy');
+        }
+    </script>
+    <script>
+        //datepicker 화면확인용 임시시크립트
+        $(function($) {
+            try {
+                $.datepicker.regional['ko'] = {
+                    closeText: '\ub2eb\uae30',
+                    prevText: '\uc774\uc804',
+                    nextText: '\ub2e4\uc74c',
+                    changeMonth: true, // 월을 바꿀수 있는 셀렉트 박스를 표시한다. 
+                    changeYear: true, // 년을 바꿀 수 있는 셀렉트 박스를 표시한다.
+                    yearRange: 'c-100:c+10', // 년도 선택 셀렉트박스를 현재 년도에서 이전, 이후로 얼마의 범위를 표시할것인가
+                    currentText: '\uc624\ub298',
+                    monthNames: ['1\uc6d4', '2\uc6d4', '3\uc6d4', '4\uc6d4', '5\uc6d4', '6\uc6d4', '7\uc6d4', '8\uc6d4', '9\uc6d4', '10\uc6d4', '11\uc6d4', '12\uc6d4'],
+                    monthNamesShort: ['1\uc6d4', '2\uc6d4', '3\uc6d4', '4\uc6d4', '5\uc6d4', '6\uc6d4', '7\uc6d4', '8\uc6d4', '9\uc6d4', '10\uc6d4', '11\uc6d4', '12\uc6d4'],
+                    dayNames: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    dayNamesShort: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    dayNamesMin: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    weekHeader: 'Wk',
+                    dateFormat: 'yy-mm-dd',
+                    firstDay: 0,
+                    showMonthAfterYear: true,
+                    yearSuffix: '\ub144',
+                    showOn: 'button',
+                    buttonImage: '../images/icon_calendar.png', //이미지 url
+                    buttonImageOnly: true
+                };
+                $.datepicker.setDefaults($.datepicker.regional['ko']);
+
+                $(".date").datepicker().css("margin-right", "2px").bind("focus", function() {
+                    $(this).select();
+                });
+                $(".ui-datepicker-trigger").css("cursor", "pointer");
+            } catch (e) {}
+        });
+    </script>
+</head>
+
+<body>
+        
+
+	<div class="contentsArea">
+		
+		<div class="contents flex">
+			<!-- STAR 컨텐츠 영역 -->
+
+
+			<!-- <ul class="tabMenu">
+				<li class="active" data-target="panel1">자격등록</li>
+				<li data-target="panel2">갱신등록</li>
+				<li data-target="panel3">변경등록</li>
+				<li data-target="panel4">말소신청</li>
+			</ul> -->
+
+			<section class="searchArea mt10">
+				<div class="row">
+					<dl>
+						<dt>업체명</dt>
+						<dd style="width: 260px;">
+							<input type="text" name="" style="width: 257px;">
+						</dd>
+					</dl>
+					<dl>
+						<dt>대표자</dt>
+						<dd>
+							<select name="" style="width:120px;">
+								<option value="" selected>전체</option>
+								<option value="">작성</option>
+								<option value="">접수</option>
+								<option value="">승인</option>
+								<option value="">심사중</option>
+							</select>
+						</dd>
+					</dl>
+					<dl>
+						<dt>장르</dt>
+						<dd>
+							<select name="" style="width:120px;">
+								<option value="" selected>접수번호</option>
+								<option value="">최종작성일</option>
+							</select>
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="row">
+					<dl>
+						<dt>최종수정일</dt>
+						<dd style="width: 260px;">
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+							<span class="text">~</span>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+						</dd>
+					</dl>
+					<dl>
+						<dt>내용</dt>
+						<dd>
+							<input type="text" name="" style="width: 120px;">
+						</dd>
+					</dl>
+					<dl>
+						<dt>가입의사</dt>
+						<dd>
+							<input type="text" name="" style="width: 120px;">
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				
+				<div class="searchBtn">
+					<a href="javascript:;" class="btn search">조회</a>
+				</div>
+			</section><!-- //searchArea -->
+
+			<section class="area">
+				<div class="fl">
+					<span class="text">전체</span>
+					<span class="text">05</span>
+					<span class="text">건</span>
+				</div>
+				<div class="fr">
+					<a href="javascript:;" class="btn style08">관리자작성</a>
+					<a href="javascript:;" class="btn style04">ExcelDn</a>
+				</div>
+			</section><!-- //area -->
+
+			<div class="lblGrid " ><!-- 해더고정 케이스 " scrolly "  클레스 추가 및 높이 지정 style="height:200px;" -->
+				<div class="lblGrid_body">
+					<table class="tbl">
+						<colgroup>
+							<col style="width: 40px;">
+							<col style="width: 90px;">
+							<col style="width: auto;">
+							<col style="width: 80px;">
+							<col style="width: 80px;">
+							<col style="width: 90px;">
+							<col style="width: 70px;">
+							<col style="width: 80px;">
+							<col style="width: 90px;">
+							<col style="width: auto;">
+						</colgroup>
+						<thead>
+							<tr>
+								<th>번호</th>
+								<th>접수일자</th>
+								<th>접수번호</th>
+								<th>자격번호</th>
+								<th>건축사명</th>
+								<th>생년월일</th>
+								<th>진행상태</th>
+								<th>처리자</th>
+								<th>처리일자</th>
+								<th>신청자 최종수정일시</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>5</td>
+								<td>2022.08.01</td>
+								<td>AR1-2022-00001</td>
+								<td>11111</td>
+								<td>홍길동</td>
+								<td>1980.01.01</td>
+								<td>작성</td>
+								<td>관리자</td>
+								<td>2022.07.01</td>
+								<td>2022.07.01 14:13</td>
+							</tr><!-- //tr -->
+							<tr>
+								<td>4</td>
+								<td>2022.08.01</td>
+								<td>AR1-2022-00001</td>
+								<td>11111</td>
+								<td>홍길동</td>
+								<td>1980.01.01</td>
+								<td>접수</td>
+								<td>관리자</td>
+								<td>2022.07.01</td>
+								<td>2022.07.01 14:13</td>
+							</tr><!-- //tr -->
+							<tr>
+								<td>3</td>
+								<td>2022.08.01</td>
+								<td>AR1-2022-00001</td>
+								<td>11111</td>
+								<td>홍길동</td>
+								<td>1980.01.01</td>
+								<td>승인</td>
+								<td>관리자</td>
+								<td>2022.07.01</td>
+								<td>2022.07.01 14:13</td>
+							</tr><!-- //tr -->
+							<tr>
+								<td>2</td>
+								<td>2022.08.01</td>
+								<td>AR1-2022-00001</td>
+								<td>11111</td>
+								<td>홍길동</td>
+								<td>1980.01.01</td>
+								<td>심사중</td>
+								<td>관리자</td>
+								<td>2022.07.01</td>
+								<td>2022.07.01 14:13</td>
+							</tr><!-- //tr -->
+							<tr>
+								<td>1</td>
+								<td>2022.08.01</td>
+								<td>AR1-2022-00001</td>
+								<td>11111</td>
+								<td>홍길동</td>
+								<td>1980.01.01</td>
+								<td>심사중</td>
+								<td>관리자</td>
+								<td>2022.07.01</td>
+								<td>2022.07.01 14:13</td>
+							</tr><!-- //tr -->
+						</tbody>
+					</table>
+				</div><!-- //lblGrid_body -->
+			</div><!-- //lblGrid -->
+
+			<div class="pagingArea">
+				<ul>
+					<li class="pagePrev2"><a href="javascript:;">처음</a></li>
+					<li class="pagePrev"><a href="javascript:;">이전</a></li>
+					<li class="on"><a href="javascript:;">1</a></li>
+					<li><a href="javascript:;">2</a></li>
+					<li><a href="javascript:;">3</a></li>
+					<li><a href="javascript:;">4</a></li>
+					<li><a href="javascript:;">5</a></li>
+					<li><a href="javascript:;">6</a></li>
+					<li><a href="javascript:;">7</a></li>
+					<li><a href="javascript:;">8</a></li>
+					<li><a href="javascript:;">9</a></li>
+					<li><a href="javascript:;">10</a></li>
+					<li class="pageNext"><a href="javascript:;" >다음</a></li>
+					<li class="pageNext2"><a href="javascript:;" >맨끝</a></li>
+				</ul>
+			</div><!-- //pagingArea -->
+
+
+
+
+
+
+
+			<!-- END 컨텐츠 영역 -->
+		</div><!-- //contents -->
+	</div><!-- //contentsArea -->
+
+
+</body></html>

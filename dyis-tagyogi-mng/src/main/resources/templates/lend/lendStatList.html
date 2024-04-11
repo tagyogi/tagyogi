@@ -1,0 +1,377 @@
+<!--
+	파일정보 : lendStatList.html
+	파일명 : lendStat현황
+	업무명 : 융자일보월보 현황 조회, 등록, 수정
+	생성자 : 변성균
+	생성일 : 2023-08-17
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			var today = /*[[${today}]]*/;
+			var yyyy = today.substring(0,4);
+
+			var basDt;
+			var serchType; // 상세팝업검색 타입
+			var baseType;
+			var lendType;
+			var interCd;
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				//년도설정
+				for(var i = 0; i < 11; i++){
+					$("#basYear").append("<option value='"+Number(yyyy - i)+"'>"+Number(yyyy - i)+"년</option>");
+				}
+				for(var i = 1; i <= 12; i++){
+					if( i < 10) i = "0"+i;
+					$("#basMonth").append("<option value='"+i+"'>"+i+"월</option>");
+				}
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetInter", el: "sheetDivInter", options: gridOptList[1] });
+			    IBSheet.create({ id: "sheetInPay", el: "sheetDivInPay", options: gridOptList[2] });
+			    IBSheet.create({ id: "sheetInHit", el: "sheetDivInHit", options: gridOptList[3] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+			    //저장후 이벤트
+			    sheet.bind("onAfterSave" , function(obj) {
+					resData = JSON.parse(obj.response.response);
+					alert(resData.resultMsg);
+			        if (resData.resultCode === 0) {
+					    //fnSearchDtl(); //조회 호출
+			        }
+				});
+
+				//대출및상환 더블클릭 처리
+				sheet.bind("onDblClick", function(obj) {
+					interCd = "";
+					lendType = "";
+						
+					if(obj.kind === "Filter") return;
+					if(obj.col !== "lendType"){
+						if(obj.row.Def.Name !== "FormulaRow"){
+							rowData = this.getFocusedRow();
+							lendType = rowData.lendType;
+						}
+						serchType = obj.col.substring(0,3);
+						baseType = "lend";
+					
+						com.dialpopupOpen("융자상세", "/index/pageCall.do?menuCd=1070723", "800", "700"); // lend/comLendStatDtl
+					};
+				});
+
+				//금년대출및상환 더블클릭 처리
+				sheetInter.bind("onDblClick", function(obj) {
+					interCd = "";
+					lendType = "";
+					if(obj.kind === "Filter") return;
+					if(obj.col !== "lendType"){
+						if(obj.row.Def.Name !== "FormulaRow"){
+							rowData = this.getFocusedRow();
+							lendType = rowData.lendType;
+						}
+						serchType = obj.col.substring(0,7);
+						baseType = "lend";
+
+						com.dialpopupOpen("융자상세", "/index/pageCall.do?menuCd=1070723", "800", "700"); // lend/comLendStatDtl
+					};
+				});
+				
+				//이자수입 더블클릭 처리
+				sheetInPay.bind("onDblClick", function(obj) {
+					interCd = "";
+					lendType = "";
+					
+					if(obj.kind === "Filter") return;
+					if(obj.col !== "lendTypeNm"){
+						
+						if(obj.row.Def.Name !== "FormulaRow"){
+							rowData = this.getFocusedRow();
+							lendType = rowData.lendType;
+						}
+						serchType = obj.col.substring(0,2);
+						baseType = "inter";
+
+						com.dialpopupOpen("융자상세", "/index/pageCall.do?menuCd=1070723", "800", "700"); // lend/comLendStatDtl
+					};
+				});
+
+				//이자수입 더블클릭 처리
+				sheetInHit.bind("onDblClick", function(obj) {
+					interCd = "";
+					lendType = "";
+					
+					if(obj.kind === "Filter") return;
+					if(obj.col !== "interCd"){
+						
+						if(obj.row.Def.Name !== "FormulaRow"){
+							rowData = this.getFocusedRow();
+							interCd = rowData.interCd;
+						}
+						serchType = obj.col.substring(0,1);
+						baseType = "inter";
+
+						com.dialpopupOpen("융자상세", "/index/pageCall.do?menuCd=1070723", "800", "700"); // lend/comLendStatDtl
+					};
+				});
+
+			});
+
+
+			//현황 조회
+			var fnSearch = function(){
+			//	alert($('input[name="sDmDiv"]:checked').val());
+			//	alert($("#basYmd").val());
+				
+				var dmDiv = $('input[name="sDmDiv"]:checked').val();
+				basDt = $("#basYmd").val();
+				if (dmDiv === "M"){
+					basDt = $("#basYear").val() + $("#basMonth").val();
+				}
+			//	alert($("#basYear").val() + $("#basMonth").val());
+				param = {basDt : basDt };
+				obj = {url:"/lendStat/selectLendStatList.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			var fnSearchCallBack = function(resData){
+				console.log(resData);
+
+				sheet.loadSearchData(resData.data); //
+				sheetInter.loadSearchData(resData.repay); //
+				sheetInPay.loadSearchData(resData.inter); //
+				sheetInHit.loadSearchData(resData.pay); //
+
+				//검색결과
+				var bas = "";
+				var basd = "";
+				var dmDiv = $('input[name="sDmDiv"]:checked').val();
+
+				if(dmDiv === "D"){
+					bas = $("#basYmd").val();
+					$("#txt_bas").html("<font color='red'> 융자일보 : " + bas.substring(0,4) + "년 " + bas.substring(5,7)  + "월 " + bas.substring(8,10)+ "일 </font>");
+
+					//일보 Header 변경
+					sheet.setValue( sheet.getRowById("Header"), "befCnt" , "전일잔액")
+					sheet.setValue( sheet.getRowById("Header"), "befAmt" , "전일잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "befCnt" , "전일잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "befAmt" , "전일잔액")
+					sheet.setValue( sheet.getRowById("Header"), "curCnt" , "금일대출")
+					sheet.setValue( sheet.getRowById("Header"), "curAmt" , "금일대출")
+					sheet.setValue( sheet.getRowById("Header"), "extCnt" , "금일대출")
+					sheet.setValue( sheet.getRowById("Header"), "extAmt" , "금일대출")
+					sheet.setValue( sheet.getRowById("Header"), "repCnt" , "금일상환")
+					sheet.setValue( sheet.getRowById("Header"), "repAmt" , "금일상환")
+					sheet.setValue( sheet.getRowById("Header"), "lenCnt" , "금일상환")
+					sheet.setValue( sheet.getRowById("Header"), "lenAmt" , "금일상환")
+					sheet.setValue( sheet.getRowById("Header"), "accCnt" , "금일사고")
+					sheet.setValue( sheet.getRowById("Header"), "accAmt" , "금일사고")
+					sheet.setValue( sheet.getRowById("HR1"), "accCnt" , "금일사고")
+					sheet.setValue( sheet.getRowById("HR1"), "accAmt" , "금일사고")
+					sheet.setValue( sheet.getRowById("Header"), "remCnt" , "금일잔액")
+					sheet.setValue( sheet.getRowById("Header"), "remAmt" , "금일잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "remCnt" , "금일잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "remAmt" , "금일잔액")
+
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "befCnt" , "전일잔액")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "befAmt" , "전일잔액")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "curCnt" , "당일수입")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "curAmt" , "당일수입")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "payCnt" , "당일잔액")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "payAmt" , "당일잔액")
+
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "befCnt" , "전일잔액")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "befAmt" , "전일잔액")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "curCnt" , "당일수입")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "curAmt" , "당일수입")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "payCnt" , "당일잔액")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "payAmt" , "당일잔액")
+
+
+
+				}else if(dmDiv === "M"){
+				    bas = $("#basYear").val();
+				    basd =  $("#basMonth").val();
+					$("#txt_bas").html("<font color='red'> 융자월보 : " + bas + "년 " + basd  + "월</font>");
+
+
+					//월보 Header 변경
+					sheet.setValue( sheet.getRowById("Header"), "befCnt" , "전월잔액")
+					sheet.setValue( sheet.getRowById("Header"), "befAmt" , "전월잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "befCnt" , "전월잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "befAmt" , "전월잔액")
+					sheet.setValue( sheet.getRowById("Header"), "curCnt" , "금월대출")
+					sheet.setValue( sheet.getRowById("Header"), "curAmt" , "금월대출")
+					sheet.setValue( sheet.getRowById("Header"), "extCnt" , "금월대출")
+					sheet.setValue( sheet.getRowById("Header"), "extAmt" , "금월대출")
+					sheet.setValue( sheet.getRowById("Header"), "repCnt" , "금월상환")
+					sheet.setValue( sheet.getRowById("Header"), "repAmt" , "금월상환")
+					sheet.setValue( sheet.getRowById("Header"), "lenCnt" , "금월상환")
+					sheet.setValue( sheet.getRowById("Header"), "lenAmt" , "금월상환")
+					sheet.setValue( sheet.getRowById("Header"), "accCnt" , "금월사고")
+					sheet.setValue( sheet.getRowById("Header"), "accAmt" , "금월사고")
+					sheet.setValue( sheet.getRowById("HR1"), "accCnt" , "금월사고")
+					sheet.setValue( sheet.getRowById("HR1"), "accAmt" , "금월사고")
+					sheet.setValue( sheet.getRowById("Header"), "remCnt" , "금월잔액")
+					sheet.setValue( sheet.getRowById("Header"), "remAmt" , "금월잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "remCnt" , "금월잔액")
+					sheet.setValue( sheet.getRowById("HR1"), "remAmt" , "금월잔액")
+
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "befCnt" , "전월잔액")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "befAmt" , "전월잔액")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "curCnt" , "당월수입")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "curAmt" , "당월수입")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "payCnt" , "당월잔액")
+					sheetInPay.setValue( sheetInPay.getRowById("Header"), "payAmt" , "당월잔액")
+
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "befCnt" , "전월잔액")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "befAmt" , "전월잔액")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "curCnt" , "당월수입")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "curAmt" , "당월수입")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "payCnt" , "당월잔액")
+					sheetInHit.setValue( sheetInHit.getRowById("Header"), "payAmt" , "당월잔액")
+
+				}
+
+
+			};
+
+			//레포트
+			var fnReport = function(){
+				var dmDiv = $('input[name="sDmDiv"]:checked').val();
+
+			//	alert(dmDiv);
+				if(dmDiv === "M") {
+					var nameArr = ["bas_dt"];
+					var valueArr = [$("#basYear").val()+""+$("#basMonth").val()];
+					ozLoad("LD_융자업무월보", nameArr, valueArr, 1, false, "pdf", "");
+				}else{
+					var nameArr = ["bas_dt"];
+					var valueArr = [$("#basYmd").val()];
+					ozLoad("LD_융자업무일보", nameArr, valueArr, 1, false, "pdf", "");
+				}
+
+			};
+
+
+			//상세 화면 호출
+			var fnView = function(){
+				param = {menuCd:7010103, paramMap:{val1:1234, val2:3456} };
+				parent.menuOpen(param);
+			};
+
+			//행 추가
+			var fnRowAdd = function(){
+				initData = {};
+				com.fnIbsRowAdd("cur", initData, sheet, "Y");//위치, 삽입데이터, sheetId, edit 활성화여부
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+
+				fnSearch();
+			};
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>융자일보</dt>
+							<dd style="width:270px;">
+								<input type="radio" name="sDmDiv" id="sDmDiv" value="D" checked>
+								<input type="search" name="basYmd" id="basYmd" th:value="${today}" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" onChange="fnSearch();"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'basYmd', 'yyyy-mm-dd','', '')" />
+							</dd>
+						</dl>
+					</div>
+					<div class="row">
+						<dl>
+							<dt>융자월보</dt>
+							<dd style="width:270px;">
+								<input type="radio" name="sDmDiv" id="sDmDiv" value="M">
+								<select name="basYear" id="basYear" style="width:100px;"></select>
+								<select name="basMonth" id="basMonth" style="width:100px;" onChange="fnSearch();"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReport();" class="btn style02">일보월보</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt10">
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area" style="min-height:15px">
+							<div class="fl">
+								<span id="txt_bas"></span>
+							</div>
+						</section>
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">대출 및 상환</h4>
+							</div>
+						</section>
+						<div class="mt10">
+							<div class="fl" id="sheetDiv" style="width:100%;height:235px"></div>
+						</div>
+					</div>
+				</div>
+				<div class="layer-flex mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width: 55%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">금년대출 및 상환</h4>
+							</div>
+						</section>
+						<div id="sheetDivInter" style="width:100%;height:210px"></div>
+					</div>
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox fixable" style="width: 44%">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">이자수입</h4>
+								</div>
+							</section>
+							<div id="sheetDivInPay" style="width:100%;height:165px"></div>
+						<div class="wrapBox">
+							<div id="sheetDivInHit" style="width:100%;height:145px"></div>
+						</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

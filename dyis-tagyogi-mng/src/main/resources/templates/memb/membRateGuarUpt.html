@@ -1,0 +1,348 @@
+<!--
+	파일정보 : membRateGuar/membRateGuarIns.html
+	파일명 : membRateGuar
+	업무명 : 조합원별요율관리 수정
+	생성자 : 김상민1
+	생성일 : 2023-05-03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+				//시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조합원요율정보 조회
+				};
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onDblClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//상세화면 호출
+					if(obj.col === "membNm" && !com.fnIsEmpty(rowData) )	{
+						if(!confirm(rowData.appDt + "일자 할인보증료요율 정보를 불러오시겠습니까?\n작성중이던 할인보증료요율이 있으면 덮어쓰기가 됩니다."))	return;
+						var paramData = {
+							bidRate: rowData.discBidRate, contrRate: rowData.discContrRate, defectRate: rowData.discDefectRate, payRate: rowData.discPayRate
+							, perfRate: rowData.discPerfRate, debtRate: rowData.discDebtRate, effiRate: rowData.discEffiRate, permRate: rowData.discPermRate
+							, sellRate: rowData.discSellRate, repeRate: rowData.discRepeRate
+						};
+						fnSetRateValue("disc", paramData);	//할인보증요율
+					}
+				});
+			});
+
+			//조합원요율정보 조회
+			var fnSearch = function(){
+				var selectParam = { membNo : /*[[${paramMap.membNo}]]*/, sMembNo : /*[[${paramMap.membNo}]]*/, appDt : /*[[${paramMap.appDt}]]*/ };
+				obj = {url:"/membRateGuar/selectMembRateGuar.do", param:selectParam, callBack:fnSelectCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//조합원요율정보 조회 콜백
+			var fnSelectCallBack = function(resData){
+				//console.log(resData);
+
+				//기본 데이터
+				com.fnSetKeyVal(resData.memb, "area_memb");
+				com.fnSetKeyVal(resData.data);
+				$("#orgAppDt").val(resData.data.appDt);
+
+				//조합원요율 이력
+				sheet.loadSearchData(resData.rateHisList);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+			}
+
+			//신용도 조회 팝업
+			var fnGradePop = function(){
+				if($("#sMembNo").val() === "") {
+			        alert("조합원을 선택해 주십시오.");
+			        $("#membNo").focus();
+			        return;
+			    }
+
+				com.dialpopupOpen("신용도조회", "/index/pageCall.do?menuCd=1070710", "800", "500"); ///com/serchCred
+			}
+
+			//신용도 조회 팝업 콜백
+			var fnGradCallBack = function(resData){
+				//console.log(resData);
+				$("#finalGrade").val(resData.finalGrade);		//신용도
+
+				//요율 조회
+				fnGetCommRate();
+			}
+
+			//요율 조회
+			var fnGetCommRate = function(){
+				if($("#appDt").val().length !== 10) return;
+
+				var selectParam = { appDt : $("#appDt").val(), finalGrade : $("#finalGrade").val() };
+				obj = {url:"/membRateGuar/selectGuarRate.do", param:selectParam, callBack:fnSelectRateCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//요율 조회 콜백
+			var fnSelectRateCallBack = function(resData){
+				//console.log(resData.data);
+
+				fnSetRateValue("org", resData.data);		//기본보증요율
+				fnSetRateValue("disc", resData.data);		//할인보증료요율
+			}
+
+			//기본보증요율, 할인보증요율 값 넣기
+			var fnSetRateValue = function(type, data){
+				if(com.fnIsEmpty(type) || com.fnIsEmpty(data))	return;
+
+				$("#"+type+"BidRate").val(data.bidRate);		//입찰
+                $("#"+type+"ContrRate").val(data.contrRate);	//계약
+                $("#"+type+"DefectRate").val(data.defectRate);	//하자
+                $("#"+type+"PayRate").val(data.payRate);		//선금급
+                $("#"+type+"PerfRate").val(data.perfRate);		//지급
+                $("#"+type+"DebtRate").val(data.debtRate);		//채무
+                $("#"+type+"EffiRate").val(data.effiRate);		//성능
+                $("#"+type+"PermRate").val(data.permRate);		//인·허가
+                $("#"+type+"SellRate").val(data.sellRate);		//상품판매
+                $("#"+type+"RepeRate").val(data.repeRate);		//지급의지급
+			}
+
+			//저장
+			var fnSave = function(){
+				//필수체크 (조합원, 신용도, 입찰보증 요율, 계약보증 요율, 하자보증 요율, 선금급보증 요율, 지급보증 요율,
+				//		 채무보증 요율, 성능보증 요율, 인허가보증 요율, 상품판매보증 요율, 지급의지급보증 요율)
+				var valChks = ["sMembNo", "finalGrade", "discBidRate", "discContrRate", "discDefectRate", "discPayRate", "discPerfRate",
+							   "discDebtRate", "discEffiRate", "discPermRate", "discSellRate", "discRepeRate"];
+
+				if(com.fnValChk(valChks)){
+					if(confirm("저장 처리 하시겠습니까?")){
+						obj = {url:"/membRateGuar/updateMembRateGuar.do", formId:"saveFrm", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxPost(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+			};
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down active"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" value=""/>
+			<input type="hidden" name="orgAppDt" id="orgAppDt" value=""/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea Collapsedown">
+
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<!--조합원정보 -->
+						<div id="area_memb">
+							<th:block th:include="com/comMemb"></th:block>
+						</div>
+
+						<!-- 할인기준정보 -->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">할인기준정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>적용일자</th>
+										<td>
+											<input type="text" name="appDt" id="appDt" th:value="${today}" title="적용일자" maxlength="10" style="width:100px;" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'appDt', 'yyyy-mm-dd')" />
+										</td>
+										<th><span class="reqMark">*</span>신용도</th>
+										<td>
+											<input type="text" name="finalGrade" id="finalGrade" size="3" title="신용도" style="width:50px;" readonly="readonly"/>
+											<button type="button" class="btn icoSearch" onclick="fnGradePop();" tabindex="2">검색</button>
+										</td>
+										<th>할인사유</th>
+										<td><input type="text" name="discReason" id="discReason" size="29" title="할인사유" maxlength="100" style="width:200px;" /></td>
+									</tr>
+								</tbody>
+							</table>
+
+							<!-- 조합원요율 이력 -->
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">조합원요율 이력</h4>
+								</div>
+							</section>
+							<div id="sheetDiv" style="width:100%;height:200px"></div>
+						</div>
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<!--기본조증료요율 -->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">기본보증료요율</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:10%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+									<col style="width:9%;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>구분</th>
+										<th>입찰</th>
+										<th>계약</th>
+										<th>하자</th>
+										<th>선금급</th>
+										<th>지급</th>
+										<th>채무</th>
+										<th>성능</th>
+										<th>인·허가</th>
+										<th>상품판매</th>
+										<th>지급의지급</th>
+									</tr>
+									<tr>
+										<th>기본요율</th>
+										<td class="tac"><input type="text" name="orgBidRate" id="orgBidRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgContrRate" id="orgContrRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgDefectRate" id="orgDefectRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgPayRate" id="orgPayRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgPerfRate" id="orgPerfRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgDebtRate" id="orgDebtRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgEffiRate" id="orgEffiRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgPermRate" id="orgPermRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgSellRate" id="orgSellRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="orgRepeRate" id="orgRepeRate" size="6" readonly="readonly" style="width:78%"/> %</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<!-- 할인보증료요율 -->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">할인보증료요율</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+									<col style="width:100px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>구분</th>
+										<th><span class="reqMark">*</span>입찰</th>
+										<th><span class="reqMark">*</span>계약</th>
+										<th><span class="reqMark">*</span>하자</th>
+										<th><span class="reqMark">*</span>선금급</th>
+										<th><span class="reqMark">*</span>지급</th>
+										<th><span class="reqMark">*</span>채무</th>
+										<th><span class="reqMark">*</span>성능</th>
+										<th><span class="reqMark">*</span>인·허가</th>
+										<th><span class="reqMark">*</span>상품판매</th>
+										<th><span class="reqMark">*</span>지급의지급</th>
+									</tr>
+									<tr id="disArea">
+										<th>할인요율</th>
+										<td class="tac"><input type="text" name="discBidRate" id="discBidRate" title="입찰보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discContrRate" id="discContrRate" title="계약보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discDefectRate" id="discDefectRate" title="하자보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discPayRate" id="discPayRate" title="선금급조증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discPerfRate" id="discPerfRate" title="지급보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discDebtRate" id="discDebtRate" title="채무보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discEffiRate" id="discEffiRate" title="성능보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discPermRate" id="discPermRate" title="인·허가보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discSellRate" id="discSellRate" title="상품판매보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+										<td class="tac"><input type="text" name="discRepeRate" id="discRepeRate" title="지급의지급보증 요율" size="6" maxlength="5" onkeyup="com.fnOnlyDecimal(this);" style="width:78%"/> %</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+				<!--처리 버튼 영역 -->
+				<div class="layer-flex mt50">
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">수정</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!--처리 버튼 영역 끝-->
+
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

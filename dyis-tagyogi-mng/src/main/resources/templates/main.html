@@ -1,0 +1,533 @@
+<!--
+	시스템구분 : 관리자
+	파일정보 : main.html
+	파일명 : 메인
+	업무명 : 메인
+	생성자 : 변성균
+	생성일 : 2023-04-03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/basicLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+
+			var userId = /*[[${session.userId}]]*/; //로그인ID
+
+			//메뉴 세팅
+			var menuList = /*[[${menuList}]]*/; //메뉴 현황
+			var menuTopList = /*[[${menuTopList}]]*/; //대메뉴
+			var menuFavList = /*[[${menuFavList}]]*/; //즐겨찾기목록
+			var bankAccList = /*[[${bankAccList}]]*/; //조합계좌목록
+
+			var nowMenuIdx = "";
+
+			$(document).ready(function(){
+
+				//즐겨찾기 메뉴
+				fnLeftBaseSet("T_0", "나의메뉴");
+
+				for(var x = 0; x < menuFavList.length; x++){
+					var getMenuFav = menuFavList[x];
+					//console.log(getMenuFav);
+
+					//2depth 메뉴
+					ddAdd = document.createElement("dd");
+					ddAdd.innerHTML = '<a href="#;" onclick="return false;" id="'+getMenuFav.menuCd+'" title="'+getMenuFav.menuNm+'" >'+getMenuFav.menuNm+'</a>';
+					dlAdd.appendChild(ddAdd);
+				}
+
+				//메뉴 추가 (fragments/main_header)
+				for(var i = 0; i < menuTopList.length; i++){
+					var getMenu = menuTopList[i];
+					var menuCd = getMenu.menuCd; //메뉴Cd
+					//console.log(getMenu);
+					if(menuCd === "901" && userId !== "admin"){
+						continue;
+					}
+					//userId
+					//상단 메뉴 추가 (fragments/main_header)
+					topLiAdd = document.createElement("li");
+					topLiAdd.setAttribute("id", "L_"+ (i+1));
+					topLiAdd.setAttribute("class", "topMenu");
+					$(".mainTabArea > ul").append(topLiAdd);
+
+					document.getElementById("L_"+ (i+1)).innerHTML = "<a href='#;' onclick='gnbMenuSelect("+(i+1)+"); return false;' title='"+getMenu.menuNm+"'>"+getMenu.menuNm+"</a>";
+
+					//상세 메뉴
+					fnLeftBaseSet("T_"+ (i+1), getMenu.menuNm);
+
+					for(var x = 0; x < menuList.length; x++){
+						var getSubMenu = menuList[x];
+						var subMenuCd = getSubMenu.menuCd;
+
+						if(menuCd === getSubMenu.topMenuCd && getSubMenu.menuStep === 2 && getSubMenu.menuYn === "Y"){
+							//2depth 메뉴
+							ddAdd = document.createElement("dd");
+							ddAdd.setAttribute("class", "has");
+
+							aAdd = document.createElement("a");
+							aAdd.innerText = getSubMenu.menuNm;
+							ddAdd.appendChild(aAdd);
+
+							//3depth 메뉴
+							ulAdd = document.createElement("ul");
+							ulAdd.setAttribute("class", "dep3");
+
+							//3depth
+							for(var y = 0; y < menuList.length; y++){
+								var getDtlMenu = menuList[y];
+
+								//console.log("check : " + menuCd+ ":"+getDtlMenu.topMenuCd+ " /" + subMenuCd + "/"+getDtlMenu.parentCd+ "/"+getDtlMenu.menuStep + " / " + getDtlMenu.menuYn + " / " + );
+
+								if(menuCd === getDtlMenu.topMenuCd && subMenuCd === getDtlMenu.parentCd && getDtlMenu.menuStep === 3 && getDtlMenu.menuYn === "Y" && getDtlMenu.grantYn === "1"){
+
+									liAdd = document.createElement("li");
+									//liAdd.innerHTML = "<a href='javascript:fnPageCall("+getDtlMenu.menuCd+")' onclick='return false;' title=''>"+getDtlMenu.menuNm+"</a>";
+									liAdd.innerHTML = '<a href="#;" onclick="return false;" id="'+getDtlMenu.menuCd+'" title="'+getDtlMenu.menuNm+'" >'+getDtlMenu.menuNm+'</a>';
+
+									ulAdd.appendChild(liAdd);
+								}
+							}
+
+							ddAdd.appendChild(ulAdd);
+							dlAdd.appendChild(ddAdd);
+						}
+					}
+				}
+
+				$("#subArea").hide();
+
+		    	$(".prev").hide();
+		        $(".next").hide();
+
+
+		    	//lnb 화면확인용 스크립트
+		        //대메뉴 클릭
+		        /* $('.lnbArea .lnb dt').click(function() {
+		            $(this).parents('.lnb').toggleClass('active');
+		        }); */
+		        gnbMenuSelect(0);
+
+		        //중메뉴 클릭시
+		        $('.lnbArea .lnb dd > a').click(function() {
+		            var dep2 = $(this).parents('.lnb dd');
+
+					 if ($(dep2).hasClass('has')) { //3depth있는 메뉴시
+		                $(dep2).toggleClass('active');
+		            } else { //3depth 없는 메뉴시
+		                $('.lnbArea .lnb dd a').removeClass('active');
+		                $(this).toggleClass('active');
+
+		                menuOpen($(this));
+		            }
+
+		        });
+
+		        //3depth 클릭시
+		        $('.lnbArea .lnb .dep3 a').click(function() {
+		            $('.lnbArea .lnb dd a').removeClass('active');
+		            $(this).toggleClass('active');
+
+		            menuOpen($(this));
+		        });
+
+		        //오른쪽사이드바컨트롤
+		        $('#sideBarBtn').click(function(){
+		            $('.container .contentWrapper').toggleClass('active');
+		            $('#rightSidebar').toggleClass('active');
+		            ($('#sideBarBtn').text() === '펼치기') ? $('#sideBarBtn').text('닫기') : $('#sideBarBtn').text('펼치기');
+		        });
+		        $('#sideBarBtn').trigger("click");
+
+				
+				if("admin" === userId){
+					var param = {menuCd:"1070225"}
+					menuOpen(param);
+					
+					setTimeout(function() {
+						var param = {menuCd:"1070603"}
+						menuOpen(param);
+						
+						setTimeout(function() {
+							menuOpen("9998");
+						}, 1000);
+						
+					}, 1000);
+					
+					
+					
+					
+					
+				}
+				//1070225
+				
+		    });
+
+		    //좌측 상단 부분 기본 설정
+		    var fnLeftBaseSet = function(subId, menuNm){
+				dlAdd = document.createElement("dl");
+				dlAdd.setAttribute("id", subId);
+				dlAdd.setAttribute("class", "lnb");
+				$(".lnbArea").append(dlAdd);
+
+				//좌측 상단 타이틀
+				dtAdd = document.createElement("dt");
+				dtAdd.innerText = menuNm;
+				dlAdd.appendChild(dtAdd);
+			};
+
+
+		    $(window).resize(function() {
+		    	setMoveBtn();
+		    });
+
+		    /*
+		    * lnb컨트롤
+		    */
+		    function showHideLnb(){
+		        $('.container').toggleClass('active');
+		    }
+
+		    /*
+		     * gnb  대메뉴관련 함수
+		     */
+		     function gnbMenuSelect(gnbCode){
+		    	var $gnbMenu = $("#T_" + gnbCode);
+
+		    	$('.topMenu').removeClass('active');
+		    	$('#L_' + gnbCode).addClass('active');
+
+		    	$gnbMenu.siblings().removeClass('active');
+		    	$gnbMenu.addClass('active');
+		    	//$gnbMenu.show();
+		    }
+
+
+		    /*
+		     * MDI 메뉴관련 함수
+		     */
+		    var menuIdx = 0;
+		    var menuArr = new Array();
+		    menuArr.push(0);
+
+		    function menuOpen(obj) {
+				//console.log(obj)
+				//$("input[name^='" + fileIds[x] + "']").each(function(idx){
+				//}
+				if($("iframe[name^=sub]").length > 9){
+					alert("탭메뉴는 10개까지 가능합니다. ");
+					return;
+				}
+				var menuNm, menuCd, title, menuSeq;
+
+				if(obj === "9999"){
+					menuNm = "메뉴현황";
+					title = "메뉴현황";
+					menuCd = "";
+					document.frameFrm.menuPage.value = "/sys/menuList";
+				}else if(obj === "9998"){
+					menuNm = "오류현황";
+					title = "오류현황";
+					menuCd = "1070604";
+					document.frameFrm.menuPage.value = "/sys/logErrList";
+				}else if(obj === "1070410"){
+					menuNm = "마이페이지";
+					title = "마이페이지";
+					menuCd = "1070410";
+					document.frameFrm.menuPage.value = "/sys/mypage";
+				}else if(obj.menuCd !== undefined){
+					menuCd = String(obj.menuCd); //메뉴코드
+					if(obj.title !== undefined){
+						menuNm = obj.title; //메뉴명
+						title = obj.title; //메뉴명
+					}else{
+						for(var x = 0; x < menuList.length; x++){
+							var getSubMenu = menuList[x];
+							if(getSubMenu.menuCd === menuCd){
+								menuNm = getSubMenu.menuNm; //메뉴명
+								title = getSubMenu.menuNm; //메뉴명
+							}
+						}
+
+					}
+					//(이동) 파라미터가 계속 남아있어서 밖으로 뻄
+				    //if(obj.paramMap !== undefined) {
+					//	document.frameFrm.paramMap.value = JSON.stringify(obj.paramMap);
+					//}
+
+			    }else{
+					//console.log(obj.attr("id"));
+					menuNm = obj.html();
+			        menuCd = obj.attr("id"); //메뉴코드
+			        title = obj.attr("title");
+				}
+
+				//메뉴순번가져오기
+				for(var y = 0; y < menuTopList.length; y++){
+					var getTop = menuTopList[y];
+					if(getTop.menuCd === menuCd.substring(0,3)){
+						menuSeq = getTop.menuSeq; //메뉴순번세팅
+					}
+				}
+
+				//(이동) 파라미터 관련 수정
+				if(obj.paramMap !== undefined) {	//obj.paramMap이 있으면
+					document.frameFrm.paramMap.value = JSON.stringify(obj.paramMap);
+				}else{	//좌측 메뉴 클릭같이 파라미터를 넘길수 없을때 초기화(이전 파라미터가 남아있어서 제거)
+					document.frameFrm.paramMap.value = "";
+				}
+
+		        menuIdx++;
+		        menuArr.push(menuIdx);
+
+		        if(curMenuIdx === undefined || curMenuIdx === "") curMenuIdx = 1; //맨처음메뉴는 curidx undefined 여서 닫기버튼시 참고번호없음
+		        document.frameFrm.refMenuIdx.value = curMenuIdx; //현재 메뉴index
+
+		        var tag = '<a href="javascript:menuSelect(\'' + menuIdx + '\', ' + '\'serch\');" class="tab" data-groupid="'+menuCd+'" data-seq="'+menuSeq+'" id="tab' + menuIdx + '" title="' + title + '">' + menuNm + '<span class="close" onclick="closeMenu(\'' + menuIdx + '\',\'' + curMenuIdx + '\'); return false;"></span></a>';
+		    	$(".move-tabs").append(tag);
+
+		        var html = '<iframe title="탭" name="sub' + menuIdx + '" id="sub' + menuIdx + '" class="ifrms" src="" width="100%" style="display:block; height: calc(100vh - 83px); border: 0;"></iframe>';
+		        $("#subArea").append(html);
+
+		        setMoveBtn();
+		        menuSelect(menuIdx);
+
+		        document.frameFrm.menuIdx.value = menuIdx; //현재 메뉴index
+		        document.frameFrm.menuCd.value = menuCd;
+		        document.frameFrm.target = "sub" + menuIdx;
+		        document.frameFrm.submit();
+
+		        //options = "width=1000,height=800, top=100, scrollbars=yes, resizable=yes";
+		        //window.open("", "pop"+menuCd, options);
+
+				//document.frameFrm.action = "http://localhost:18080/index/pageCall.do";
+				//document.frameFrm.target = "pop"+menuCd;
+				//document.frameFrm.submit();
+
+
+		    }
+		    /*
+		    function tabOpen(menuNm, title, url) {
+		        menuIdx++;
+		        menuArr.push(menuIdx);
+
+		        var tag = '<a href="javascript:menuSelect(\'' + menuIdx + '\');" class="tab" id="tab' + menuIdx + '" title="' + title + '">' + menuNm + '<span class="close" onclick="closeMenu(\'' + menuIdx + '\'); return false;"></span></a>';
+		    	$(".move-tabs").append(tag);
+
+		        var html = '<iframe id="sub' + menuIdx + '" name="sub' + menuIdx + '" class="ifrms" src="' + url + '" width="100%" style="display:block; height: calc(100vh - 83px); border: 0;"></iframe>';
+		        $("#subArea").append(html);
+
+		        setMoveBtn();
+
+		        menuSelect(menuIdx);
+		    }
+		    */
+
+		    var curMenuIdx;
+		    function menuSelect(menuIdx, serchYn) {
+
+				//좌측메뉴컨트롤
+				let menuCd = $("#tab"+menuIdx).attr("data-groupid");
+				let menuSeq = $("#tab"+menuIdx).attr("data-seq");
+
+				if(menuCd !== ""){
+					gnbMenuSelect(menuSeq);
+					$(".dep3 li a ").removeClass("active");
+					$("#"+menuCd).addClass("active");
+				}
+
+				$("#homeArea").hide();
+		    	$(".ifrms").hide();
+
+		    	//id 가 없을 경우
+		    	//console.log("menuIdx " + menuIdx);
+		    	if($("#sub" + menuIdx).length === 0 && menuIdx !== 0){
+					menuIdx = menuArr[menuArr.length - 1];
+				}
+
+				$("#sub" + menuIdx).show();
+
+		        $(".tab").removeClass("active");
+		        $("#tab" + menuIdx).addClass("active");
+
+		        //메인 화면 표시 여부
+		        if(menuIdx === 0) {
+		        	$("#subArea").hide();
+		        	$(".mainArea").show();
+		        } else {
+		        	$("#subArea").show();
+		        	$(".mainArea").hide();
+		        }
+
+		        if(menuIdx > 0) {
+		            curMenuIdx = menuIdx;
+
+		        } else {
+		        	$("#homeArea").show();
+		        }
+
+		        //nowMenuIdx = menuIdx;
+		        if(serchYn !== undefined){
+					//리로드 여부
+					var reloadYn = $('#sub' + menuIdx).get(0).contentWindow.reloadYn;
+					if(reloadYn === undefined) reloadYn = true;
+
+					if(typeof $('#sub' + menuIdx).get(0).contentWindow.fnSearch === "function" && reloadYn){
+						//$('#sub' + menuIdx).get(0).contentWindow.fnSearch();
+					}
+				}
+
+				//탭갯수
+				fnCountTab();
+		    }
+
+		    //탭 닫기
+		    function closeMenu(menuIdx, refMenuIdx, type) {
+				//console.log(menuIdx + " / " + refMenuIdx + " / " + type );
+				menuIdx = menuIdx.toString().replace("sub", ""); //서브아이디로 들어오는 경우
+
+		    	var ml = Number($(".mList").css("margin-left").replace("px", "")) + $("#tab" + menuIdx).width();
+		    	if(ml > 0) ml = 0;
+		    	$(".mList").css("margin-left", ml + "px");
+
+		        $("#tab" + menuIdx).remove();
+		        $("#sub" + menuIdx).remove();
+
+		        //대상 배열에서 삭제
+		        for(var i = 0; i < menuArr.length; i++) {
+		            if(Number(menuIdx) === menuArr[i]) {
+		                menuArr.splice(i, 1);
+		            }
+		        }
+
+		        mvMenuIdx = menuArr[menuArr.length - 1]; //이동 idx
+
+		        if(refMenuIdx !== undefined && refMenuIdx !== ""){ //refMenuIdx가 없거나, 있어도 그 탭이 살아있지 않은경우
+					mvMenuIdx = refMenuIdx;
+				}else{
+					mvMenuIdx = menuArr[menuArr.length - 1];
+			    }
+			    //alert(menuArr + " mv : " + mvMenuIdx);
+
+			    var cnt = $(".move-tabs").find('.tab').length;
+			    if(cnt > 0 && type !== 'all'){
+					if(refMenuIdx !== undefined){
+						menuSelect(mvMenuIdx, 'serch'); //메뉴선택
+					}else{
+						menuSelect(mvMenuIdx); //메뉴선택
+					}
+
+			        setMoveBtn();
+				}else if(cnt <= 0 || type === 'all'){
+					menuSelect(mvMenuIdx); //메뉴선택
+				}
+
+		        //탭갯수
+				fnCountTab();
+
+				//열린탭중 조합원명있는 탭 없으면 탭크기 재조정
+				let tagCnt = 0;
+				$(".move-tabs .tab").each(function(idx, item){
+					if($(item).find("em.tabMembTag").length > 0) tagCnt++;
+				});
+				//console.log(tagCnt);
+				if(tagCnt == 0) $(top.document).find('.container').removeClass("hasNm");
+
+		    }
+
+		    function allMenuClose() {
+		    	if(!confirm("모든 메뉴를 닫으시겠습니까?")) return;
+
+		        for(var i = menuArr.length - 1; i > 0 ; i--) {
+		            closeMenu(menuArr[i],'','all');
+		        }
+
+				//tab높이 조절
+				$(top.document).find('.container').removeClass("hasNm");
+
+		        fnCountTab();
+
+		    }
+
+		    function setMoveBtn() {
+		    	if($(window).width() - 681 <= $(".mList").width()) {
+		    		$(".prev").show();
+		            $(".next").show();
+		    	} else {
+		    		$(".prev").hide();
+		            $(".next").hide();
+		    	}
+		    }
+
+		    var moveUnit = 120;
+		    function movePrev() {
+		    	var ml = Number($(".mList").css("margin-left").replace("px", "")) + moveUnit;
+		    	if(ml > 0) ml = 0;
+		    	$(".mList").css("margin-left", ml + "px");
+		    }
+
+		    function moveNext() {
+		    	var ml = Number($(".mList").css("margin-left").replace("px", "")) - moveUnit;
+		    	$(".mList").css("margin-left", ml + "px");
+		    	$(".mList").css("margin-left", ($(window).width() - 681 - $(".mList").width()) + "px");
+		    }
+
+		    function refreshPage(menuIdx) {
+		    	$("#sub" + menuIdx).attr("src", $("#sub" + menuIdx).attr("src"));
+		    }
+
+		    function logout() {
+		    	location.href = "../admin/logoutProc.do";
+		    }
+
+		    function fnPageCall(menuCd) {
+		    	alert(menuCd);
+		    }
+
+		    function fnCountTab(){
+				var cnt = $(".move-tabs").find('.tab').length;
+				$("#tabCntTxt > em").text(cnt);
+			}
+
+		    /*]]>*/
+		</script>
+
+		<form name="frameFrm" id="frameFrm" method="POST" action="/index/pageCall.do">
+			<input type="hidden" name="menuIdx" id="menuIdx" value=""/>
+			<input type="hidden" name="refMenuIdx" id="refMenuIdx" value=""/>
+			<input type="hidden" name="menuCd" id="menuCd" value=""/>
+			<input type="hidden" name="menuPage" id="menuPage" value=""/>
+			<input type="hidden" name="paramMap" id="paramMap" value=""/>
+		</form>
+
+		<div class="wrap">
+			<!-- main header start (상단메뉴 영역) -->
+			<div th:insert="~{/fragments/main_header::main-header}"></div>
+			<!-- main header end -->
+
+			<div class="container">
+				<!-- main lnb start (좌측메뉴, 메뉴탭 부분) -->
+				<th:block th:insert="~{/fragments/main_lnb::main-lnb}"></th:block>
+				<!-- main lnb end -->
+
+				<div class="contentWrapper">
+					<!-- 콘텐츠 시작 -->
+		        	<div id="subArea"></div>
+		        	<div id="mainArea">
+						<th:block th:include="mainStat"></th:block> <!--조합원조회 -->
+					</div>
+				</div>
+
+			</div>
+			<!-- main right start (민원신청, 업무메모영역) -->
+			<div th:insert="~{/fragments/main_right::main-right}"></div>
+			<!-- main right end -->
+		</div>
+		<div id="ele_loading" style="display:none">
+			<img src="/images/loading.gif" onerror=""/>
+			<span>데이터 조회중입니다.</span>
+		</div>
+		<div id="ele_exceDown" style="display:none"></div> <!--엑셀다운로드 처리 영역-->
+	</body>
+</html>

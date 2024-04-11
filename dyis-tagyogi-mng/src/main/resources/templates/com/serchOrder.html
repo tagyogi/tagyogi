@@ -1,0 +1,179 @@
+<!--
+	파일정보 : serchOrder/serchOrder.html
+	파일명 : serchOrder
+	업무명 : 피공제기관
+	생성자 : BSG
+	생성일 : 2023.06.14
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				$("#sOrderNm").val(parent.$("#orderNm").val());	//피공제기관명
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //더블클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//console.log(rowData);
+
+					//데이터 값 없으면
+					if(com.fnIsEmpty(rowData)){
+						$("#btn_exceptN").hide();
+						$("#btn_exceptY").hide();
+					}else{
+						if(rowData.exceptYn === "Y"){
+							$("#btn_exceptN").show();
+							$("#btn_exceptY").hide();
+						}else{
+							$("#btn_exceptN").hide();
+							$("#btn_exceptY").show();
+						}
+					}
+				});
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick" , function(obj) { //더블클릭
+					if(obj.kind === "Filter") return;
+					fnSelectRow();	//row 선택 이벤트
+				});
+
+				//sheetDiv 조회 완료 후
+				sheet.bind("onSearchFinish" , function(obj) {
+					//제외, 복원 버튼 숨김처리
+					$("#btn_exceptN").hide();
+					$("#btn_exceptY").hide();
+
+					//로딩바
+					$("#ele_loading").css("display","none");
+
+					//제외 목록 빨간색 지정
+					var rows = sheet.getDataRows();
+					$.each(rows, function(idx, item){
+						if(item.exceptYn === "Y"){
+							sheet.setCellStyle(sheet.getRowById(item.id), "orderCd", {"TextColor" : "#FF4500"}, 1);
+							sheet.setCellStyle(sheet.getRowById(item.id), "orderNm", {"TextColor" : "#FF4500"}, 1);
+							sheet.setCellStyle(sheet.getRowById(item.id), "orderBizNo", {"TextColor" : "#FF4500"}, 1);
+						}
+					})
+				});
+
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				$("#ele_loading").css("display","block"); //로딩바
+
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/guar/selectOrderList.do", param); //param, sheetId 생략 가능
+			};
+
+			//row 선택 이벤트
+			var fnSelectRow = function(){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				if(com.fnIsEmpty(rowData)){
+					alert("목록이 선택되지 않았습니다.");
+					return;
+				}
+				parent.fnOrderSearchSet(rowData)
+				parent.$("#dialog").dialog("close");
+			};
+
+			//제외/복원 이벤트
+			var fnExcept = function(yn){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				if(com.fnIsEmpty(rowData)){
+					alert("목록이 선택되지 않았습니다.");
+					return;
+				}
+
+				var param = {
+					orderCd : rowData.orderCd
+					, orderNm : rowData.orderNm
+					, orderBizNo : rowData.orderBizNo
+					, exceptYn : yn
+					, updateYn : 'Y'	//복구 flag
+				};
+
+				obj = {url:"/guar/mergeGrOrder.do", param:param, callBack:fnExceptCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//제외/복원 이벤트 콜백
+			var fnExceptCallBack = function(resData){
+				alert("처리 완료되었습니다.");
+				fnSearch();	//리스트 재조회
+			}
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<section class="searchArea">
+				<div class="row">
+					<dl>
+						<dt>피공제기관명</dt>
+						<dd style="width:240px;">
+							<input type="search" name="sOrderNm" id="sOrderNm" style="width:160px;" maxlength="50"/>
+							<input type="checkbox" name="sIgnoreYn" id="sIgnoreYn" value="Y"/>&nbsp;제외포함
+						</dd>
+						<dt>사업자번호</dt>
+						<dd style="width:120px;">
+							<input type="search" name="sOrderBizNo" id="sOrderBizNo" style="width:120px;" maxlength="12" onkeyup="com.fnOnlyNum(this);" />
+						</dd>
+					</dl>
+				</div><!-- //row -->
+
+				<div class="searchBtn">
+					<button type="button" onclick="fnSearch();" class="btn search">조회</button>
+				</div>
+			</section>
+			</form>
+			<div class="mt10">
+		    	<div id="sheetDiv" style="width:100%;height:300px"></div>
+			</div>
+		</div><!-- //contentsArea -->
+
+		<!--하단 버튼 영역-->
+		<div class="layer-flex mt20">
+			<!-- 처리 버튼 영역 -->
+			<div class="" style="width:100%">
+				<section class="area">
+					<div class="fc">
+						<button type="button" onclick="javascript:fnSelectRow();" class="btn style08">선택</button>
+						<button type="button" onclick="javascript:fnExcept('Y');" class="btn style07" id="btn_exceptY" style="display:none;">제외</button>
+						<button type="button" onclick="javascript:fnExcept('N');" class="btn style07" id="btn_exceptN" style="display:none;">복원</button>
+						<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style06">닫기</button>
+					</div>
+				</section>
+			</div>
+		</div>
+
+		<div id="ele_loading" style="display:none">
+			<img src="/images/loading.gif" onerror=""/>
+		</div>
+	</body>
+</html>

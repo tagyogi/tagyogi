@@ -1,0 +1,153 @@
+<!--
+   파일정보 : sys/popDtl.html
+   파일명 : popDtl
+   업무명 : 팝업상세
+   생성자 : 윤가영
+   생성일 : 2023.11.02
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+   <body>
+      <script th:inline="javascript">
+         /*<![CDATA[*/
+
+         //초기화 조회 콜백
+         var htmlData = "";
+         var fnInitCallBack = function(resData){
+            console.log(resData);
+
+            //동적 첨부파일 (다건)
+            com.fnIbsUploadView($("#myUpload"), resData.fileList);
+
+            com.fnSetKeyVal(resData.data);
+            $("#ele_cont").html(resData.data.cont);
+         };
+
+         //수정페이지호출
+         var fnUpt = function(){
+            menuNm = /*[[${paramMap.menuNm}]]*/;
+            param = {menuCd:1070222, title:menuNm+"수정"
+                  , paramMap:{menuNm:menuNm
+                           , seq:$("#seq").val()
+                           , atthType:$("#atthType").val()
+                           , atthNo:$("#atthNo").val()
+                           , imgAtthNo: $("#imgAtthNo").val()
+                       }
+            };
+            parent.menuOpen(param);
+            parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);	
+         }
+
+         //화면 초기화(게시판정보 조회)
+         $(document).ready(function(){
+            obj = {url:"/pop/selectPop.do", formId:"serchFrm", callBack:fnInitCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+            com.fnAjaxPost(obj);
+
+         });
+
+          /*]]>*/
+
+      </script>
+
+      <!-- 콘텐츠 시작 -->
+      <div class="contentsArea">
+         <div class="contentsTop">
+            <div th:insert="~{/fragments/subTitle}"></div>
+         </div><!-- //contentsTop -->
+         <form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+         <input type="hidden" name="seq" id="seq" th:value="${paramMap.seq}"/>
+         <input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+         <input type="hidden" name="atthNo" id="atthNo" value=""/>
+         <input type="hidden" name="imgAtthNo" id="imgAtthNo"/>
+         <div class="contents flex">
+            <div class="layer-flex">
+               <!-- 그리드 좌측 부분 -->
+               <div class="" style="width:100%">
+                  <table class="tbl">
+                     <colgroup>
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                     </colgroup>
+                     <tbody>
+                        <tr>
+                           <th>제목</th>
+                           <td colspan="5">
+                              <span id="ele_subj"></span>
+                           </td>
+                        </tr>
+                        <tr>
+                           <th>사용여부</th>
+                           <td>
+                              <span id="ele_useYn"></span>
+                           </td>
+                           <th>게시일자</th>
+                           <td>
+                              <span id="ele_begDt"></span>
+                           </td>
+                           <th>마감일자</th>
+                           <td>
+                              <span id="ele_expDt"></span>
+                           </td>
+                        </tr>
+                        <tr>
+                           <th>가로사이즈</th>
+                           <td>
+                              <span id="ele_widSize"></span><span> px</span>
+                           </td>
+                           <th>세로사이즈</th>
+                           <td>
+                              <span id="ele_hegSize"></span><span> px</span>
+                           </td>
+                           <th>스크롤사용여부</th>
+                           <td>
+                              <span id="ele_scrollYn"></span>
+                           </td>
+                        </tr>
+                        <tr>
+                           <th>상단위치</th>
+                           <td>
+                              <span id="ele_posTop"></span><span> px</span>
+                           </td>
+                           <th>좌측위치</th>
+                           <td colspan="3">
+                              <span id="ele_posLeft"></span><span> px</span>
+                           </td>
+                        </tr>
+                     </tbody>
+                  </table>
+                  <div style="width:100%;min-height:400px;overflow:auto;border:1px solid #cfd6db;padding:20px;box-sizing:border-box;">
+                     <div id="ele_cont"></div>
+                  </div>
+                  <div id="ele_atthArea">
+                     <section class="area mt10">
+                        <div class="fl">
+                           <h4 class="title">첨부파일</h4>
+                        </div>
+                        <div class="fr">
+							<button type="button" onclick="javascript:com.fnDtlFileUpload('myUpload', $('#atthType').val(), $('#atthNo').val(), $('#seq').val());" class="btn small style07">파일저장</button>
+                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUpload'));" class="btn small style08">전체다운</button>
+                           	<button type="button" onclick="javascript:com.fnIbsFileAdd($('#myUpload'));" class="btn small style08">추가</button>
+                           	<button type="button" onclick="javascript:com.fnIbsFileDel($('#myUpload'));" class="btn small style08">삭제</button>
+                        </div>
+                     </section>
+                     <div id="myUpload" style="height:140px;"></div>
+                  </div>
+                  <!-- 처리 버튼 영역 -->
+                  <section class="area mt10">
+                     <div class="fc">
+                        <button type="button" onclick="javascript:fnUpt();" class="btn style07">수정</button>
+                     </div>
+                  </section>
+               </div>
+               <!-- END 컨텐츠 영역 -->
+            </div>
+         </div><!-- //contents -->
+         </form>
+
+      </div><!-- //contentsArea -->
+   </body>
+</html>

@@ -1,0 +1,147 @@
+<!--
+	파일정보 : comMemoPop.html
+	파일명 : comMemoPop
+	업무명 : 업무메모 상세/수정 팝업
+	생성자 : 윤가영
+	생성일 : 2023.09.12
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			let memoSeq = /*[[${paramMap.memoSeq}]]*/; //그리드옵션
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				console.log(memoSeq);
+				
+				fnSearch();
+			});
+
+			//업무메모 상세 조회
+			var fnSearch = function(){
+				param = {memoSeq:memoSeq};
+				console.log(param.memoSeq);
+				obj = {url:"/com/selectUserMemo.do", param:param, formId:"serch", callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+			
+			//조회 콜백
+			var fnSearchCallBack = function(resData){
+				console.log(resData);
+				resData.data.regDt = com.fnDateFormat(resData.data.regDt,'-')
+				com.fnSetKeyVal(resData.data);
+			}
+
+			//수정모드 전환
+			var fnModMemo = function(){
+				$("#memoCont").prop("readonly", false);
+				$("#memoModBtn").prop("disabled", true);
+				$("#memoSaveBtn").prop("disabled", false);
+				$("#chkDel").prop("disabled", false);
+			}
+			
+			//수정, 저장
+			var fnSave = function(){
+				var msg = "";
+				if($("#chkDel").prop("checked")) { //삭제선택됐을때
+					if(!confirm("해당메모를 삭제하시겠습니까?")){ //취소시
+						return;
+					}else {
+						$("#chkDel").attr('value', 'Y');
+						param = {};
+						obj = {url:"/com/updateUserMemo.do", param:param, formId:"serch", callBack:fnSaveDelCallback, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxPost(obj); 
+					}
+				}else {//삭제말고 단순 내용수정할때
+					if($("#memoCont").val() === '') {
+						alert('수정할 내용이 없습니다');
+						return;
+					}
+					
+					if(confirm("수정 처리 하시겠습니까?")){
+						param = {};
+						obj = {url:"/com/updateUserMemo.do", param:param, formId:"serch", callBack:fnSaveCallback, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxPost(obj); 
+					}
+				}
+				
+			}
+			
+			//수정콜백
+			var fnSaveCallback = function(resData){
+				console.log('수정콜백');
+				console.log(resData);
+				com.dialpopupClose();
+				parent.fnSearch();
+			}
+			
+			//수정 - 삭제 콜백
+			var fnSaveDelCallback = function(resData){
+				console.log('수정-삭제콜백');
+				console.log(resData);
+				com.dialpopupClose();
+				parent.fnSearch();
+			}
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serch" id="serch" method="post" onSubmit="return false">
+				<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+				<input type="hidden" name="memoSeq" id="memoSeq" th:value="${paramMap.memoSeq}"/>
+				<div class="wrapBox">
+					<section class="area">
+						<div class="fl">
+							<h4 class="title">업무메모 상세 정보</h4>
+						</div>
+					</section>
+					<table class="tbl mt10">
+						<colgroup>
+							<col style="width:100px;">
+							<col style="width:140px;">
+							<col style="width:100px;">
+							<col style="width:140px;">
+							<col style="width:100px;">
+							<col style="">
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>작성자</th>
+								<td><span id="ele_userId"></span></td>
+								<th>등록날짜</th>
+								<td><span id="ele_regDt"></span></td>
+								<th>삭제</th>
+								<td>
+									<input type="checkbox" id="chkDel" name="chkDel" disabled/>
+									<span style="font-size: 11px;">(체크시 해당메모 삭제)</span>
+								</td>
+							</tr>
+							<tr>
+								<th>내용</th>
+								<td colspan="5">
+									<textarea name="memoCont" id="memoCont" cols="30" rows="13" readonly></textarea>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div><!-- //wrapbox-->
+			</form>
+		</div><!-- //contentsArea -->
+		<div class="layer-flex mt20">
+			<!-- 처리 버튼 영역 -->
+			<div class="" style="width:100%">
+				<section class="area">
+					<div class="fc">
+						<button type="button" onclick="javascript:fnModMemo();" id="memoModBtn" class="btn style08">수정</button>
+						<button type="button" onclick="javascript:fnSave();" id="memoSaveBtn" class="btn style08" disabled>저장</button>
+						<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style08">취소/닫기</button>
+					</div>
+				</section>
+			</div>
+			<!-- 처리 버튼 영역 끝-->
+		</div>
+	</body>
+</html>

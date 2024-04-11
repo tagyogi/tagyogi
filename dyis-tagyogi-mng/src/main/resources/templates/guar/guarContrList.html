@@ -1,0 +1,298 @@
+<!--
+	파일정보 : guarContrList.html
+	파일명 : 보증약정현황
+	업무명 : 보증약정현황 조회, 등록, 수정
+	생성자 : 변성균
+	생성일 : 2023-04-04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "GR01:GR11:GR17:CM07", gridNoList : refVals[1]}
+
+			var refVal = /*[[${menuInfo.refVal}]]*/; //메뉴참조값 현황유형:그리드번호
+			var refVals = refVal.split(":"); //화면유형:그리드번호
+			var reloadYn = false;	//공통 리로드 방지
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				$("#sSerchType").val(refVals[0]); //화면 유형
+
+				//코드값 처리
+				com.fnCodeSelectBox("GR01", "sGuarType", 2, ""); //상품종류
+				com.fnCodeSelectBox("GR11", "sContrType", 2, ""); //약정구분
+				com.fnCodeSelectBox("GR17", "sProcStat", 2, ""); //처리상태
+				com.fnCodeSelectBox("MB24", "sMembCd", 2, ""); //조합원형태
+
+				//달력부분
+				if(refVals[0] === "I"){
+					com.fnCodeSelectBox("CM07", "sContrStat", 2, ""); //약정상태
+					$("#sSerchStaDt").val(com.fnDateGet(/*[[${today}]]*/, -730)); //
+					$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 30));
+				}else{
+					com.fnCodeSelectBox("CM07", "sContrStat", 2, "10"); //약정상태
+					$("#sSerchStaDt").val(com.fnDateGet(/*[[${today}]]*/, -30)); //
+					$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 60)); //
+					$("#txt_serchDt").text("만기일자");
+				}
+
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+
+					if(obj.row.contrStatNm === "해제(유효)"){
+						$("#btnGuarTran").show();
+					}else{
+						$("#btnGuarTran").hide();
+					}
+					//
+				});
+				
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+					fnView("V");
+				});
+				
+				
+				
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				serchType = $("#sSerchType").val();
+
+				//화면별 검색 일자값 변경
+				if(serchType === "I"){
+					$("#sContrStaDt").val($("#sSerchStaDt").val());
+					$("#sContrEndDt").val($("#sSerchEndDt").val());
+				}else if(serchType === "E"){
+					$("#sContrBegDt").val($("#sSerchStaDt").val());
+					$("#sContrExpDt").val($("#sSerchEndDt").val());
+				}
+
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/guarContr/selectGuarContrList.do", param); //param, sheetId 생략 가능
+			};
+
+			//화면 호출(등록, 수정, 삭제)
+			var fnView = function(type){
+				if(type === "I"){
+					param = {menuCd:"1030105", paramMap:{atthNo:"",atthType:/*[[${menuInfo.atthType}]]*/}};  // guar/guarContrReqIns
+					parent.menuOpen(param);
+				}else{
+					var rowData = sheet.getFocusedRow();
+					if(rowData === null){
+						alert("선택된 대상이 없습니다.");
+						return;
+					}
+
+					var contrStat = rowData.contrStat; //약정상태
+					var contrType = rowData.contrType; //약정유형
+
+					if(type === "D"){
+						if(confirm(rowData.membNm + " 조합원 " + rowData.contrNo + "약정을 삭제 하시겠습니까?")){
+							var param = {membNo: rowData.membNo, contrNo : rowData.contrNo, atthNo : rowData.atthNo, atthType:/*[[${menuInfo.atthType}]]*/ };
+							obj = {url:"/guarContr/deleteGuarContr.do", param:param, callBack:fnSearch, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+							com.fnAjaxDef(obj);
+						}
+					}else{
+						if(type === "U"){
+							menuCd = "1030107"; //신청수정 guar/guarContrReqUpt
+							//if(contrStat !== "") menuCd = "1030107"; //상세수정
+						}
+
+						if(type === "V" && contrStat != "10") menuCd = "1030106"; //신청상세 1030106 guar/guarContrReqDtl
+						if(type === "V" && (contrStat == "10" || contrStat == "20") ) menuCd = "1030108"; //상세  guar/guarContrDtl
+ 
+
+						if(type === "R" ){
+							if(type === "R" && contrType != "11"){
+								alert("한도거래 정상 건만 갱신 가능합니다.");
+								return;
+							}
+
+							if(rowData.procCnt > 0){
+								alert("이미 갱신 처리 진행 중인 건이 존재합니다.");
+								return;
+							}
+
+							if(!(contrStat == "10" || rowData.contrStatNm == "해제(유효)")){
+								alert("약정상태가 정상이거나 해제(유효)인 경우만 갱신 가능합니다.");
+								return;
+							}
+
+							menuCd = "1030110"; //갱신 guar/guarContrRenewIns
+						}
+
+						if(type === "U" && contrStat == "20"){
+							alert("약정상태가 해제인 경우는 수정이 불가 합니다.");
+							return;
+						}
+
+						param = {menuCd:menuCd, paramMap:{membNo:rowData.membNo
+														, contrNo:rowData.contrNo
+														, contrStat:rowData.contrStat
+														, procStat:rowData.procStat
+														, atthNo:rowData.atthNo
+														, atthType:/*[[${menuInfo.atthType}]]*/
+														}
+								};
+						parent.menuOpen(param);
+					}
+				}
+			};
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+
+				if(refVals[0] === "I"){
+					$("#sSerchStaDt").val(com.fnDateGet(/*[[${today}]]*/, -730)); //
+					$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0));
+				}else{
+					$("#sSerchStaDt").val(com.fnDateGet(/*[[${today}]]*/, -30)); //
+					$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 60)); //
+				}
+
+				fnSearch();
+			};
+			
+			//보증이관 처리
+			var fnGuarTran = function(){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				if(confirm(rowData.membNm + " 유효한 보증을 이관 처리 하시겠습니까?")){
+					param = {membNo:rowData.membNo, befContrNo:rowData.contrNo}
+					obj = {url:"/guarContr/updateContrGuarTran.do", param:param, callBack:fnGuarTranCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+				}
+			}
+			//보증이관 처리 콜백
+			var fnGuarTranCallBack = function(resData){
+				fnSearch();
+			}
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="sSerchType" id="sSerchType" value=""/>
+				<input type="hidden" name="sContrStaDt" id="sContrStaDt" value=""/>
+				<input type="hidden" name="sContrEndDt" id="sContrEndDt" value=""/>
+				<input type="hidden" name="sContrBegDt" id="sContrBegDt" value=""/>
+				<input type="hidden" name="sContrExpDt" id="sContrExpDt" value=""/>
+				<input type="hidden" name="membNo" id="membNo" value=""/>
+				<input type="hidden" name="contrNo" id="contrNo" value=""/>
+
+
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;"  maxlength="40" >
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>약정구분</dt>
+							<dd style="width:150px;">
+								<select name="sContrType" id="sContrType" style="width:150px;"></select>
+							</dd>
+							<dt>약정상태</dt>
+							<dd style="width:150px;">
+								<select name="sContrStat" id="sContrStat" style="width:150px;"></select>
+							</dd>
+							<dt >조합원형태</dt>
+							<dd style="width:110px;">
+								<select name="sMembCd" id="sMembCd" style="width:110px;"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+					<div class="row">
+						<dl>
+							<dt id="txt_serchDt">약정일자</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sSerchStaDt" id="sSerchStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sSerchStaDt', 'yyyy-mm-dd','sSerchEndDt', 1)" />
+	                        	<input type="search" name="sSerchEndDt" id="sSerchEndDt" title="종료일" maxlength="10" style="width:100px" value=""onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sSerchEndDt', 'yyyy-mm-dd', 'sSerchStaDt', 2)" />
+							</dd>
+							<dt>상품종류</dt>
+							<dd style="width:150px;">
+								<select name="sGuarType" id="sGuarType" style="width:150px;"></select>
+							</dd>
+							<dt>처리상태</dt>
+							<dd style="width:150px;">
+								<select name="sProcStat" id="sProcStat" style="width:150px;"></select>
+							</dd>
+
+						</dl>
+					</div><!-- //row -->
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt20">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+
+								<button type="button" onclick="javascript:fnView('I');" class="btn style08">등록</button>
+								<button type="button" onclick="javascript:fnView('U');" class="btn style08">수정</button>
+								<button type="button" onclick="javascript:fnView('R');" class="btn style08">갱신</button>
+								<button type="button" onclick="javascript:fnView('V');" class="btn style08">상세</button>
+								<button type="button" id="btnGuarTran" onclick="javascript:fnGuarTran();" class="btn style03" style="display:none">보증이관</button>
+								<th:block th:if="${#strings.equals(session.userId,'admin')}"> <!-- 관리자권한 -->
+									<button type="button" onclick="javascript:fnView('D');" class="btn style03">삭제</button>
+								</th:block>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04" id="btn_excel">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+		    /*]]>*/
+		</script>
+		<div class="content-top flex-box jc-between">
+			<h2 class="ko-bold" >[[${menuInfo.menuNm}]]
+			</h2>
+			[[${session.membNo}]]
+			<th:block th:if="${#strings.equals(active,'local') or #strings.equals(active,'dev')}"> 
+				[[${menuInfo.menuPage}]]
+			</th:block>
+            <div class="menuPath-wrap">
+				<a href="/main.do" class="menuPath-home" title="홈"></a><span> > </span> 
+            	<span id="menuPath">[[${menuInfo.menuPath}]]</span> <b id="menuPath2" class="ellipsis">[[${menuInfo.menuNm}]]</b>
+            </div>
+        </div>
+</html>

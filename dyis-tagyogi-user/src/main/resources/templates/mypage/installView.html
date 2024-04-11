@@ -1,0 +1,371 @@
+<!--
+	시스템구분 : 홈페이지 설치파일 확인
+	파일정보 : installPop.html
+	파일명 : installPop.html
+	업무명 : 홈페이지 설치파일 확인 
+	생성자 : 윤가영
+	생성일 : 2023.11.08
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<script th:src="@{/markany/js/MaXHRControl.js}"></script>
+	<script th:src="@{/js/ozws.js}"></script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		
+		//공인인증서설치여부
+		var isInstall = {unicrs:false};
+		
+		var unicrsVersion = "2.0.11.2";
+		var unicrsSrc = "https://127.0.0.1:15018";
+
+		// OS
+		var OSTYPE_WIN32					= "Win32";
+		var OSTYPE_WIN64					= "Win64";
+		var OSTYPE_MAC						= "MAC";
+		var OSTYPE_UNKNOWN                  = "Unknown";
+		var Client_OS						= "Win32";
+		
+		if(navigator.platform == OSTYPE_WIN32) Client_OS = OSTYPE_WIN32;
+		else if(navigator.platform == OSTYPE_WIN64) Client_OS = OSTYPE_WIN64;
+		else if(navigator.platform == "MacIntel") Client_OS = OSTYPE_MAC;
+		else Client_OS = OSTYPE_UNKNOWN;
+
+		var par = /*[[${paramMap}]]*/;
+		var certRs = /*[[${paramMap.cert}]]*/;
+		var ozRs = /*[[${paramMap.oz}]]*/;
+		var markRs = /*[[${paramMap.mark}]]*/;
+		
+		if(certRs === 'Y'){
+			$("#certTxt > div").text("설치됨");
+			$("#certTxt button").prop("disabled", true);
+			$("#certTxt button").hide();	
+		}else {
+			$("#certTxt > div").text("미설치");
+			$("#certTxt button").prop("disabled", false);
+			$("#certTxt button").show();
+		}
+		
+		if(ozRs === 'Y'){
+			$("#ozTxt > div").text("설치됨");
+			$("#ozTxt button").prop("disabled", true);
+			$("#ozTxt button").hide();	
+		}else {
+			$("#ozTxt > div").text("미설치");
+			$("#ozTxt button").prop("disabled", false);
+			$("#ozTxt button").show();
+		}
+		
+		if(markRs === 'Y'){
+			$("#markTxt > div").text("설치됨");
+			$("#markTxt button").prop("disabled", true);
+			$("#markTxt button").hide();	
+		}else {
+			$("#markTxt > div").text("미설치");
+			$("#markTxt button").prop("disabled", false);
+			$("#markTxt button").show();
+			
+		}
+		
+		/*** 설치 ***/
+		
+		// ############ 공인증서 설치 부분 ######################################//
+		//인증서설치 호출
+		var fnReInstallCert = function(){
+			if(Client_OS == OSTYPE_MAC)
+				document.getElementById("downfrm").src = '/CC_WSTD_home/install/UniSignCRSV3Setup.pkg';	
+			else
+				document.getElementById("downfrm").src = '/CC_WSTD_home/install/UniSignCRSV3Setup.exe';	
+			
+			UniCRSChecker();
+		}
+		
+		var UniCRSVersion = function(data){
+			var currentVersion = data.split(":")[1];
+			var cv = currentVersion.split('.');
+			currentVersion = cv[0] + '.' + cv[1] + '.' + cv[2] + '.0';
+			
+			if( isUpdate(currentVersion, unicrsVersion) ){
+				console.log("인증서 진행주");
+				setTimeout(UniCRSChecker, 2000);
+			}else{
+				isInstall.unicrs = true;
+				
+				console.log("인증서 완료");
+				//성공 완료 시
+				$("#certTxt > div").text("설치됨");
+				$("#certTxt button").prop("disabled", true);
+				$("#certTxt button").hide();
+				
+			}
+		}
+		var count = 0;
+		var UniCRSChecker = function(){
+			console.log(count++);
+			count++;
+			var fnResult2 = function(obj, r){
+				if(obj && obj.parentNode) obj.parentNode.removeChild(obj);
+				var fnlogic = function(){
+					if(r){
+						var j = document.createElement('script');
+						var url = unicrsSrc + "/VER?UniCRSVersion";
+						
+						j.setAttribute('src', url);
+						j.setAttribute('type', 'text/javascript');
+					}else{
+						//console.log("실패 : ");
+						setTimeout(UniCRSChecker, 1000);
+					}
+				}
+				setTimeout(fnlogic,200);
+			}
+		
+			var chkImg;
+			if (navigator.userAgent.indexOf("MSIE 7.0") !== -1) {
+				chkImg = document.createElement("<img id='uniImg' alt='uniImg' src='"+unicrsSrc + '/CRS?cd=' + Math.random() + "' onload='fnResult2(this, true)' onerror='fnResult2(this, false)' />");
+				chkImg.onerror = function() {fnResult2(chkImg, false);};
+				chkImg.onload = function() {fnResult2(chkImg, true);};
+				chkImg.style.display = "none";
+			} else {
+				//여기
+				chkImg = document.createElement('img');
+				
+				chkImg.setAttribute('id', "uniImg");
+				chkImg.setAttribute('src', unicrsSrc + '/CRS?cd=' + Math.random());
+				chkImg.onerror = function() {fnResult2(chkImg, false);};
+				chkImg.onload = function() {fnResult2(chkImg, true);};
+				chkImg.style.display = "none";
+			}
+			document.body.appendChild(chkImg);
+		}
+		
+		
+		// ############ 공인증서 설치 부분 끝 ######################################//
+		
+		
+		//설치체크파일정보		[version			, CSIDL		, exeName						, addPath				];
+		var checkFileInfo_1 = 	[ "25043"		, 0x0026	, "TWFFUFNCcm9rZXIuZXhl"	, "c0f3ryzZBcTnc1jNceBfFXI=" ];
+		//var checkFileInfo_2 = 	[ "2505"			, 0x0029	, "0veef5ygDSRZ4RMLoCROIGxs"	, "" ];
+		//var chkFileArray = new Array(checkFileInfo_1, checkFileInfo_2);
+		var chkFileArray = new Array(checkFileInfo_1);
+		
+		var programComment_1 = [ "MaEPSBroker"	, "XP, Vista, 7, 8, 8.1, 10"	, "설치체크 프로그램입니다. 해당 프로그램이 미설치 시 아래의 프로그램에 대한 설치체크를 진행 할 수 없습니다."			, "/markany/install/Setup_NoaXOZ.exe"];
+		//var programComment_2 = [ "ePageSafer"	, "XP, Vista, 7, 8, 8.1, 10"	, "출력물 위변조방지를 위한 프로그램 입니다."	, "./bin/Setup_NoaXOZ.exe" ];
+		//var programCommentArray = new Array(programComment_1, programComment_2);
+		var programCommentArray = new Array(programComment_1);		
+		
+		//마크애니 설치 확인
+		function maEPS_InstallCheck() {
+			console.log("maEPS_InstallCheck4");
+			MDBG("", "start");
+			if (typeof (maResJsonData) != 'string') {			
+				for (var chkFile_i = 0; chkFile_i < maResJsonData.length; chkFile_i++) {
+					var installFlag = maResJsonData[chkFile_i].installFlag;
+					var fileDownloadLink = '';
+					if (installFlag == false) {
+						console.log("maEPS_InstallCheck6");
+					} else {
+						console.log("maEPS_InstallCheck7");
+						//$("#waitOverlay").hide();
+					}
+				}
+				
+			} else {
+				MDBG("", maResJsonData);
+				console.log("maEPS_InstallCheck8");
+			}
+		
+			if (maOnlyInstallFlag == true) {
+				//$("#waitOverlay").hide();
+				alert("설치가 완료되었습니다.");
+			}
+		}
+		
+		//마크애니설치호출
+		var fnReInstallMark = function(){
+			//$("#waitOverlay").show();
+			console.log("maEPS_InstallCheck1");
+			document.getElementById("downfrm").src = "/markany/install/Setup_NoaXOZ.exe";
+			xconsole.log("maEPS_InstallCheck2");
+			maBrokerInit( maEPS_InstallCheck, 'getVersion', true );
+			console.log("maEPS_InstallCheck3");
+		}
+		
+		
+		//오즈 부분
+		var OZUtil = start_OZUtil;
+		var namespace = "kocfcExeViewer";
+		var OZViewerID = "OZViewer";
+		var OZInstallChk = false;
+		OZUtil.CloseEXEViewer(OZViewerID);
+		OZCall = function()
+		{
+			var	protocolversion = 2008;
+			var ztParam = new Object();
+		    ztParam.InstallBase = "<PROGRAMS>/Forcs";
+		    ztParam.InstallNamespace = namespace;
+		    ztParam.DownloadServer = "https://www.kocfc.or.kr/oz80/ozexeviewer/ozrviewer";
+		    ztParam.DownloadPort = 80;
+		    ztParam.DownloadInstruction = "ozrviewer.idf";
+			OZUtil.installViewer(protocolversion, ztParam, installOZWebLauncher, createOZViewer);
+		}
+		
+		
+		installOZWebLauncher = function()
+		{
+			if(OZInstallChk == false){
+				OZInstallChk = true;
+		    	setTimeout(function(){ OZCall(); }, 2000);
+		    	
+				//document.getElementById('downfrm').src = '/oz80/OnLine_Install_Dialog_UI_SSL.exe';
+		    	document.getElementById('downfrm').src = '/oz80/OnLine_Install_Dialog_UI_SSL.exe';
+			}else{ //1차 설치 중일 경우
+				setTimeout(function(){ OZCall(); }, 2000);
+			}
+		}
+		
+		createOZViewer = function()
+		{
+			$("#ozTxt button").prop("disabled", false);
+			//$("#ozTxt button").show();
+			//$("#waitOverlay").hide();
+		}
+		
+		//오즈설치호출
+		var fnReInstallOz = function(){
+			$("#ozTxt > div").text("설치됨");
+			$("#ozTxt button").prop("disabled", true);
+			$("#ozTxt button").hide();
+			
+			OZCall();
+		}
+		
+		/***************************************************/
+		
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+			
+		});
+		
+		
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+                        
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="saveFrm" id="saveFrm" onSubmit="return false;">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="certPlainText" id="certPlainText" value="kocfc1234567890kocfc"/>
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+								<div id="">
+                                    <p class="title-dept1 m-mb0">필수 설치 프로그램 안내</p>
+                                    <p class="txt-dept1">
+										홈페이지 > 로그인 페이지 내에서 자동으로 프로그램 설치 유무를 확인하여 설치 진행을 지원하고 있습니다.
+										</br>다음은 설치가 정상적으로 처리 되지 않을 경우에 대한 처리 방법 입니다.
+									</p>
+                                    <ul>
+                                        <li class="dot-dept1">업무 관련 프로그램</li>
+                                        <li class="txt-dept2">1. 공인인증서(CROSSCERT)</li>
+                                        <li class="txt-dept2">2. 레포트(출력물) 위변조 프로그램(MarkAny)</li>
+                                        <li class="txt-dept2">3. 레포트(출력물) 오즈레포트(OZReport)</li>
+                                    </ul>
+                                    <div class="alignR mt20" style="display: flex; justify-content: space-between; align-items: flex-end;">
+										<span style="font-size: 15px; color: #ff6600;" class="fl">* 미설치된 프로그램이 있습니다. 우측상단 다운로드 버튼을 클릭하여 프로그램을 다운로드 해주세요.</span>
+									</div>
+                                    <article class="table-wrap">
+                                        <div class="table-scroll">
+                                            <table>
+                                                <caption>필수 설치 프로그램 안내</caption>
+                                                <colgroup>
+                                                    <col style="width: 20%;">
+                                                    <col style="width: 50%;">
+                                                    <col style="width: 20%;">
+                                                </colgroup>
+                                                <thead>
+                                                    <tr class="back-gray">
+                                                        <th scope="col">종류</th>
+                                                        <th scope="col">내용</th>
+                                                        <th scope="col">설치상태</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="txt-center">공인인증서(CROSSCERT)</td>
+                                                        <td>인증서 이용을 위한 응용프로그램.</td>
+                                                        <td id="certTxt" class="txt-center">
+															<div></div>
+															<button type="button" class="sub-btn btn-color red" style="display: none; font-size: 14px;" onclick="fnReInstallCert();" disabled>설치하기</button></td>
+														</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="txt-center">MarkAny</td>
+                                                        <td>레포트(출력물) 위변조 프로그램(MarkAny).</td>
+                                                        <td id="markTxt" class="txt-center">
+															<div></div>
+															<button type="button" class="sub-btn btn-color red" style="display: none; font-size: 14px;" onclick="fnReInstallMark();" disabled>설치하기</button></td>
+														</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="txt-center">오즈레포트</td>
+                                                        <td>레포트(출력물) 오즈레포트(OZReport).</td>
+                                                        <td id="ozTxt" class="txt-center">
+															<div></div>
+															<button type="button" class="sub-btn btn-color red" style="display: none; font-size: 14px;" onclick="fnReInstallOz();" disabled>설치하기</button></td>
+														</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <span style="font-size: 16px; color: #ff6600;" class="fl">* 설치가 완료되면 로그인페이지로 이동하여 다시 로그인하여 주십시오.</span>
+                                    </article>
+                                    <!--
+                                    <article>
+										<p class="title-dept1 m-mb0">문의 사항</p>
+	                                    <p class="txt-dept1">
+											02-3661-5384 한국콘텐츠공제조합 전산운영팀
+											</br>원격 접속정보 : https://939.co.kr/dongyangis
+										</p>
+									</article>
+									-->
+                                </div>
+								
+                        	</div>
+                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <iframe id="downfrm" style="display:none;" title="오즈설치용"></iframe> <!-- 오즈설치용 -->
+        
+        <div id="waitOverlay" style="display: none;">
+			<div>
+				<img src="/images/loading.gif" onerror="" alt="로딩바"/>
+				<span>잠시만 기다려주세요, 필요한 프로그램을 설치중입니다.</br>시간이 다소 소요될 수 있습니다...</span>
+			</div>
+		</div>
+</html>

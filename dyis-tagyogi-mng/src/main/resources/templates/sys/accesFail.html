@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" lang="ko">
+<head>
+</head>
+<body>
+<script th:inline="javascript">
+/*<![CDATA[*/
+//alert(/*[[${failType}]]*/ );
+
+if(/*[[${failType}]]*/  === "S"){ //세션없을경우
+	top.location.href = "/login/login.do";	
+}
+/*]]>*/
+</script>
+
+
+</body>
+</html>

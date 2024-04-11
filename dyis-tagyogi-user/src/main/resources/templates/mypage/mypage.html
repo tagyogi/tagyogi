@@ -1,0 +1,160 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : mypage
+	파일명 : mypage
+	업무명 : 마이페이지
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+			
+			
+			//게시글 부르기
+			
+			
+		});
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+                        
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article>
+                                    <p class="title-dept1">조합원정보</p>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll">
+                                            <table summary="조합원정보">
+                                                <colgroup>
+                                                    <col width="12%">
+                                                    <col width="23%">
+                                                    <col width="12%">
+                                                    <col width="18%">
+                                                    <col width="12%">
+                                                    <col width="23%">
+                                                </colgroup>
+                                                <tbody>
+                                                    <tr>
+                                                        <th>조합원</th>
+                                                        <td>35 / 동양정보서비스㈜</td>
+                                                        <th>대표자</th>
+                                                        <td id="t_ceo_nm">윤정철</td>
+                                                        <th>주장르</th>
+                                                        <td id="t_main_buss_nm">콘텐츠솔루션</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>사업자번호</th>
+                                                        <td id="t_biz_no">106-81-96098</td>
+                                                        <th>법인등록번호</th>
+                                                        <td id="t_law_no">110111-2147670</td>
+                                                        <th>소속단체</th>
+                                                        <td id="t_belong"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>전화번호</th>
+                                                        <td id="t_tel_no">02-761-4353</td>
+                                                        <th>주소</th>
+                                                        <td id="t_addr" colspan="3">서울특별시 강서구 양천로 401 에이 610호</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <article>
+                                    <p class="title-dept1">변경정보</p>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll">
+                                            <table>
+                                                <colgroup>
+                                                    <col width="15%">
+                                                    <col width="35%">
+                                                    <col width="15%">
+                                                    <col width="35%">
+                                                </colgroup>
+                                                <tbody>
+                                                    <tr>
+                                                        <th>안내</th>
+                                                        <td colspan="3">
+                                                            <ul>
+                                                                <li class="dot-black">모바일에서 조회 시 아이디와 비밀번호로 조회 가능합니다.</li>
+                                                            </ul>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>아이디</th>
+                                                        <td>
+                                                            <div class="flex-box al-center gap-5">
+                                                                <input name="" type="text" size="" maxlength=""
+                                                                    value="" onkeypress="onlyNumber();"
+                                                                    onkeyup="">
+                                                                <button
+                                                                    class="sub-btn btn-color btn-auto"><a
+                                                                        href="#;">중복확인</a></button>
+                                                                        
+                                                            </div>
+                                                        </td>
+			                                                <th></th>
+			                                                <td></td>
+                                                    </tr>
+		                                             <tr>
+		                                                <th>비밀번호</th>
+		                                                <td>
+		                                                    <div class="flex-box al-center gap-5">
+		                                                        <input name="" type="password"
+		                                                            id="" size="12" maxlength=""
+		                                                            value="" onkeypress=""
+		                                                            onkeyup=";" autocomplete="off">
+		                                                    </div>
+		                                                </td>
+		                                                <th>비밀번호 확인</th>
+		                                                <td><input name="" type="password" id=""
+                                                                size="20" class="" autocomplete="off"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <div class="btn-wrap flex-box jc-center gap-10">
+                                    <button type="submit" class="btn-color sub-btn2"><a href="">등록</a></button>
+                                    <button type="button" class="sub-btn2 btn-black"><a
+                                            href="./sub3-1-1.html">취소</a></button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

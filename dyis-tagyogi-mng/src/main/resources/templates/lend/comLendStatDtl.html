@@ -1,0 +1,111 @@
+<!--
+	파일정보 : searchLend/searchLend.html
+	파일명 : comLendStatDtl
+	업무명 : 대출일보월보 팝업
+	생성자 : BSG
+	생성일 : 2023.06.13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "80103"}
+			
+			var paramMap = /*[[${paramMap}]]*/;
+			//console.log(paramMap);
+			//초기화 조회 콜백
+			
+			var serchType; 
+			$(document).ready(function(){
+				//화면 처리
+				serchType = parent.serchType;
+				//공통코드
+				//codeList = resData.codeList; //코드값 세팅
+				
+				//IBsheet 초기화
+				
+				var gridNo = /*[[${menuInfo.workGrid}]]*/;
+				if(serchType === "rep" || serchType === "len" || serchType === "yearRep"){ //상환
+					gridNo = "40303";
+				}else if(serchType === "be" || serchType === "cu" || serchType === "pa"
+				         || serchType === "b" || serchType === "c" || serchType === "p"){ //이자
+					gridNo = "40323";
+				}
+				
+				com.fnIbsInit(gridNo);
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+			    
+			    
+			   
+			});
+			
+			//현황 조회
+			var fnSearch = function(){
+				$("#ele_loading").css("display","block"); //로딩바
+				
+				var dmDiv = parent.$('input[name="sDmDiv"]:checked').val();
+				basDt = parent.$("#basYmd").val();
+				if (dmDiv === "M"){
+					basDt = parent.$("#basYear").val() + parent.$("#basMonth").val();
+				}
+				
+				var url = "/lendStat/selectLendStatDtlList.do"; 
+				if(serchType === "rep" || serchType === "len" || serchType === "yearRep") 
+				 url = "/lendStat/selectLendStatDtlRepayList.do"; //상환
+				
+				
+				param = {basDt : basDt, serchType : parent.serchType, baseType : parent.baseType, lendType : parent.lendType, interCd : parent.interCd };
+				
+				console.log(param);
+				obj = {url:url, param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);	
+			};
+			
+			//alert(parent.basDt +"/" + parent.serchType +"/" + parent.baseType +"/" + parent.lendType );
+			var fnSearchCallBack = function(resData){
+				
+				sheet.loadSearchData(resData.data); //
+				sheet.loadSearchData(resData.repay); //
+				
+				$("#ele_loading").css("display","none"); //로딩바	
+			};
+			
+			//엑셀 다운로드
+			var fnExcel = function(){
+				console.log(gridOptList[0].Cols);
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+			
+		    /*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="sSerchType" id="sSerchType" value=""/>
+			</form>
+			<section class="area">
+				<div class="fr">
+					<button type="button" onclick="javascript:fnExcel();" class="btn style04">엑셀</button>
+				</div>
+			</section>
+			<div class="mt10">
+		    	<div id="sheetDiv" style="width:100%;height:600px"></div>
+			</div>
+		</div><!-- //contentsArea -->
+		<div id="ele_loading" style="display:none">
+			<img src="/images/loading.gif" onerror=""/>
+		</div>
+	</body>
+</html>

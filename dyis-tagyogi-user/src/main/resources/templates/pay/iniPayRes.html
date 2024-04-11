@@ -1,0 +1,48 @@
+<!--
+	파일정보 : bankPayRes.html
+	파일명 : 뱅크페이 결제 결과 처리
+	업무명 : 뱅크페이 결제 결과 처리(팝업 호출 부분 4단계)
+	생성자 : bsg
+	생성일 : 2023.05.09
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			var result = /*[[${result}]]*/
+			if(result.resultCd === "0"){
+				alert("결제가 정상 처리 되었습니다.");
+				opener.fnRepage();
+				self.close();	
+			}else{
+				alert("결제 처리 중 오류가 발생하였습니다.[" +result.resultMsg+ "]");	
+			}
+			
+			/*>*/ 
+		</script>
+		<!-- 콘텐츠 시작 -->
+		<div class="wrapBox" >
+			<!--
+			<section class="area">
+				<div class="fl">
+					<h4 class="title" th:text="결제결과"></h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:80px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>결과</th>
+						<td>[[${result}]]</td>
+					</tr>
+				</tbody>
+			</table>
+			-->
+		</div>
+	</body>
+</html>

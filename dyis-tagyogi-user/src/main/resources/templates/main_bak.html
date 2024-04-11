@@ -1,0 +1,873 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : main.html
+	파일명 : 메인
+	업무명 : 메인
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/basicLayout" xml:lang="ko">
+	<body>
+   		<script th:inline="javascript">
+	    /*<![CDATA[*/
+	    	var membNo = /*[[${session.membNo}]]*/;
+	    	var bizNo =  /*[[${session.bizNo}]]*/;
+	    	var kocfc =  /*[[${kocfc}]]*/; // 조합원정보
+	    	var kocfcAccList =  /*[[${kocfcAccList}]]*/; //조합원계좌정보
+	    	var brdAtthType ='';//게시판에따른 atth_type구분
+
+	    	var active =  /*[[${active}]]*/; //서버유형 (dev, prd)
+	    	
+	    	/*****임시s*****/
+			//var signYn = /*[[${session.signYn}]]*/;
+			/*****임시e*****/
+
+	        $(document).ready(function () {
+				getUrl = window.location.href;
+				if(getUrl.indexOf("localhost") === -1 && getUrl.indexOf("http://") > -1 ){
+					location.href = getUrl.replace( "http:", "https:");	
+				}
+				
+				
+				//로그인버튼
+				if(membNo === null){
+					$("#btnLogin, #btnLogin-m").removeClass("hide");
+					$("#btnLogout, #btnMypage, #btnLogout-m, #m-name, #btnMypage-m").addClass("hide");
+				}else{
+					$("#btnLogout, #btnMypage, #btnLogout-m, #m-name, #btnMypage-m").removeClass("hide");
+					$("#btnLogin, #btnLogin-m").addClass("hide");
+				}
+
+	            const swiper = new Swiper('.swiper', {
+	                slidesPerView: 1,
+	                direction: 'horizontal',
+	                // autoplay : {delay: 5000, disableOnInteraction: false},
+	                loop: true,
+	                speed: 500,
+	                pagination: {
+	                    el: ".swiper-pagination",
+	                    clickable: true,
+	                },
+	                navigation: {
+	                    nextEl: '.swiper-button-next',
+	                    prevEl: '.swiper-button-prev',
+	                },
+	            });
+
+	            const swiper2 = new Swiper('.swiper2', {
+	                slidesPerView: 7,
+	                spaceBetween: 20,
+	                direction: 'horizontal',
+	                autoplay: false,
+	                loop: true,
+
+
+	                navigation: {
+	                    nextEl: '.swiper2-button-next',
+	                    prevEl: '.swiper2-button-prev',
+	                },
+
+	                breakpoints: {
+	                    1400: {
+	                        slidesPerView: 6,
+	                    },
+	                    1180: {
+	                        slidesPerView: 4,
+	                    },
+	                    768: {
+	                        slidesPerView: 2,
+	                    },
+	                },
+	            });
+	            const swiper3 = new Swiper('.swiper3', {
+	                slidesPerView: 6,
+	                spaceBetween: 30,
+	                direction: 'horizontal',
+	                autoplay: { delay: 5000, disableOnInteraction: false},
+	                loop: true,
+
+
+	                navigation: {
+	                    nextEl: '.next',
+	                    prevEl: '.prev',
+	                },
+
+	                breakpoints: {
+	                    1400: {
+	                        slidesPerView: 5,
+	                    },
+	                    1180: {
+	                        slidesPerView: 4,
+	                    },
+	                    768: {
+	                        slidesPerView: 2,
+	                    },
+	                },
+	            });
+	            $('.stop').click(function () { //배너 정지 버튼
+	                swiper3.autoplay.stop();
+	            });
+
+	            let ww = window.innerWidth;
+	            let swiperPop;
+
+	            responsiveSwiper();
+
+	            function initSwiper(n, effect) {
+	                if (typeof(swiperPop) === 'object') swiperPop.destroy();
+
+	                return swiperPop = new Swiper('.swiperPop', {
+	                    slidesPerView: n,
+	                    slidesPerGroup : n,
+	                    direction: 'horizontal',
+	                    autoplay: effect,
+	                    loop: true,
+	                    loopFillGroupWithBlank: true,
+	                    speed: 800,
+
+	                    navigation: {
+	                        nextEl: '.swiperPop-button-next',
+	                        prevEl: '.swiperPop-button-prev',
+	                    },
+	                });
+	            }
+
+	            function responsiveSwiper() {
+	                if (ww >= 1180) {
+	                    initSwiper(3, false);
+	                } else if (ww < 1180) {
+	                    initSwiper(1, true);
+	                }
+	            }
+
+	            window.addEventListener('resize', function() {
+	                ww = window.innerWidth;
+	                responsiveSwiper();
+	            });
+
+	            //메인팝업
+	            if(getCookie("swiperPopArea1") !=="Y" || $("#swiperPopArea1 .swiper-slide").length != 0 ){
+					$("header").addClass("pop");
+		            $("#swiperPopArea1").show();
+		        }else{
+					$("header").removeClass("pop");
+		            $("#swiperPopArea1").hide();
+				}
+
+				//gnb 검색창
+				$('#mainSearchBtn').click(function(e){
+	                e.preventDefault();
+	                target = $(this).attr('href');
+	                $(target).toggleClass('hid');
+	                $(target).children().children('input').focus();
+	                $('nav').css('pointer-events','none');
+	            });
+            });
+
+            //gnb 검색창
+            var fnMainSearchOut = function() {
+                $('#mainSearch').addClass('hid');
+                $('nav').css('pointer-events','auto');
+                $('#keyword').val('');
+            }
+
+	        //화면 호출
+	        var fnPage = function(menuCd, param){
+				if(param === undefined) param = {};
+				
+				if($("#keyword").val().length > 40){
+					alert('검색키워드가 너무 깁니다.');
+					return;
+				}
+				param.sKeyword = $("#keyword").val(); //메인검색 키워드
+				
+				param = {menuCd:menuCd, param: JSON.stringify(param)};
+				obj = {url:"/kocfc.do", param:param, callBack:fnPageCallBack, msgYn:"N", sessYn:"N", loadYn:"N"};
+				com.fnAjaxHtml(obj);
+
+				//화면호출후 gnb닫기
+				$("header").removeClass('on');
+            	//document.mainFrm.menuCd.value = menuCd;
+		        //document.mainFrm.submit();
+			}
+
+			var fnPageCallBack = function(resData){
+				//console.log(resData);
+				//상단으로 스크롤이동
+				goTop();
+				$("#contFrme").html(resData);
+
+			}
+
+			//lnb 세팅함수
+			var fnPageLnbSet = function(menuInfo, menuNm, brdRef, menuCd){
+				//console.log(menuInfo);
+
+				$('#lnb').append($('.lnb-wrap.hide').html());
+
+				var pageTitle ="";
+				var pageActive  = "";
+
+			    $('.lnb-dept1').removeClass('active');
+			    $('.lnb-dept2').removeClass('on');
+			    $(".lnb-dept2 a").removeClass('on');
+
+	    		if(menuCd ==='20404'){//상세페이지 lnb
+					var brdTopMenuCd = brdRef.substr(0, 3);
+
+					$('#lnb > ul[id= \'lnb' + brdTopMenuCd + '\']').removeClass('on');
+					$('#lnb > ul[id= \'lnb' + brdTopMenuCd + '\']').addClass('on');
+
+					pageTitle = $('#' + brdRef).text();
+					$('h3').text($('#topMenu' + brdTopMenuCd).text());
+
+				}else {
+
+					$('#lnb > ul[id= \'lnb' + menuInfo.topMenuCd + '\']').addClass('on');
+					$('#lnb > ul[id!= \'lnb' + menuInfo.topMenuCd + '\']').removeClass('on');
+
+					pageTitle = $('h2').text();
+					//alert(menuNm);
+					if(menuNm !== undefined && menuNm !== "" ) pageTitle = menuNm;
+
+					pageActive = $(".lnb-dept2 a").filter(function() {
+		        		return $(this).text() === pageTitle;
+	    			})
+
+				    pageActive.addClass('on');
+				    pageActive.parents('.lnb-dept1').addClass('active');
+				    pageActive.parents('.lnb-dept2').addClass('on');
+
+		    		//lnb h3 이름세팅 (좌측 상단 메뉴 타이틀)
+		    		$('h3').text(menuInfo.menuPath.split('>')[0]);
+
+	    		}
+
+			    //lnb 현재페이지 active (lnb-dept2없을 때)
+			    $('.lnb-dept1 a').each(function(index,item){
+			        if($(this).text() === pageTitle){
+			            $(this).closest('li').addClass('active');
+			        }
+			    });
+
+			}
+
+			//프로그램설치 팝업
+			var fnMainProgramPop = function(){
+				com.dialpopupOpen("프로그램 설치 안내", "/index/popPageCall.do?menuPage=com/mainProgramPop", "800", "500");	// 	menuCd=1070725
+			}
+
+			//카카오채널 팝업
+			var fnKakaoChPop = function(){
+				com.dialpopupOpen("카카오톡 채널 추가하기", "/index/popPageCall.do?menuPage=com/kakaoChPop", "800", "550");	// 	menuCd=1070726
+			}
+
+			//쿠키설정
+		    function setCookie( name, value, expiredays ) {
+		    var todayDate = new Date();
+		    todayDate.setDate( todayDate.getDate() + expiredays );
+		    document.cookie = name + '=' + escape( value ) + '; path=/; expires=' + todayDate.toGMTString() + ';'
+		    }
+
+		    //쿠키 불러오기
+		    function getCookie(name)
+		    {
+		        var obj = name + "=";
+		        var x = 0;
+		        while ( x <= document.cookie.length )
+		        {
+		            var y = (x+obj.length);
+		            if ( document.cookie.substring( x, y ) === obj )
+		            {
+		                if ((endOfCookie=document.cookie.indexOf( ";", y )) === -1 )
+		                    endOfCookie = document.cookie.length;
+		                return unescape( document.cookie.substring( y, endOfCookie ) );
+		            }
+		            x = document.cookie.indexOf( " ", x ) + 1;
+
+		            if ( x === 0 ) break;
+		        }
+		        return "";
+		    }
+
+		    //1일동안 접어두기 버튼 클릭시
+		    function closePop(key)
+		    {
+	            setCookie('swiperPopArea'+key, 'Y' , 1 );
+		        $("header").removeClass("pop");
+		        $("#swiperPopArea"+key+"").hide();
+		    }
+
+		    //메인팝업 호출
+			var fnOpenMainPop = function(seq, widSize, height, scrollYn, posTop, posLeft){
+				$("#seq").val(seq);
+				var frmPop = document.unitFrm;
+			    var url = "/index/popPageCall.do?menuPage=com/mainPop&seq="+seq; //menuCd=1070727
+			    var option = "chrome, centerscreen, dependent=yes, resizable=yes, left="+ posLeft +", top="+ posTop +",";
+			    	option += "width="+ widSize +", height="+ height +", ";
+			    
+			    // 스크롤 여부
+				if(scrollYn == "Y"){
+					option += "scrollbars=yes, ";
+				}else{
+		        	option += "scrollbars=no, ";
+		        }
+		        
+		        //다중팝업열경우
+		        window.open(url, 'Popwin'+seq, option);
+		        
+		        //하나의 새창에서 팝업재로드 할경우
+				/*frmPop.action = url; 
+			    frmPop.target = 'PopupWin'; //window,open()의 두번째 인수와 같아야 하며 필수다.   
+			    frmPop.submit();*/ 
+			}
+			
+   		 /*]]>*/
+		</script>
+		<form name="certFrm" id="certFrm" method="post" onSubmit="return false;">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<input type="hidden" name="certSingData" id="certSingData" value=""/>
+		</form>
+		<div id="wrap">
+	        <ul id="skip">
+	            <li><a href="#content">본문바로가기</a></li>
+	            <li><a href="#gnb">주메뉴바로가기</a></li>
+	        </ul>
+	        <div id="swiperPopArea1" class="swiperPopArea">
+		        <ul class="swiperPop-box">
+		            <li class="swiperPop">
+		                <ul class="swiper-wrapper">
+						<th:block th:each="popItem,popItemStat  : ${popList}">
+		                    <li th:if="${#strings.equals(popItem.useYn, 'Y')}" class="swiper-slide">
+		                        <a href="javascript:void(0);" th:onclick="fnOpenMainPop([[${popItem.seq}]], [[${popItem.widSize}]], [[${popItem.height}]], [[${popItem.scrollYn}]], [[${popItem.posTop}]], [[${popItem.posLeft}]]); return false;" target="_blank">
+		                            <span th:text="${popItem.subj}" class="ellipsis"></span>
+	                            	<span th:each="popCont,popContStat : ${popCont}" th:if="${popItemStat.index == popContStat.index}" th:text="${popCont.value}" class=" ellipsis"></span>
+		                        </a>
+		                    </li>
+	                    </th:block>
+		                </ul>
+		            </li>
+		            <li class="popChk"><label for="swiperPopChk1"><input type="checkbox" id="swiperPopChk1" onclick="closePop(1);"> 1일동안 접어두기</label></li>
+		            <li class="swiperPop-button-prev"></li>
+		            <li class="swiperPop-button-next"></li>
+		        </ul>
+		    </div>
+		    <form name="unitFrm" id="unitFrm" method="post" target="PopupWin">
+				<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+				<input type="hidden" name="menuCd" value="1070727" />
+				<input type="hidden" name="seq" id="seq" value="" title="시퀀스"/>
+			</form>
+	        <header>
+				<!-- 상단 pc 버전 -->
+	            <div class="inner">
+					<div class="gnb-top">
+	                    <ul class="nav-right">
+							<li id="btnLogin"><a href="javascript:void(0);" onclick="fnPage('20601'); return false;" class="ko-medium login">로그인</a></li>
+							<li id="btnLogout"><a href="/login/logout.do" class="ko-medium logout">로그아웃</a></li>
+							<li id="btnMypage"><a href="javascript:void(0);" onclick="fnPage('20602'); return false;" class="ko-medium mypage">마이페이지</a></li>
+	                        <li class="position-r">
+								<a href="#mainSearch" id="mainSearchBtn" class="ko-medium search">검색</a>
+		                        <div id="mainSearch" class="hid">
+	                                <form method="post">
+										<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+										<input type="text" name="sKeyword" id="keyword" maxlength="40" placeholder="검색어를 입력하세요." onKeyPress="if( event.keyCode===13 ){fnPage('20207');fnMainSearchOut(); return false;}">
+	                                    <button type="button" onClick="fnPage('20207');fnMainSearchOut(); return false;"><span class="ir">검색</span></button>
+	                                </form>
+	                            </div>
+	                        </li>
+	                        <li><a href="https://939.co.kr/dongyangis/" target="_blank" class="ko-medium remote">원격지원</a></li>
+	                        <li><a href="javascript:void(0);" onClick="fnKakaoChPop(); return false;" class="ko-medium kakaoCh">카카오톡 채널</a></li>
+	                        <li class="zoom">
+	                            <em>화면</em>
+	                            <button type="button" class="zoomIn"></button>
+	                            <button type="button" class="zoomOut"></button>
+                        	</li>
+	                    </ul>
+					</div>
+	                <div id="gnb" class="gnb flex-box">
+	                    <h1 class="logo">
+	                        <a href="/main.do"><img src="../images/logo.png" alt="logo-한국콘텐츠공제조합"></a>
+	                    </h1>
+	                    <nav>
+							<ul class="flex-box menu-dept1">
+							<th:block th:each="topItem : ${menuTopList}">
+								<li th:if="${#strings.equals(topItem.menuYn,'Y')}">
+									<a href="#" class="ko-bold"><span th:id="'topMenu'+${topItem.menuCd}" th:text="${topItem.menuNm}" ></span></a>
+	                                <ul class="menu-dept2">
+										<th:block th:each="item : ${menuList}">
+										    <li th:if="${#strings.equals(topItem.menuCd, item.parentCd) && #strings.equals(item.menuYn, 'Y')}">
+												<!-- 2depth 명 -->
+												<a href="javascript:void(0);" th:if="${!#strings.equals(item.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${item.refMenuCd}]])" th:text="${item.menuNm}" th:id="${item.menuCd}" style="cursor:pointer" th:title="${item.menuNm}"></a>
+												<a href="javascript:void(0);" th:if="${#strings.equals(item.depth3Cnt.toString(),'0')}" th:onclick="fnPage([[${item.menuCd}]])" th:text="${item.menuNm}"  th:id="${item.menuCd}" style="cursor:pointer" th:title="${item.menuNm}"></a> 
+												<!-- 3depth 명 -->
+												<!--<a href="javascript:void(0);" th:onclick="fnPage([[${item.refMenuCd}]])" th:text="${item.menuNm}" th:id="${item.menuCd}" th:title="${item.menuNm}" style="cursor:pointer"></a>-->
+											</li>
+	                                	</th:block>
+									</ul>
+
+	                            </li>
+							</th:block>
+	                        </ul>
+	                    </nav>
+	                    <div class="generalMenu">
+	                        <button class="site-map" type="button"></button>
+	                        <div class="generalMenu_cont">
+	                            <div class="gMbg_head">
+	                                <p class="generalMenu_txt">함께 담고 함께 쓰는 콘텐츠계의 큰 마중물 그릇<span>한국콘텐츠공제조합!</span></p>
+	                                <div class="menu_sort"></div>
+	                                <div class="menu-box">
+	                                    <div class="generalMenu_list">
+											<th:block th:each="topItem : ${menuTopList}">
+	                                        <div th:if="${#strings.equals(topItem.menuYn, 'Y')}" class="list-box">
+	                                            <p th:text="${topItem.menuNm}" class="mainTitle"></p>
+	                                            <ul>
+													<!-- 2depth -->
+													<th:block th:each="depth2 : ${menuList}">
+		                                                <li th:if="${#strings.equals(topItem.menuCd, depth2.parentCd) && #strings.equals(depth2.menuYn,'Y') && #strings.equals(depth2.menuStep.toString(),'2')}" class="subTitle">
+		                                                    <span th:if="${!#strings.equals(depth2.depth3Cnt.toString(),'0')}" th:text="${depth2.menuNm}"></span>
+		                                                    <a href="javascript:void(0);" th:if="${#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${depth2.menuCd}]])" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer" class="after-close"></a>
+		                                                    <!-- 3depth -->
+		                                                    <ul th:if="${depth2.depth3Cnt > 0}">
+																<th:block th:each="depth3 : ${menuList}">
+		                                                        	<li th:if="${#strings.equals(depth2.menuCd, depth3.parentCd) && #strings.equals(depth3.menuYn, 'Y') && #strings.equals(depth3.menuStep.toString(), '3')}">
+																		 <a href="javascript:void(0);" th:if="${#strings.equals(depth3.mobileYn, 'Y') && !#strings.isEmpty(depth3.mobileYn)}" th:onclick="fnPage([[${depth3.menuCd}]])" th:text="${depth3.menuNm}" th:title="${depth3.menuNm}" style="cursor:pointer" class="after-close"></a>
+																		 <a href="javascript:void(0);" th:if="${!#strings.equals(depth3.mobileYn, 'Y')|| #strings.isEmpty(depth3.mobileYn)}" th:onclick="fnPage([[${depth3.menuCd}]])" th:text="${depth3.menuNm}" th:title="${depth3.menuNm}" style="cursor:pointer" class="after-close onlyPc"></a>
+																	</li>
+		                                                        </th:block>
+		                                                    </ul>
+		                                                </li>
+	                                                </th:block>
+	                                            </ul>
+	                                        </div>
+	                                    </div>
+	                                    <button type="button" class="site-map-close">사이트맵닫기</button>
+	                                </div>
+	                            </div>
+	                        </div>
+	                    </div>
+	                    <button class="side-bar" type="button"></button>
+	                </div>
+	            </div>
+	            <!-- 상단 모바일 버전 -->
+	            <div class="gnb-layout"></div>
+	            <div class="m-gnb-wrap">
+	                <div class="m-top">
+	                    <div class="side-close">
+	                        <button type="button"></button>
+	                    </div>
+	                    <p id="m-name">[[${session.membNm}]]님, 반갑습니다.</p>
+	                    <div class="user">
+	                        <p id="btnLogin-m"><a href="javascript:void(0);" onclick="fnPage('20601'); return false;" class="ko-medium after-close">로그인</a></p>
+	                        <p id="btnLogout-m"><a href="/login/logout.do" class="ko-medium after-close">로그아웃</a></p>
+	                        <p id="btnMypage-m"><a href="javascript:void(0);" onclick="fnPage('20602'); return false;" class="ko-medium after-close">마이페이지</a></p>
+	                        <p><a href="javascript:void(0);" onclick="fnPage('20207'); return false;" class="ko-medium after-close">검색</a></p>
+	                        <p><a href="https://939.co.kr/dongyangis/" class="ko-medium after-close">원격지원</a></p>
+	                    </div>
+	                </div>
+	                <div class="m-gnb">
+	                    <ul class="menu-dept1">
+							<th:block th:each="topItem : ${menuTopList}">
+								<li th:if="${#strings.equals(topItem.menuYn, 'Y') || (#strings.equals(topItem.menuCd, '206') && !#strings.isEmpty(session.membNo))}">
+									<!-- 1depth -->
+									<a href="javascript:void(0);" class="ko-bold init"><span th:id="'topMenu'+${topItem.menuCd}" th:text="${topItem.menuNm}"></span></a>
+									<!-- 2depth -->
+	                                <ul class="menu-dept2">
+										<th:block th:each="depth2 : ${menuList}">
+											<th:block th:if="${#strings.equals(topItem.menuCd, depth2.parentCd) && #strings.equals(depth2.menuStep.toString(), '2') && #strings.equals(depth2.mobileYn, 'Y')}">
+												<li th:if="${#strings.equals(depth2.menuYn, 'Y') || #strings.equals(depth2.parentCd, '206')}">
+													<a href="javascript:void(0);" th:if="${!#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer"></a> <!-- 2depth 명 -->
+													<a href="javascript:void(0);" th:if="${#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${depth2.menuCd}]])" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer" class="after-close"></a> <!-- 2depth 명 -->
+													<!-- 3depth -->
+													<ul th:if="${depth2.depth3Cnt > 0}" class="menu-dept3 back-gray" >
+														<th:block th:each="depth3 : ${menuList}">
+															  <li th:if="${#strings.equals(depth2.menuCd, depth3.parentCd) && #strings.equals(depth3.menuYn, 'Y') && #strings.equals(depth3.menuStep.toString(), '3') && #strings.equals(depth3.mobileYn, 'Y')}" >
+																 <a href="javascript:void(0);" th:onclick="fnPage([[${depth3.menuCd}]])" th:text="${depth3.menuNm}" th:title="${depth3.menuNm}" style="cursor:pointer" class="after-close"></a> <!-- 3depth 명 -->
+															 </li>
+														</th:block>
+													</ul>
+												</li>
+		                                	</th:block>
+	                                	</th:block>
+									</ul>
+	                            </li>
+							</th:block>
+	                    </ul>
+	                </div>
+	            </div>
+	            <div class="overlay"></div>
+					<div class="lnb-wrap hide">
+						<th:block th:each="topItem : ${menuTopList}">
+	                    <ul  th:id="lnb + ${topItem.menuCd}" class="lnb menu1">
+							<th:block th:each="depth2 : ${menuList}">
+								<th:block th:if="${#strings.equals(topItem.menuCd, depth2.parentCd) && #strings.equals(depth2.menuYn, 'Y') && #strings.equals(depth2.menuStep.toString(), '2')}" >
+		                            <li th:if="${#strings.equals(depth2.menuYn, 'Y') || #strings.equals(depth2.parentCd, '206')}" class="ko-medium lnb-dept1">
+										<a href="javascript:void(0);" th:if="${!#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer" class="init"></a> <!-- 2depth 명 -->
+										<a href="javascript:void(0);" th:if="${#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${depth2.menuCd}]])" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer"></a> <!-- 2depth 명 -->
+										<ul th:if="${depth2.depth3Cnt > 0}" class="lnb-dept2" >
+											<th:block th:each="depth3 : ${menuList}">
+										 		<li th:if="${#strings.equals(depth2.menuCd, depth3.parentCd) && #strings.equals(depth3.menuYn, 'Y') && #strings.equals(depth3.menuStep.toString(), '3')}">
+											 		<a href="javascript:void(0);" th:onclick="fnPage([[${depth3.menuCd}]])" th:text="${depth3.menuNm}" th:title="${depth3.menuNm}" style="cursor:pointer"></a> <!-- 3depth 명 -->
+										 		</li>
+											</th:block>
+		                                </ul>
+		                            </li>
+								</th:block>
+                            </th:block>
+                        </ul>
+                        </th:block>
+                    </div>
+
+	        </header>
+	        <!-- 헤더 끝 -->
+			<main class="main" id="contFrme">
+				<div class="main-top position-r">
+					<ul class="main-move">
+	                    <li class="move1"></li>
+	                    <li class="move2"></li>
+	                    <li class="move3"></li>
+	                    <li class="move4"></li>
+	                    <li class="move5"></li>
+	                </ul>
+	                <div class="inner flex-box">
+	                    <div class="swiper-box">
+	                        <div class="swiper">
+	                            <ul class="swiper-wrapper">
+	                                <li class="swiper-slide" style="background: url('../images/img-slide-03.png') no-repeat center center; background-size: contain; border-radius: 30px;">
+	                                </li>
+	                                <li class="swiper-slide" style="background: url('../images/img-slide-02.png') no-repeat center center; background-size: contain;  border-radius: 30px;">
+	                                </li>
+	                                <li class="swiper-slide" style="background: url('../images/img-slide-01.png') no-repeat center center; background-size: contain; border-radius: 30px;">
+	                                </li>
+	                            </ul>
+	                        </div>
+	                        <div class="swiper-pagination"></div>
+	                        <div class="swiper-button-prev"></div>
+                        	<div class="swiper-button-next"></div>
+	                    </div>
+	                    <div class="main-top-cont">
+							<!--
+	                        <ul class="main-search flex-box al-center m-fd-col">
+	                            <li>
+									<span class="search-txt">SEARCH</span>
+	                            </li>
+	                            <li>
+	                                <div class="flex-box">
+	                                    <input type="text" name="sKeyword2" id="sKeyword2" placeholder="무엇을 찾고 계시나요?" onKeyPress="if( event.keyCode===13 ){fnPage('20207'); return false;}">
+	                                    <button type="button" onClick="fnPage('20207'); return false;"></button>
+	                                </div>
+	                                <ul class="word">
+	                                    <li class="hot">인기검색어</li>
+	                                    <li><a href="javascript:void(0);" onClick="fnPage('2030101'); return false;">#사이버보증</a></li>
+	                                    <li><a href="javascript:void(0);" onClick="fnPage('2030501'); return false;">#보증증권진위확인</a></li>
+	                                    <li><a href="javascript:void(0);" onClick="fnPage('2030401'); return false;">#출자좌수증명원</a></li>
+	                                    <li class="no-after"><a href="javascript:void(0);" onClick="fnPage('2030501'); return false;">#발급사실조회</a></li>
+	                                </ul>
+	                            </li>
+	                        </ul>
+	                        -->
+	                        <div class="main-menu">
+	                            <ul class="flex-box">
+	                                <li class="m-before">
+	                                    <a href="javascript:void(0);" onClick="fnMainProgramPop(); return false;" class="flex-box m-fd-col al-center jc-center">
+	                                        <span class="main-menu1"></span>
+	                                        <dl>
+	                                            <dt>프로그램설치</dt>
+	                                            <dd class="ellipsis-line2">익스플로러 종료에 따른 프로그램 설치</dd>
+	                                        </dl>
+	                                    </a>
+	                                </li>
+	                                <li>
+	                                    <a href="javascript:void(0);" onClick="fnPage('2010101'); return false;" class="flex-box m-fd-col al-center jc-center">
+	                                        <span class="main-menu2"></span>
+	                                        <dl>
+	                                            <dt>조합가입</dt>
+	                                            <dd class="ellipsis-line2">구비서류 준비 신청 후 가입심사가 진행</dd>
+	                                        </dl>
+	                                    </a>
+	                                </li>
+	                                <li class="no-after m-before">
+	                                    <a href="https://m.one-click.co.kr/#/kocfc01" target="_blank" class="flex-box m-fd-col al-center jc-center">
+	                                        <span class="main-menu3"></span>
+	                                        <dl>
+	                                            <dt>신용평가</dt>
+	                                            <dd class="ellipsis-line2">업체의 재무사항에 대한 신용평가 실시</dd>
+	                                        </dl>
+	                                    </a>
+	                                </li>
+	                                <li>
+	                                    <a href="https://m.one-click.co.kr/#/kocfc01" target="_blank" class="flex-box m-fd-col al-center jc-center">
+	                                        <span class="main-menu4"></span>
+	                                        <dl>
+	                                            <dt>약정체결</dt>
+	                                            <dd class="ellipsis-line2">신용평가 후 구비서류 체출하면 약정체결</dd>
+	                                        </dl>
+	                                    </a>
+	                                </li>
+	                                <li class="m-before">
+	                                    <a href="javascript:void(0);" onClick="fnPage('2010201'); return false;" class="flex-box m-fd-col al-center jc-center">
+	                                        <span class="main-menu5"></span>
+	                                        <dl>
+	                                            <dt>보증</dt>
+	                                            <dd class="ellipsis-line2">약정체결 후 각종 보증서 발급 및 자금대여 이용</dd>
+	                                        </dl>
+	                                    </a>
+	                                </li>
+	                                <li class="no-after">
+	                                    <a href="javascript:void(0);" onClick="fnPage('2010301'); return false;" class="flex-box m-fd-col al-center jc-center">
+	                                        <span class="main-menu6"></span>
+	                                        <dl>
+	                                            <dt>융자</dt>
+	                                            <dd class="ellipsis-line2">계약진행, 신용운영, 어음할인, 매출채권...</dd>
+	                                        </dl>
+	                                    </a>
+	                                </li>
+	                            </ul>
+	                        </div>
+	                        <div class="flex-box banner-wrap m-fd-col">
+	                            <a href="https://partner.ecredit.co.kr/s3pat/s3_kocfc.nice" target="_blank" class="banner1">
+	                                <p><span>NICE평가정보 사전진단 무료</span>공공용 기업신용평가</p>
+	                                <span>최대 <span class="font-28">40%</span></span>
+	                            </a>
+	                            <a href="http://www.bigservice.co.kr/oneclick/oneclick.asp?cporcd=321" target="_blank" class="banner2">
+	                                <p>온라인 재무제표 간편제출</p>
+	                                <span class="font-18">원클릭 4.0 <span class="font-14">시스템 설치!</span></span>
+	                            </a>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="content-wrap">
+	                <div class="main-service">
+	                    <div class="inner flex-box m-fd-col">
+	                        <p class="ko-medium">즐겨찾는<br> 서비스 메뉴</p>
+	                        <ul class="swiper-box2">
+	                            <li class="swiper2">
+	                                <ul class="flex-box swiper-wrapper al-center">
+	                                    <li class="swiper-slide">
+	                                        <a href="javascript:void(0);" onClick="fnPage('2030101'); return false;" class="main-service1">사이버보증</a>
+	                                    </li>
+	                                    <li class="swiper-slide">
+	                                        <a href="javascript:void(0);" onClick="fnPage('20203'); return false;" class="main-service2">서식자료실</a>
+	                                    </li>
+	                                    <li class="swiper-slide">
+	                                        <a href="javascript:void(0);" onClick="fnPage('2030501'); return false;" class="main-service3">보증증권진위확인</a>
+	                                    </li>
+	                                    <li class="swiper-slide">
+	                                        <a href="javascript:void(0);" onClick="fnPage('2030401'); return false;" class="main-service4">출자좌수증명원</a>
+	                                    </li>
+	                                    <li class="swiper-slide">
+	                                        <a href="javascript:void(0);" onClick="fnPage('2030401'); return false;" class="main-service5">금융거래서류발급</a>
+	                                    </li>
+	                                    <li class="swiper-slide">
+	                                        <a href="javascript:void(0);" onClick="fnPage('2030501'); return false;" class="main-service6">발급사실조회</a>
+	                                    </li>
+	                                    <li class="swiper-slide">
+	                                        <a href="https://www.bigservice.co.kr/oneclick/oneclick.asp?cporcd=321" target="_blank" class="main-service7">재무제표 제출</a>
+	                                    </li>
+	                                </ul>
+	                            </li>
+	                            <li class="swiper2-button-prev"></li>
+	                            <li class="swiper2-button-next"></li>
+	                        </ul>
+	                    </div>
+	                </div>
+	                <div class="content-main">
+	                    <div class="inner">
+	                        <section id="content" class="content flex-box">
+	                            <div class="news">
+	                                <p class="main-title tab-back"><span class="color-news">새소식</span>을 알려드립니다.</p>
+	                                <button type="button" class="main-tab-button" title="현재선택된 메뉴명">공지사항</button>
+	                                <div class="flex-box m-fd-col">
+	                                    <a href="#tab1" class="main-tab active main-tab-back" onclick="fnMaintab(this); return false;">공지사항</a>
+	                                    <div id="tab1" class="tab-content active">
+	                                        <ul>
+												<th:block th:if="${#lists.isEmpty(brdList1)}">
+		                                            <li class="no-brd">게시물이 존재하지 않습니다</li>
+	                                            </th:block>
+	                                            <th:block th:each="brdList1 : ${brdList1}">
+		                                            <li th:if="${brdList1.topYn != 'Y'}" class="flex-box">
+		                                                <a href="javascript:void(0);" class="dot-black font-18 ellipsis new-icon" th:onClick="com.fnBrdDtlPage([[${brdList1.brdNo}]] , [[${brdList1.brdSeq}]] , [[${brdList1.menuCd}]]); return false;"><span th:utext="${brdList1.brdSubj}"></span></a>
+		                                                <span th:text="${brdList1.regDtm}"></span>
+		                                            </li>
+	                                            </th:block>
+	                                        </ul>
+	                                        <a href="javascript:void(0);" onclick="fnPage('20401'); return false;" class="plus-icon" title="공지사항더보기"></a>
+	                                    </div><!--tab-content-->
+	                                    <a href="#tab2" class="main-tab" onclick="fnMaintab(this); return false;">콘텐츠 업계소식</a>
+	                                    <div id="tab2" class="tab-content">
+	                                        <ul>
+												<th:block th:if="${#lists.isEmpty(brdList2)}">
+		                                            <li class="no-brd">게시물이 존재하지 않습니다</li>
+	                                            </th:block>
+	                                            <th:block th:each="brdList2 : ${brdList2}">
+		                                            <li th:if="${brdList2.topYn != 'Y'}" class="flex-box">
+		                                                <a href="javascript:void(0);" class="dot-black font-18 ellipsis new-icon" th:onClick="com.fnBrdDtlPage([[${brdList2.brdNo}]] , [[${brdList2.brdSeq}]] , [[${brdList2.menuCd}]]); return false;"><span th:utext="${brdList2.brdSubj}"></span></a>
+		                                                <span th:text="${brdList2.regDtm}"></span>
+		                                            </li>
+	                                            </th:block>
+	                                        </ul>
+	                                        <a href="javascript:void(0);" onclick="fnPage('20402'); return false;" class="plus-icon" title="콘텐츠업계소식더보기"></a>
+	                                    </div><!--tab-content-->
+	                                    <a href="#tab3" class="main-tab" onclick="fnMaintab(this); return false;">조합원생생 TALK</a>
+	                                    <div id="tab3" class="tab-content">
+	                                        <ul>
+	                                            <th:block th:if="${#lists.isEmpty(brdList3)}">
+		                                            <li class="no-brd">게시물이 존재하지 않습니다</li>
+	                                            </th:block>
+	                                            <th:block th:each="brdList3 : ${brdList3}">
+		                                            <li th:if="${brdList3.topYn != 'Y'}" class="flex-box">
+		                                                <a href="javascript:void(0);" class="dot-black font-18 ellipsis new-icon" th:onClick="com.fnBrdDtlPage([[${brdList3.brdNo}]] , [[${brdList3.brdSeq}]] , [[${brdList3.menuCd}]]); return false;"><span th:utext="${brdList3.brdSubj}"></span></a>
+		                                                <span th:text="${brdList3.regDtm}"></span>
+		                                            </li>
+	                                            </th:block>
+	                                        </ul>
+	                                        <a href="javascript:void(0);" onclick="fnPage('20403'); return false;" class="plus-icon" title="조합원생생TALK더보기"></a>
+	                                    </div><!--tab-content-->
+	                                </div>
+	                            </div>
+	                            <div class="goods">
+	                                <p class="main-title">무엇이 <span class="color-goods">궁금</span>하신가요?</p>
+	                                <ul>
+	                                    <li class="flex-box jc-between m-fd-col">
+	                                        <ul class="flex-box al-center">
+	                                            <li class="goods1"></li>
+	                                            <li>
+	                                                <ul>
+	                                                    <li class="ko-medium">보증상품문의</li>
+	                                                    <li class="color-goods">02-3661-5160</li>
+	                                                </ul>
+	                                            </li>
+	                                        </ul>
+	                                        <ul class="flex-box al-center">
+	                                            <li class="goods2"></li>
+	                                            <li>
+	                                                <ul>
+	                                                    <li class="ko-medium">자금대여상품문의</li>
+	                                                    <li class="color-goods">02-3661-5166</li>
+	                                                </ul>
+	                                            </li>
+	                                        </ul>
+	                                    </li>
+	                                    <li class="flex-box m-fd-col">
+	                                        <ul class="flex-box">
+	                                            <li class="ko-medium">FAX : </li>
+	                                            <li class="en-medium color-666">02-3661-5388 </li>
+	                                        </ul>
+	                                        <ul class="flex-box">
+	                                            <li class="ko-medium">E-mail :</li>
+	                                            <li class="en-medium color-666">cg@kocfc.or.kr</li>
+	                                        </ul>
+	                                    </li>
+	                                    <li>
+	                                        <span class="ko-medium">상담시간 :</span>
+	                                        <span class="color-666">09:30~18:00(토, 일요일 및 공휴일 휴무)</span>
+	                                    </li>
+	                                    <li class="flex-box m-fd-col">
+	                                        <a href="javascript:void(0);" onClick="fnPage('20201'); return false;">자주묻는질문<span class="godds-more"></span></a>
+	                                        <a href="javascript:void(0);" onClick="fnPage('20202'); return false;">질문과답변<span class="godds-more"></span></a>
+	                                        <a href="javascript:void(0);" onClick="fnPage('20204'); return false;" class="no-after">관련법령<span class="godds-more"></span></a>
+	                                    </li>
+	                                </ul>
+	                            </div>
+	                        </section>
+	                        <ul class="swiper-box3 flex-box m-fd-col">
+	                            <li class="flex-box">
+	                                <button class="prev" type="button">이전</button>
+	                                <button class="stop" type="button">정지</button>
+	                                <button class="next" type="button">다음</button>
+	                            </li>
+	                            <li class="swiper3">
+	                                <ul class="swiper-wrapper">
+	                                    <li class="swiper-slide" style="background: url('../images/munhwa.gif') no-repeat center right -20px; background-size: contain;">
+	                                        <a href="http://www.mcst.go.kr" title="문화체육관광부" target="_blank"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/contentgin.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kocca.kr/cop/main.do" target="_blank" title="한국콘텐츠진흥원"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/kbiz.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kbiz.or.kr" target="_blank" title="중소기업중앙회"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/contentbun.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kcdrc.kr/" target="_blank" title="콘텐츠분쟁조정위원회"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/kocla.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kocla.org/" target="_blank" title="한국문화콘텐츠라이센싱협회"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/koda.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kodatv.or.kr/" target="_blank" title="한국드라마제작사협회"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/ncia.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.ncia.kr/" target="_blank" title="차세대융합콘텐츠산업협회"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/kapa.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.koreaanimation.or.kr/" target="_blank" title="한국애니메이션제작사협회"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/design.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kodeco.or.kr/" target="_blank" title="한국디자인협동조합"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/kcta.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kcta.or.kr/" target="_blank" title="한국케이블tv방송협회"></a>
+	                                    </li>
+	                                    <li class="swiper-slide" style="background: url('../images/kptc.gif') no-repeat center center; background-size: contain;">
+	                                        <a href="http://www.kptc.or.kr/home/?section=1" target="_blank" title="한국정기간행물협동조합"></a>
+	                                    </li>
+	                                </ul>
+                            	</li>
+	                        </ul>
+	                    </div>
+	                </div>
+	            </div>
+	        </main>
+	        <!-- 가운데 부분 끝 -->
+			<footer>
+	            <div class="footer-btn-wrap">
+	                <div class="inner">
+	                    <div class="footer-btn">
+	                        <span class="ko-medium pdl0"><a href="javascript:void(0);" onClick="fnPage('20510'); return false;" class="color-up">개인정보처리방침</a></span>
+	                        <span><a href="javascript:void(0);" onClick="fnPage('20202'); return false;" class="ko-medium">질문과답변</a></span>
+	                        <span><a href="mailto:info@kocfc.or.kr" class="ko-medium">Contact us</a></span>
+	                        <span><a href="javascript:void(0);" onClick="fnPage('20508'); return false;" class="ko-medium">찾아오시는길</a></span>
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="footer-cont">
+	                <div class="inner flex-box jc-between">
+	                    <ul>
+	                        <li>서울특별시 강서구 공항대로 219 (마곡동), 센테니아 13층(우 07802)
+	                        </li>
+	                        <li>
+	                            <span class="pdl0">대표번호 : 02- 3661-5160</span>
+	                            <span>팩스 : 02-3661-5388</span>
+	                            <span>http://kocfc.or.kr</span>
+	                            <span>사업자등록번호 : 105-82-21572</span>
+	                        </li>
+	                        <li class="ko-light">Copyright(C)2013 Korea Content Financial Cooperative. All rights reserved.
+	                        </li>
+	                    </ul>
+	                </div><!--inner-->
+	            </div>
+        	</footer>
+
+	        <div id="quick-menu">
+	            <button type="button" class="quick-open">Quick Menu</button>
+	            <button type="button" class="quick-close"></button>
+	            <ul>
+	                <li><a href="javascript:void(0);" onClick="fnPage('2030101'); return false;" class="quick1">사이버보증</a></li>
+	                <li><a href="javascript:void(0);" onClick="fnPage('20203'); return false;" class="quick2">서식자료실</a></li>
+	                <li><a href="javascript:void(0);" onClick="fnPage('2030501'); return false;" class="quick3">보증증권<br>진위확인</a></li>
+	                <li><a href="javascript:void(0);" onClick="fnPage('2030401'); return false;" class="quick4">출자좌수<br>증명원</a></li>
+	            </ul>
+	            <button type="button" class="quick-top" onclick="goTop()">TOP</button>
+	        </div>
+	    </div>
+	    <div id="ele_loading" style="display:none">
+			<img src="/images/loading.gif" onerror="" alt="로딩바"/>
+		</div>
+		<div id="dialog" style="display:none">
+			<iframe name="popFrm" id="popFrm" title="팝업" style="width: 100%; height: 100%; overflow: auto; border: none;"></iframe>
+		</div>
+		<div id="ele_exceDown" style="display:none;"></div> <!--엑셀다운로드 처리 영역-->
+	</body>
+
+</html>

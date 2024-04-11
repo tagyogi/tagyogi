@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+		<header th:fragment="main-header">
+			<script th:inline="javascript">
+			/*<![CDATA[*/
+				//알람해제
+				var fnAlramOff = function(){
+					if($(".alarm").hasClass("on") === true) {
+						$(".alarm").removeClass("on");
+						param = {};
+						obj = {url:"/workAlrm/updateWorkAlrmEmplChk.do", param:param, msgYn:"N", loadYn:"N", sessYn:"Y"};
+						com.fnAjaxDef(obj);
+					}
+				}
+				
+				//보완요청등록
+ 				var fnMngReqIns = function(){
+					com.dialpopupOpen("유지보수요청등록", "/index/pageCall.do?menuCd=1070226", "1000", "800");	// sys/mngReqIns			
+				}
+			/*]]>*/
+			</script>
+			<h1 onclick="location.href='/'">관리시스템</h1>
+            <div class="mainTabArea">
+				<!-- 메뉴 호출 하여 설정 -->
+                <ul>
+					<li id="L_0" class="topMenu">
+						<a href="#;" onclick="gnbMenuSelect(0); return false;" title="나의메뉴">나의메뉴</a>
+					</li>
+					
+				</ul>
+            </div>
+            
+            <div class="rightArea">
+                <button type="button" class="mark-btn alarm fl" onclick="fnAlramOff()"></button>
+                <div class="userInfo">
+					<p><span>[[${session.userNm}]]</span></p>
+                    <a th:if="${!#strings.equals(session.userId, '')}" href="javascript:menuOpen('1070410')" class="btn icon-btn mypage">마이페이지</a>
+                    <a href="javascript:com.fnLogout();" class="btn icon-btn logout">로그아웃</a>
+                    <a href="javascript:fnMngReqIns();" class="btn icon-btn">
+	                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="Group_581" data-name="Group 581" width="18" height="18" viewBox="0 0 18 18" style="margin: 3px 2px; ">
+						  <defs>
+						    <clipPath id="clip-path">
+						      <rect id="Rectangle_256" data-name="Rectangle 256" width="18" height="18" fill="#333"/>
+						    </clipPath>
+						  </defs>
+						  <rect id="Rectangle_11" data-name="Rectangle 11" width="17.734" height="17.734" transform="translate(0 0.266)" fill="none"/>
+						  <g id="Group_567" data-name="Group 567">
+						    <g id="Group_566" data-name="Group 566" clip-path="url(#clip-path)">
+						      <path id="Path_167" data-name="Path 167" d="M16,0H2A2,2,0,0,0,0,2V13a2,2,0,0,0,2,2H16a2,2,0,0,0,2-2V2a2,2,0,0,0-2-2m1,13a1,1,0,0,1-1,1H2a1,1,0,0,1-1-1V2A1,1,0,0,1,2,1H16a1,1,0,0,1,1,1Z" fill="#333"/>
+						      <path id="Path_168" data-name="Path 168" d="M12.5,17h-7l1-2h5Z" fill="#333"/>
+						      <path id="Path_169" data-name="Path 169" d="M15,18H3a.5.5,0,0,1,0-1H15a.5.5,0,0,1,0,1" fill="#333"/>
+						      <path id="Path_170" data-name="Path 170" d="M15,2H3A1,1,0,0,0,2,3v9a1,1,0,0,0,1,1H15a1,1,0,0,0,1-1V3a1,1,0,0,0-1-1M7.5,3.5A.5.5,0,0,1,8,3h2a.5.5,0,0,1,.5.5v2A.5.5,0,0,1,10,6H8a.5.5,0,0,1-.5-.5Zm0,4A.5.5,0,0,1,8,7h2a.5.5,0,0,1,.5.5v2a.5.5,0,0,1-.5.5H8a.5.5,0,0,1-.5-.5Zm-4-4A.5.5,0,0,1,4,3H6a.5.5,0,0,1,.5.5v2A.5.5,0,0,1,6,6H4a.5.5,0,0,1-.5-.5Zm0,4A.5.5,0,0,1,4,7H6a.5.5,0,0,1,.5.5v2A.5.5,0,0,1,6,10H4a.5.5,0,0,1-.5-.5ZM14,12H4a.5.5,0,0,1,0-1H14a.5.5,0,0,1,0,1m.5-2.5a.5.5,0,0,1-.5.5H12a.5.5,0,0,1-.5-.5v-2A.5.5,0,0,1,12,7h2a.5.5,0,0,1,.5.5Zm0-4A.5.5,0,0,1,14,6H12a.5.5,0,0,1-.5-.5v-2A.5.5,0,0,1,12,3h2a.5.5,0,0,1,.5.5Z" fill="#333"/>
+						    </g>
+						  </g>
+						</svg>
+					</a>
+                    <span th:if="${#strings.equals(session.userId,'admin')}"><a href="javascript:menuOpen('9999')" class="btn logout">메뉴관리</a></span>
+                    <span th:if="${#strings.equals(session.userId,'admin')}"><a href="javascript:menuOpen('9998')" class="btn logout">오류현황</a></span>
+                </div>
+            </div>
+            
+        </header><!-- //header --> 
+</html>

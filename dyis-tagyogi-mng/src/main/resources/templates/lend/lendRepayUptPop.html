@@ -1,0 +1,441 @@
+<!--
+	파일정보 : lend/lendRepayUptPop.html
+	파일명 : lendRepayList
+	업무명 : 대출상환수정
+	생성자 : 권다슬
+	생성일 : 2023-12-21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "LD01:LD04:CM01:CM02", gridNoList : ""}
+
+			//var lend; //대출정보
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//코드값 처리
+				com.fnCodeSelectBox("CM01", "repayWay", 1, ""); //선택
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheetChgHist", el: "sheetDivChgHist", options: gridOptList[0] }); //수정이력
+			    
+				//조합계좌 팝업호출이라 따로 불러옴
+				$("#selBank").append("<option value=''>선택</option>");
+				$.each(parent.parent.bankAccList, function(idx, item){	//parent: 리스트, parent.parent : 메인..
+					$("#selBank").append("<option value='"+item.bankCd+","+item.acctNo+"'>"+item.bankNm+"(" + item.bankType + ")</option>");
+				});
+
+				//조회 호출
+				fnSearch();
+			});
+
+
+			//상세검색
+			var fnSearch = function(){
+			    var param = {lendNo : /*[[${paramMap.lendNo}]]*/, repaySeq: /*[[${paramMap.repaySeq}]]*/};
+				obj = {url:"/lendRepay/selectLendRepayUptPop.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//상세검색콜백
+			var fnSearchCallBack = function(resData){
+				//console.log(resData);
+				//조합원정보
+				com.fnSetKeyVal(resData.memb);
+			
+				sheetChgHist.loadSearchData(resData.chgList);
+				
+				//약정정보(연체이율 조회 위해);
+				$("#finalGrade").val(resData.contr.finalGrade);
+
+				//대출정보
+				com.fnSetKeyVal(resData.lend, "areaLend");
+				$("#ele_lendRemark").text(resData.lend.remark);	//대출정보 > 비고
+				$("#repayPreDt").val(resData.lend.repayPreDt);	//상환예정일
+				$("#lendStat").val(resData.lend.lendStat);		//대출상태
+
+				//상환정보
+				com.fnSetKeyVal(resData.lendRepay, "areaLendRepay");	//상환정보
+
+				//상환정보 > 입금은행 선택
+				if(!com.fnIsEmpty(resData.lendRepay.repayBank) && !com.fnIsEmpty(resData.lendRepay.repayAcct)){
+					var selVal = resData.lendRepay.repayBank + "," + resData.lendRepay.repayAcct;
+					$("#selBank > option[value='"+selVal+"']").attr("selected", "selected");
+				}
+
+				//초기화면 역산처리
+				var remainLendAmt 	= Number(com.rmComma(resData.lend.remainLendAmt));	//대출잔액
+				var	repayAmt 		= Number(com.rmComma(resData.lendRepay.repayAmt));	//실상환금
+				var	repRepayAmt 	= Number(com.rmComma(com.fnNvlChk(resData.lendRepay.repRepayAmt,0)));	//대체상환금
+				var totDelayInterAmt = Number(com.rmComma(com.fnNvlChk(resData.lend.totDelayInterAmt,0)));	//총 연체납입액
+				var delayInterAmt 	= Number(com.rmComma(com.fnNvlChk(resData.lendRepay.delayInterAmt,0)));	//연체납입액
+
+				$("#totDelayInterAmt").val(com.addComma(totDelayInterAmt - delayInterAmt));	//기연체금액 = 대출 연체납입액 총액 - 현재 연체납입액
+				$("#ele_befRemainLendAmt").text(com.addComma(remainLendAmt + repayAmt + repRepayAmt));	//처리전 대출잔액 = 대출잔액 + 실상황금 + 대체상환금
+				$("#totRepayAmt").val(com.addComma(repayAmt + repRepayAmt));	//상환금액(A+B) = 대출잔액 + 실상황금 + 대체상환금
+				$("#remainAmt").val(com.addComma(remainLendAmt));	//상환후잔액 = 대출잔액
+				$("#repayDelayAmt").val(com.addComma(delayInterAmt));	//연체금액 = 연체납입액
+
+				//fnTotPayCalc();	//총납입금액 계산
+
+				//시트값 설정
+				//lend = resData.lend;
+
+				//이자율정보 조회 및 상환 연체금액 산정
+				fnGetRate("N");
+			};
+
+			//이자율정보 조회 및 상환 연체금액 산정
+			//상환일자 변경일경우 호출
+			var fnGetRate = function(calcYn = "Y"){
+				var param = {membNo : $("#membNo").val(), appDt : $("#repayDt").val(), finalGrade : $("#finalGrade").val() };
+				obj = {url:"/membRateLend/selectLendRate.do", param:param, callBack:fnGetRateCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				if(calcYn === "N")	obj.callBack = fnGetRateNoCalcCallBack;
+				com.fnAjaxDef(obj);
+			};
+
+			//이율 조회 콜백
+			var fnGetRateCallBack = function(res){
+				//console.log("계산o");
+				//console.log(res);
+				$("#delayRate").val(res.data.delayRate);
+				if(com.fnIsEmpty(res.data?.delayRate))	$("#delayRate").val("18");
+				$("#delayEndDt").val($("#repayDt").val());
+				fnDelaySet(); //이자연체정보
+			};
+
+			//이율 조회 콜백 - 수정페이지 초기데이터를 위해 계산 제거
+			var fnGetRateNoCalcCallBack = function(res){
+				//console.log("계산x");
+				//console.log(res);
+				$("#delayRate").val(res.data.delayRate);
+				if(com.fnIsEmpty(res.data?.delayRate))	$("#delayRate").val("18");
+			}
+
+			//연체금액 변경
+			var fnSetDelayAmt = function(obj){
+				$("#delayInterAmt").val(obj.value);
+
+				//fnTotPayCalc();
+			}
+
+			//연체기간설정
+			var fnSetDelayDt = function(){
+				let delayBegDt = $("#delayBegDt").val();	//연체기간(시작일)
+				let delayEndDt = $("#delayEndDt").val();	//연체기간(종료일)
+				let remainLendAmt = Number(com.rmComma($("#ele_befRemainLendAmt").text()));	//처리전 대출잔액
+				let delayRate = $("#delayRate").val();		//연체이율
+				let totDelayInterAmt = Number(com.rmComma($("#totDelayInterAmt").val()));	//기연체금액
+
+				if(delayBegDt != "" && delayEndDt != ""){
+					let delayDays = com.fnDateTerm(delayBegDt, delayEndDt);
+					$("#delayDays").val(delayDays);	//연체기간 차수
+
+					let repayDelayAmt = Math.floor((remainLendAmt * delayRate / 100 / 365 * delayDays/10))*10;
+					$("#repayDelayAmt").val(com.addComma(repayDelayAmt));	//연체금액
+					$("#delayInterAmt").val(com.addComma(repayDelayAmt - totDelayInterAmt));	//연체납입액
+				}
+			}
+
+			//연체정보조회
+			var fnDelaySet = function() {
+				//console.log(res);
+				let delayRate = $("#delayRate").val(); //연체이율
+				let repayPreDt = $("#repayPreDt").val().replace(/\-/g,""); //상환예정일
+				let repayDt = $("#repayDt").val().replace(/\-/g,""); //입금일자
+				let remainLendAmt = Number(com.rmComma($("#ele_befRemainLendAmt").text()));	//처리전 대출잔액
+
+				//상환 연체 정보 생성
+				if(repayDt > repayPreDt){
+					totDelayInterAmt = $("#totDelayInterAmt").val().replace(/\,/g,""); //기연체금액
+
+					$("#delayBegDt").val(com.fnDateGet(repayPreDt, 1)); //연체시작일
+					$("#delayEndDt").val($("#repayDt").val()); //연체시작일
+
+					fnSetDelayDt();
+				}else{
+					$("#delayBegDt").val(""); //연체시작일
+					$("#delayEndDt").val(""); //연체시작일
+					$("#delayDays").val("");
+					$("#repayDelayAmt").val("");
+					$("#delayInterAmt").val("");
+				}
+
+			}
+
+			//상환금 입력
+			var fnPayCalc = function(val){
+				var repayAmt = com.rmComma($("#repayAmt").val());
+				var repRepayAmt = com.rmComma($("#repRepayAmt").val());
+				//var remainLendAmt = lend.remainLendAmt.replace(/\,/g,""); //대출잔액
+				var remainLendAmt = $("#ele_befRemainLendAmt").text().replace(/\,/g,""); //대출잔액
+
+				if(repayAmt === "") repayAmt = 0;
+				if(repRepayAmt === "") repRepayAmt = 0;
+
+				var totRepayAmt = Number(repayAmt) + Number(repRepayAmt);
+
+				if(totRepayAmt > remainLendAmt){
+					alert("대출잔액 보다 상환금액이 큽니다.");
+					$("#totRepayAmt").focus();
+					return;
+				}
+
+				$("#totRepayAmt").val(com.addComma(totRepayAmt)); //상환금액(a+b)
+
+				reRemainLendAmt = remainLendAmt - totRepayAmt; //최종 잔여대출금
+				$("#remainAmt").val(com.addComma(reRemainLendAmt)); //상환후잔액
+
+				//fnTotPayCalc();
+			}
+
+			//총납입금액 산출
+			//var fnTotPayCalc = function(){
+			//	let delayInterAmt = com.rmComma($("#delayInterAmt").val());	//연체납입액(E)
+			//	let totRepayAmt   = com.rmComma($("#totRepayAmt").val());	//상환금액(A+B)
+
+			//	$("#totPayAmt").val( com.addComma( Number(delayInterAmt) + Number(totRepayAmt) ) );
+			//}
+
+			//저장
+			var fnSave = function(){
+				
+				//필수체크
+				var valChks = ["repayDt", "repayWay", "repayBank"];
+				if(com.fnValChk(valChks)){
+					
+					if($("#histReason").val() === ""){
+						alert("수정사유를 입력하십시오");
+						$("#histReason").focus();
+						return;
+					}
+					
+					var lendStat = $("#lendStat").val();	//대출 상태
+					if(lendStat !== "30"){	//사고가 아니면
+						if(!confirm("해당대출은 정상 대출건으로\n상환금 변경시 납부이자정보를 확인하셔야됩니다.\n수정 처리 하시겠습니까?"))	return;
+					}else{
+						if(!confirm("수정 처리 하시겠습니까?"))	return;
+					}
+
+
+					var param = $("#saveFrm").serializeObject();
+					//console.log(param);
+					obj = {url:"/lendRepay/updateLendRepayProc.do", callBack:fnSaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+					com.fnAjaxMulti(obj);
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				//console.log(resData);
+				if(typeof parent.fnSearch != "undefined"){
+					parent.fnSearch();
+				}else{
+					parent.location.reload();
+				}
+
+				parent.$("#dialog").dialog("close");
+			};
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="lendNo" id="lendNo" th:value="${paramMap.lendNo}"/>
+			<input type="hidden" name="repaySeq" id="repaySeq" th:value="${paramMap.repaySeq}"/>
+			<input type="hidden" name="repayPreDt" id="repayPreDt" /> <!--상환예정일 -->
+			<input type="hidden" name="membNo" id="membNo" /> <!--조합원번호 -->
+			<input type="hidden" name="finalGrade" id="finalGrade" /> <!--신용등급 -->
+			<input type="hidden" name="lendStat" id="lendStat" /> <!--대출 상태 -->
+			<input type="hidden" name="histType" id="histType" value="R" /> <!-- 수정 이력 상세  -->
+
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">상환정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+							</colgroup>
+							<tbody id="areaLendRepay">
+								<tr>
+									<th>대출잔액</th>
+									<td><span id="ele_befRemainLendAmt"></td>
+									<th>상환일자</th>
+									<td colspan="3">
+										<input type="search" name="repayDt" id="repayDt" title="상환일자" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);fnGetRate();" style="width:100px"maxlength="10" />
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'repayDt', 'yyyy-mm-dd','','',fnGetRate)" />
+									</td>
+								</tr>
+								<tr>
+									<th>연체이율</th>
+									<td><input type="text" name="delayRate" id="delayRate" onblur="fnDelaySet();" style="width:80px" maxlength="5">&nbsp;%</td>
+									<th>연체기간</th>
+									<td colspan="3">
+										<input type="text" name="delayBegDt" id="delayBegDt" title="연체시작일" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);fnSetDelayDt();" style="width:100px"maxlength="10" />&nbsp;~&nbsp;
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'delayBegDt', 'yyyy-mm-dd','delayEndDt',1, fnSetDelayDt)" />
+										<input type="text" name="delayEndDt" id="delayEndDt" title="연체종료일" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);fnSetDelayDt();" style="width:100px"maxlength="10" />
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'delayEndDt', 'yyyy-mm-dd','delayBegDt',2, fnSetDelayDt)" />
+										(<input type="text" name="delayDays" id="delayDays" title="연체일" style="width:50px" readonly />일)
+									</td>
+								</tr>
+								<tr>
+									<th>연체금액</th>
+									<td><input type="search" id="repayDelayAmt" name="repayDelayAmt" style="width:120px" title="연체금액" onkeyup="com.fnOnlyNum(this);com.makeComma(this);fnSetDelayAmt(this);" maxlength="15"></td>
+									<th>기연체금액</th>
+									<td><input type="search" id="totDelayInterAmt" name="totDelayInterAmt" style="width:120px" title="기연체금액" maxlength="15" readonly ></td>
+									<th>연체납입액(E)</th>
+									<td><input type="search" id="delayInterAmt" name="delayInterAmt" style="width:120px" title="연체납입액" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" maxlength="15"></td>		<!-- fnTotPayCalc(); -->
+								</tr>
+								<tr>
+									<th>실상환금(A)</th>
+									<td><input type="search" id="repayAmt" name="repayAmt" style="width:120px" title="실상환금" onkeyup="com.fnOnlyNum(this);com.makeComma(this);fnPayCalc();" maxlength="15"></td>	<!-- onchange="fnProcInit();" onBlur="fnProcInit();"  -->
+									<th>대체상환금(B)</th>
+									<td><input type="search" id="repRepayAmt" name="repRepayAmt" style="width:120px" title="대체상환금" onkeyup="com.fnOnlyNum(this);com.makeComma(this);fnPayCalc();" maxlength="15"></td>	<!-- onchange="fnProcInit();" onBlur="fnProcInit();"  -->
+									<th>상환금액(A+B)</th>
+									<td><input type="search" id="totRepayAmt" name="totRepayAmt" style="width:120px" title="상환금액" maxlength="15" readonly ></td>	<!-- onchange="fnProcInit();"  -->
+								</tr>
+								<tr>
+									<th>상환후잔액</th>
+									<td colspan="5">
+										<input type="search" id="remainAmt" name="remainAmt" style="width:120px" title="상환후잔액" maxlength="15" readonly >	<!-- onchange="fnProcInit();" -->
+									</td>
+								</tr>
+
+								<tr>
+									<th>입금구분</th>
+									<td><select name="repayWay" id="repayWay" title="입금구분" style="width:100px" ></td>
+									<th>입금자</th>
+									<td colspan="3"><input type="search" id="repayMan" name="repayMan" style="width:130px" title="입금자" maxlength="30"></td>
+								</tr>
+								<tr>
+									<th>입금은행</th>
+									<td>
+										<select name="selBank" id="selBank" title="입금은행" style="width:120px" onchange="com.fnBankChange(this.value, 'repay');">
+											<optoin value=""></option>
+										</select>
+										<input type="hidden" name="repayBank" id="repayBank" title="입금은행"/>
+									</td>
+									<th>계좌번호</th>
+									<td colspan="3"><input type="search" name="repayAcct" id="repayAcct" style="width:150px" title="입금계좌" readonly="readonly" /></td>
+								</tr>
+								<tr>
+									<th>비고</th>
+									<td colspan="5"><input type="search" name="remark" id="remark" style="width:100%" title="비고" maxlength="100"></td>
+								</tr>
+								<tr>
+									<th>수정사유</th>
+									<td colspan="5">
+										<textarea name="histReason" id="histReason" title="수정사유" cols="100" rows="2"></textarea>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+
+					</div>
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox" style="width:49%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">대출정보</h4>
+							</div>
+						</section>
+						<div id="areaLend">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>대출번호</th>
+										<td><span id="ele_lendNo"></td>
+										<th>대출종류</th>
+										<td><span id="ele_lendTypeNm"></td>
+										<th>대출구분</th>
+										<td><span id="ele_lendNm"></td>
+									</tr>
+									<tr>
+										<th>대출일자</th>
+										<td><span id="ele_lendDt"></td>
+										<th>상환기한</th>
+										<td><span id="ele_repayPreDt"></td>
+										<th>대출상태</th>
+										<td><span id="ele_lendStatNm"></td>
+									</tr>
+									<tr>
+										<th>대출금액</th>
+										<td><span id="ele_lendAmt"></td>
+										<th>상환금액</th>
+										<td><span id="ele_repayAmt"></td>
+										<th>대출잔액</th>
+										<td><span id="ele_remainLendAmt"></td>
+									</tr>
+									<tr>
+										<th>이자율</th>
+										<td colspan="5"><span id="ele_interPer"></span>&nbsp;%</td>
+									</tr>
+									<tr>
+										<th>비고</th>
+										<td colspan="5" id="ele_lendRemark"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">수정이력</h4>
+								</div>
+							</section>
+							<div id="sheetDivChgHist" style="width:100%;height:200px"></div>
+						</div>
+					</div>
+					
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+				<div class="layer-flex mt20">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style03">수정</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

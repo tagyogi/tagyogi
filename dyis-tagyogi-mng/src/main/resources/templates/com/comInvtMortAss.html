@@ -1,0 +1,238 @@
+<!--
+	파일정보 : comInvtMortAss.html
+	파일명 : comInvtMortAss
+	업무명 : 출자담보배정관리 - 출자담보정보(공통)
+	생성자 : bsg
+	생성일 : 2023.06.08
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			// mod옵션 : upt수정, view 담보배정정보, canView 담보배정해제정보
+			var fnIbsInvtMortAss = function(gridOpt, mod){
+				console.log(gridOpt);
+				
+				//공통세팅 , boolean 값 Y,N 세팅
+				$.each(gridOpt.Cols, function(idx, item){
+					if(item.Name === "setYn" || item.Name === "canYn"){ //
+						item.TrueValue = "Y";
+						item.FalseValue = "N";
+					}
+				});
+				
+				//시트로드후, 보여줄행만 설정하기위한 설정
+				//gridOpt.Events = {
+				    //onDataLoad:function(evtParam){
+				    	//console.log('hihihihi');
+				   // }
+				//}
+				
+				if(mod === "upt") { //담보설정수정
+					$.each(gridOpt.Cols, function(idx, item){
+						if(item.Name === "selectYn"){ 
+							item.TrueValue = "Y";
+							item.FalseValue = "N";
+							item.Visible = "1"   //담보배정시 증권선택 확인용
+							item.CanEdit = "1"  //담보배정시 증권선택가능하도록 활성화
+						}
+						if(item.Name === "setYn"){ 
+							item.TrueValue = "Y";
+							item.FalseValue = "N";
+							item.Visible = "1"   //수정확인용
+						}
+					});
+					
+				 }else if(mod === "uptCan"){ //담보해제수정
+					 $.each(gridOpt.Cols, function(idx, item){
+						if(item.Name === "selectYn"){ 
+							item.TrueValue = "Y";
+							item.FalseValue = "N";
+							item.Visible = "1" ;  //담보배정시 증권선택 확인용
+							item.CanEdit = "1" ; //담보배정시 증권선택가능하도록 활성화
+							item.OnChange= fnCanYnChange; //선택 컨트롤러 추가
+						}
+						if(item.Name === "canYn"){ 
+							item.TrueValue = "Y";
+							item.FalseValue = "N";
+							item.Visible = "1"   //수정확인용
+						}
+					});
+					 
+				 }else if(mod === "view") { //담보배정정보
+				 
+				 }else if(mod === "canView") { //담보배정해제정보
+					 $.each(gridOpt.Cols, function(idx, item){
+						if(item.Name === "assMembNm"){ //
+							item.Visible = "1"; //배정조합원명 보이기
+						}
+					});
+				 
+				 }else if(mod === "insert") { //담보배정등록
+					 $.each(gridOpt.Cols, function(idx, item){
+						if(item.Name === "selectYn"){ 
+							item.TrueValue = "Y";
+							item.FalseValue = "N";
+							item.Visible = "1"   //담보배정시 증권선택 확인용
+							item.CanEdit = "1"  //담보배정시 증권선택가능하도록 활성화
+						}
+					});
+					
+				 }else if(mod === "canInsert"){//담보해제등록
+					 $.each(gridOpt.Cols, function(idx, item){
+						if(item.Name === "selectYn"){ 
+							item.Visible = "1"   
+							item.CanEdit = "1"  //담보해제등록시 증권선택가능하도록 활성화
+							item.TrueValue = "Y";
+							item.FalseValue = "N";
+							item.OnChange= fnSetYnChange; //선택 컨트롤러 추가
+						}
+						if(item.Name === "assMembNo" || item.Name === "assMembNm" ){ 
+							item.Visible = "1"   //배정된 조합원번호,이름보이기
+						}
+					});
+				 }
+				 
+				
+				//그리드 초기화
+				IBSheet.create({ id: "sheetInvtMortAss", el: "sheetDivInvtMortAss", options: gridOpt}); //출자담보정보
+				
+				//그리드 로드후 
+				sheetInvtMortAss.bind("onDataLoad" , function(evtParam) { //로드후
+				
+					//***********담보배정등록시, 담보설정 및 배정설정여부에 따라 증권선택가능 여부 설정 시작***************//
+					var rows = sheetInvtMortAss.getDataRows();
+					for(var i=0; i< rows.length; i++){
+						
+						var mortYn   = sheetInvtMortAss.getValue(rows[i], "mortYn"); //담보설정이 안되어있거나 배정이 되어있는애들 제외
+						var assignYn = sheetInvtMortAss.getValue(rows[i], "assignYn"); 
+						
+						//가지고있는 증권목록에서 배정설정이냐 배정해제냐 컬럼 구분해서 가져오고, 그걸기반으로 체크박스컨트롤함
+						var setYn    = sheetInvtMortAss.getValue(rows[i], "setYn"); //담보배정설정등록 여부 (배정설정수정일땐, 배정한것+배정더할수있는 목록)
+						var canYn    = sheetInvtMortAss.getValue(rows[i], "canYn"); //담보배정해제등록 여부 (해제수정일땐, 소유/배정조합원에대한 증권만)
+						
+						
+						if(mod === "insert"){ //담보설정등록
+							if(mortYn !== "Y" || assignYn === "Y") {
+								sheetInvtMortAss.setAttribute(rows[i],"selectYn","CanEdit",0,1);
+							}
+							
+						}else if(mod === "canInsert"){//담보해제등록
+							if(mortYn !== "Y" || assignYn !== "Y") { //
+								sheetInvtMortAss.setAttribute(rows[i],"selectYn","CanEdit",0,1);
+							}
+						}else if(mod === "upt"){//담보설정수정
+							if((mortYn !== "Y" || assignYn === "Y") && setYn !== 1) { //담보설정이 안되어있거나 배정이 이미 되어있는 증권은 선택불가로 세팅 (내가 수정하고자하는 배정건에대해 배정여부가 Y가 아닌애들만)
+								sheetInvtMortAss.setAttribute(rows[i],"selectYn","CanEdit",0,1);
+							}
+							
+							if(setYn === 1) { //해당 배정설정정보에를 기준으로, 배정설정한 증권일때
+								sheetInvtMortAss.setValue(rows[i], "selectYn", "Y"); //선택여부 Y로 세팅
+							}
+							
+						}else if(mod === "uptCan"){//담보해제수정
+							if((mortYn !== "Y" || assignYn !== "Y") && canYn !== 1) { //담보설정이 안되어있거나 배정이 이미 되어있는 증권은 선택불가로 세팅 (내가 수정하고자하는 배정건에대해 배정여부가 Y가 아닌애들만)
+								sheetInvtMortAss.setAttribute(rows[i],"selectYn","CanEdit",0,1);
+							}
+							
+							if(canYn === 1) { //해당 배정설정정보에를 기준으로, 배정설정한 증권일때
+								sheetInvtMortAss.setValue(rows[i], "selectYn", "Y"); //선택여부 Y로 세팅
+							}
+							
+						}
+						
+					}
+					
+					//***********담보배정등록시, 담보설정 및 배정설정여부에 따라 증권선택가능 여부 설정 끝***************//
+				
+					
+					
+				});
+				
+				//console.log(sheetInvtMortAss.getSaveJson());
+				
+			}
+			
+			//select 선택 컨트롤   
+			var calSetAssignNum = 0;
+			var calSetAssignAmt = 0;
+			
+			var fnSetYnChange = function(evtParam) {
+				var targetVal = evtParam.sheet.getValue({row:evtParam.row,col:evtParam.col})
+				//선택을한 증권이라면 증권좌수와, 금액 누적
+				if(targetVal === 1){
+					calSetAssignNum += Number(evtParam.sheet.getValue(evtParam.row, "billNum")); //좌수
+					calSetAssignAmt += Number(evtParam.sheet.getValue(evtParam.row, "billAmt")); //금액
+					
+				}else if(targetVal === 0){
+					calSetAssignNum -= Number(evtParam.sheet.getValue(evtParam.row, "billNum")); //좌수
+					calSetAssignAmt -= Number(evtParam.sheet.getValue(evtParam.row, "billAmt")); //금액
+				}
+				
+				$("#assignNum").val(com.addComma(calSetAssignNum === 0 ? "" : calSetAssignNum));
+				$("#assignAmt").val(com.addComma(calSetAssignAmt === 0 ? "" : calSetAssignAmt));		
+			    
+			}
+			
+			//담보배정해제 전체선택
+			var fnAssSetAll = function(proc){
+				var rows = sheetInvtMortAss.getDataRows();
+				for(var i=0; i<rows.length; i++){
+					sheetInvtMortAss.setValue( rows[i], "selectYn", proc);
+				}
+			}
+			
+			//담보배정해제 select 컨트롤
+			var calCanAssignNum = 0;
+			var calCanAssignAmt = 0;		
+					
+			var fnCanYnChange = function(evtParam) {
+				var targetVal = evtParam.sheet.getValue({row:evtParam.row,col:evtParam.col})
+				
+				//선택을한 증권이라면 증권좌수와, 금액 누적
+				if(targetVal === 1){
+					calCanAssignNum += Number(evtParam.sheet.getValue(evtParam.row, "billNum")); //좌수
+					calCanAssignAmt += Number(evtParam.sheet.getValue(evtParam.row, "billAmt")); //금액
+					
+				}else if(targetVal === 0){
+					calCanAssignNum -= Number(evtParam.sheet.getValue(evtParam.row, "billNum")); //좌수
+					calCanAssignAmt -= Number(evtParam.sheet.getValue(evtParam.row, "billAmt")); //금액
+				}
+				
+				$("#assignNum").val(com.addComma(calCanAssignNum === 0 ? "" : calCanAssignNum));
+				$("#assignAmt").val(com.addComma(calCanAssignAmt === 0 ? "" : calCanAssignAmt));	
+			    
+			}
+			
+			/*var fnCusRowAss = function(){
+				var rows = sheetInvtMortAss.getDataRows();
+				for(var i=0; i<rows.length; i++){
+					if(rows[i]["canYn"] !== 1){
+					    console.log(rows[i]["canYn"]);
+					    sheetInvtMortAss.hideRow( {'row':rows[i],'norender':1});
+					}
+				}
+				sheetInvtMortAss.renderBody();
+			}*/
+			
+			
+
+			
+		    /*]]>*/
+		</script>
+		<div class="wrapBox">
+			<section class="area">
+				<div class="fl">
+					<h4 class="title">출자담보정보</h4>
+				</div>
+				<div id="" class="fr" style="">
+					<button type="button" onclick="javascript:fnAssSetAll('Y');" class="btn small style08">전체선택</button>
+					<button type="button" onclick="javascript:fnAssSetAll('N');" class="btn small style08">전체해제</button>
+				</div>
+			</section>
+			<div id="sheetDivInvtMortAss" style="width:100%;height:220px"></div>
+		</div>	
+	</body>
+</html>

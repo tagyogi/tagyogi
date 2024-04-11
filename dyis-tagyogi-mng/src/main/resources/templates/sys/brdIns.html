@@ -1,0 +1,182 @@
+<!--
+	파일정보 : brd/brdIns.html
+	파일명 : brdIns
+	업무명 : 게시판등록
+	생성자 : BSG
+	생성일 : 2023.04.06
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:src="@{/ckeditor/build/ckeditor.js}"></script>
+		<script th:inline="javascript">
+			/*<![CDATA[*/ 
+			//초기화 조회 콜백
+			var fnInitCallBack = function(resData){
+				//게시판 유형 처리
+				
+				//첨부파일사용여부
+				if(resData.brdMas.atthYn === "Y"){
+					$("#ele_atthArea").css("display", "block");
+					//동적 첨부파일 (다건)
+					com.fnIbsUpload($("#myUpload")); 
+				}
+				
+				//공지사용여부 notiYn
+				if(resData.brdMas.notiYn !== "Y"){
+					$("input[name^='notiYn'").attr("checked", false);
+					$("input[name^='notiYn'").attr("disabled", true);
+				}
+				if(resData.brdMas.topYn !== "Y"){
+					$("input[name^='topYn'").attr("checked", false);
+					$("input[name^='topYn'").attr("disabled", true);
+				}
+				//에디터 호출
+				com.fnCkeditorSet("#editor");	
+			};
+			
+			//저장
+			var fnSave = function(){
+				
+				//필수체크
+				var valChks = ["brdSubj"];
+				
+				if(com.fnValChk(valChks)){
+					if(confirm("저장 처리 하시겠습니까?")){
+						
+						$("#brdCont").val(editor.getData()); //게사판내용삽입
+						
+						//첨부파일 첨부한 순서 코드따오기 (물리적저장순서 맞춰야해서 필수)
+						com.fnGetModCds("myUpload");
+				
+						obj = {url:"/brd/insertBrd.do", formId:"saveFrm", fileId:"myUpload", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+						
+						//파일 업로드 처리(파일이 없어도 첨부파일 번호 추출을 위해 호출)
+						//com.fnIbsFileUpload($("#myUpload"), $("#atthType").val(), $("#atthNo").val());
+					}
+				}
+			};
+			
+			//첨부파일 처리 콜백
+			var fnIbsFileUploadCallBack = function(atthNo){
+				$("#atthNo").val(atthNo);
+				
+				$("#brdCont").val(editor.getData()); //게사판내용삽입
+				
+				obj = {url:"/brd/insertBrd.do", formId:"saveFrm", fileId:"myUpload", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxMulti(obj);
+			};
+			
+			//저장 콜백
+			var fnSaveCallBack = function(data){
+				
+				//상세화면 호출 
+				menuNm = /*[[${paramMap.menuNm}+'상세']]*/;
+				param = {menuCd:1070216, title:menuNm
+						, paramMap:{menuNm:menuNm
+									, brdNo:$("#brdNo").val()
+									, brdSeq:data.paramMap.brdSeq
+									, atthType:$("#atthType").val()
+									} 
+				};
+				parent.menuOpen(param);
+				
+				//현재창 닫기
+				parent.closeMenu(window.name);
+				
+			};
+			
+			//화면 초기화(게시판정보 조회)
+			$(document).ready(function(){
+				var initParam = {brdNo:/*[[${paramMap.brdNo}]]*/}
+				obj = {url:"/brdMas/selectBrdMas.do", param:initParam, callBack:fnInitCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+				
+			});
+		    /*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="brdNo" id="brdNo" th:value="${paramMap.brdNo}"/>
+			<input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+			<input type="hidden" name="imgAtthNo" id="imgAtthNo" />
+			<input type="hidden" name="atthNo" id="atthNo"/>
+			<input type="hidden" name="brdCont" id="brdCont" />
+			<input type="hidden" name="modFileCds" id="modFileCds" />
+			<div class="contents flex">
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<table class="tbl">
+							<colgroup>
+								<col style="width:10%;">
+								<col style="width:25%;">
+								<col style="width:10%;">
+								<col style="width:25%;">
+								<col style="width:10%;">
+								<col style="width:25%;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>제목</th>
+									<td colspan="5">
+										<input type="search" name="brdSubj" id="brdSubj" title="제목" style="width:100%;" maxlength="50">
+									</td>
+								</tr>
+								<tr>
+									<th>게시여부</th>
+									<td>
+										<input type="radio" name="viewYn" id="viewY" value="Y" checked> Y
+										<input type="radio" name="viewYn" id="viewN" value="N" > N
+									</td>
+									<th>공지여부</th>
+									<td>
+										<input type="radio" name="notiYn" id="notiY" value="Y" > Y
+										<input type="radio" name="notiYn" id="notiN" value="N" checked> N
+									</td>
+									<th>상단고정여부</th>
+									<td>
+										<input type="radio" name="topYn" id="topY" value="Y" > Y
+										<input type="radio" name="topYn" id="topN" value="N" checked> N
+									</td>
+								</tr> 
+							</tbody>
+						</table>
+						<div class="ckEdirorWrap" style="width:100%;min-height:280px;overflow:auto">
+							<div id="editor" name="editor"></div>
+						</div>
+						<div id="ele_atthArea" style="display:none">
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">첨부파일</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnIbsFileAdd($('#myUpload'));" class="btn small style08">추가</button>
+									<button type="button" onclick="javascript:com.fnIbsFileDel($('#myUpload'));" class="btn small style08">삭제</button>
+								</div>
+							</section>
+							<div id="myUpload" style="height:140px;"></div>
+						</div>
+						<!-- 처리 버튼 영역 -->
+						<section class="area mt50">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>	
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

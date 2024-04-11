@@ -1,0 +1,143 @@
+<!--
+	파일정보 : comMemb.html
+	파일명 : comMemb
+	업무명 : 우측 조합원정보
+	생성자 : bsg
+	생성일 : 2023.04.03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body  th:fragment="type(type)">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+
+			var fnMembSearchEvent = function (rmVal, event = undefined){
+
+				var targetNo = $("#sMembNo").val();
+				var targetNm = $("#sMembNm").val();
+				if(prevEventType === "clear" && targetNo === "" && targetNm === ""){//clear로 지우고, 공백일땐 팝업조회 및 조회 방지
+					prevEventType = event.type;
+					return; //패스
+			    }
+
+			    if(prevEventType === "search"){ //search는 x표시(clear)외엔 다 스킵
+					prevEventType = event.type;
+					return;
+				}
+
+				//input이 초기화되어 change가 일어났지만, input초기화가 search x 표시로 인한 이벤트가 아닌경우에만 alert 표출
+				if(event.type === "change" && prevEventType !== "clear"){
+					prevEventType = event.type;
+					if($("#sMembNo").val() === "" && $("#sMembNm").val() === ""){
+						alert("조합원번호 또는 조합원명을 입력하십시오.");
+						return;
+					}
+				}
+
+				 //현재 일어난 이벤트를 이전이벤트 타입 변수에 저장
+				prevEventType = event.type;
+
+				//if(!serchingYn){
+					serchingYn = true; //중복 조회 방지
+					$("#"+rmVal).val("");
+					com.fnMembInfo(); //serchMemb
+				//}
+
+			}
+
+
+		    /*]]>*/
+		</script>
+		<div class="wrapBox" th:fragment="comMemb (title)">
+			<section class="area">
+				<div class="fl">
+					<h4 class="title" th:if="${!#strings.isEmpty(title)}" th:text="${title}"></h4>
+					<h4 class="title" th:unless="${!#strings.isEmpty(title)}" th:text="조합원정보">조합원정보</h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th><span class="reqMark">*</span>조합원명</th>
+						<td colspan="3">
+							<th:block  th:if="${!#strings.equals (type, 'guarReq')}">	<!-- 일반 -->
+							<input type="search" name="sMembNo" id="sMembNo" title="조합원번호" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);javascript:if(event.keyCode === 13){fnMembSearchEvent('sMembNm',event)}" onchange="fnMembSearchEvent('sMembNm',event)" tabIndex="1" >
+							<input type="search" name="sMembNm" id="sMembNm" title="조합원명" style="width:180px;" maxlength="40" onkeyup="javascript:if(event.keyCode === 13){fnMembSearchEvent('sMembNo',event)}" onchange="fnMembSearchEvent('sMembNo',event)" >
+							<button type="button" name="btnMemb" id="btnMemb" class="btn icoSearch" onclick="com.fnMembInfo()" tabIndex="2">검색</button>
+							</th:block>
+
+							<th:block  th:if="${#strings.equals(type,'guarReq')}">	<!-- 보증신청등록 -->
+							<input type="search" name="sMembNo" id="sMembNo" title="조합원번호" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);javascript:if(event.keyCode === 13){fnMembContrSearchEvent('sMembNm',event)}" onchange="fnMembContrSearchEvent('sMembNm',event)" tabIndex="1" >
+							<input type="search" name="sMembNm" id="sMembNm" title="조합원명" style="width:180px;" maxlength="40" onkeyup="javascript:if(event.keyCode === 13){fnMembContrSearchEvent('sMembNo',event)}" onchange="fnMembContrSearchEvent('sMembNo',event)" >
+							<button type="button" name="btnMemb" id="btnMemb" class="btn icoSearch" onclick="fnMembContrSearchPop()" tabIndex="2">검색</button>
+							</th:block>
+							<span id="ele_cretop" style="color: #FFFFFF; "></span>
+						</td>
+						<th>대표자</th>
+						<td><div id="ele_ceoNm"></div></td>
+					</tr>
+					<tr>
+						<th>법인번호</th>
+						<td><div id="ele_lawNo"></div></td>
+						<th>사업자번호</th>
+						<td><div id="ele_bizNo"></div></td>
+						<th>전화번호</th>
+						<td><div id="ele_telNo"></div></td>
+					</tr>
+					<tr>
+						<th>상태</th>
+						<td><div id="ele_membStatNm"></div></td>
+						<th>주장르</th>
+						<td><div id="ele_mainBussCdNm"></div></td>
+						<th>소속단체</th>
+						<td><div id="ele_belong"></div></td>
+					</tr>
+					<tr>
+						<th>주소</th>
+						<td colspan="5"><div id="ele_addrFull"></div></td>
+					</tr>
+
+					<th:block th:if="${#strings.equals(type, 'guarReq')}">	<!-- 보증신청등록 -->
+					<tr>
+						<th>특이사항</th>
+						<td colspan="5"><div id="ele_membRemark"></div></td>
+					</tr>
+					<tr>
+						<th>신용도</th>
+						<td><div id="ele_finalGrade"></div></td>
+						<th>약정구분</th>
+						<td><div id="ele_contrTypeNm"></div></td>
+						<th>약정기간</th>
+						<td><div id="ele_contrTermShotDt"></div></td>
+					</tr>
+					<tr>
+						<th>한도금액</th>
+						<td><div id="ele_limitAmt"></div></td>
+						<th>사용액</th>
+						<td><div id="ele_useAmt"></div></td>
+						<th>가능액</th>
+						<td><div id="ele_remainAmt"></div></td>
+					</tr>
+					<th:block>
+
+					<th:block  th:if="${!#strings.isEmpty(type) and #strings.equals(type,'invtSeprt')}">
+						<tr>
+							<th>출좌좌수</th>
+							<td><div id="ele_investNum" class="setCommaCls"></div></td>
+							<th>출자금액</th>
+							<td colspan="3"><div id="ele_investAmt" class="setCommaCls"></div></td>
+						</tr>
+					</th:block>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,408 @@
+<!--
+	파일정보 : membReq/membReqIns.html
+	파일명 : membReq
+	업무명 : 공제가입등록 상세
+	생성자 : 김상민1
+	생성일 : 2023-05-04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB01:MB02:MB03:CM02:MB32", gridNoList : ""}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//동적 첨부파일 생성(동적)
+				com.fnFileViewSet("MB32", "myUpload");
+
+				//조회
+				fnSearch();
+			});
+
+			//검색
+			var fnSearch = function(){
+			   //화면 처리 (공제가입등록 정보 조회)
+				var param = { bizNo : $("#bizNo").val(), atthType : $("#atthType").val() };
+				obj = {url:"/membReq/selectMembReq.do", param:param, callBack:fnSelectCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+
+			//공제가입등록 정보 조회 콜백
+			var fnSelectCallBack = function(resData){
+				//console.log(resData);
+				var data = resData.data;
+				var invtData = resData.invtData;
+
+				//기본 데이터
+				com.fnSetKeyVal(data);
+
+				//보조장르
+				var subBussCds = data.subBussCds;
+				if(subBussCds){
+					var subBussList = [];
+					if(subBussCds.indexOf(',') !== -1)	subBussList = [...subBussCds.split(',')];
+					else								subBussList.push(subBussCds);
+					var subBussNms = "";
+					$.each(subBussList, function(idx, item){
+						if(subBussNms !== "")	subBussNms += ", ";
+						subBussNms += com.fnInputText("MB02", item);
+						if(item === "14" && data.bussEtc !== null)	subBussNms += "(" + data.bussEtc + ")";		//기타면 기타내용 추가
+					});
+					$("#ele_subBussCds").text(subBussNms);
+				}
+
+				//checkBox 관련(알게된 사유)
+				com.checkBoxCheckValue(data.knowCds, "knowCd");	//알게된 사유
+
+				//좌당지분액 정보
+				var faceAmt = com.addComma(invtData.faceAmt);
+				$("#ele_faceAmt").text('(1좌당 '+faceAmt+'만원)');	//최초출자좌수
+
+				//심사서류정보(파일)
+				com.fnIbsUploadViewOne(resData.fileList);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+			}
+
+			//수정
+			var fnUpt = function(){
+				if($("#procStat").val() === "90"){
+					alert("이미 가입완료된 건입니다.");
+					return;
+				}
+
+				param = {menuCd:"1010407", paramMap:{ bizNo: $("#bizNo").val(), atthType:/*[[${menuInfo.atthType}]]*/ } };
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			};
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="bizNo" id="bizNo" th:value="${paramMap.bizNo}" />
+			<input type="hidden" name="procStat" id="procStat"  />
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>	<!-- 메뉴관리 > 관련첨부코드 -->
+			<input type="hidden" name="atthNo" id="atthNo" value=""/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">업체정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:7%;">
+								<col style="width:8%;">
+								<col style="width:35%;">
+								<col style="width:15%;">
+								<col style="width:35%;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th colspan="2">업체명</th>
+									<td><span id="ele_membNm"></span></td>
+									<th >대표자</th>
+									<td><div id="ele_ceoNm"></div></td>
+								</tr>
+								<tr>
+									<th colspan="2">사업자번호</th>
+									<td><div id="ele_bizNo"></div></td>
+									<th>법인번호</th>
+									<td><div id="ele_lawNo"></div></td>
+								</tr>
+								<tr>
+									<th colspan="2">휴대전화</th>
+									<td><div id="ele_ceoCellNo"></div></td>
+									<th>주민번호</th>
+									<td><div id="ele_ceoSsn"></div></td>
+								</tr>
+								<tr>
+									<th rowspan="3">사무소<br>(본사)</th>
+									<th>주소</th>
+									<td colspan="3">
+										<span id="ele_postNo"></span>&nbsp;<span id="ele_addrFullDoro"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>전화번호</th>
+									<td><div id="ele_telNo"></div></td>
+									<th>팩스번호</th>
+									<td><div id="ele_faxNo"></div></td>
+								</tr>
+								<tr>
+									<th>홈페이지</th>
+									<td colspan="4">
+										<div id="ele_homepage"></div>
+									</td>
+								</tr>
+
+								<tr>
+									<th rowspan="3">사업장<br>(공장,지점)</th>
+									<th>주소</th>
+									<td colspan="5">
+										<span id="ele_bussPostNo"></span>&nbsp;<span id="ele_bussAddrFullDoro"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>전화번호</th>
+									<td><div id="ele_bussTelNo"></div></td>
+									<th>팩스번호</th>
+									<td><div id="ele_bussFaxNo"></div></td>
+								</tr>
+								<tr>
+									<th>홈페이지</th>
+									<td><div id="ele_bussHomepage"></div></td>
+								</tr>
+								<tr>
+									<th rowspan="3">대표자<br>(자택)</th>
+									<th>주소</th>
+									<td colspan="5">
+										<span id="ele_ceoPostNo"></span>&nbsp;<span id="ele_ceoAddrFullDoro"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>전화번호</th>
+									<td><div id="ele_ceoTelNo"></div></td>
+									<th>팩스번호</th>
+									<td><div id="ele_ceoFaxNo"></div></td>
+								</tr>
+								<tr>
+									<th>이메일</th>
+									<td><div id="ele_ceoEmail"></div></td>
+								</tr>
+
+								<tr>
+									<th colspan="2">업체이메일</th>
+									<td><div id="ele_email"></div></td>
+									<th>우편수령처</th>
+									<td><div id="ele_postGetCdNm"></div></td>
+								</tr>
+
+								<tr>
+									<th colspan="2">주장르</th>
+									<td><div id="ele_mainBussCdNm"></div></td>
+
+									<th>사업게시일</th>
+									<td><div id="ele_bussStartDt"></div></td>
+								</tr>
+								<tr>
+									<th colspan="2">보조장르</th>
+									<td colspan="3"><div id="ele_subBussCds"></div></td>
+								</tr>
+
+							</tbody>
+						</table>
+
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">신청 및 심사 정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:15%;">
+								<col style="width:35%;">
+								<col style="width:15%;">
+								<col style="width:35%;">
+							</colgroup>
+							<tbody>
+								<tr style="display:none;">
+									<th>전자 서명</th>
+									<td colspan="3"><div id="ele_signedContrDtm"></div></td>
+								</tr>
+								<tr>
+									<th>신청일자</th>
+									<td><div id="ele_reqDt"></div></td>
+									<th>처리상태</th>
+									<td><div id="ele_procStatNm"></div></td>
+								</tr>
+								<tr>
+									<th>처리일자</th>
+									<td><div id="ele_procDt"></div></td>
+									<th>처리인</th>
+									<td><div id="ele_procNm"></div></td>
+								</tr>
+								<tr>
+									<th>심사내용</th>
+									<td colspan="3"><div id="ele_procCont"></div></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">추가정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:15%;">
+									<col style="width:21%;">
+									<col style="width:15%;">
+									<col style="width:17%;">
+									<col style="width:15%;">
+									<col style="width:17%;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>최초출자좌수</th>
+										<td><span id="ele_investCnt">0</span>&nbsp;좌<div id="ele_faceAmt"></div></td>
+										<th>최초출자금액</th>
+										<td><div id="ele_investAmt"></div></td>
+										<th>출자권종</th>
+										<td><div id="ele_billTypeNm"></div></td>
+									</tr>
+									<tr>
+										<th>자산총액</th>
+										<td><div id="ele_assetAmt"></div></td>
+										<th>자본금총액</th>
+										<td><div id="ele_capiAmt"></div></td>
+										<th>종업원수</th>
+										<td><div id="ele_empCnt"></div></td>
+									</tr>
+
+									<tr>
+										<th>주생산품</th>
+										<td><div id="ele_mainProd"></td>
+										<th>업태</th>
+										<td colspan="3"><div id="ele_bussCond"></div></td>
+									</tr>
+									<tr>
+										<th>년매출액</th>
+										<td><div id="ele_yearSaleAmt"></div></td>
+
+										<th>종목</th>
+										<td colspan="3"><div id="ele_bussEvent"></div></td>
+									</tr>
+									<tr>
+										<th>소속 협회/단체</th>
+										<td colspan="5"><div id="ele_belong"></div></td>
+									</tr>
+									<!--<tr>
+										<th>거래은행</th>
+										<td><div id="ele_bankNm"></div></td>
+										<th>계좌번호</th>
+										<td><div id="ele_acctNo"></div></td>
+										<th>예금주</th>
+										<td><div id="ele_depoNm"></div></td>
+									</tr>-->
+									<tr>
+										<th>업체담당자</th>
+										<td><div id="ele_persNm"></div></td>
+										<th>휴대전화</th>
+										<td><div id="ele_persCellNo"></div></td>
+										<th>SMS수신</th>
+										<td><div id="ele_smsYnNm"></div></td>
+									</tr>
+									<tr>
+										<th>직위</th>
+										<td><div id="ele_persPos"></div></td>
+										<th>이메일</th>
+										<td><div id="ele_persEmail"></div></td>
+										<th>이메일수신</th>
+										<td><div id="ele_emailYnNm"></div></td>
+									</tr>
+									<tr>
+										<th>알게된 사유</th>
+										<td colspan="5">
+											<div id="ele_checkBoxCm01" title="체크세로1" style="float:left; margin-left:10px;">
+												<input type="checkbox" name="knowCd" id="knowCd1" value="1" disabled="disabled">
+												&nbsp;&nbsp;인터넷검색&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd2" value="2" disabled="disabled">
+												&nbsp;&nbsp;지인 추천&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd3" value="3" disabled="disabled">
+												&nbsp;&nbsp;콘텐츠 관련기관 추천&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+											</div>
+
+											<div id="ele_checkBoxCm01" title="체크세로1" style="float:left; margin-left:10px;">
+												(검색어 : <span id="ele_webKeyword"></span>)
+												<br>
+												(추천인 : <span id="ele_recPers"></span>)
+												<br>
+												(추천인 : <span id="ele_recComp"></span>)
+												<br>
+											</div>
+
+											<div id="ele_checkBoxCm01" title="체크세로1" style="float:left; margin-left:10px;">
+												<input type="checkbox" name="knowCd" id="knowCd4" value="4" disabled="disabled">
+												&nbsp;&nbsp;조합 홍보물&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd5" value="5" disabled="disabled">
+												&nbsp;&nbsp;언론보도&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd6" value="6" disabled="disabled">
+												&nbsp;&nbsp;기타&nbsp;(<span id="ele_etcCont"></span>)
+												<br>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">심사서류정보<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnDtlFileUpload('docFile', $('#atthType').val(), $('#atthNo').val(), $('#bizNo').val(), 'MB32');" class="btn small style07">파일저장</button>
+			                    </div>
+							</section>
+							<table class="tbl" id="myUpload"></table>
+
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!-- 처리 버튼 영역 -->
+				<div class="area mt50" style="width:100%">
+					<section class="area">
+						<div class="fc">
+							<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" >수정</button>
+							<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+						</div>
+					</section>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

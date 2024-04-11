@@ -1,0 +1,137 @@
+<!--
+	파일정보 : comGuarMemb.html
+	파일명 : comGuarMemb
+	업무명 : 사이버보증 - 조합원 및 약정정보
+	생성자 : 권다슬
+	생성일 : 2023.09.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<body th:fragment="type(type)">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			$(document).ready(function(){
+
+			});
+
+			//약정구분 selectbox 만들기
+			var fnContrTypeSelectBoxSet = function(contrList){
+				if(com.fnIsEmpty(contrList))	return;
+
+				var html = "";
+				$.each(contrList, function(idx, item){
+					html += "<option value='"+item.contrType+"' data-contrNo='"+item.contrNo+"'>"+item.contrTypeNm+"</option>";
+				});
+				$("#area_comGuarMemb #contrType").html(html);
+			}
+
+			//약정 정보 조회
+			var fnSearchContr = function(){
+				if(com.fnIsEmpty($("#area_comGuarMemb #contrType option:selected").data('contrNo'.toLowerCase()))){
+					alert("해당보증 약정 정보가 존재하지 않습니다.");
+					return;
+				}
+
+				//내용 초기화
+				$("#contrNo, #finalGrade").val("");
+				$("#ele_grade, #ele_contrTermDt, #ele_limitAmt, #ele_useAmt, #ele_remainAmt").text("");
+
+				//조회
+				var param = {
+					contrNo		: $("#area_comGuarMemb #contrType option:selected").data('contrNo'.toLowerCase())
+					, membNo 	: $("#membNo").val()
+					, guarType	: $("#guarType").val()
+					, mortCnt 	: $("#mortCnt").val()
+					, appDt		: $("#reqDt").val()
+				};
+
+				var obj = {url:"/guar/selectMembContr.do", param:param, callBack:fnSearchContrCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//약정 정보 조회 콜백
+			var fnSearchContrCallBack = function(resData){
+				//console.log(resData);
+				//1. 조합원(약정정보)
+				com.fnSetKeyVal(resData.contr, "area_comGuarMemb");
+				$("#finalGrade").val(resData.contr.finalGrade);			//신용도
+				$("#contrNo").val(resData.contr.contrNo);				//약정번호
+				//$("#contrType").val(resData.contr.contrType);			//약정구분
+
+				//2. 조합원(보증한도, 보증사용액, 보증가능액)
+				com.fnSetKeyVal(resData.contrLimit, "area_comGuarMemb");
+
+				//3. 요율정보
+				var paramData = {data: resData.comRate};
+				guarCom.fnSelectRateNoCalcCallBack(paramData);
+			}
+
+		    /*]]>*/
+		</script>
+
+        <p class="title-dept1">조합원 및 약정정보</p>
+        <div class="table-wrap info" id="area_comGuarMemb">
+            <div class="table-scroll">
+                <table summary="조합원 및 약정정보">
+                    <colgroup>
+                    	<col style="width:13%;">
+                    	<col style="width:22%;">
+                    	<col style="width:11%;">
+                    	<col style="width:18%;">
+                    	<col style="width:12%;">
+                    	<col style="width:24%;">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>조합원명</th>
+                            <td colspan="3"><span id="ele_membNm"></span></td>
+                            <th>대표자</th>
+                            <td><span id="ele_ceoNm"></span></td>
+                        </tr>
+                        <tr>
+                            <th>주소</th>
+                            <td colspan="3"><span id="ele_addrFull"></span></td>
+                            <th>전화번호</th>
+                            <td><span id="ele_telNo"></span></td>
+                        </tr>
+                        <tr>
+                            <th>주장르</th>
+                            <td><span id="ele_mainBussNm"></span></td>
+                            <th>사업자번호</th>
+                            <td><span id="ele_bizNo"></span></td>
+                            <th>법인번호</th>
+                            <td><span id="ele_lawNo"></span></td>
+                        </tr>
+                        <tr>
+                            <th>약정구분</th>
+							<td>
+								<th:block th:if="${#strings.isEmpty(type) or #strings.equals(type, '')}">	<!-- 약정 상세 보이기 -->
+								<span id="ele_contrTypeNm"></span>
+								<input type="hidden" name="contrType" id="contrType" value="" />
+								</th:block>
+
+								<th:block th:if="${!#strings.isEmpty(type) and !#strings.equals(type, '') and #strings.equals(type, 'search')}">	<!-- 검색 약정 보이기 -->
+								<select name="contrType" id="contrType" title="약정구분" style="width:110px" onchange="fnSearchContr()"></select>
+								<button type="button" class="address-btn3" onclick="fnSearchContr();"></button>
+								</th:block>
+							</td>
+                            <th>신용도</th>
+							<td><span id="ele_grade"></span></td>
+                            <th>약정기간</th>
+							<td><span id="ele_contrTermDt"></span></td>
+                        </tr>
+                        <tr>
+                            <th>보증한도</th>
+                            <td><span id="ele_limitAmt"></span></td>
+                            <th>보증사용액</th>
+                            <td><span id="ele_useAmt"></span></td>
+                            <th>보증가능액</th>
+                            <td><span id="ele_remainAmt"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+	</body>
+</html>

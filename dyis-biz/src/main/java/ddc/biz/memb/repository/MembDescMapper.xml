@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.memb.repository.MembDescMapper">
+
+	<!-- 기재변경관리 정보 조회 -->
+	<select id="selectMembDescList" parameterType="Map" resultType="camelMap">
+		/* MembDescMapper.selectMembDescList */
+		SELECT
+			A.REQ_NO
+			, A.MEMB_NO
+		    , A.REQ_DT
+		    , A.REQ_NM
+		    , A.MEMB_NM_CHG_YN
+		    , A.MEMB_NM_CHG_DT
+		    , A.BEF_MEMB_NM
+		    , A.CHG_MEMB_NM
+		    , A.CEO_NM_CHG_YN
+		    , A.CEO_NM_CHG_DT
+		    , A.BEF_CEO_NM
+		    , A.CHG_CEO_NM
+		    , A.TEL_NO_CHG_YN
+		    , A.TEL_NO_CHG_DT
+		    , A.BEF_TEL_NO
+		    , A.CHG_TEL_NO
+		    , A.ADDR_CHG_YN
+		    , A.ADDR_CHG_DT
+		    , A.BEF_ADDR
+		    , A.CHG_ADDR_DIV
+		    , A.CHG_POST_NO
+		    , A.CHG_ADDR1
+		    , A.CHG_ADDR2
+		    , A.CHG_DORO_CD
+		    , A.CHG_DORO_NM
+		    , A.CHG_DORO_BUNHO
+		    , A.CHG_DORO_DONG
+		    , A.CHG_DORO_DTL
+		    , A.CHG_DORO_BD_NO
+		    , A.SIGNET_CHG_YN
+		    , A.SIGNET_CHG_DT
+		    , A.PROC_STAT
+		    , F_GET_CD_NM('MB14', A.PROC_STAT) AS PROC_STAT_NM
+		    , A.PROC_DT
+		    , A.PROC_NM
+		    , A.PROC_REASON
+		    , A.REMARK
+		    , A.REG_DTM
+		    , A.REG_NM
+		    , A.MOD_DTM
+		    , A.MOD_NM
+		    , A.SIGNED_CONT
+		    , RTRIM((CASE WHEN A.MEMB_NM_CHG_YN = 'Y' THEN '업체명 ' ELSE '' END) ||
+				    (CASE WHEN A.CEO_NM_CHG_YN = 'Y' THEN '대표자 ' ELSE '' END)  ||
+				    (CASE WHEN A.TEL_NO_CHG_YN = 'Y' THEN '전화번호 ' ELSE '' END) ||
+				    (CASE WHEN A.ADDR_CHG_YN = 'Y' THEN '주소 ' ELSE '' END)) AS CHANGE_INFO
+		    , B.MEMB_NM
+		    , F_GET_CRYPT_DEC(A.TALK_TEL) TALK_TEL
+		    , A.TALK_NM
+		  FROM
+		  	MB_CHANGE_REQ A
+		    , MB_MASTER B
+		 WHERE A.MEMB_NO = B.MEMB_NO
+		<if test="sMembNo != null and sMembNo != ''"> 	<!-- 조합원번호 -->
+		   AND A.MEMB_NO = #{sMembNo}
+		</if>
+		<if test="sMembNm != null and sMembNm != ''"> 	<!-- 조합원명 -->
+		   AND B.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+		</if>
+		<if test="sReqDtStaDt != null and sReqDtStaDt != ''"> 	<!-- 신청일 시작일 -->
+		   AND A.REQ_DT &gt;= REPLACE(#{sReqDtStaDt}, '-', '')
+		</if>
+		<if test="sReqDtEndDt != null and sReqDtEndDt != ''"> 	<!-- 신청일 종료일 -->
+		   AND A.REQ_DT &lt;= REPLACE(#{sReqDtEndDt}, '-', '')
+		</if>
+		<if test="sProcStat != null and sProcStat != ''"> 	<!-- 처리상태 -->
+		   AND A.PROC_STAT = #{sProcStat}
+		</if>
+
+		ORDER BY REQ_DT DESC, REQ_NO DESC
+	</select>
+
+	<!-- 기재변경관리 상세 조회 -->
+	<select id="selectMembDesc" parameterType="Map" resultType="camelMap">
+		/* MembDescMapper.selectMembDesc */
+		SELECT
+			REQ_NO
+			, MEMB_NO
+			, F_GET_PATTERN(REQ_DT, 'DT') AS REQ_DT
+			, REQ_NM
+			, MEMB_NM_CHG_YN
+			, F_GET_PATTERN(MEMB_NM_CHG_DT, 'DT') AS MEMB_NM_CHG_DT
+			, BEF_MEMB_NM
+			, CHG_MEMB_NM
+			, CEO_NM_CHG_YN
+			, F_GET_PATTERN(CEO_NM_CHG_DT, 'DT') AS CEO_NM_CHG_DT
+			, BEF_CEO_NM
+			, CHG_CEO_NM
+			, TEL_NO_CHG_YN
+			, F_GET_PATTERN(TEL_NO_CHG_DT, 'DT') AS TEL_NO_CHG_DT
+			, BEF_TEL_NO
+			, CHG_TEL_NO
+			, ADDR_CHG_YN
+			, F_GET_PATTERN(ADDR_CHG_DT, 'DT') AS ADDR_CHG_DT
+			, BEF_ADDR
+			, CHG_ADDR_DIV
+			, CHG_POST_NO
+			, CHG_ADDR1
+			, CHG_ADDR2
+			, (CASE WHEN CHG_ADDR1 IS NOT NULL THEN TRIM(CHG_ADDR1 || ' ' || CHG_ADDR2)
+                    ELSE '' END) AS CHG_ADDR
+			, CHG_DORO_CD
+			, CHG_DORO_NM
+			, CHG_DORO_BUNHO
+			, CHG_DORO_DONG
+			, CHG_DORO_DTL
+			, CHG_DORO_BD_NO
+			, (CASE WHEN CHG_POST_NO IS NOT NULL THEN CHG_DORO_NM ||' ( '||CHG_DORO_DONG||' '||CHG_DORO_BD_NO||' )'
+                    ELSE '' END) AS CHG_ADDR_FULL_DORO
+
+            , (CASE WHEN CHG_ADDR_DIV = 'JB' THEN CHG_ADDR1 || ' ' || CHG_ADDR2
+					WHEN CHG_ADDR_DIV = 'DR' THEN CHG_DORO_NM ||' ( '||CHG_DORO_DONG||' '||CHG_DORO_BD_NO||' )' ||' '|| CHG_DORO_DTL
+					ELSE '' END) AS CHG_ADDR_FULL
+
+			, SIGNET_CHG_YN
+			, F_GET_PATTERN(SIGNET_CHG_DT, 'DT') AS SIGNET_CHG_DT
+			, PROC_STAT
+			, F_GET_CD_NM('MB14', PROC_STAT) AS PROC_STAT_NM
+			, F_GET_PATTERN(PROC_DT, 'DT') AS PROC_DT
+			, PROC_NM
+			, PROC_REASON
+			, REMARK
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, SIGNED_CONT
+			, ATTH_NO
+			, MOD_REASON
+			, F_GET_CRYPT_DEC(TALK_TEL) TALK_TEL
+			, TALK_NM
+		  FROM MB_CHANGE_REQ
+		 WHERE REQ_NO = #{reqNo}
+		   AND MEMB_NO = #{membNo}
+	</select>
+
+	<!-- 기재변경관리 등록 처리 -->
+	<insert id="insertMembDesc" parameterType="Map"  >
+		/* MembDescMapper.insertMembDesc */
+		INSERT INTO MB_CHANGE_REQ (
+			REQ_NO
+			, MEMB_NO
+			, REQ_DT
+			, REQ_NM
+			, MEMB_NM_CHG_YN
+			, MEMB_NM_CHG_DT
+			, BEF_MEMB_NM
+			, CHG_MEMB_NM
+			, CEO_NM_CHG_YN
+			, CEO_NM_CHG_DT
+			, BEF_CEO_NM
+			, CHG_CEO_NM
+			, TEL_NO_CHG_YN
+			, TEL_NO_CHG_DT
+			, BEF_TEL_NO
+			, CHG_TEL_NO
+			, ADDR_CHG_YN
+			, ADDR_CHG_DT
+			, BEF_ADDR
+			, CHG_ADDR_DIV
+			, CHG_POST_NO
+			, CHG_ADDR1
+			, CHG_ADDR2
+			, CHG_DORO_CD
+			, CHG_DORO_NM
+			, CHG_DORO_BUNHO
+			, CHG_DORO_DONG
+			, CHG_DORO_DTL
+			, CHG_DORO_BD_NO
+			, SIGNET_CHG_YN
+			, SIGNET_CHG_DT
+			, PROC_STAT
+			, PROC_DT
+			, PROC_NM
+			, PROC_REASON
+			, REMARK
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, SIGNED_CONT
+			, ATTH_NO
+			, TALK_TEL
+			, TALK_NM
+		) VALUES (
+			#{reqNo}
+			, #{membNo}
+			, REPLACE(#{reqDt}, '-', '')
+			, #{reqNm}
+			, #{membNmChgYn}
+			, REPLACE(#{membNmChgDt}, '-', '')
+			, #{befMembNm}
+			, #{chgMembNm}
+			, #{ceoNmChgYn}
+			, REPLACE(#{ceoNmChgDt}, '-', '')
+			, #{befCeoNm}
+			, #{chgCeoNm}
+			, #{telNoChgYn}
+			, REPLACE(#{telNoChgDt}, '-', '')
+			, #{befTelNo}
+			, #{chgTelNo}
+			, #{addrChgYn}
+			, REPLACE(#{addrChgDt}, '-', '')
+			, #{befAddr}
+			, #{chgAddrDiv}
+			, #{chgPostNo}
+			, #{chgAddr1}
+			, #{chgAddr2}
+			, #{chgDoroCd}
+			, #{chgDoroNm}
+			, #{chgDoroBunho}
+			, #{chgDoroDong}
+			, #{chgDoroDtl}
+			, #{chgDoroBdNo}
+			, #{signetChgYn}
+			, REPLACE(#{signetChgDt}, '-', '')
+			, #{procStat}
+			, REPLACE(#{procDt}, '-', '')
+			, #{procNm}
+			, #{procReason}
+			, #{remark}
+			, SYSDATE
+			, #{userNm}
+			, SYSDATE
+			, #{userNm}
+			, #{signedCont}
+			, #{atthNo}
+			, F_GET_CRYPT_ENC(#{talkTel})
+			, #{talkNm}
+		)
+	</insert>
+
+	<!-- 기재변경관리 수정 처리 -->
+	<update id="updateMembDesc" parameterType="Map"  >
+		/* MembDescMapper.updateMembDesc */
+		UPDATE MB_CHANGE_REQ
+		SET
+			REQ_DT = REPLACE(#{reqDt}, '-', '')
+			, REQ_NM = #{reqNm}
+			, MEMB_NM_CHG_YN = #{membNmChgYn}
+			, MEMB_NM_CHG_DT = REPLACE(#{membNmChgDt}, '-', '')
+			, BEF_MEMB_NM = #{befMembNm}
+			, CHG_MEMB_NM = #{chgMembNm}
+			, CEO_NM_CHG_YN = #{ceoNmChgYn}
+			, CEO_NM_CHG_DT = REPLACE(#{ceoNmChgDt}, '-', '')
+			, BEF_CEO_NM = #{befCeoNm}
+			, CHG_CEO_NM = #{chgCeoNm}
+			<!--, TEL_NO_CHG_YN = #{telNoChgYn}
+			, TEL_NO_CHG_DT = REPLACE(#{telNoChgDt}, '-', '')
+			, BEF_TEL_NO = #{befTelNo}
+			, CHG_TEL_NO = #{chgTelNo}-->
+			, ADDR_CHG_YN = #{addrChgYn}
+			, ADDR_CHG_DT = REPLACE(#{addrChgDt}, '-', '')
+			, BEF_ADDR = #{befAddr}
+			, CHG_ADDR_DIV = #{chgAddrDiv}
+			, CHG_POST_NO = #{chgPostNo}
+			, CHG_ADDR1 = #{chgAddr1}
+			, CHG_ADDR2 = #{chgAddr2}
+			, CHG_DORO_CD = #{chgDoroCd}
+			, CHG_DORO_NM = #{chgDoroNm}
+			, CHG_DORO_BUNHO = #{chgDoroBunho}
+			, CHG_DORO_DONG = #{chgDoroDong}
+			, CHG_DORO_DTL = #{chgDoroDtl}
+			, CHG_DORO_BD_NO = #{chgDoroBdNo}
+			, SIGNET_CHG_YN = #{signetChgYn}
+			, SIGNET_CHG_DT = REPLACE(#{signetChgDt}, '-', '')
+			, PROC_STAT = #{procStat}
+			, PROC_DT = REPLACE(#{procDt}, '-', '')
+			, PROC_NM = #{procNm}
+			, PROC_REASON = #{procReason}
+			, REMARK = #{remark}
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{userNm}
+			, SIGNED_CONT = #{signedCont}
+			, ATTH_NO = #{atthNo}
+			, MOD_REASON = #{modReason}
+			, TALK_TEL = F_GET_CRYPT_ENC(#{talkTel})
+			, TALK_NM = #{talkNm}
+		WHERE MEMB_NO = #{membNo}
+          AND REQ_NO = #{reqNo}
+	</update>
+
+	 <!-- 기재변경관리 key 조회(reqNo 채번) -->
+    <select id="selectMembDescReqNo" parameterType="Map" resultType="java.lang.String">
+        SELECT NVL(MAX(REQ_NO), 0) + 1
+          FROM MB_CHANGE_REQ
+    </select>
+
+	<!-- 대표자변경시 해당대표자가 입보한 한도거래약정해제 -->
+    <update id="updateGuarContrCeoChg" parameterType="Map">
+        /* MembDescMapper.updateGuarContrCeoChg */
+        UPDATE GR_CONTRACT
+           SET CONTR_CAN_DT = REPLACE(#{reqDt}, '-', ''),
+               CONTR_STAT = '20',
+               MOD_DTM = SYSDATE,
+               MOD_NM = #{userNm}
+         WHERE CONTR_STAT = '10'
+           AND CONTR_TYPE = '11'
+           AND MEMB_NO = #{membNo}
+           AND CONTR_NO IN ( SELECT CONTR_NO
+                               FROM GR_SURETY
+                              WHERE SURE_CD = '10'
+                                AND SURE_NM LIKE '%' || #{befCeoNm} || '%'
+                                AND SURE_YN = 'Y')
+    </update>
+
+</mapper>

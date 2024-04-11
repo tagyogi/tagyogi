@@ -1,0 +1,260 @@
+<!--
+	파일정보 : membDesc/membDescIns.html
+	파일명 : membDesc
+	업무명 : 기재변경관리 상세
+	생성자 : 김상민1
+	생성일 : 2023-04-27
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB14", gridNoList : ""}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//코드값 처리
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#docFile"));
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //기재변경정보 조회
+				};
+			});
+
+			//기재변경정보 조회
+			var fnSearch = function(){
+				var selectParam = { reqNo : /*[[${paramMap.reqNo}]]*/, membNo : /*[[${paramMap.membNo}]]*/, sMembNo : /*[[${paramMap.membNo}]]*/,  atthType : $("#atthType").val()};
+				obj = {url:"/membDesc/selectMembDesc.do", param:selectParam, callBack:fnSelectCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//조합원 정보 조회 콜백
+			var fnSelectCallBack = function(resData){
+				//console.log(resData);
+
+				//기본 데이터
+				com.fnSetKeyVal(resData.memb);
+				com.fnSetKeyVal(resData.data);
+
+				//체크박스 데이터
+				com.checkBoxCheckValue(resData.data.ceoNmChgYn, "ceoNmChgYn");		//대표자 변경구분
+				com.checkBoxCheckValue(resData.data.membNmChgYn, "membNmChgYn");	//업체명 변경구분
+				com.checkBoxCheckValue(resData.data.addrChgYn, "addrChgYn");		//주소 변경구분
+
+				//조합원 기재변경 이력
+				sheet.loadSearchData(resData.membDescHisList);
+
+				//첨부파일
+				com.fnIbsUploadView($("#docFile"), resData.fileList);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+			};
+
+			//수정
+			var fnUpt = function(){
+				param = {menuCd:"1010125", paramMap:{membNo:$("#membNo").val()
+										, reqNo:$("#reqNo").val()
+										, atthType:/*[[${menuInfo.atthType}]]*/
+										}
+				};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			};
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<!--<button type="type" class="btn-collapse down active"><span></span></button>
+						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" value=""/>
+    		<input type="hidden" name="reqNo" id="reqNo" value=""/>
+    		<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>	<!-- 메뉴관리 > 관련첨부코드 -->
+    		<input type="hidden" name="atthNo" id="atthNo"/>
+
+			<div class="contents flex">
+				<div class="layer-flex collapseArea Collapsedown">
+
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<!--조합원조회 -->
+						<th:block th:include="com/comMemb"></th:block>
+
+						<!-- 조합원 기재변경 이력 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">조합원 기재변경 이력</h4>
+							</div>
+						</section>
+						<div id="sheetDiv" style="width:100%;height:200px"></div>
+
+						<!-- 변경정보 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">변경정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:4%;">
+								<col style="width:4%;">
+								<col style="width:8%;">
+								<col style="width:42%;">
+								<col style="width:42%;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th colspan="2">변경구분</th>
+									<th rowspan="2">변경일자</th>
+									<th rowspan="2">변경전사항</th>
+									<th rowspan="2">변경후사항</th>
+								</tr>
+								<tr>
+									<th>내용</th>
+									<th>체크</th>
+								</tr>
+								<tr>
+									<th>대표자</th>
+									<td style="text-align: center;"><input type="checkBox" name="ceoNmChgYn" value="Y" disabled="disabled"></td>
+									<td><div id="ele_ceoNmChgDt" style="text-align: center;"></div></td>
+									<td><div id="ele_befCeoNm"></div></td>
+									<td><div id="ele_chgCeoNm"></div></td>
+								</tr>
+								<tr>
+									<th>업체명</th>
+									<td style="text-align: center;"><input type="checkBox" name="membNmChgYn" value="Y" disabled="disabled"></td>
+									<td><div id="ele_membNmChgDt" style="text-align: center;"></div></td>
+									<td><div id="ele_befMembNm"></div></td>
+									<td><div id="ele_chgMembNm"></div></td>
+								</tr>
+								<tr>
+									<th>주소</th>
+									<td style="text-align: center;"><input type="checkBox" name="addrChgYn" value="Y" disabled="disabled"></td>
+									<td><div id="ele_addrChgDt" style="text-align: center;"></div></td>
+									<td><div id="ele_befAddr"></div></td>
+									<td><span id="ele_chgAddrFull"></span></td>
+									<!--<td><span id="ele_chgAddrFullDoro"></span>&nbsp;<span id="ele_chgDoroDtl"></span></td>-->
+								</tr>
+								<tr>
+									<th>기타</th>
+									<td colspan="4"><div id="ele_remark"></div></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">신청정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>신청일자</th>
+										<td><div id="ele_reqDt"></div></td>
+										<th>신청자</th>
+										<td><div id="ele_reqNm"></div></td>
+									</tr>
+								</tbody>
+							</table>
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">승인정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>처리상태</th>
+										<td><div id="ele_procStatNm"></div></td>
+										<th>처리일자</th>
+										<td><div id="ele_procDt"></div></td>
+										<th>처리자</th>
+										<td><div id="ele_procNm"></div></td>
+									</tr>
+									<tr>
+										<th>처리사유</th>
+										<td colspan="5"><div id="ele_procReason" style="min-height: 65px;" maxlength="50"></div></td>
+									</tr>
+								</tbody>
+							</table>
+
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnDtlFileUpload('docFile', $('#atthType').val(), $('#atthNo').val(), $('#membNo').val());" class="btn small style07">파일저장</button>
+			                        <button type="button" onclick="javascript:com.fnIbsFileDownAll($('#docFile'));" class="btn small style08">전체다운</button>
+			                    </div>
+							</section>
+							<div id="docFile" style="height:140px;"></div>
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!-- 처리 버튼 영역 -->
+				<div class="area mt50" style="width:100%">
+					<section class="area">
+						<div class="fc">
+							<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" >수정</button>
+							<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+						</div>
+					</section>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

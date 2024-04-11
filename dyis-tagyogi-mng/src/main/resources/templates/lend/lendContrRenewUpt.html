@@ -1,0 +1,697 @@
+<!--
+	파일정보 : lend/lendContrRenewUpt.html
+	파일명 : lendContrRenewUpt
+	업무명 : 대출약정 갱신 수정
+	생성자 : 김대성
+	생성일 : 2023-06-29
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/lendCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "LD02:LD09:LD01:LD05", gridNoList : "20112:30105:30106:40308:40202:40203:40204:40205:", accYn : "Y"}
+
+			var selSureRow = {}; //대출인선택정보
+			var selMortRow = {}; //담보선택정보
+
+			var lendContr = {}; //한도약정정보(정상)
+
+			var paramMap = /*[[${paramMap}]]*/; //넘어온 파라미터
+
+			var contrStat = ""; //약정상태
+			var procStat = ""; //처리상태
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+
+				//코드값 처리
+				com.fnCodeSelectBox("LD01", "lendType", 1, ""); //대출상품
+				com.fnCodeSelectBox("LD05", "procStat", 1, "", "1"); //처리상태
+
+				//동적 융자상품정보설정
+				lendCom.fnSetLendLimit("LD01", "tbl_lendLimit");
+
+				//동적 첨부파일 생성(동적)
+				com.fnFileSet("LD09", "myUpload");
+
+				//조합계좌설정
+				com.fnSetBankAccList("selBank", 1);
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//수정가능 설정
+				IBSheet.create({ id: "sheetSure", el: "sheetDivSure", options: gridOptList[0] }); //대출인정보
+			    IBSheet.create({ id: "sheetMort", el: "sheetDivMort", options: gridOptList[1] }); //담보정보
+			    IBSheet.create({ id: "sheetLend", el: "sheetDivLend", options: gridOptList[7] }); //대출정보
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//넘어온 파라미터 설정 및 상세 정보 조회
+					$("#membNo").val(paramMap.membNo);
+					$("#sMembNo").val(paramMap.membNo);
+					$("#contrNo").val(paramMap.contrNo);
+					$("#atthNo").val(paramMap.atthNo);
+
+					obj = {url:"/lendContr/selectLendContr.do", formId:"saveFrm", callBack:fnDtlCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxPost(obj);
+
+				};
+
+
+				//sheetSure 원클릭
+			    sheetSure.bind("onAfterClick" , function(obj) { //원클릭
+			    	//수정호출
+					if(obj.col === "sureNm"){
+						selSureRow = obj.row;
+						fnPopup("sure");
+					}
+
+					//삭제
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+
+				//sheetMort 원클릭
+			    sheetMort.bind("onAfterClick" , function(obj) { //원클릭
+			    	//수정호출
+					if(obj.col === "sureNm"){
+						selMortRow = obj.row;
+						fnPopup("mort");
+					}
+
+					//삭제
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+
+				//계약체결명세 원클릭
+			    sheetConcl.bind("onAfterClick" , function(obj) { //원클릭
+			    	//삭제
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+
+				sheetNote.bind("onAfterClick" , function(obj) { //원클릭
+			    	//삭제
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+
+				//양도 매출채권 및 대출신청 명세 원클릭
+			    sheetBond.bind("onAfterClick" , function(obj) { //원클릭
+			    	//삭제
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+
+				//매출채권보험청구권현황 원클릭 (보험청구권)
+			    sheetClaim.bind("onAfterClick" , function(obj) { //원클릭
+			    	//삭제
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+
+			    //대출현황 원클릭 처리
+				sheetLend.bind("onAfterClick" , function(obj) { //원클릭
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//lendCom.fnLendSet(rowData);
+				});
+
+				//대출현황 조회 후 자동 조회
+				sheetLend.bind("onSearchFinish" , function(obj) { //원클릭
+					this.focus(this.getRowById("AR1"));
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//lendCom.fnLendSet(rowData);
+				});
+			});
+
+			//상세 조회 콜백
+			var fnDtlCallBack = function(resData){
+				lendContr = resData.contr;
+
+				contrStat = resData.contr.contrStat;
+
+				com.fnSetKeyVal(resData.memb); //조합원 설정
+				com.fnSetKeyVal(resData.contr); //약정정보 설정
+				com.fnSetKeyVal(resData.befContr, "befArea"); //이전약정정보
+
+				com.fnIbsUploadViewOne(resData.fileList, "upt"); //첨부파일설정
+				sheetSure.loadSearchData(resData.suretyList); //보증인정보
+				sheetMort.loadSearchData(resData.mortList); //담보정보
+				sheetLend.loadSearchData(resData.lendList); //대출현황
+
+				//약정가능좌수 설정
+				var contrNum = resData.contr.contrNum;
+			    if(contrStat !== "10") contrNum = 0;
+			    $("#remainNum").val(resData.memb.mortNum - resData.memb.assignNum - resData.memb.contrUseNum + resData.memb.deptNum + contrNum);
+
+				//상품선택 처리
+				var lendTypes = resData.contr.lendTypes.split(",");
+				lendTypes.forEach((item, idx) => {
+					$("#lendTypes"+item).prop("checked", true);
+
+					var useAmt = resData.contr["useAmt" + item];
+					if(useAmt === null) useAmt = 0;
+					$("#lendUseAmt"+item).val(com.addComma(useAmt));
+			  	});
+
+			  	fnSumLimit(); //합계계산
+
+				//알림톡세팅
+				var setParam = {membNo: $("#membNo").val(), setTalk:"Y", setVal:resData.contr.talkNm}
+				com.fnSetPersList(setParam);
+
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+			}
+
+
+			//업무처리 ****************************************************************************************************************************
+
+			//약정일자 입력시 시작일 설정
+			var fnSetContrDt = function(val){
+
+				$("#contrBegDt, #lendDt").val(val); //약정시작일
+				$("#contrExpDt, #repayPreDt").val(com.fnDateGet(val, 365)); //약정종료일
+
+				//약정배수조회
+				//fnContrDrng();
+			}
+
+			//약정좌수 금액 체크
+			var fnContrNumChk = function(){
+				var contrNum = $("#contrNum").val();
+				var remainNum = $("#remainNum").val();
+				if(remainNum < contrNum){
+					alert("약정가능좌수를 초과할 수 없습니다.");
+					$("#contrNum").val("");
+					$("#contrNum").focus();
+					return;
+				}
+			}
+
+			//신용도 조회 팝업
+			var fnGrad = function(obj){
+
+				var valChks = ["contrDt", "contrNum"];
+
+				if(com.fnValChk(valChks)){
+					com.dialpopupOpen("신용도조회", "/index/pageCall.do?menuCd=1070710", "800", "500"); ///com/serchCred
+				}
+			}
+
+			//신용도 조횝 팝업 콜백
+			var fnGradCallBack = function(resData){
+				$("#gradeNo").val(resData.gradeNo);
+				$("#finalGrade").val(resData.finalGrade);
+				$("#gradeDt").val(com.fnDateGet(resData.gradeDt, 0));
+
+				//좌당금액,배수,한도조회
+				fnContrDrng();
+			}
+
+			//좌당금액,배수,한도조회 (한도 필요 여부 확인)
+			var fnContrDrng = function(resData){
+
+				var param = {appDt : $("#contrDt").val(), finalGrade : $("#finalGrade").val()}
+				obj = {url:"/lendContr/selectLendContrBase.do", param:param, callBack:fnContrDrngCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//좌당금액,배수,한도조회 콜백
+			var fnContrDrngCallBack = function(resData){
+				//console.log(resData);
+				//상품배수율
+				$("#doubleNum11").val(resData.confLend.conclusRate);
+				$("#doubleNum12").val(resData.confLend.creditRate);
+				$("#doubleNum13").val(resData.confLend.noteRate);
+				$("#doubleNum14").val(resData.confLend.bondRate);
+				$("#doubleNum15").val(resData.confLend.claimRate);
+
+				//지분액
+				$("#dealAmt").val(com.addComma(resData.confInvt.dealAmt));
+				$("#lendEachMul").val(com.addComma(resData.confRisk.lendEachMul)); //개별한도
+                $("#lendLimitMul").val(resData.confRisk.lendLimitMul); //융자한도배수
+			}
+
+			//상품 직접입력 선택 처리
+			var fnOverChkSel = function(){
+				var overChk  = $("#overChk").is(":checked"); //한도임의설정여부
+
+				//상품정보 화면 컨트롤
+				$("input[name='lendTypes']").each(function(idx) {
+					var cd = $(this).attr("id").replace("lendTypes", ""); //상품id
+					if(overChk){
+						$("#limitAmt"+cd).addClass("readonly").attr("readonly", false);
+						$("#limitOptYn").val("Y");
+					}else{
+						$("#limitAmt"+cd).addClass("readonly").attr("readonly", true);
+						$("#limitOptYn").val("N");
+					}
+				});
+			}
+
+			//상품 선택 체크
+			var fnGuarTypeSel = function(obj){
+				var cd = obj.id.replace("lendTypes", ""); //상품id
+				var contrType = $("#contrType").val();
+				var contrNum = $("#contrNum").val();
+				var overChk  = $("#overChk").is(":checked"); //한도임의설정여부
+				var chkYn  = $("#"+obj.id).is(":checked"); //상품선택여부
+
+				if(!overChk && $("#contrNum").val() === ""){
+					alert("약정좌수를 입력 하십시오.");
+					$("#contrNum").focus();
+					if(chkYn) $("#"+obj.id).prop("checked", false);
+					return
+				}
+
+				if(!overChk && $("#gradeNo").val() === ""){
+					alert("신용도를 조회 하십시오.");
+					$("#finalGrade").focus();
+					if(chkYn) $("#"+obj.id).prop("checked", false);
+					return
+				}
+
+				if(!chkYn){
+					//$("#doubleNum"+cd).val("");
+					$("#limitAmt"+cd).val("");
+				}
+
+				fnSumLimit(); //합계계산
+			}
+
+			//한도액 입력
+			var fnLimiAmtSet = function(obj){
+				var id = obj.id;
+				var cd = id.replace("limitAmt", ""); //한도액
+
+				if(obj.value ===""){
+					$("#lendTypes"+cd).prop("checked", false);
+				}else{
+					$("#lendTypes"+cd).prop("checked", true);
+				}
+
+				fnSumLimit();
+			}
+
+
+			//한도금액 합산 (상품정보 화면 수정)
+			var fnSumLimit = function(){
+
+				var sumNum = 0;
+    			var sumAmt = 0;
+
+    			var overChk  = $("#overChk").is(":checked"); //한도임의설정여부
+    			var contrNum = Number($("#contrNum").val()); //약정좌수
+    			var dealAmt  = Number(com.rmComma($("#dealAmt").val())); //좌당금액
+    			var finalGrade = $("#finalGrade").val(); //등급
+    			var contrType = $("#contrType").val(); //약정구분
+
+    			$("input[name='lendTypes']").each(function(idx) {
+					//console.log(idx)
+					var cd = $(this).attr("id").replace("lendTypes", ""); //상품id
+					var chkYn = $(this).is(":checked"); //상품체크여부
+					var doubleNum = Number($('input[name="doubleNum"]')[idx].value); //상품배수
+					var limitAmt  = Number(com.rmComma($('input[name="limitAmt"]')[idx].value)); //상품한도액
+
+					if(chkYn && overChk){
+
+					}else if(chkYn && contrNum !== "" && doubleNum !== ""){
+						limitAmt = contrNum * dealAmt * doubleNum;
+
+						$('input[name="limitAmt"]')[idx].value = com.addComma(limitAmt);
+
+					}else{
+						$('input[name="limitAmt"]')[idx].value = "";
+						doubleNum = 0;
+					}
+
+					//console.log(doubleNum + " / " + limitAmt)
+					sumNum += doubleNum;
+					sumAmt += limitAmt;
+
+				});
+				$("#sumDoubleNum").val(sumNum);
+    			$("#sumLimitAmt").val(com.addComma(sumAmt));
+
+			}
+
+
+			//대출인/담보/관련조합원 팝업 호출
+			var fnPopup = function(type, addYn){
+
+				if($("#membNo").val() === ""){
+					alert("조합원을 선택 하십시오.");
+					$("#sMembNo").focus();
+					return;
+				}
+
+				if(type === "sure"){
+					if($("#sumLimitAmt").val() === ""){
+						alert("한도금합계가 산정 되지 않았습니다.");
+						//return;
+					}
+					if(addYn === "Y") selSureRow = {}; //초기화
+					com.dialpopupOpen("보증인추가", "/index/pageCall.do?menuCd=1070715", "900", "700"); ///com/comSureAdd
+				}else if(type === "mort"){
+					if(addYn === "Y") selMortRow = {}; //초기화
+					com.dialpopupOpen("담보추가", "/index/pageCall.do?menuCd=1070716", "900", "650"); ///com/comMortAdd
+				}
+			}
+
+			//보증인 추가 콜백
+			var fnSureCallBack = function(obj){
+				var param = {sheetId: sheetSure, mapRow: selSureRow, rnVal: obj, ifVal: "sureNm:sureSeq"}
+				com.fnIbsAddChgRow(param);
+			}
+
+			//담보 추가 콜백
+			var fnMortCallBack = function(obj){
+				var param = {sheetId: sheetMort, mapRow: selMortRow, rnVal: obj, ifVal: "sureNm:mortSeq"}
+				com.fnIbsAddChgRow(param);
+			}
+
+			//행 추가
+			var fnRowAdd = function(sheetId){
+				initData = {};
+				com.fnIbsRowAdd("pre", initData, sheetId);
+			};
+
+			//수정
+			var fnSave = function(){
+
+				fnContrNumChk(); //약정좌수 체크
+
+				//필수체크
+				var valChks = [ "contrDt", "contrBegDt", "contrExpDt", "contrNum"
+							, "gradeNo", "limitAmt", "histReason"];
+
+				if(com.fnValChk(valChks)){
+
+					//파일여부
+					var fileList01 = $("#docFile01").IBUpload('fileList');
+					var fileList02 = $("#docFile02").IBUpload('fileList');
+					var fileList03 = $("#docFile02").IBUpload('fileList');
+					if(fileList01.length === 0 || fileList02.length === 0 || fileList03.length === 0 ){
+						alert("관련 첨부파일을 첨부하십시오.");
+						//return;
+					}
+					//첨부파일 첨부한 순서 코드따오기 (물리적저장순서 맞춰야해서 필수)
+					com.fnGetModCds("docFile");
+					if(confirm("저장 처리 하시겠습니까?")){
+						var param = $("#saveFrm").serializeObject();
+						param.sure = sheetSure.getSaveJson(0);
+						param.mort = sheetMort.getSaveJson(0);
+
+						obj = {url:"/lendContr/updateLendContrRenew.do", callBack:fnSaveCallBack, jParam:param, fileId:"docFile", sessYn:"Y" };
+						com.fnAjaxMulti(obj);
+					}
+
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				if(resData.resultCode === 0){
+					param = {menuCd:"1040110", paramMap:{
+						                contrNo:$("#contrNo").val()
+										, lendType:$("#lendType").val()
+										, atthType:$("#atthType").val()
+										}
+					};
+					parent.menuOpen(param);
+
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+				}
+			};
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" value="" title="조합원"/>
+			<input type="hidden" name="sMembNo" id="sMembNo" value=""/> <!--조합원번호-->
+			<input type="hidden" name="contrNo" id="contrNo" value=""/> <!--조합원번호-->
+			<input type="hidden" name="lendNo" id="lendNo" value=""/> <!--대출번호-->
+
+			<input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+			<input type="hidden" name="atthNo" id="atthNo" /> <!--첨부파일번호-->
+			<input type="hidden" name="modFileCds" id="modFileCds" /> <!-- 첨부파일 첨부순서 -->
+
+			<input type="hidden" name="reqWay" id="reqWay" value="V"/> <!-- 신청방법 -->
+			<input type="hidden" name="payAmt" id="payAmt" value=""/> <!-- 지급금액 -->
+			<input type="hidden" name="gradeNo" id="gradeNo" value=""/> <!-- 신용등급관리번호 -->
+			<input type="hidden" name="contrOverYn" id="contrOverYn" value=""/> <!-- 한도직접입력대상 -->
+
+			<input type="hidden" name="lendStat" id="lendStat" /> <!-- 융자처리상태(심사승인) -->
+			<input type="hidden" name="dealAmt" id="dealAmt" />
+			<input type="hidden" name="lendEachMul" id="lendEachMul"   />
+			<input type="hidden" name="lendLimitMul" id="lendLimitMul"  />
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">약정정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;"
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>약정구분</th>
+									<td>
+										<span id="ele_contrTypeNm"></span>
+									</td>
+									<th>약정번호</th>
+									<td>
+										<span id="ele_contrNo"></span>
+									</td>
+									<th>약정상태</th>
+									<td>
+										<span id="ele_contrStatNm"></span>
+									</td>
+								</tr>
+								<tr>
+									<th>약정일자</th>
+									<td >
+										<input type="search" name="contrDt" id="contrDt" title="약정일자" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" onChange="fnSetContrDt(this.value);" autocomplete="off" style="width:100px" maxlength="10"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'contrDt', 'yyyy-mm-dd')" />
+									</td>
+									<th>약정기간</th>
+									<td colspan="3">
+										<input type="text" name="contrBegDt" id="contrBegDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+			                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'contrBegDt', 'yyyy-mm-dd','contrExpDt', 1)" />
+			                        	<input type="text" name="contrExpDt" id="contrExpDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+			                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'contrExpDt', 'yyyy-mm-dd', 'contrBegDt', 2)" />
+									</td>
+								</tr>
+
+								<tr>
+									<th>담보좌수</th>
+									<td>
+										<input type="text" name="mortNum" id="mortNum" title="담보좌수" style="width:40px" readonly/>
+									</td>
+									<th>예수좌수</th>
+									<td>
+										<input type="text" name="deptNum" id="deptNum" title="담보좌수" style="width:40px" readonly/>
+									</td>
+									<th>총좌수</th>
+									<td>
+										<input type="text" name="totNum" id="totNum" title="약정사용좌수" style="width:40px" readonly/>
+									</td>
+								</tr>
+								<tr>
+									<th>배정좌수</th>
+									<td>
+										<input type="text" name="assignNum" id="assignNum" title="배정좌수" style="width:40px" readonly/>
+									</td>
+									<th>사용좌수</th>
+									<td>
+										<input type="text" name="contrUseNum" id="contrUseNum" title="배정좌수" style="width:40px" readonly/>
+									</td>
+									<th>가능좌수</th>
+									<td>
+										<input type="text" name="remainNum" id="remainNum" title="약정가능좌수" style="width:40px" readonly/>
+									</td>
+								</tr>
+								<tr>
+									<th>약정좌수</th>
+									<td >
+										<input type="search" name="contrNum" id="contrNum" title="약정좌수" style="width:60px" onKeyUp="com.fnOnlyNum(this);" onBlur="fnContrNumChk()" maxlength="5" />
+									</td>
+									<th>신용도</th>
+									<td colspan="3">
+										<input type="text" name="finalGrade" id="finalGrade" title="신용도" style="width:50px" readonly/>
+										<button type="button" class="btn icoSearch" onclick="fnGrad()">검색</button>
+										<input type="text" name="gradeDt" id="gradeDt" title="평가일자" style="width:100px" readonly/>
+									</td>
+								</tr>
+								<tr>
+									<th>비고</th>
+									<td colspan="5">
+										<input type="search" name="remark" id="remark" title="비고" style="width:400px" maxlength="100" />
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">융자상품정보
+								<input type="checkbox" name="overChk" id="overChk" onClick="fnOverChkSel();" />
+								<input type="hidden" name="limitOptYn" id="limitOptYn" value=""/> <!-- 한도직접입력여부 -->
+								</h4>
+							</div>
+						</section>
+						<table class="tbl" id="tbl_lendLimit"></table>
+
+
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">보증인정보</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:fnPopup('sure', 'Y');" class="btn small style08">추가</button>
+								</div>
+							</section>
+							<div id="sheetDivSure" style="width:100%;height:140px"></div>
+						</div>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">담보정보</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:fnPopup('mort', 'Y');" class="btn small style08">추가</button>
+								</div>
+							</section>
+							<div id="sheetDivMort" style="width:100%;height:140px"></div>
+						</div>
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<th:block th:include="lend/comLendContrBefDtl"></th:block> <!--약정이전 상세 정보 -->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">심사정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;"
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>처리상태</th>
+									<td><span id="ele_procStatNm"></span></td>
+									<th>심사일자</th>
+									<td><span id="ele_apprDtm"></span></td>
+									<th>심사자</th>
+									<td><span id="ele_apprNm"></span></td>
+								</tr>
+								<tr>
+									<th>승인여부</th>
+									<td>
+										<span id="ele_examYn"></span>
+									</td>
+									<th>승인일자</th>
+									<td>
+										<span id="ele_examDtm"></span>
+									</td>
+									<th>승인자</th>
+									<td>
+										<span id="ele_examNm"></span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<!-- 첨부파일 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">첨부파일</h4>
+							</div>
+						</section>
+						<table class="tbl" id="myUpload"></table>
+
+						<!--알림톡정보 : s-->
+						<div id="alarmBox" class="wrapBox mt10">
+							<th:block th:include="com/comAlarmTalk"></th:block> <!--알람톡정보 -->
+							<!--<th:block th:include="com/comAlarmTalk :: type('invtSeprt')"></th:block> -->
+						</div><!-- //wrapbox-->
+						<!--알림톡정보 : e-->
+
+						<div id="ele_histReason">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">수정사유</h4>
+								</div>
+							</section>
+							<div>
+								<textarea name="histReason" id="histReason" cols="100" rows="3" title="수정사유"></textarea>
+							</div>
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">수정</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,416 @@
+<!--
+	파일정보 : ivnt/invtBillAssIns.html
+	파일명 : invtColatAss
+	업무명 : 담보배정수정
+	생성자 : 윤가영1
+	생성일 : 2023-04-17
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			
+			var sMembType = ""; //조합원검색구분
+			var vMembType = ""; //조합원상세구분
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//화면 처리
+				//달력부분
+				$("#assignDt").val(/*[[${today}]]*/);
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				//출자담보배정 출자담보정보(공통부), view : 담보배정정보
+				fnIbsInvtMortAss(gridOptList[0], "canInsert");
+			});
+			
+			//조합원조회 콜백	
+			//소유조합원, 배정조합원 값 세팅
+			var fnMembInfoSet = function(obj){
+				
+				//초기화 (조합원검색이 두개 이상일때, 한쪽 검색후 돋보기아이콘 클릭시 조회했던 조합원 초기화)
+				$("#sMembNo").val("");
+				$("#sMembNm").val("");
+				
+				//검색input결과세팅
+				$("#"+sMembType+"No").val(obj.membNo);
+				$("#"+sMembType+"Nm").val(obj.membNm);
+				
+				//배정가능좌수, 배정가능금액 계산
+				//var assSetNumCalc = Number(obj.mortNum) - Number(obj.assSetNum) - Number(obj.contrUseNum);
+				//var assSetAmtCalc = Number(obj.mortAmt) - Number(obj.assSetAmt) - Number(obj.contrUseAmt);
+				//var assSetAmtCalc = Number(obj.mortAmt) - Number(obj.assSetAmt) - Number(obj.contrUseNum)*1000000; //AMT로 바꿔야함
+				//obj.assAvailNum = assSetNumCalc;
+				//obj.assAvailAmt = assSetAmtCalc;
+				
+				//전체배정좌수, 금액세팅				
+				//obj.assTotalAmt = Number(obj.assGetAmt)-Number(obj.assSetAmt);
+				//obj.assTotalNum = Number(obj.assGetNum)-Number(obj.assSetNum);
+				
+				//기타상세데이터 세팅
+				invtCom.fnAssSetKeyVal(obj,vMembType);
+				
+				//콤마추가 클래스들 세팅
+				$.each($(".setCommaCls"), function(idx,item){
+					$(item).text(com.addComma($(item).text()));
+				});
+				
+				//증권정보세팅 (소유, 배정 조합원 다 입력되었을시에)
+				if($("#sOwnMembNo").val() !== "" && $("#sAssMembNo").val() !== "") fnSearchDtl();
+				
+				//검색한게 소유조합원이면 약정좌수 체크하기
+			    if(vMembType === "own") {
+                	
+					//해제가능좌수
+					//fnSearchMembBill(); 
+					if(Number(obj.assSetNum) <= 0) {
+            			alert("해제가능한 배정된 출자증권이 없습니다.");
+            		}
+			    }
+			    
+			};
+			
+			//출자증권정보(담보정보) 조회
+			var fnSearchDtl = function(){
+				var param = {membNo : $("#sOwnMembNo").val(), assMembNo : $("#sAssMembNo").val(), atthType: atthType, billStat: '10'};
+				com.fnIbsSearch("/invtBill/selectInvtMortBillList.do", param, sheetInvtMortAss, fnSearchDtlCallback ); //param, sheetId 생략 가능
+			};
+			
+			var fnSearchDtlCallback = function(resData){
+				
+				var resData = JSON.parse(resData.data);
+				if(resData.resultCode === 9){
+					alert(resData.resultMsg);	
+				}
+				
+				parent.$("#ele_loading").css("display","none"); //로딩바
+				//출자증권정보, 출자담보정보(히든)리스트가져온걸로 세팅
+				invtCom.fnSetinvtbillCnt(sheetInvtMortAss);
+			};
+			
+			//저장
+			var fnSave = function(saveType){
+				
+				//저장 vs 저장후 계속등록
+				var msg = "";
+				$("#saveType").val(saveType);
+				if($("#saveType").val( )=== "continue") msg = "담보배정해제 정보를 저장후 계속 등록하시겠습니까?";
+				else msg = "담보배정해제 정보를 등록하시겠습니까?";
+				
+				//필수체크
+				if($('#ele_own_ceoNm').text()===""){
+					alert("소유조합원을 선택해 주십시오.");
+					return false;
+				}
+				
+				/*if($('#ele_ass_ceoNm').text()===""){
+					alert("배정조합원을 선택해 주십시오.");
+					return false;
+				}*/		
+				
+				if($('#assignNum').val()===""){
+					alert("담보배정해제 처리를 위한 증권이 선택되지 않았습니다.");
+					return false;
+				} 
+				
+				//필수체크
+				var valChks = ["assignDt"];
+				
+				if(com.fnValChk(valChks)){
+					
+					if(confirm(msg)){
+						var param = $("#saveFrm").serializeObject();
+						param.AssBillDat = sheetInvtMortAss.getSaveJson();
+						
+						if(saveType === "continue"){
+							obj = {url:"/InvtBillAss/insertInvtBillAssCan.do", jParam:param, callBack:fnSaveKeepCallBack, fileId:"docFile", msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						}else {
+							obj = {url:"/InvtBillAss/insertInvtBillAssCan.do", jParam:param, callBack:fnSaveCallBack, fileId:"docFile", msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						}
+						
+						com.fnAjaxMulti(obj);
+	
+					}
+				}	
+				
+			};
+			
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				if(resData.resultCode === 0) {
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+					//com.fnDoAfterClose(); 
+				}
+			};
+			
+			//저장콜백(저장후계속등록)
+			var fnSaveKeepCallBack = function(resData){
+				if(resData.resultCode === 0) {
+					$("#saveFrm").find('input, select, button').prop('disabled', true);
+					//parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+					param = {menuCd:"1020114", paramMap:{atthType:/*[[${menuInfo.atthType}]]*/}}
+					parent.menuOpen(param);
+				}
+			};
+			
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+			
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="atthType"   id="atthType" th:value="${paramMap.atthType}"/>
+			<input type="hidden" name="imgAtthNo"  id="imgAtthNo" />
+			<input type="hidden" name="atthNo"     id="atthNo"/>
+			<input type="hidden" name="modFileCds" id="modFileCds" />
+			<input type="hidden" name="investNo"   id="investNo" value=""/>
+			<!--조합원 공통검색용-->
+			<input type="hidden" name="sMembNo"    id="sMembNo" value=""/> 
+			<input type="hidden" name="sMembNm"    id="sMembNm" value=""/>
+			<div class="contents flex ">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:47%">
+						<!--소유조합원정보 : s-->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">소유조합원</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="width:120px;">
+									<col style="width:80px;">
+									<col style="width:120px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>소유조합원</th>
+										<td colspan="3">
+											<input type="search" name="sOwnMembNo" id="sOwnMembNo" style="width:50px;" maxlength="4" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'own')}" onchange="com.fnMembInfoMulti(event,'own')">
+											<input type="search" name="sOwnMembNm" id="sOwnMembNm" style="width:150px;" maxlength="40" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'own')}" onchange="com.fnMembInfoMulti(event,'own')">
+											<button type="button" class="btn icoSearch" onclick="com.fnMembInfoMulti(event,'own')">검색</button>
+										</td>
+										<th>대표자</th>
+										<td><div id="ele_own_ceoNm"></div></td>
+									</tr>
+									<!--<tr>
+										<th>소유조합원</th>
+										<td colspan="3"><span id="ele_memb_membNo"></span> / <span id="ele_memb_membNm"></span></td>
+										<th>대표자</th>
+										<td><div id="ele_memb_ceoNm"></div></td>
+									</tr>	-->
+									<tr>
+										<th>법인번호</th>
+										<td><div id="ele_own_lawNo"></div></td>
+										<th>사업자번호</th>
+										<td><div id="ele_own_bizNo"></div></td>
+										<th>전화번호</th>
+										<td><div id="ele_own_telNo"></div></td>
+									</tr>
+									<tr>
+										<th>상태</th>
+										<td><div id="ele_own_membStatNm"></div></td>
+										<th>주장르</th>
+										<td><div id="ele_own_mainBussNm"></div></td>
+										<th>소속단체</th>
+										<td><div id="ele_own_belong"></div></td>
+									</tr>
+									<tr>
+										<th>주소</th>
+										<td colspan="5"><div id="ele_own_addrFull"></div></td>
+									</tr>
+									<tr>
+										<th>출좌좌수</th>
+										<td><div id="ele_own_investNum" class="setCommaCls"></div></td>
+										<th>담보좌수</th>
+										<td><div id="ele_own_mortNum" class="setCommaCls"></div></td>
+										<th>해제가능좌수</th>
+										<td><div id="ele_own_assSetNum" class="setCommaCls"></div></td>
+									</tr>
+									<tr>
+										<th>출좌금액</th>
+										<td><div id="ele_own_investAmt" class="setCommaCls"></div></td>
+										<th>담보금액</th>
+										<td><div id="ele_own_mortAmt" class="setCommaCls"></div></td>
+										<th>해제가능금액</th>
+										<td><div id="ele_own_assSetAmt" class="setCommaCls"></div></td>
+									</tr>
+								</tbody>
+							</table>
+							<div style="font-size: 12px; padding: 10px; background-color: #edf3f8; margin-top:3px;">
+								*해제가능좌수 = 배정한좌수 </br>
+								*해제가능좌수금액 = 배정한금액</br>
+							</div>
+						</div>
+						<!--소유조합원정보 : e-->
+						
+						<!--기본조합원조회에 출좌관련 데이터 조인해야함 : 공통 fragment에 적용 어떻게할지 고민하기-->
+						<!--<th:block th:include="com/comMembSearch::comMemb (소유조합원)"></th:block> 조합원조회 -->
+						
+						<!--배정조합원정보 : s-->
+						<div class="wrapBox mt5">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">배정조합원정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="width:120px;">
+									<col style="width:80px;">
+									<col style="width:120px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>배정조합원</th>
+										<td colspan="3">
+											<input type="search" name="sAssMembNo" id="sAssMembNo" style="width:50px;" maxlength="4" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'ass')}" onchange="com.fnMembInfoMulti(event,'ass')">
+											<input type="search" name="sAssMembNm" id="sAssMembNm" style="width:150px;" maxlength="40" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'ass')}" onchange="com.fnMembInfoMulti(event,'ass')">
+											<button type="button" class="btn icoSearch" onclick="com.fnMembInfoMulti(event,'ass')">검색</button>
+										</td>
+										<th>대표자</th>
+										<td><div id="ele_ass_ceoNm"></div></td>
+									</tr>
+									<tr>
+										<th>법인번호</th>
+										<td><div id="ele_ass_lawNo"></div></td>
+										<th>사업자번호</th>
+										<td><div id="ele_ass_bizNo"></div></td>
+										<th>전화번호</th>
+										<td><div id="ele_ass_telNo"></div></td>
+									</tr>
+									<tr>
+										<th>상태</th>
+										<td><div id="ele_ass_membStatNm"></div></td>
+										<th>주장르</th>
+										<td><div id="ele_ass_mainBussNm"></div></td>
+										<th>소속단체</th>
+										<td><div id="ele_ass_belong"></div></td>
+									</tr>
+									<tr>
+										<th>주소</th>
+										<td colspan="5"><div id="ele_ass_addrFull"></div></td>
+									</tr>
+									<tr>
+										<th>출좌좌수</th>
+										<td><div id="ele_ass_investNum" class="setCommaCls"></div></td>
+										<th>출좌금액</th>
+										<td colspan="3"><div id="ele_ass_investAmt" class="setCommaCls"></div></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--배정조합원정보 : e-->
+						
+					</div>
+					
+					
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:52%">	
+						
+						<!--출자증권담보설정목록 : s-->
+						<th:block th:include="com/comInvtMortAss"></th:block> <!-- 출자담보정보(공통) -->
+						<!-- //wrapbox-->
+						
+						<!--담보배정설정정보 : s-->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">담보배정설정정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>배정해제일자</th>
+										<td colspan="5">
+											<input type="search" name="assignDt" id="assignDt" title="배정해제일자" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:120px" maxlength="10"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'assignDt', 'yyyy-mm-dd')" />
+										</td>
+									</tr>
+									<tr>
+										<th>배정해제좌수</th>
+										<td colspan="2"><input type="search" id="assignNum" name="assignNum" style="width:100%" title="담보배정좌수" readonly></td>
+										<th>배정해제금액</th>
+										<td colspan="4">
+											<input type="search" id="assignAmt" name="assignAmt" style="width:100%" title="담보배정금액" readonly>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div><!-- //wrapbox-->
+						<!--담보배정설정정보 : e-->
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+						
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">등록</button>
+								<button type="button" onclick="javascript:fnSave('continue');" class="btn style07">저장후 계속등록</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+						
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

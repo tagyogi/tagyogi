@@ -1,0 +1,339 @@
+<!--
+	파일정보: invt/invtDeptDtl.html
+	파일명 : invtDeptDtl
+	업무명 : 예수금상세
+	생성자 : 윤가영1
+	생성일 : 2023-04-13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//화면 처리
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				$.each(gridOptList[0].Cols, function(idx, item){
+					//숨김목록 제외 보이게
+					if(item.Name === "delChk"){
+						item.Visible = 0;	//보이게
+					}
+					
+					//입출금계좌 (조합원계좌)
+					var getEnum = com.fnBankIbSelectBox();
+					if(item.Name === "payBank"){
+						item.Enum = getEnum.enumNm;
+						item.EnumKeys = getEnum.enumKeys;
+						item.OnChange = fnCtrlbankAcct;//계좌세팅
+					}
+
+					//그리드 푸터에 합계 옵션추가
+
+					if(item.Name === "depositAmt"){
+						item.FormulaRow = function(fr){
+							var rows = fr.Sheet.getDataRows();
+				            var depositAmt = 0;
+				            for(var i = 0; i < rows.length; i++){
+				                if(rows[i].payType === "P" && rows[i].delYn === "N"){
+									depositAmt += rows[i].depositAmt ;
+								}
+				            }
+				            return depositAmt;
+						}
+
+					}
+
+					if(item.Name === "refundAmt"){
+						//item.FormulaRow = "Sum"
+						item.FormulaRow = function(fr){
+							var rows = fr.Sheet.getDataRows();
+				            var refundAmt = 0;
+				            for(var i = 0; i < rows.length; i++){
+				               if(rows[i].payType === "R" && rows[i].delYn === "N"){
+									refundAmt += rows[i].refundAmt ;
+								}
+				            }
+				            return refundAmt;
+						}
+
+					}
+				});
+
+
+				//그리드 푸터에 합계 옵션추가
+				/*$.each(gridOptList[0], function(idx, item){
+					if(item.Name === "billCnt" || item.Name === "billAmt"){
+						item.FormulaRow = "Sum"
+					}
+					if(item.Name === "billTypeNm"){
+						item.FormulaRow = "합계"
+					}
+				});*/
+				
+				gridOptList[0].Def = {
+						Row:{CanFormula: 1
+						, CalcOrder: "Color"
+						, ColorFormula: function (param) {
+				          if (param.Row["delYn"] === "Y") { 
+				               return "#FFFFDD";
+				          }
+				       }
+			       }
+		       }
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+					
+					
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheet로드후 입출금은행명 은행코드와 계좌로 enumkey값으로 조합해 세팅해주기
+				/**paybank는 조합원계좌로 그리드관리에서 공통코드로 세팅되는것이아닌, 동적으로 부여하는것이기 때문에 loadSearchData에서 파싱될때 enum이 제대로 작동하지않음
+				따라서 코드값, 계좌값 따로 불러와서 조합후 세팅
+				*/
+				sheet.bind("onDataLoad" , function(obj) { //데이터로드
+				 	var rows = sheet.getDataRows();
+				 	for(var i=0; i<rows.length; i++){
+						var payType = rows[i].payType;
+						var payBankCd = rows[i].payBankCd;
+						var payAcct = rows[i].payAcct;
+						var delYn = rows[i].delYn;
+						var setPayBank = payBankCd + "," + payAcct
+						sheet.setValue(rows[i], "payBank", setPayBank);
+
+						/*필수*/
+						//처음 불러온 데이터는 입출금조합계좌 세팅으로 인핸 changed 상태값을 변경 : 무효화
+						rows[i].Changed = 0;
+
+
+
+					}
+
+				});
+
+			});
+
+			//입출금은행,계좌 (조합원계좌)
+			var fnCtrlbankAcct = function(evtParam){
+				var rowId = evtParam.row.id;
+				//var rowIdx = evtParam.sheet.getRowIndex(rowId);
+				var payBank = sheet.getValue(sheet.getRowById(rowId), "payBank");
+				var bankCd  = payBank.split(",")[0];
+				var bankNm  = payBank.split(",")[1];
+
+				sheet.setValue(sheet.getRowById(rowId), "payBankCd", bankCd);
+				sheet.setValue(sheet.getRowById(rowId), "payAcct", bankNm);
+
+			}
+
+
+			//검색
+			var fnSearch = function(){
+				//상세정보 조회
+			    var membNo = /*[[${paramMap.membNo}]]*/;
+			    var atthType = /*[[${menuInfo.atthType}]]*/;
+
+			    var param = {membNo : membNo, atthType: atthType, mode: "uptDtl"};
+				obj = {url:"/invtDept/selectInvtDept.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+				//$("#tr_reqWay").css("display", ""); //신청자정보
+				console.log(resData);
+				com.fnSetKeyVal(resData.memb);
+
+				//예수좌수 출력
+				com.fnSetKeyVal(resData.invtDeptData);
+
+				//첨부파일
+				//com.fnIbsUploadViewOne(resData.fileList);
+				com.fnIbsUploadView($("#docFile"), resData.fileList);
+
+				//콤마추가 클래스들 세팅
+				$.each($(".setCommaCls"), function(idx,item){
+					$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
+				});
+
+				/*$.each($("div[id^='docSubmitDt']"), function(idx, item){
+					//var dtTxt = com.fnDateFormat($(item).text(),'-');
+					$(item).text(dtTxt);
+				});*/
+
+				//시트값 설정
+				sheet.loadSearchData(resData.data);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+
+			};
+			//수정
+			var fnUpt = function(){
+				param = {menuCd:"1020121", paramMap:{membNo:$("#membNo").val()
+										, atthType:/*[[${menuInfo.atthType}]]*/
+										}
+				};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			};
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" />
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+			<input type="hidden" name="atthNo" id="atthNo" value=""/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+
+						<!--최초등록 예수금정보 : s-->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">예수금정보</h4>
+									<!--<button type="button" class="btn icoSearch" onclick="fnDeptListPop()">검색</button>-->
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										</td>
+										<th>예수금액</th>
+										<td colspan="7" id="ele_totalDepositAmt" class="setCommaCls">
+										</td>
+									</tr>
+									<tr>
+										<th>예수좌수</th>
+										<td id="ele_deptNum" class="setCommaCls">
+										</td>
+										<th>사용좌수</th>
+										<td colspan="5" id="ele_deptUseNum" class="setCommaCls"></td>
+									</tr>
+									<tr>
+										<th>사용가능좌수</th>
+										<td id="ele_deptAvalUseNum" class="setCommaCls"></td>
+										<th>사용금액</th>
+										<td colspan="5" id="ele_deptUseAmt" class="setCommaCls"></td>
+									</tr>
+									<tr>
+										<th>환불가능금액</th>
+										<td colspan="7" id="ele_deptAvalRefundAmt" class="setCommaCls"></td>
+									</tr>
+								</tbody>
+							</table>
+							<div style="font-size: 12px; padding: 10px; background-color: #edf3f8; margin-top:3px;">
+								*예수금액 = 예수입금금액 - 예수환불금액 <br>
+								*환불가능금액 = 예수금액 - 예수좌수사용금액(보증, 융자) <br>
+								*예수좌수 = 예수입금금액 / 좌당지분액 <br>
+								*사용좌수 = 예수좌수 = 예수좌수사용좌수(보증, 융자) <br>
+								*사용금액 = 예수좌수사용금액(보증, 융자) <br>
+							</div>
+						</div>
+						<!-- //wrapbox-->
+						<!--예수금정보 : e-->
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+
+						<!-- 심사서류정보 : s-->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">심사서류정보<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnDtlFileUpload('docFile', $('#atthType').val(), $('#atthNo').val(), $('#membNo').val());" class="btn small style07">파일저장</button>
+			                        <button type="button" onclick="javascript:com.fnIbsFileDownAll($('#docFile'));" class="btn small style08">전체다운</button>
+			                    </div>
+							</section>
+							<!--<table class="tbl" id="myUpload"></table>-->
+							<div id="docFile" style="height:140px;"></div>
+						</div>
+						<!--심사서류정보 : e-->
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+				<div class="mt20">
+					<!--예수금변경이력 : s-->
+					<div class="wrapBox">
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">예수금변경이력</h4>
+							</div>
+						</section>
+						<!--예수금변경이력 리스트 :s-->
+						<div class="">
+					    	<div id="sheetDiv" style="width:100%;height:250px"></div>
+					    	<div>- 입금 및 환급금액의 합계는 삭제여부가 N인 행만(삭제처리가 아닌 행) 계산됩니다.</div>
+						</div>
+						<!--예수금변경이력 리스트 :e-->
+					</div><!-- //wrapbox-->
+					<!--예수금변경이력 : e-->
+				</div>
+				<!-- 처리 버튼 영역 -->
+				<div class="area mt50" style="width:100%">
+					<section class="area">
+						<div class="fc">
+							<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" >수정</button>
+							<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+						</div>
+					</section>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,355 @@
+<!--
+	파일정보 : lend/lendContrRenewDtl.html
+	파일명 : lendContrRenewDtl
+	업무명 : 대출약정 갱신상세
+	생성자 : 김대성
+	생성일 : 2023-06-30
+	
+	comLendContrBefDtl 약정이전상세정보
+	com/comMemb 조합원조회
+	lend/comLendContrDtl 융자약정정보
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/lendCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "LD02:LD09:LD01:LD05", gridNoList : "20112:30105:30106:40308:40202:40203:40204:40205", accYn : "Y"}
+			
+			var lendContr = {}; //한도약정정보(정상)
+			
+			var paramMap = /*[[${paramMap}]]*/; //넘어온 파라미터
+			var procType = ""; //업무처리상태값
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//화면 처리
+				
+				//동적 첨부파일 생성(동적)
+				com.fnFileViewSet("LD09", "myUpload"); 
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+			    //수정가능 설정
+				gridOptList[0].Cols[0].Visible = 0; //삭제버튼비활성화
+			    gridOptList[1].Cols[0].Visible = 0; //삭제버튼비활성화
+			   
+			    
+			    IBSheet.create({ id: "sheetSure", el: "sheetDivSure", options: gridOptList[0] }); //대출인정보
+			    IBSheet.create({ id: "sheetMort", el: "sheetDivMort", options: gridOptList[1] }); //담보정보
+			    IBSheet.create({ id: "sheetLend", el: "sheetDivLend", options: gridOptList[7] }); //대출정보
+			    IBSheet.create({ id: "sheetHist", el: "sheetDivHist", options: gridOptList[8] }); //변경이력
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//넘어온 파라미터 설정 및 상세 정보 조회
+					$("#contrNo").val(paramMap.contrNo);
+					
+					obj = {url:"/lendContr/selectLendContr.do", formId:"serchFrm", callBack:fnDtlCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxPost(obj);
+				};
+			   
+				//대출현황 원클릭 처리
+				sheetLend.bind("onAfterClick" , function(obj) { //원클릭
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//lendCom.fnLendSet(rowData);
+				});
+				
+				//대출현황 조회 후 자동 조회
+				sheetLend.bind("onSearchFinish" , function(obj) { //원클릭
+					this.focus(this.getRowById("AR1"));
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//lendCom.fnLendSet(rowData);
+				});
+				
+			});
+			
+			//상세 조회 콜백 
+			var fnDtlCallBack = function(resData){
+				//console.log(resData)
+			
+				lendContr = resData.contr;
+				var contrStat = resData.contr.contrStat;
+				
+				//동적 융자상품정보설정
+				lendCom.fnSetLendLimitView("LD01", "tbl_lendLimit", resData.contr); 
+				
+				com.fnSetKeyVal(resData.memb); //조합원 설정
+				com.fnSetKeyVal(resData.contr); //약정정보 설정
+				com.fnSetKeyVal(resData.befContr, "befArea"); //이전약정정보
+					
+				com.fnIbsUploadViewOne(resData.fileList, ""); //첨부파일설정
+				sheetSure.loadSearchData(resData.suretyList); //보증인정보
+				sheetMort.loadSearchData(resData.mortList); //담보정보
+				sheetLend.loadSearchData(resData.lendList); //대출현황
+				sheetHist.loadSearchData(resData.contrHistList); //변경이력
+				
+				//약정가능좌수 설정
+				var contrNum = resData.contr.contrNum;
+			    if(contrStat !== "10") contrNum = 0;
+			    $("#ele_contrRemainNum").text(resData.memb.mortNum - resData.memb.assignNum - resData.memb.contrUseNum + contrNum);
+				
+			    //버튼 체어
+				var procStat = resData.contr.procStat;
+				var contrStat = resData.contr.contrStat;
+				
+				if(procStat === "10" || procStat === "51" || procStat === "21"){ //접수,승인불가,심사반려
+					$("#btn_apprReq").css("display", ""); //요청
+				}
+				if(procStat === "22"){ //심사중
+					$("#btn_apprFail").css("display", ""); //심사반려
+					$("#btn_apprSucc").css("display", ""); //심사완료
+				}
+				if(procStat === "30" || procStat === "40" || procStat === "50"){ //심사완료, 제출완료, 승인요청
+					$("#btn_examFail").css("display", "");
+					$("#btn_examSucc").css("display", "");
+				}
+				
+				if(contrStat === "10"){ //발급(정상)
+					$("#btn_rmv").css("display", "");
+					$("#btn_rptExp").css("display", "");
+				}
+				if(contrStat !== "20"){ //해제 아닌경우
+					$("#btn_upt").css("display", "");
+				}
+			}
+			
+			//레포트
+			var fnReport = function(){
+				var nameArr = ["contr_no"];
+				var valueArr = [$("#contrNo").val()];
+				ozLoad("LD_자금대여상환예고통지서", nameArr, valueArr, 1, false, false, "");
+			}
+			
+			//해제
+			var fnRmv = function(){
+				if(confirm("해제 처리 하시겠습니까?")){
+					
+					param = {contrNo:$("#contrNo").val() };
+					obj = {url:"/lendContr/updateLendContrRmvProc.do", param:param, callBack:fnProcCallBack, msgYn:"Y", loadYn:"Y", sessYn:"Y"};
+					com.fnAjaxDef(obj);
+					
+				}
+			}
+			
+			//수정
+			var fnUpt = function(){
+				//대출약정갱신수정
+				param = {menuCd:"1040109", paramMap:{
+					                    contrNo:$("#contrNo").val()
+										, lendType:$("#lendType").val()
+										, atthType:$("#atthType").val()
+										}
+				};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);	
+			}
+			
+			
+			//처리
+			var msg = "";
+			var fnProc = function(procStat){
+				procType = procStat; //처리상태값 체크
+				var contrNo = $("#contrNo").val(); //약정번호
+				var apprNm =  $("#apprNm").val(); //약정번호
+				var userNm = /*[[${session.userNm}]]*/;
+				
+				if((procStat === "51" || procStat === "90")  && apprNm === userNm){
+					alert("심사자와 승인자를 동일할 수 없습니다.");
+					if(userNm !== "관리자"){
+						return;	
+					}
+				}
+				
+				if(procStat === "30"){ 
+					msg = "심사완료";
+				}else if(procStat === "51"){ //
+					msg = "승인불가";
+				}else if(procStat === "90"){ //
+					msg = "승인완료";
+				}
+				if(confirm(msg + " 처리 하시겠습니까?")){
+					param = {contrNo:contrNo, procStat:procStat, befContrNo:$("#befContrNo").val() , lendNo:$("#lendNo").val()};
+					obj = {url:"/lendContr/updateLendContrProc.do", param:param, callBack:fnProcCallBack, msgYn:"N", loadYn:"N", sessYn:"Y"};
+					com.fnAjaxDef(obj);
+				}
+			};
+			
+			//처리콜백
+			var fnProcCallBack = function(resData){
+				if(resData.resultCode === 0){
+					alert(msg + " 처리 되었습니다.");
+					
+					if(procType === "90"){ //갱신완료이면 약정상세로 이동
+						param = {menuCd:"1040107", paramMap:{
+											contrNo:$("#contrNo").val()
+											, lendType:$("#lendType").val()
+											, atthType:$("#atthType").val()
+											}
+						};
+						parent.menuOpen(param);
+						
+						parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);	
+					}else{
+						location.reload();
+					}
+					
+				}else{
+					alert(resData.resultMsg);
+				} 	
+			};
+			
+			/*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" value=""/> <!--조합원번호-->
+			<input type="hidden" name="contrNo" id="contrNo" value=""/> <!--약정번호-->
+			<input type="hidden" name="lendNo" id="lendNo" value=""/> <!--대출번호-->
+			<input type="hidden" name="lendType" id="lendType" value=""/> <!--대출상품-->
+			<input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/> <!--첨부파일유형-->
+			<input type="hidden" name="atthNo" id="atthNo" /> <!--첨부파일번호-->
+			<input type="hidden" name="gradeNo" id="gradeNo" value=""/> <!-- 신용등급관리번호 -->
+			<input type="hidden" name="modFileCds" id="modFileCds" /> <!-- 첨부파일 첨부순서 -->
+			
+			<input type="hidden" name="procStat" id="procStat" /> <!-- 처리상태 -->
+			<input type="hidden" name="apprNm" id="apprNm" /> <!-- 심사자 -->
+			<input type="hidden" name="befContrNo" id="befContrNo" /> <!-- 이전약정번호 -->
+			
+			<div class="contents flex">
+				<div class="layer-flex">
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnProc('30');" id="btn_apprSucc" class="btn style01" style="display:none">심사완료</button>
+								<button type="button" onclick="javascript:fnProc('21'');" id="btn_apprFail" class="btn style03" style="display:none">심사반려</button>
+								<button type="button" onclick="javascript:fnProc('50');" id="btn_examReq" class="btn style03" style="display:none">승인요청</button>
+								<button type="button" onclick="javascript:fnProc('90');" id="btn_examSucc" class="btn style01" style="display:none">승인완료</button>
+								<button type="button" onclick="javascript:fnProc('51');" id="btn_examFail" class="btn style03" style="display:none">승인불가</button>
+								<button type="button" onclick="javascript:fnReport();" id="btn_rptExp" class="btn style02" style="display:none">만기안내문</button>
+								<button type="button" onclick="javascript:fnRmv();" id="btn_rmv" class="btn style03" style="display:none">해제</button>
+								<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" style="display:none">수정</button>
+								<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<!--융자약정정보 ######################################################################## -->
+						<th:block th:include="lend/comLendContrDtl"></th:block> <!--융자약정정보 -->
+						<!--융자약정정보 ######################################################################## -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">융자상품정보</h4>
+							</div>
+						</section>
+						<table class="tbl" id="tbl_lendLimit"></table>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">보증인정보</h4>
+								</div>
+							</section>
+							<div id="sheetDivSure" style="width:100%;height:140px"></div>
+						</div>	
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">담보정보</h4>
+								</div>
+							</section>
+							<div id="sheetDivMort" style="width:100%;height:140px"></div>
+						</div>
+					</div>
+					
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<th:block th:include="lend/comLendContrBefDtl"></th:block> <!--약정이전 상세 정보 -->
+						
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">심사정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;"
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>처리상태</th>
+									<td><span id="ele_procStatNm"></span></td>
+									<th>심사일자</th>
+									<td><span id="ele_apprDtm"></span></td>
+									<th>심사자</th>
+									<td><span id="ele_apprNm"></span></td>
+								</tr>
+								<tr>
+									<th>승인여부</th>
+									<td>
+										<span id="ele_examYn"></span>
+									</td>
+									<th>승인일자</th>
+									<td>
+										<span id="ele_examDtm"></span>
+									</td>
+									<th>승인자</th>
+									<td>
+										<span id="ele_examNm"></span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						
+						<!-- 첨부파일 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">첨부파일</h4>
+							</div>
+						</section>
+						<table class="tbl" id="myUpload"></table>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">변경이력</h4>
+								</div>
+							</section>
+							<div id="sheetDivHist" style="width:100%;height:140px"></div>
+						</div>	
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" lang="ko">
+<head>
+</head>
+<body>
+<script th:inline="javascript">
+/*<![CDATA[*/
+//alert(/*[[${failType}]]*/ );
+
+if(/*[[${failType}]]*/  == "S"){ //세션없을경우
+	alert("접근 권한이 없습니다.");
+	//window.close();
+	window.open("", "_self").close();
+	top.location.href = "/";	
+}
+/*]]>*/
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!--
+	파일정보 : memb/popupSealView.html
+	파일명 : popupSealView
+	업무명 : 인감파일보기 팝업
+	생성자 : 권다슬
+	생성일 : 2023.06.26
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				
+				//부모창 검색 정보 추출(파일 한개만 보여주면 되서 파라미터로 받았음 - 부모창에 정보가 다 있어서 조회 따로 안하기 위해..)
+				$("#ele_fileOrgNm").text(parent.$("#paramFileName").val());	//파일명
+				var filePath = parent.$("#paramFilePath").val().split(':');	//파일조회정보 ['MB05', '2', '1']
+
+				var fileFullPath = encodeURI("/file/fileImgDown.do?atthType=" + filePath[0] + "&atthNo=" + filePath[1] + "&atthSeq=" + filePath[2]);
+				var tag = '<img src="'+fileFullPath+'" style="max-width:400px;"/>';
+				$("#ele_fileArea").html(tag);
+			});
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="atthType" id="atthType" value="">
+				<input type="hidden" name="atthNo" id="atthNo" value="">
+				<input type="hidden" name="atthSeq" id="atthSeq" value="">
+			</form>
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">파일정보</h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:100px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>파일명</th>
+						<td><div id="ele_fileOrgNm"></div></td>
+					</tr>
+					<tr>
+						<th>이미지</th>
+						<td><div id="ele_fileArea"></div></td>
+					</tr>
+				</tbody>
+			</table>
+		</div><!-- //contentsArea -->
+		<div class="layer-flex mt20">
+			<!-- 처리 버튼 영역 -->
+			<div class="" style="width:100%">
+				<section class="area">
+					<div class="fc">
+						<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style08">닫기</button>
+					</div>
+				</section>
+			</div>
+			<!-- 처리 버튼 영역 끝-->
+		</div>
+	</body>
+</html>

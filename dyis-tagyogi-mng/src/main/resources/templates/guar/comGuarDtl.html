@@ -1,0 +1,498 @@
+<!--
+	파일정보 : comGuarDtl.html
+	파일명 : comGuarDtl
+	업무명 : 보증 걔약정보 상세
+	생성자 : bsg
+	생성일 : 2023.04.03
+	내용 :
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var paramMap = /*[[${paramMap}]]*/
+			$(document).ready(function(){
+				//selectBox
+				com.fnCodeSelectBox("GR07", "orderCd", 1, ""); 		//피공제기관
+			});
+
+			var adjustHeight =  function() {
+			    var textEle = $('.hlth-textarea');
+			    $('.hlth-textarea').css('height', 'auto');
+
+			    $('.hlth-textarea').each(function (index, item) {
+			        var hei = $(item).prop('scrollHeight');
+			        $(item).css('height', hei);
+			    });
+
+			};
+
+			var fnGuarContrViewSet = function(guarType, resData){
+				var procType = paramMap.viewType;
+				var menuCd = paramMap.menuCd;
+				//alert(procType + " / " + menuCd);
+				if(procType === "DESC" || menuCd === "1030218") { //기재변경, 변경등록(배서) 수정
+					$("span[id^='txt_dtl'").each(function(){
+						$(this).text("원보증 ");
+					});
+				}
+
+				//공통
+				guarCom.fnGuarIssueChg(resData.guar.guarIssueCd);	//전자공고 검색버튼
+				if(!com.fnIsEmpty(resData.guar.guarClassCont))	$("#ele_guarClassContArea").show();	//보증문구 보이기
+
+				if(guarType === "11"){ //입찰
+					$("#txt_servNm").html("입찰건명");
+					$("#txt_contrAmt").html("입찰금액");
+
+					$("#contrAmt").attr("title", "입찰금액");
+
+				}else if(guarType === "13"){ //하자보수
+					$("#txt_releDt").text("검수완료일");
+
+
+					com.fnCodeRadio("GR08", "div_releCd", "releCd", false, "E"); //계약방식
+
+				}else if(guarType === "14"){ //선금급
+					$("#txt_releDt").text("지급예정일");
+					$(".area_contrAmt > #txt_guarRate").text("선금금율");
+
+
+				}else if(guarType === "21"){ //채무
+					com.fnCodeRadio("GR14", "div_debtWay", "debtWay", false, "10"); //계약방식
+
+					$("#txt_servNm").html("대출과목");
+					$("#txt_contrAmt").html("대출예정금액");
+					$("#txt_contrTermDt").html("대출기간");
+
+					$("#contrAmt").attr("title", "대출예정금액");
+					$("#contrBegDt").attr("title", "대출시작일");
+					$("#contrExpDt").attr("title", "대출종료일");
+
+				}else if(guarType === "32"){ //인허가
+
+					$("#txt_contrTermDt").html("인·허가기간");
+
+					$("#contrBegDt").attr("title", "인·허가시작일");
+					$("#contrExpDt").attr("title", "인·허가종료일");
+
+				}else if(guarType === "34"){ // 지급보증의지급
+
+					$("#txt_contrTermDt").html("지급보증기간");
+					$("#txt_contrAmt").html("지급보증금액");
+
+					$("#contrBegDt").attr("title", "지급보증시작일");
+					$("#contrExpDt").attr("title", "지급보증종료일");
+					$("#contrAmt").attr("title", "지급보증금액");
+
+				}
+
+				//보증정보 타이블 추가
+				$("#txt_guarTitl").text(resData.guar.guarTypeNm + "( 보증상태 : " + resData.guar.guarStatNm + " )");
+
+				//최초가 아닌경우 최초 신청일자 표기
+				if(resData.guar.befDocNo !== null){
+					$("#ele_firstReqDt").html("<font color='blue' >(최초 : " + resData.guar.initReqDt + " )</font>");
+
+					//기재사항변경이 아니면
+					if(resData.guar.guarClassCd !== '60')	$("#ele_guarAddInfo").show();	 //추가보증정보 표시
+
+					//변경보증기간 변경값 있으면 set
+					if(!com.fnIsEmpty(resData.guar.guarClassCd)){
+						if(resData.guar.guarClassCd.indexOf('2') > -1 || resData.guar.guarClassCd.indexOf('3') > -1){
+							$("#ele_chgGuarTerm").text(resData.guar.chgGuarBegDt + " ~ " + resData.guar.chgGuarExpDt + " ("+resData.guar.chgGuarDays+" 일)");
+						}
+					}
+
+					//이전보증기간
+					$("#ele_befGuarTerm").text(resData.guar.befGuarBegDt + " ~ " + resData.guar.befGuarExpDt + " ("+resData.guar.befGuarDays+" 일)");
+				}
+
+				//계약방식표시
+				if(guarType === "12" || guarType === "15" || guarType === "31" || guarType === "32" || guarType === "33" || guarType === "34"){ //계약, 이행지급, 성능이행, 인허가, 상품판매
+					com.fnCodeRadio("GR08", "div_contrCd", "contrCd", false, "E"); //계약방식
+				}
+
+				//기본 공통 화면 활성화
+				$(".area_contr" + guarType).show();
+
+				//실제이행기일
+				if(guarType === "12"){
+					$("#ele_realImpChk").show();
+					com.checkBoxCheckValue(resData.guar.g2bContCheck, "realImpChk");	//실제이행기일 체크
+				}
+
+				//계약,하자,선급금, 이행지급, 성능이행, 인허가, 상품판매 체결일정보
+				if(guarType === "12" || guarType === "13" || guarType === "14" || guarType === "15" || guarType === "31" || guarType === "32" || guarType === "33"){
+					$(".area_contr12_1").show();
+					$(".area_contr12_1").find("#ele_releDt").text(resData.guar.releDt);
+				}
+				//수출보증(지급보증) 체결일정보
+				if(guarType === "34"){
+					$(".area_contr12_2").show();
+					$(".area_contr12_2").find("#ele_releDt").text(resData.guar.releDt);
+				}
+
+				//계약,하자,선급금, 이행지급, 채무, 성능이행, 인허가, 상품판매, 지급보증기간 계약기간
+				if(guarType === "12" || guarType === "13" || guarType === "14" || guarType === "15" || guarType === "21" || guarType === "31" || guarType === "32" || guarType === "32" || guarType === "34"){
+					$(".area_contr12_3").show();
+					$(".area_contr12_3").find("#ele_releDt").text(resData.guar.releDt);
+				}
+
+				// 계약보증, 이행지급, 성능이행, 인허가
+				if(guarType === "12" || guarType === "15" || guarType === "31" || guarType === "32" ){
+					$(".area_contr12_4").show();
+				}
+
+				if(guarType !== "31") $(".area_contrAmt").show(); //성능이행 아닌경우 계약정보 표시
+
+
+				//기타표시 (이행지급, 성능이행, 인허가, 이행상품판매대금  )
+				if(guarType === "15" || guarType === "31" || guarType === "32" || guarType === "33"){
+					$("#ele_etcArea").show(); //기타
+				}
+
+
+
+				//공제기관 수정 버튼 (변성균삭제 - 기타수정에서 처리)
+				//if(paramMap.viweType === "DTL"){
+			//		$("#btn_order").css("display", "");
+			//	}
+
+			}
+
+			//피공제기관 수정/저장 버튼 이벤트
+			/*
+			var fnChgOrderCd = function(btn){
+				if(btn === "modBtn"){
+					$("#orderCdOrgArea").hide();
+    				$("#orderCdModArea").show();
+				}else if(btn === "saveBtn"){
+					if(!confirm("기관구분을 저장하시겠습니까?")) return;
+
+					var param = { guarNo: $("#guarNo").val(), orderCd: $("#orderCd").val() };
+					console.log(param);
+					obj = {url:"/guar/updateGuarOrderCd.do", param:param, callBack:fnReLoad, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+				}
+			}
+			*/
+
+			//이전보증서 or 최초보증서 페이지 이동
+			var fnClickDocNo = function(type){
+				var guarNo = "";
+				if(type === "bef")			guarNo = $("#befDocGuarNo").val();
+				else if(type === "init")	guarNo = $("#initDocGuarNo").val();
+
+				if(com.fnIsEmpty(guarNo))	return;
+
+				//조회용
+				param = {menuCd:"1030224", paramMap:{guarNo: guarNo, listType:	"VIEW"}};
+				parent.menuOpen(param);
+			}
+
+		    /*]]>*/
+		</script>
+		<div id="areaGuarDtl">
+			<input type="hidden" name="befDocGuarNo" id="befDocGuarNo" value=""/>
+			<input type="hidden" name="initDocGuarNo" id="initDocGuarNo" value=""/>
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title"><span id="txt_dtl"></span>보증정보 <font color="blue" id="txt_guarTitl"></font><th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarDtl.html)</th:block></h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>보증번호</th>
+						<td><span id="ele_guarNo"></span></td>
+						<th>신청구분</th>
+						<td><span id="ele_guarReqCdNm"></span></td>
+						<th>변경구분</th>
+						<td><span id="ele_guarClassCdNm"></span></td>
+					</tr>
+					<tr>
+						<th>신청일자</th>
+						<td>
+							<span id="ele_reqDt"></span><span id="ele_firstReqDt"></span>
+						</td>
+						<th>발급구분</th>
+						<td><span id="ele_guarIssueCdNm"></span></td>
+						<th>전자공고번호</th>
+						<td>
+							<div id="ele_g2bNone">해당사항없음</div>
+							<div id="ele_g2b" style="display:none">
+								<span id="ele_publicNo"></span>&nbsp;
+								<button type="button" name="btnG2b" id="btnG2b" class="btn icoSearch" onclick="guarCom.fnG2bSearch()">검색</button>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th>신청자</th>
+						<td><span id="ele_reqTypeNm"></span></td>
+						<th>신청자명</th>
+						<td><span id="ele_guarReqNm"></span></td>
+						<th>신청자연락처</th>
+						<td><span id="ele_reqTel"></span></td>
+					</tr>
+					<tr>
+						<th>보증서번호</th>
+						<td><span id="ele_docNo" onfocus="this.select()" ></span></td>
+						<th>최초보증서</th>
+						<td><a onclick="fnClickDocNo('init');" style="cursor:pointer;"><span id="ele_initDocNo"></span></a></td>
+						<th>이전보증서</th>
+						<td><a onclick="fnClickDocNo('bef');" style="cursor:pointer;"><span id="ele_befDocNo"></span></a></td>
+					</tr>
+					<!-- 해제정보 영역 구현으로 제외
+					<tr id="area_guarCan" style="display:none">
+						<th>해제일자</th>
+						<td><span id="ele_guarCanDt"></td>
+						<th>해제사유</th>
+						<td colspan="3"><span id="ele_guarCanReason"></span></td>
+					</tr>
+					-->
+				</tbody>
+			</table>
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title"><span id="txt_dtl"></span>주계약정보<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarDtl.html)</th:block></h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th id="txt_servNm">계약건명</th>
+						<td colspan="5"><span id="ele_servNm"></span></td>
+					</tr>
+					<tr>
+						<th>피공제기관</th>
+						<td colspan="3">
+							<!--<span id="ele_orderCdNm" ></span>&nbsp;/&nbsp;<span id="ele_orderNm"></span>-->
+
+							<span id="orderCdOrgArea">
+								<span id="ele_orderCdNm"></span>
+								<!--
+								<button type="button" onclick="javascript:fnChgOrderCd('modBtn');" class="btn small style08" style="display:none" id="btn_order">수정</button>
+								-->
+							</span>
+		                    <span id="orderCdModArea" style="display:none;">
+								<select name="orderCd" id="orderCd" title="기관구분" style="width:100px"></select>
+								<button type="button" onclick="javascript:fnChgOrderCd('saveBtn');" class="btn small style08">저장</button>
+		                    </span> &nbsp;/&nbsp; <span id="ele_orderNm"></span></td>
+
+						</td>
+						<th>사업자번호</th>
+						<td><span id="ele_orderBizNo"></span></td>
+					</tr>
+					<!-- 입찰보증 -->
+					<tr class="area_contr11" style="display:none">
+						<th>입찰마감일</th>
+						<td colspan="5"><span id="ele_releDt"></span></td>
+					</tr>
+
+					<!-- 계약,하자,선급금, 이행지급, 성능이행, 인허가, 상품판매 체결일정보 -->
+					<tr class="area_contr12_1" style="display:none">
+						<th>계약체결일</th>
+						<td colspan="3"><span id="ele_contrDt"></span></td>
+						<th id="txt_releDt">낙찰일자</th>
+						<td><span id="ele_releDt"></span></td>
+					</tr>
+
+					<!-- 지급보증의지급인 경우 지급보증종류 -->
+					<tr class="area_contr12_2" style="display:none">
+						<th>지급보증종류</th>
+						<td colspan="3"><span id="ele_perfKind"></span></td>
+						<th id="txt_releDt">낙찰일자</th>
+						<td><span id="ele_releDt"></span></td>
+					</tr>
+
+					<!-- 계약,하자,선급금, 이행지급, 채무, 성능이행, 인허가, 상품판매, 지급보증기간 계약기간 -->
+					<tr class="area_contr12_3" style="display:none">
+						<th id="txt_contrTermDt" >계약기간</th> <!-- 대출기간 -->
+						<td colspan="5"><span id="ele_contrBegDt"></span> ~ <span id="ele_contrExpDt"></span>&nbsp;(<span id="ele_contrDays"></span>일)</td>
+					</tr>
+
+					<!-- 하자보수보증 -->
+					<tr class="area_contr13" style="display:none">
+						<th>하자담보기간</th>
+						<td colspan="5"><span id="ele_releBegDt"></span> ~ <span id="ele_releEndDt"></span>&nbsp;(<span id="ele_releDays"></span>일)</td>
+					</tr>
+
+					<!-- 인허가 제외 -->
+					<tr class="area_contrAmt" style="display:none">
+						<th id="txt_contrAmt">계약금액</th> <!-- 입찰금액,선금급액 -->
+						<td colspan="3"><span id="ele_contrAmt"></span></td>
+						<th id="txt_guarRate">보증금율</th> <!--선금금율-->
+						<td ><span id="ele_guarRate" class="fl"></span><span class="fl">&nbsp;%</span></td>
+					</tr>
+
+					<tr class="area_contr14" style="display:none">
+						<th>선금금액</th>
+						<td><span id="ele_repayAmt"></span></td>
+						<th id="txt_guarRate">약정이자액</th>
+						<td colspan="3"><span id="ele_contrInterAmt"></span>&nbsp;(약정이자율&nbsp;<span id="ele_contrInterRate"></span>&nbsp;%)</td>
+					</tr>
+
+					<!-- 인허가 장소 -->
+					<tr class="area_contr32" style="display:none">
+						<th>인·허가장소</th>
+						<td colspan="5">
+							<input type="search" name="permPlace" id="permPlace" title="인·허가장소" maxlength="50" style="width:250px" value=""/>
+						</td>
+					</tr>
+
+					<!-- 계약보증, 이행지급, 성능이행, 인허가 -->
+					<tr class="area_contr12_4" style="display:none">
+						<th>계약방식</th>
+						<td colspan="5">
+							<span id="ele_contrCdNm" title="계약방식"></span>
+						</td>
+					</tr>
+
+					<!-- 대출상환방법 -->
+					<tr class="area_contr21" style="display:none">
+						<th>상환방법</th>
+						<td colspan="5">
+							<span id="ele_debtWay" title="계약방식"></span>
+						</td>
+					</tr>
+
+				</tbody>
+			</table>
+			<section class="area mt10">
+				<div class="fl">
+					<!--<h4 class="title"><span id="txt_dtl"></span>보증정보</h4>-->
+					<h4 class="title"><span id="txt_dtl"></span>보증정보</font><th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarDtl.html)</th:block></h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>보증기간</th>
+						<td colspan="3"><span id="ele_guarBegDt"></span><span>&nbsp;~&nbsp;</span><span id="ele_guarExpDt"></span>&nbsp;(<span id="ele_guarDays"></span>일)</td>
+						<th>보증기간가산</th>
+						<td colspan="3">
+							<span id="ele_guarAddCdNm"></span>
+							<span id="ele_realImpChk" style="display:none">&nbsp;&nbsp;<input type="checkbox" name="realImpChk" value="Y" disabled="disabled" />&nbsp;실제이행기일</span>
+						</td>
+					</tr>
+					<tr>
+						<th>보증금액</th>
+						<td><span id="ele_guarAmt"></span></td>
+						<th>기본요율</th>
+						<td><span id="ele_orgRate"></span>&nbsp;%</td>
+						<th>적용요율</th>
+						<td><span id="ele_commRate"></span>&nbsp;%<span id="ele_rateModNm"></span></td>
+					</tr>
+					<tr>
+						<th>보증료</th>
+						<td><span id="ele_commAmt"></span></td>
+						<th>PG수수료</th>
+						<td colspan="3"><span id="ele_pgCommAmtDtl"></span></td>
+					</tr>
+					<tr>
+						<th>보증료산식</th>
+						<td colspan="5"><span id="ele_commCalc"></span></td>
+					</tr>
+					<tr>
+						<th>특약</th>
+						<td colspan="5"><span id="ele_specContrsNm"></span></td>
+					</tr>
+					<tr id="ele_etcArea" style="display:none">
+						<th>기타</th>
+						<td colspan="5"><span id="ele_koccaYnNm"></span></td>
+					</tr>
+					<tr>
+						<th>보증내용</th>
+						<td colspan="5"><span id="ele_guarCont"></span></td>
+					</tr>
+					<tr id="ele_guarClassContArea" style="display: none;">
+						<th>보증문구</th>
+						<td colspan="5"><span id="ele_guarClassCont"></span></td>
+					</tr>
+					<tr>
+						<th>비고</th>
+						<td colspan="5">
+							<pre style="white-space: pre-wrap;"><span id="ele_guarRemark"></span><pre>
+							<!--<textarea name="txt_guarRemark" id="txt_guarRemark" class="hlth-textarea" readonly></textarea>-->
+						</td>
+					</tr>
+					<tr>
+						<th>특기사항</th>
+						<td colspan="5">
+							<pre style="white-space: pre-wrap;"><span id="ele_guarClassContAdd"></span></pre>
+							<!--<textarea name="txt_guarClassContAdd" id="txt_guarClassContAdd" class="hlth-textarea" readonly></textarea>-->
+						</td>
+					</tr>
+					<tr>
+						<th>적요</th>
+						<td colspan="5">
+							<pre style="white-space: pre-wrap;"><span id="ele_summary"></span><pre>
+							<!--<textarea name="txt_summary" id="txt_summary" class="hlth-textarea" readonly></textarea>-->
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div id="ele_guarAddInfo" style="display:none">
+				<section class="area mt10">
+					<div class="fl">
+						<h4 class="title"><span id="txt_dtl"></span>추가보증<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarDtl.html)</th:block></h4>
+					</div>
+				</section>
+				<table class="tbl">
+					<colgroup>
+						<col style="width:90px;">
+						<col style="width:140px;">
+						<col style="width:90px;">
+						<col style="width:140px;">
+						<col style="width:90px;">
+						<col style="width:140px;">
+					</colgroup>
+					<tbody>
+						<tr>
+							<th>표시구분</th>
+							<td colspan="5"><span id="ele_chgDispYnNm"></span></td>
+						</tr>
+						<tr>
+							<th>변경보증기간</th>
+							<td colspan="3"><span id="ele_chgGuarTerm"></span></td>
+							<th>변경보증금액</th>
+							<td><span id="ele_chgGuarAmt"></span></td>
+						</tr>
+						<tr>
+							<th>이전보증기간</th>
+							<td colspan="3"><span id="ele_befGuarTerm"></span></td>
+							<th>이전보증금액</th>
+							<td><span id="ele_befGuarAmt"></span></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</body>
+</html>

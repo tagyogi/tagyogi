@@ -1,0 +1,145 @@
+<!--
+	파일정보 : comInvtMort.html
+	파일명 : comInvtMort
+	업무명 : 출자담보정보(공통)
+	생성자 : bsg
+	생성일 : 2023.06.08
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			var fnIbsInvtMort = function(gridOpt, mod){
+				//console.log(mod);
+				//상세화면, 조회화면일땐 수정없음, 선택버튼 없음
+				//수정화면일땐 수정있고, 상단에 버튼 있음
+				
+				if(mod === "upt") { //수정모드
+					$("#invtMortBtns").show();
+					
+					$.each(gridOpt.Cols, function(idx, item){
+						if(item.Name === "mortSelect"){ //담보설정선택컬럼
+							item.Visible = "1"      //숨겨져있는 컬럼 보이게 변경
+							item.CanEdit = "1"  
+							item.TrueValue = "Y";
+							item.FalseValue = "N";
+							item.OnChange= fnInvtSelChange; //선택 컨트롤러 추가
+						}
+						if(item.Name === "investDt") item.Visible = "1"; //출자일자는 visible만
+						if(item.Name === "mortDt" || item.Name === "mortCanDt"){
+							item.Visible = "1"; //
+							item.CanEdit = "1";
+						} 
+						
+					});
+					
+					//초기데이터설정	
+					gridOpt.Def = {
+							Row:{CanFormula: 1
+							, CalcOrder: "CanEdit"
+							, CanEditFormula: function (param) {
+					          //담보설정상태가 배정이아닌것만 수정가능모드로 세팅
+					          if (param.Row["assignYnNm"] !== "배정") {
+					              return 1;
+					          }else return 0;
+					       }
+				       }
+			       }
+					 
+				 }else if (mod === "view") { //상세모드
+					 $.each(gridOpt.Cols, function(idx, item){
+							if(item.Name === "investDt") item.Visible = "1"; //출자일자는 visible만
+						});
+				 } //기타는 현황그리드 import
+				 
+				//그리드 초기화
+				IBSheet.create({ id: "sheetInvtMort", el: "sheetDivInvtMort", options: gridOpt}); //출자담보정보
+			}
+			 
+			//select 선택 컨트롤   
+			var fnInvtSelChange = function(evtParam) {
+			    var targetVal = evtParam.sheet.getValue({row:evtParam.row,col:evtParam.col})
+			    
+			    //속성세팅
+			    sheetInvtMort.setAttribute(evtParam.row, "mortCanDt", "DataFormat", "yyyyMMdd");
+				sheetInvtMort.setAttribute(evtParam.row, "mortDt", "DataFormat", "yyyyMMdd");
+			    
+			    //이벤트 발생한 row의 해당 데이터 가져오기
+			    var mortDt = sheetInvtMort.getValue(evtParam.row, "mortDt"); //설정일자
+			    var mortCanDt = sheetInvtMort.getValue(evtParam.row, "mortCanDt"); //해제일자
+			    
+			    if(targetVal === "Y"){
+					if(mortDt === "") sheetInvtMort.setValue({row:evtParam.row, col:"mortDt", val:todayString});
+					sheetInvtMort.setValue({row:evtParam.row, col:"mortCanDt", val:""});
+					sheetInvtMort.setValue({row:evtParam.row, col:"mortYn", val:"Y"}); //설정선택시 mortYn(hidden) 값 변경
+				}else {
+					if(mortCanDt === "") sheetInvtMort.setValue({row:evtParam.row, col:"mortCanDt", val:todayString});
+					sheetInvtMort.setValue({row:evtParam.row, col:"mortYn", val:"N"});//해제선택시 mortYn(hidden) 값 변경
+				}
+				
+				fnCalcTotal();//담보설정정보 좌수, 금액계산
+			    
+			}
+			
+			//담보설정정보 좌수, 금액계산
+			var fnCalcTotal = function(){
+				var rows = sheetInvtMort.getDataRows();
+				var mortNum = 0;
+				var mortAmt = 0;
+				for(var i=0; i< rows.length; i++){
+					var mortStat = sheetInvtMort.getValue(rows[i], "mortYn"); //담보설정상태
+					if(mortStat !== "N") {
+						mortNum = mortNum + rows[i].billNum;
+						mortAmt = mortAmt + rows[i].billAmt;
+					}
+				}
+				$("#mortNum").val(com.addComma(mortNum)); //담보좌수
+				$("#mortAmt").val(com.addComma(mortAmt)); //담보금액
+			}
+				    
+			//출자담보 선택버튼(전체선택/전체해제)
+			var fnMortAll = function(proc){
+				var mortNum = 0;
+				var mortAmt = 0;
+				var today = /*[[${today}]]*/;
+				console.log(today);
+				today = today.replace(/-/gi, "");
+				
+				var rows = sheetInvtMort.getDataRows();
+				for(var i=0; i<rows.length; i++){
+				    //배정이 아닌 것
+				    if(rows[i].assignYn !== "Y"){
+						sheetInvtMort.setValue({row:rows[i], col:"mortSelect", val:proc});
+						sheetInvtMort.setValue( rows[i], "mortYn", proc);
+						if(proc === "Y"){
+							if(rows[i].mortDt === ""){
+								sheetInvtMort.setString( rows[i], "mortDt", today);	
+							}
+							sheetInvtMort.setString( rows[i], "mortCanDt", "");
+						}else{
+							sheetInvtMort.setString( rows[i], "mortCanDt", today);
+						}
+					}
+				}
+				//sheetInvtMort.rerender(1);
+				fnCalcTotal(); //담보좌수, 금액 계산
+			}
+			
+		    /*]]>*/
+		</script>
+		<div class="wrapBox">
+			<section class="area">
+				<div class="fl">
+					<h4 class="title">출자담보정보</h4>
+				</div>
+				<div id="invtMortBtns" class="fr" style="display: none;">
+					<button type="button" onclick="javascript:fnMortAll('Y');" class="btn small style08">전체선택</button>
+					<button type="button" onclick="javascript:fnMortAll('N');" class="btn small style08">전체해제</button>
+				</div>
+			</section>
+			<div id="sheetDivInvtMort" style="width:100%;height:220px"></div>
+		</div>	
+	</body>
+</html>

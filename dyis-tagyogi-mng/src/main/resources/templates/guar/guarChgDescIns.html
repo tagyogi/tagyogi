@@ -1,0 +1,351 @@
+<!--
+	파일정보 : guarChgDesc/guarChgDescIns.html
+	파일명 : guarChgDesc
+	업무명 : 보증기재변경 등록, 수정
+	생성자 : 변성균
+	생성일 : 2023-04-11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			var guarType = /*[[${paramMap.refVal}]]*/; //메뉴참조값 (보증상품)
+			var paramMap = /*[[${paramMap}]]*/;
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//코드값 처리
+				com.fnCodeSelectBox("GR06", "guarIssueCd", 0, ""); //발급형태
+				//com.fnCodeSelectBox("GR05", "procStat", 1, "22"); //처리상태 (아래코드로 대체)
+				guarCom.fnProcStatSelectBox();	//처리상태
+
+				//주계약정보 화면 설정(guar/comGuarReqContr.html)
+				fnGuarContrInputSet();
+
+				if(guarType === "21") com.fnCodeRadio("GR13", "div_repayCd", "repayCd", false, "10"); //채무보증방법
+
+				com.fnCodeCheckBox("GR12", "ele_chgDescType", "chgDescType", false); //보증문구
+
+				//보증문구 클릭이벤트 추가
+				$("input[name='chgDescType']").click(function(){
+					//보증문구값 생성 및 변경
+    				guarCom.fnMakeGuarClassCont();
+				});
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#docFile"));
+
+				fnSearchDtl();
+			});
+
+			//보증 신청 조회
+			var fnSearchDtl = function(){
+				var initParam = {
+					"guarNo"	: /*[[${paramMap.guarNo}]]*/
+				};
+
+				obj = {url:"/guarChgDesc/selectGuarChgDesc.do", param:initParam, callBack:fnDtlCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//상세 조회 콜백
+			var fnDtlCallBack = function(resData){
+				//console.log(resData);
+
+				//0. 심사승인자 selectBox 생성
+				var empList = {data: resData.empList};
+				guarCom.fnSelectEmployCallBack(empList);
+
+				//0. 주계약정보 화면 설정
+				guarType = resData.guar.guarType;
+				fnGuarContrViewSet(guarType, resData); //주계약정보 화면설정(상세) guar/comGuarDtl
+
+				//1. 조합원정보
+				com.fnSetKeyVal(resData.memb);
+
+				//2-1. 약정정보(신용도, 약정구분, 약정기간)
+				com.fnSetKeyVal(resData.contr, "areaGuarContr");	//
+				//$("#finalGrade").val(resData.contr.finalGrade);	//신용도
+				//$("#contrType").val(resData.contr.contrType);		//약정구분
+
+				//2-2. 약정정보(상품별 한도정보)
+				var typeValue = guarType;
+				if(guarType === "31")	typeValue = "13";
+				if(guarType === "32")	typeValue = "12";
+				if(guarType === "33" || guarType === "34")	typeValue = "15";
+				$("#ele_limitAmt").text(resData.contr["limitAmt"+typeValue]);	//한도금액
+				$("#ele_useAmt").text(resData.contr["useAmt"+typeValue]);		//사용액
+				$("#ele_remainAmt").text(resData.contr["remainAmt"+typeValue]);	//가능액
+
+				//3-1. 심사정보 처리(화면)
+				if(guarCom.fnToNumber(resData.guar.procStat) < 30)	$("#procStat").show();	//심사완료 이전 수정가능한 처리상태 보이기
+				else{	//심사완료 이후 text만 보이기
+					$("#ele_procStatNm").text("발급가능");
+					$("#ele_procStatNm").show();
+				}
+				//3-2. 심사승인자 처리(화면)
+				if(resData.guar.examYn !== "Y")	$("#examNm").show();		//심사승인 안됬으면 수정가능한 심사승인자 보이기
+				else							$("#ele_examNm").show();	//심사승인 됬으면 text 심사승인자
+
+				//4-1. 보증 정보 세팅
+				com.fnSetKeyVal(resData.guar);
+				$("#befGuarNo").val(resData.guar.guarNo);
+				
+				//4-2. (보증신청정보) 전자공고 영역 변경
+				guarCom.fnGuarIssueChg($("#guarIssueCd").val());	//해당사항없음 or text + 검색 조회 버튼
+
+				//4-3. (보증신청정보) 신청자 선택처리
+				guarCom.fnSelCpSelectBox(resData.persList, resData.guar.reqNm);	//신청자 선택
+				
+				//4-4. 심사정보
+				$("#ele_guarApprNm").text(/*[[${session.userNm}]]*/);	//심사자
+				$("#procStat").val("22");				//처리상태 심사승인 디폴트
+				$("#guarPubDt").val("");				//발급일자 초기화
+				$("#examNm").val("");					//심사승인자 초기화
+				$("#reqDt").val(/*[[${today}]]*/);		//신청일자
+
+				//6. 체크박스, radio 체크 처리
+				fnUptCheckValContr(resData.guar);	//comGuarReqContr.html 체크값 체크
+				com.checkBoxCheckValue(resData.guar.specContrs, "specContrs");	//특약
+
+				//7. 기재변경등록 관련 데이터 수정
+				$("#commAmt").val(com.addComma(guarCom.fnGetMinCommAmt("Y")));			//기재변경 보증료 7000원
+
+				//8. 첨부파일
+				//com.fnIbsUploadView($("#docFile"), resData.fileList);
+			}
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["servNm", "orderCd", "orderNm", "contrAmt", "guarBegDt", "guarExpDt", "examNm", "commAmt"];
+				if(guarType !== "11")						valChks.push(...["contrBegDt", "contrExpDt", "contrDays"]);
+				if(guarType === "11" || guarType === "13")	valChks.push(...["releDt"]);
+				if(guarType === "13")						valChks.push(...["releBegDt", "releEndDt", "releDays"]);
+				if(guarType === "15" || guarType === "31" || guarType === "32" || guarType === "33" || guarType === "34")	valChks.push(...["reqDt", "guarAmt", "guarCont"]);
+
+				if(com.fnValChk(valChks)){
+					//보증문구
+					if($("input[name=chgDescType]:checked").length === 0) {
+						alert("보증문구를 선택해 주십시오.");
+						return;
+					}
+
+					//조기경보
+				    if(guarCom.fnToNumber($("#cretop").val()) > 12) {
+				        alert("이 업체는 "+ com.fnInputText("CRET", $("#cretop").val()) +" 등급입니다.");
+				    //    return;
+				    }
+
+					if(confirm("저장 처리 하시겠습니까?")){
+						var param = $("#saveFrm").serializeObject();
+						obj = {url:"/guarChgDesc/insertGuarChgDesc.do", jParam: param, fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+			};
+
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<!-- 첨부파일 관련 -->
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+			<input type="hidden" name="atthNo" id="atthNo"/>
+
+			<!-- 화면조회 관련 -->
+			<input type="hidden" name="membNo" id="membNo" />
+			<input type="hidden" name="sMembNo" id="sMembNo"/>
+			<input type="hidden" name="contrNo" id="contrNo" />
+			<input type="hidden" name="guarNo" id="guarNo" />
+			<input type="hidden" name="guarType"   id="guarType" />
+            <input type="hidden" name="befGuarNo" id="befGuarNo" />
+            <!--<input type="hidden" name="commAmt" id="commAmt" />-->	<!-- 기재변경 보증료 직접입력으로 수정 -->
+            <input type="hidden" id="cretop" value="" />
+
+			<input type="hidden" name="initDocNo"  		id="initDocNo"/>	<!-- 최초보증서 -->
+            <input type="hidden" name="initReqDt"  		id="initReqDt"/>	<!-- 최초신청일자 -->
+            <input type="hidden" name="chgCnt" 			id="chgCnt" />		<!-- 변경차수 -->
+
+			<!--전자보증용 필드 #######################################################################################-->
+			<!--<th:block th:include="guar/comHiddenElect"></th:block>--> <!--전자보증용 -->
+			<!--전자보증용 필드 #######################################################################################-->
+
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">보증신청정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>신청일자</th>
+									<td>
+										<input type="search" name="reqDt" id="reqDt" title="신청일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSelectGuarRate();" onblur="com.fnDateValiChk(this);" style="width:100px" />
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd', '', '', guarCom.fnSelectGuarRate)" />
+									</td>
+									<th>발급구분</th>
+									<td><select name="guarIssueCd" id="guarIssueCd" title="발급구분" style="width:120px" onchange="guarCom.fnGuarIssueChg(this.value);"></select></td>
+									<th>전자공고번호</th>
+									<td><div id="ele_g2bNone">해당사항없음</div>
+										<div id="ele_g2b" style="display:none">
+											<input type="search" name="publicNo" id="publicNo" maxlength="30" style="width:100px" />
+											<button type="button" name="btnG2b" id="btnG2b" class="btn icoSearch" onclick="guarCom.fnG2bSearch()" >검색</button>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<th>신청자</th>
+									<td><select name="selCp" id="selCp" title="신청자" style="width:120px"></select></td>
+									<th>신청자명</th>
+									<td><input type="search" name="reqNm" id="reqNm" title="신청자명" style="width:100px" maxlength="20"/></td>
+									<th>신청자연락처</th>
+									<td><input type="search" name="reqTel" id="reqTel" title="신청자연락처" style="width:120px" maxlength="13" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)"/></td>
+								</tr>
+								<tr>
+									<th>보증문구</th>
+									<td colspan="5">
+										<div id="ele_chgDescType" title="보증문구"></div>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">변경 주계약정보<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarReqContr.html)</th:block></h4>
+							</div>
+						</section>
+						<!--주계약정보 ################################################################################## -->
+						<th:block th:include="guar/comGuarReqContr :: type('guarChgDescIns')"></th:block> <!--주계약정보 -->
+						<!--주계약정보 ################################################################################## -->
+
+						<!--보증계약정보 #######################################################################################-->
+						<th:block th:include="guar/comGuarReqGuar :: type('guarChgDescIns')"></th:block> <!--보증계약정보 -->
+						<!--보증계약정보 #######################################################################################-->
+
+						<!--첨부파일 #######################################################################################-->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+							</div>
+							<div class="fr">
+	                           <button type="button" onclick="javascript:com.fnIbsFileAdd($('#docFile'));" class="btn small style08">추가</button>
+	                           <button type="button" onclick="javascript:com.fnIbsFileDel($('#docFile'));" class="btn small style08">삭제</button>
+	                    	</div>
+						</section>
+						<div id="docFile" style="height:140px;"></div>
+						<!--첨부파일 #######################################################################################-->
+					</div>
+					<!-- ########################################################################################################################## -->
+					<!-- ########################################################################################################################## -->
+					<!-- ########################################################################################################################## -->
+					<!-- ########################################################################################################################## -->
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<!--보증약정정보 #######################################################################################-->
+						<th:block th:include="guar/comGuarContrDtl"></th:block> <!--보증약정정보 -->
+						<!--보증약정정보 #######################################################################################-->
+
+						<!--보증상세정보 #######################################################################################-->
+						<th:block th:include="guar/comGuarDtl"></th:block> <!-- -->
+						<!--보증상세정보 #######################################################################################-->
+
+						<!--심사정보 #######################################################################################-->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">심사정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>처리상태</th>
+									<td><select name="procStat" id="procStat" title="처리상태" style="width:120px"></td>
+									<th>심사자</th>
+									<td>[[${session.userNm}]]</td>
+									<th>심사승인자</th>
+									<td><select name="examNm" id="examNm" title="심사승인자" style="width:120px"></td>
+								</tr>
+								<tr>
+									<th>처리사유</th>
+									<td colspan="5">
+										<input type="search" name="procReason" id="procReason" title="처리사유" maxlength="50" style="min-width:400px" value="" />
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<!--심사정보 #######################################################################################-->
+
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+					<!-- ########################################################################################################################## -->
+					<!-- ########################################################################################################################## -->
+					<!-- ########################################################################################################################## -->
+					<!-- ########################################################################################################################## -->
+					<!-- 그리드 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!--하단 버튼 영역-->
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

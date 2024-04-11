@@ -1,0 +1,636 @@
+<!--
+	파일정보 : comconfList.html
+	파일명 : comconf현황
+	업무명 : 민원발급 현황 조회, 등록, 수정
+	생성자 : 최진호
+	생성일 : 2023-06-13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			var serchType = ""; //조합원검색 구분
+			var refVal = /*[[${menuInfo.refVal}]]*/; //메뉴참조값 현황유형:그리드번호
+			var refVals = refVal.split(":");
+			var rowData = {}; //선택된 행
+			var reloadYn = false;	//공통 리로드 방지
+		//	var initParam = {codeList : "CM19:CM12:MB02", gridNoList : refVals[1]};
+			var paramMap = /*[[${paramMap}]]*/;
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//화면 초기화 처리 호출
+				$("#sConfCd").val(refVals[0]);
+				$("#confCd").val(refVals[0]);
+
+				//화면 처리
+				$("#sReqStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //신청일자 시작일
+				$("#sReqEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); 	//신청일자 종료일
+
+				com.fnCodeSelectBox("CM19", "reqCnt", 1 ); //선택 신청매수
+				com.fnCodeSelectBox("CM12", "sProcStat", 2, paramMap.sProcStat); //전체 민원처리상태
+				com.fnCodeSelectBox("CM12", "procStat", 3, "30"); //전체 처리상태
+
+				//보증상품 선택
+				com.fnCodeCheckBox("GR22", "sel_guarType", "guarType", false, "all");
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+			    //저장후 이벤트
+			    sheet.bind("onAfterSave" , function(obj) {
+					if(obj.kind === "Filter" || obj.kind === "Header") return;
+					resData = JSON.parse(obj.response.response);
+					alert(resData.resultMsg);
+			        if (resData.resultCode === 0) {
+					    //fnSearchDtl(); //조회 호출
+			        }
+				});
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter" || obj.kind === "Header") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+				//	console.log(rowData);
+
+					$("#membNo").val(rowData.membNo);
+					$("#membNm").val(rowData.membNm);
+					$("#ele_ceoNm").text(rowData.ceoNm);							//대표자
+					$("#ele_lawNo").text(rowData.lawNo);							//법인번호
+					$("#ele_bizNo").text(rowData.bizNo);							//사업자번호
+					$("#ele_lendNo").text(rowData.lendNo);							//대출관리번호
+					$("#ele_lendAmt").text(com.addComma(rowData.lendAmt));			//대출금액
+					$("#ele_lendDt").text(com.fnDateFormat(rowData.lendDt));		//대출일자
+					$("#ele_repayPreDt").text(com.fnDateFormat(rowData.repayPreDt));//만기일자
+					$("#ele_totRepayAmt").text(com.addComma(rowData.repayAmt));	    //상환금액
+					$("#ele_remainAmt").text(com.addComma(rowData.remainAmt));		//잔액
+					$("#ele_mainBussCdNm").text(com.fnInputText("MB02", rowData.mainBussCdNm));	//주장르
+					$("#ele_belong").text(rowData.belong);							//소속단체
+					$("#contrNo").val(rowData.contrNo);		                        //약정번호
+					$("#purpose").val(rowData.purpose);		                        //용도
+					$("#reqDt").val(com.fnDateFormat(rowData.reqDt));				//신청일자
+					$("#reqNm").val(rowData.reqNm);					                //신청자
+					$("#basDt").val(com.fnDateFormat(rowData.basDt));				//기준일자
+					$("#pubDt").val(com.fnDateFormat(rowData.pubDt));				//발급일자
+					$("#reqCnt").val(rowData.reqCnt);					            //신청매수
+					$("#procStat").val(rowData.procStat);					        //처리상태
+					$("#confNo").val(rowData.confNo);					            //처리상태
+
+				});
+
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				var id = $(':focus').attr('id');
+				if(id === "membNo" || id === "membNm"){
+					return;
+				}
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/comConf/selectComConfList.do", param); //param, sheetId 생략 가능
+			};
+
+			/*
+			//상세 화면 호출
+			var fnDetail = function(){
+				param = {menuCd:7010103, paramMap:{val1:1234, val2:3456} };
+				parent.menuOpen(param);
+			};
+
+			*/
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/); //
+			};
+
+			//조합원검색
+			var fnMembSearchPop = function (event,type){
+				serchType = type;
+				if(serchType === "serch"){
+					//$("#sMembNo").val("");
+					//$("#sMembNm").val("");
+					//com.fnMembInfo();
+					com.fnMembInfoMulti(event,"etc", "serchMemb");
+
+				}else{
+					var confCd = $("#confCd").val();
+					if(confCd === "LP" || confCd === "LR" || confCd === "LI"){
+						$("#membNo").val();
+						$("#membNm").val();
+						com.dialpopupOpen("대출검색", "/index/pageCall.do?menuCd=1070709", "800", "500"); //menuPage=/com/serchLend
+					}else{
+						//com.fnMembInfo();
+						com.fnMembInfoMulti(event,"etc", "memb");
+					}
+				}
+				
+			};
+
+			var fnMembInfoSet = function(rowData){
+			//	alert(refVals[0]);
+				//console.log(rowData);
+				if(serchType === "serch"){
+					$("#serchMembNo").val(rowData.membNo);
+					$("#serchMembNm").val(rowData.membNm);
+
+					fnSearch();
+				}else{
+
+					if(refVals[0] === "GR"){
+						if(rowData.guarContrNo === null){
+							alert("체결된 보증내역이 없습니다.")
+							return;
+						}
+					}else if(refVals[0] === "DP"){
+						if(rowData.depAmt === 0){
+							alert("예수금액이 존재하지 않습니다.")
+							return;
+						}
+					}
+
+					$("#membNo").val(rowData.membNo);
+					$("#membNm").val(rowData.membNm);
+					$("#ele_ceoNm").text(rowData.ceoNm);
+					$("#ele_lawNo").text(rowData.lawNo);
+					$("#ele_bizNo").text(rowData.bizNo);
+					$("#ele_mainBussCdNm").text(rowData.mainBussNm);
+				}
+
+
+			};
+
+
+			var fnLendSearchSet = function(resData){
+			//	console.log(resData);
+				$("#membNo").val(resData.membNo);
+				$("#membNm").val(resData.membNm);
+				$("#ele_ceoNm").text(resData.ceoNm);							//대표자
+				$("#ele_lawNo").text(resData.lawNo);							//법인번호
+				$("#ele_lendNo").text(resData.lendNo);							//대출관리번호
+				$("#lendNo").val(resData.lendNo);								//대출관리번호
+				$("#ele_lendAmt").text(com.addComma(resData.lendAmt));			//대출금액
+				$("#ele_lendDt").text(com.fnDateFormat(resData.lendDt));		//대출일자
+				$("#ele_repayPreDt").text(com.fnDateFormat(resData.repayPreDt));//만기일자
+				$("#ele_totRepayAmt").text(com.addComma(resData.totRepayAmt));	//상환금액
+				$("#ele_remainAmt").text(com.addComma(resData.remainAmt));		//잔액
+			};
+
+
+			//버튼 화면 처리
+			var procType = "";
+			var fnProcView = function (type){
+				procType = type;
+
+				if(type === "I" || type === "U"){ // 입력 버튼  입력폼 활성화
+					disYn = false
+					$("#btn_membSerch").attr("disabled", false);
+					$("#procReason").attr("readonly", false);
+					$("#purpose").attr("readonly", false);
+					$("#procStat").attr("disabled", false);
+					$("#reqCnt").attr("disabled", false);
+					$("#basDt").attr("readonly", false);
+					$("#pubDt").attr("readonly", false);
+					$("#reqNm").attr("readonly", false);
+					$("#reqDt").attr("readonly", false);
+					$("#guarTypeAll").attr("disabled", false);
+					$("input[name=guarType]").attr("disabled", false);
+
+				}else if(type === "C"){ //입력 폼 비활성화 및 내용 삭제
+					disYn = true
+					$("#btn_membSerch").attr("disabled", true);
+					$("#procReason").attr("readonly", true);
+					$("#purpose").attr("readonly", true);
+					$("#procStat").attr("disabled", true);
+					$("#reqCnt").attr("disabled", true);
+					$("#basDt").attr("readonly", true);
+					$("#pubDt").attr("readonly", true);
+					$("#reqNm").attr("readonly", true);
+					$("#reqDt").attr("readonly", true);
+					$("#guarTypeAll").attr("disabled", true);
+					$("input[name=guarType]").attr("disabled", true);
+
+					$("#saveFrm").each(function() {
+					  this.reset();
+					});
+
+					$("span[id^='ele_']").each(function(idx){
+						$(this).text("");
+					});
+
+				}else{//저장 완료 시 입력 폼 비활성화 및 내용 삭제
+					disYn = true
+					$("#procReason").attr("readonly", true);
+				}
+
+					$("#membNo").attr("readonly", disYn);
+					$("#membNm").attr("readonly", disYn);
+					$("#btn_membSerch").attr("readonly", disYn);
+					$("#guarTypeAll").attr("readonly", disYn);
+			};
+
+			//보증서종류,처리상태 전체 선택
+			var fnSerchChk = function(val){
+				var chkYn;
+
+				chkYn = $("#guarTypeAll").is(":checked");
+
+				if(chkYn){
+					$("input[name='"+val+"']").each(function(idx) {
+						$(this).prop("checked", true);
+					});
+				}else{
+					$("input[name='"+val+"']").each(function(idx) {
+						$(this).prop("checked", false);
+					});
+				}
+			}
+
+			//전체선택 해제 처리
+			var fnSerchChkAll = function(val){
+
+				var chkYn = true;
+				$("input[name='"+val+"']").each(function(idx) {
+					if(!$(this).is(":checked") && $(this).val() !== ""){
+						chkYn = false;
+						return;
+					}
+				});
+
+				$("#guarTypeAll").prop("checked", chkYn);
+			}
+
+
+			//증명서신청
+			var fnSave = function(){
+
+
+				if(procType === "I"){
+					var valChks = ["reqDt", "basDt", "reqNm", "reqCnt"];
+					if(com.fnValChk(valChks)){
+						if(confirm("증명서를 신청 하시겠습니까?")){
+							obj = {url:"/comConf/insertComConf.do", formId:"saveFrm", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+							com.fnAjaxPost(obj);
+						}
+					}
+				}else if(procType === "U"){
+					var valChks = ["reqDt", "basDt"];
+					if(com.fnValChk(valChks)){
+						if(confirm("증명서를 수정 하시겠습니까?")){
+							obj = {url:"/comConf/updateComConf.do", formId:"saveFrm", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+							com.fnAjaxPost(obj);
+						}
+					}
+				}
+			};
+
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				//$("#saveFrm").find('input, select').prop('readonly', true);
+				fnSearch();
+
+				$("#saveFrm").each(function() {
+				  this.reset();
+				});
+				//$("#saveFrm").clearForm();
+
+
+				$("span[id^='ele_']").each(function(idx){
+					$(this).text("");
+				});
+			};
+
+			/*
+			var fnIsd = function(){
+				var valChks = ["reqDt", "basDt", "pubDt", "reqNm", "reqCnt"];
+				if(com.fnValChk(valChks)){
+					if(confirm("증명서를 발급 하시겠습니까?")){
+
+					}
+				}
+			}
+			*/
+			var fnReport = function(){
+			//	alert(rowData.membNo);
+				//console.log(rowData.procStat);
+				if(rowData.membNo === undefined){
+					alert("발급목록을 선택하세요.");
+					return;
+				}else{
+
+					if(rowData.pubDt == null){
+						alert("발급일자를 입력 하십시오.");
+						return;
+					}
+
+
+				//	alert(rowData.confCd);
+					var ozName = "";
+					var rtnProc = "conf";
+
+					if(rowData.confCd === "LP") ozName = "LD_대출상환증명서";
+				    if(rowData.confCd === "LR") ozName = "LD_대출잔액증명서";
+				    if(rowData.confCd === "LI") ozName = "LD_대출이자납입증명서";
+				    if(rowData.confCd === "FL") ozName = "LD_금융거래확인서";
+
+				    if(rowData.confCd === "GR") ozName = "GR_보증거래확인서";
+				    if(rowData.confCd === "IP") ozName = "IV_출자좌수증명원";
+				    if(rowData.confCd === "IK") ozName = "IV_출자증권보관증";
+				    if(rowData.confCd === "DP") ozName = "IV_예치금증명원";
+					console.log(rowData.basDt);
+				    var nameArr = new Array("memb_no", "bas_dt", "pub_dt", "purpose", "st_yn","conf_cd", "conf_no","lend_no","req_cnt","contr_no");
+				    var valueArr = new Array(rowData.membNo, com.fnDateFormat(rowData.basDt), com.fnDateFormat(rowData.pubDt), rowData.purpose, "Y", rowData.confCd, rowData.confNo, rowData.lendNo, rowData.reqCnt, rowData.contrNo);
+
+				        //오즈파일명, 변수명,     변수값,  출력수, pdf저장여부, 결과처리여부
+				    //ozLoad(ozName, nameArr, valueArr, rowData.reqCnt, "pdf", rtnProc); - 파라미터갯수 안맞음 확인필요
+				    ozLoad(ozName, nameArr, valueArr, rowData.reqCnt, false, "pdf", rtnProc);
+				}
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+
+				$("#sReqStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //신청일자 시작일
+				$("#sReqEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); 	//신청일자 종료일
+
+				fnSearch();
+			};
+
+			//새로고침
+			var fnReLoad = function(){
+				$(".reLoadFrm").click();
+			}
+
+			//oz 출력 이후
+			var doAfter = function(){
+				fnReLoad();
+			}
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+	<!--				<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+					<div class="layer-flex collapseArea">
+						<!-- 그리드 좌측 부분 -->
+						<!-- 검색 부분 -->
+						<div class="collapseBox" style="width:56%">
+						<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false" >
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="sConfCd" id="sConfCd" value=""/>
+						<input type="hidden" name="sMembNo" id="sMembNo" value=""/>
+						<input type="hidden" name="sMembNm" id="sMembNm" value=""/>
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">발급목록</h4>
+							</div>
+						</section>
+						<section class="searchArea mt10">
+							<div class="row">
+								<dl>
+									<dt>조합원명</dt>
+									<dd style="width:260px;">
+										<input type="search" name="serchMembNo" id="serchMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);if(event.keyCode ===13){fnMembSearchPop(event,'serch')}">
+										<input type="search" name="serchMembNm" id="serchMembNm" style="width:165px;"  maxlength="40" onkeyup="if(event.keyCode ===13){fnMembSearchPop(event,'serch')}"  >
+										<button type="button" name="btnMemb" id="btnMemb" class="btn icoSearch" onclick="fnMembSearchPop(event,'serch')">검색</button>
+									</dd>
+									<dt>대표자</dt>
+									<dd style="width:100px;">
+										<input type="text" name="sCeoNm" id="sCeoNm" style="width:100px;" maxlength="15">
+									</dd>
+								</dl>
+							</div><!-- //row -->
+							<div class="row">
+								<dl>
+									<dt>신청일자</dt>
+									<dd style="width:260px;">
+										<input type="text" name="sReqStaDt" id="sReqStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sReqStaDt','sReqEndDt','F');" autocomplete="off"/>
+				                    	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sReqStaDt', 'yyyy-mm-dd','sReqEndDt', 1)" />
+				                    	<input type="text" name="sReqEndDt" id="sReqEndDt" title="종료일" maxlength="10" style="width:100px" value=""onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sReqStaDt','sReqEndDt','T');" autocomplete="off"/>
+				                    	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sReqEndDt', 'yyyy-mm-dd', 'sReqStaDt', 2)" />
+									</dd>
+									<dt>민원처리상태</dt>
+									<dd style="width:100px;">
+										<select name="sProcStat" id="sProcStat" style="width:100px;"></select>
+									</dd>
+								</dl>
+							</div><!-- //row -->
+							<div class="searchBtn">
+								<button type="button" onclick="javascript:fnSearch();" class="btn small search">조회</button>
+								<button type="button" onclick="javascript:fnReport();" class="btn small style02">발급</button>
+								<button type="button" onclick="javascript:fnReset();" class="btn small reset">초기화</button>
+							</div>
+						</section>
+						</form>
+						<!-- 검색 부분 끝 -->
+						<div class="layer-flex mt10">
+							<!-- 그리드 좌측 부분 -->
+							<div class="collapseBox" style="width:100%">
+								<section class="area mt10">
+									<div class="fl">
+										<h4 class="title">민원처리현황</h4>
+									</div>
+									<div class="fr">
+										<button onclick="javascript:fnExcel();" class="btn small style04">엑셀</button>
+									</div>
+								</section>
+								<div class="mt10">
+							    	<div id="sheetDiv" style="width:100%;height:550px"></div>
+								</div>
+							</div>
+						</div>
+							<!-- 그리드 좌측 부분 끝 -->
+					</div>
+						<!-- END 컨텐츠 영역 -->
+					<!-- 검색 부분 -->
+					<!-- 그리드 우측 부분 -->
+						<div class="collapseBox fixable" style="width:43%">
+						<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false" >
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="confCd" id="confCd" value=""/>
+						<input type="hidden" name="confNo" id="confNo" value=""/>
+						<input type="hidden" name="contrNo" id="contrNo" value=""/>
+						<input type="hidden" name="procDt" id="procDt" value=""/>
+						<input type="hidden" name="procNm" id="procNm" value=""/>
+						<input type="hidden" name="givePlace" id="givePlace" value=""/>
+						<input type="hidden" name="signedCont" id="signedCont" value=""/>
+						<input type="hidden" name="lendNo" id="lendNo" value=""/>
+						<input type="hidden" name="refVal" id="refVal" value=""/>
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">조합원정보</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:fnProcView('I');" class="btn small style08">등록</button>
+									<button type="button" onclick="javascript:fnProcView('U');" class="btn small style08">수정</button>
+									<button type="button" onclick="javascript:fnProcView('C');" class="btn small style08">취소</button>
+									<button type="button" onclick="javascript:fnSave();" class="btn small style03">저장</button>
+								</div>
+							</section>
+							<section class="area mt5">
+								<table class="tbl">
+									<colgroup>
+										<col style="width:80px;">
+										<col style="width:150px;">
+										<col style="width:80px;">
+										<col style="width:150px;">
+									</colgroup>
+									<tbody>
+										<tr>
+											<th>조합원명</th>
+											<td class="tal" colspan="3">
+												<input type="search" name="membNo" id="membNo" style="width:50px;" maxlength="4" onkeyup="com.fnOnlyNum(this);if(event.keyCode ===13){fnMembSearchPop(event)}" readonly/>
+												<input type="search" name="membNm" id="membNm" style="width:150px;" maxlength="40"  onkeyup="if(event.keyCode ===13){fnMembSearchPop(event)}"  readonly/>
+												<button type="button" class="btn icoSearch" onclick="fnMembSearchPop(event)" id="btn_membSerch"  disabled/>검색</button>
+											</td>
+										</tr>
+										<tr>
+											<th>대표자</th>
+											<td class="tal" ><span id="ele_ceoNm"></span></td>
+											<th>법인번호</th>
+											<td class="tal" ><span id="ele_lawNo"></span></td>
+										</tr>
+										<th:block th:if="${#strings.contains(menuInfo.refVal, 'FL') || #strings.contains(menuInfo.refVal, 'IP') || #strings.contains(menuInfo.refVal, 'IK') || #strings.contains(menuInfo.refVal, 'GR')}"> <!-- 금융거래확인서,출좌좌수증명원,출자좌수보관증,보증잔액증명서 -->
+										<tr>
+											<th>사업자번호</th>
+											<td class="tal" ><span id="ele_bizNo"></span></td>
+											<th>주장르</th>
+											<td class="tal" ><span id="ele_mainBussCdNm"></span></td>
+										</tr>
+										<tr>
+											<th>소속단체</th>
+											<td class="tal" colspan="3" ><span id="ele_belong"></span></td>
+										</tr>
+										</th:block>
+									</tbody>
+								</table>
+							</section>
+							<th:block th:if="${#strings.contains(menuInfo.refVal, 'LP') || #strings.contains(menuInfo.refVal, 'LR') || #strings.contains(menuInfo.refVal, 'LI')}"> <!-- 대출상환,대출잔액,이자납입 증명서 -->
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">대출정보</h4>
+								</div>
+							</section>
+							<section class="area mt5">
+								<table class="tbl">
+									<colgroup>
+										<col style="width:80px;">
+										<col style="width:150px;">
+										<col style="width:80px;">
+										<col style="width:150px;">
+									</colgroup>
+									<tbody>
+										<tr>
+											<th>대출관리번호</th>
+											<td class="tal"><span id="ele_lendNo"></span></td>
+											<th>대출금액</th>
+											<td class="tal"><span id="ele_lendAmt"></span></td>
+										</tr>
+										<tr>
+											<th>대출일자</th>
+											<td class="tal"><span id="ele_lendDt"></span></td>
+											<th>만기일자</th>
+											<td class="tal"><span id="ele_repayPreDt"></span></td>
+										</tr>
+										<tr>
+											<th>상환금액</th>
+											<td class="tal"><span id="ele_totRepayAmt"></span></td>
+											<th>잔액</th>
+											<td class="tal"><span id="ele_remainAmt"></span></td>
+										</tr>
+									</tbody>
+								</table>
+							</section>
+							</th:block>
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">신청정보</h4>
+								</div>
+							</section>
+							<section class="area mt5">
+								<table class="tbl">
+									<colgroup>
+										<col style="width:80px;">
+										<col style="width:150px;">
+										<col style="width:80px;">
+										<col style="width:150px;">
+									</colgroup>
+									<tbody>
+										<tr>
+											<th><span class="reqMark">*</span>신청일자</th>
+											<td class="tal">
+												<input type="search" name="reqDt" id="reqDt" title="신청일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:100px" readonly/>
+												<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd')" />
+											</td>
+											<th><span class="reqMark">*</span>신청자</th>
+											<td class="tal">
+												<input type="search" name="reqNm" id="reqNm" title="신청자" style="width:100px;" maxlength="20" readonly>
+											</td>
+										</tr>
+										<tr>
+											<th><span class="reqMark">*</span>기준일자</th>
+											<td class="tal">
+												<input type="search" name="basDt" id="basDt" title="기준일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:100px" readonly/>
+												<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'basDt', 'yyyy-mm-dd')" />
+											</td>
+											<th>발급일자</th>
+											<td class="tal">
+												<input type="search" name="pubDt" id="pubDt" title="발급일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:100px" readonly/>
+												<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'pubDt', 'yyyy-mm-dd')" />
+											</td>
+										</tr>
+										<tr>
+											<th><span class="reqMark">*</span>신청매수</th>
+											<td class="tal" >
+												<select name="reqCnt" id="reqCnt" title="신청매수" style="width:80px" disabled>
+											</td>
+											<th><span></span>처리상태</th>
+											<td class="tal" >
+												<select name="procStat" id="procStat" title="처리상태" style="width:150px" disabled>
+											</td>
+										</tr>
+										<tr>
+											<th>용도</th>
+											<td class="tal">
+												<input type="text" name="purpose" id="purpose" style="width:120px;" maxlength="20" readonly>
+											</td>
+											<th>처리사유</th>
+											<td class="tal" >
+												<input type="text" name="procReason" id="procReason"title="처리사유" style="width:150px;" maxlength="50" readonly>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</section>
+						</form>
+						</div>
+						<!-- END 컨텐츠 영역 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

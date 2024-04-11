@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.memb.repository.MembAccMapper">
+
+	<!-- 조합원계좌신청 정보 조회 -->
+	<select id="selectMembAccList" parameterType="Map" resultType="camelMap">
+		/* MembAccMapper.selectMembAccList */
+		SELECT
+			  A.MEMB_NO
+			, A.REQ_SEQ
+			, F_GET_CRYPT_DEC(A.ACCT_NO) ACCT_NO
+			, F_GET_CRYPT_DEC(A.DEPO_NM) DEPO_NM
+			, F_GET_CRYPT_DEC(A.BANK_CD) BANK_CD
+			, F_GET_CD_NM('CM02', F_GET_CRYPT_DEC(A.BANK_CD)) BANK_NM
+			, A.REQ_DT
+			, A.SIGNED_CONT
+			, TO_CHAR(A.SIGNED_DTM, 'YYYYMMDD') SIGNED_DTM
+			, A.CONTR_APPR_DT
+			, A.CONTR_APPR_NM
+			, A.PROC_STAT
+			, F_GET_CD_NM('MB34', A.PROC_STAT) PROC_STAT_NM
+			, A.PROC_REASON
+			, A.REG_DTM
+			, A.REG_NM
+			, A.MOD_DTM
+			, A.MOD_NM
+			, B.MEMB_NM
+			, B.CEO_NM
+		 FROM MB_ACCOUNT_REQ A
+			, MB_MASTER B
+		WHERE A.MEMB_NO = B.MEMB_NO
+		<if test='sShowReqTypeI == "Y"'> 	<!-- 조합원계좌관리 조회조건 -->
+		  AND (A.REQ_TYPE != 'V' OR A.REQ_TYPE IS NULL)
+		</if>
+		<if test="sMembNo != null and sMembNo != ''"> 	<!-- 조합원번호 -->
+		  AND A.MEMB_NO = #{sMembNo}
+		</if>
+		<if test="sMembNm != null and sMembNm != ''"> 	<!-- 조합원명 -->
+		  AND B.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+		</if>
+		<if test="sCeoNm != null and sCeoNm != ''"> 		<!-- 대표자명 -->
+		  AND B.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+		</if>
+		<if test="sProcStat != null and sProcStat != ''"> <!-- 처리상태 -->
+		  AND A.PROC_STAT = #{sProcStat}
+		</if>
+		<if test="sBankCd != null and sBankCd != ''">		<!-- 은행 -->
+		  AND A.BANK_CD = #{sBankCd}
+		</if>
+		<if test="sAcctNo != null and sAcctNo != ''">		<!-- 계좌번호 -->
+		  AND A.ACCT_NO LIKE '%' || #{sAcctNo} || '%'
+		</if>
+		<if test="sDepoNm != null and sDepoNm != ''">		<!-- 예금주 -->
+		  AND A.DEPO_NM LIKE '%' || #{sDepoNm} || '%'
+		</if>
+		<if test="sSerchType eq 'R'.toString()"> <!-- 신청중인건 신청, 접수 -->
+		  AND A.PROC_STAT IN ('10','11')
+		</if>
+		ORDER BY REG_DTM DESC
+	</select>
+	
+	<!-- 조합원계좌 정보 조회(mb_acc) -->
+	<select id="selectMembAccMngList" parameterType="Map" resultType="camelMap">
+		/* MembAccMapper.selectMembAccMngList */
+		SELECT
+			A.MEMB_NO
+      		, B.MEMB_NM
+			, F_GET_CRYPT_DEC(A.ACCT_NO) ACCT_NO
+			, F_GET_CRYPT_DEC(A.ACCT_NM) ACCT_NM
+			, F_GET_CRYPT_DEC(A.BANK_CD) BANK_CD
+			, F_GET_CD_NM('CM02', F_GET_CRYPT_DEC(A.BANK_CD)) BANK_NM
+			, A.USE_YN
+			, A.REMARK
+			, A.REG_DTM
+			, A.REG_NM
+			, A.MOD_DTM
+			, A.MOD_NM
+			, A.ATTH_NO
+		FROM MB_ACC A, MB_MASTER B
+    	WHERE A.MEMB_NO = B.MEMB_NO
+		<if test="sMembNo != null and sMembNo != ''"> 	<!-- 조합원번호 -->
+		  AND A.MEMB_NO = #{sMembNo}
+		</if>
+		<if test="sMembNm != null and sMembNm != ''"> 	<!-- 조합원명 -->
+		  AND B.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+		</if>
+		<if test="sBankCd != null and sBankCd != ''">	<!-- 은행 -->
+		  AND A.BANK_CD = F_GET_CRYPT_ENC(#{sBankCd})
+		</if>
+		<if test="sAcctNo != null and sAcctNo != ''">	<!-- 계좌번호 -->
+		  AND A.ACCT_NO = F_GET_CRYPT_ENC(REPLACE(#{sAcctNo}, '-', ''))
+		</if>
+		<if test='sUseYn != null and sUseYn != ""'>	<!-- 사용여부 -->
+		  AND A.USE_YN = #{sUseYn}
+		</if>
+		ORDER BY A.MEMB_NO DESC, A.REG_DTM DESC
+	</select>
+
+	<!-- 조합원계좌 상세 조회 -->
+	<select id="selectMembAcc" parameterType="Map" resultType="camelMap">
+		/* MembAccMapper.selectMembAcc*/
+		SELECT
+			MEMB_NO
+			, REQ_SEQ
+			, F_GET_CRYPT_DEC(BANK_CD) BANK_CD
+			, F_GET_CD_NM('CM02', F_GET_CRYPT_DEC(BANK_CD)) BANK_NM
+			, F_GET_CRYPT_DEC(ACCT_NO) ACCT_NO
+			, F_GET_CRYPT_DEC(DEPO_NM) DEPO_NM
+			, F_GET_PATTERN(REQ_DT, 'DT') AS REQ_DT
+			, SIGNED_CONT
+			, SIGNED_DTM
+			, F_GET_PATTERN(CONTR_APPR_DT, 'DT') AS CONTR_APPR_DT
+			, CONTR_APPR_NM
+			, PROC_STAT
+			, F_GET_CD_NM('MB34', PROC_STAT) PROC_STAT_NM
+			, PROC_REASON
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+            , ATTH_NO
+		  FROM
+		  	MB_ACCOUNT_REQ
+		 WHERE MEMB_NO = #{membNo}
+		   AND REQ_SEQ = #{reqSeq}
+	</select>
+
+	<!-- 조합원계좌 등록 처리(조합원 수정되면 호출되는 부분밖에 없어서 select insert) -->
+	<insert id="insertMembAcc" parameterType="Map"  >
+		/* MembAccMapper.insertMembAcc */
+		<selectKey resultType="java.lang.String" keyProperty="reqSeq" order="BEFORE">
+		SELECT NVL(MAX(REQ_SEQ), 0) + 1 FROM MB_ACCOUNT_REQ WHERE MEMB_NO = #{membNo}
+        </selectKey>
+
+		INSERT INTO MB_ACCOUNT_REQ (
+			MEMB_NO
+			, REQ_SEQ
+			, BANK_CD
+			, ACCT_NO
+			, DEPO_NM
+			, REQ_DT
+			, SIGNED_CONT
+			, SIGNED_DTM
+			, PROC_STAT
+			, ATTH_NO
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+		)
+		VALUES
+		(
+			#{membNo}
+			, #{reqSeq}
+			, F_GET_CRYPT_ENC(#{bankCd})
+			, F_GET_CRYPT_ENC(#{acctNo})
+			, F_GET_CRYPT_ENC(#{depoNm})
+			, TO_CHAR(SYSDATE, 'YYYYMMDD')
+			, #{signedCont}
+			, DECODE(#{signedCont}, NULL, NULL, SYSDATE)
+			, #{procStat}
+			, #{atthNo}
+			, SYSDATE
+			, #{userNm}
+			, SYSDATE
+			, #{userNm}
+		)
+
+	</insert>
+
+	<!-- 조합원계좌 수정 처리 -->
+	<update id="updateMembAcc" parameterType="Map"  >
+		/* MembAccMapper.updateMembAcc */
+		UPDATE MB_ACCOUNT_REQ
+		SET
+			BANK_CD 	= F_GET_CRYPT_ENC(#{bankCd})
+			, ACCT_NO 	= F_GET_CRYPT_ENC(#{acctNo})
+			, DEPO_NM 	= F_GET_CRYPT_ENC(#{depoNm})
+			, REQ_DT 	= REPLACE(#{reqDt}, '-', '')
+			, SIGNED_CONT = #{signedCont}
+			, SIGNED_DTM = SYSDATE
+			, CONTR_APPR_DT = REPLACE(#{contrApprDt}, '-', '')
+			, CONTR_APPR_NM = #{contrApprNm}
+			, PROC_STAT = #{procStat}
+			, PROC_REASON = #{procReason}
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{modNm}
+			, MOD_REASON = #{modReason}
+		WHERE MEMB_NO = #{membNo}
+		  AND REQ_SEQ = #{reqSeq}
+	</update>
+
+	<!-- 조합원계좌 삭제 처리 -->
+	<delete id="deleteMembAcc" parameterType="Map"  >
+		/* MembAccMapper.deleteMembAcc */
+		DELETE FROM MB_ACCOUNT_REQ
+		 WHERE MEMB_NO = #{membNo}
+		   AND REQ_SEQ = #{reqSeq}
+	</delete>
+
+
+	<!-- 조합원계좌 이력 등록 -->
+	<insert id="insertMembAccHist" parameterType="Map"  >
+		/* MembAccMapper.insertMembAccHist */
+		INSERT INTO MB_ACC_HIST (
+			MEMB_NO
+			, ACCT_NO
+			, HIST_SEQ
+			, HIST_REG_DTM
+			, HIST_REG_NM
+			, HIST_REASON
+			, ACCT_NM
+			, BANK_CD
+			, USE_YN
+			, REMARK
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, ATTH_NO
+		)
+		(
+		SELECT MEMB_NO
+			, ACCT_NO
+			, (SELECT NVL(MAX(HIST_SEQ), 0) + 1
+				FROM MB_ACC_HIST
+				WHERE MEMB_NO = A.MEMB_NO
+				AND ACCT_NO = A.ACCT_NO
+			)
+			, SYSDATE
+			, #{userNm}
+			, #{histReason}
+			, ACCT_NM
+			, BANK_CD
+			, USE_YN
+			, REMARK
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, ATTH_NO
+		 FROM MB_ACC A
+		WHERE MEMB_NO = #{membNo}
+		  AND ACCT_NO = F_GET_CRYPT_ENC(#{acctNo})
+
+		)
+	</insert>
+	
+	<!-- 조합원계좌관리 계좌등록 -->
+	<insert id="insertMembAccMng" parameterType="Map"  >
+		/* MembAccMapper.insertMembAccMng */
+		INSERT INTO MB_ACC (
+			MEMB_NO
+		    , ACCT_NO
+		    , ACCT_NM
+		    , BANK_CD
+		    , USE_YN
+		    , REMARK
+		    , REG_DTM
+		    , REG_NM
+		    , MOD_DTM
+		    , MOD_NM
+		    , ATTH_NO
+		)
+		VALUES
+		(
+			#{membNo}
+			, F_GET_CRYPT_ENC(#{acctNo})
+			, F_GET_CRYPT_ENC(#{acctNm})
+			, F_GET_CRYPT_ENC(#{bankCd})
+			, DECODE(#{useYn}, 'Y', 'Y', 'N') 
+			, #{remark}
+			, SYSDATE
+			, #{userNm}
+			, SYSDATE
+			, #{userNm}
+			, #{atthNo}
+		)
+
+	</insert>
+	
+	 <!-- //조합원계좌관리 계좌등록 카운트 --> 
+	<select id="selectMembAccMngCnt" parameterType="Map" resultType="int"> 
+		/* MembAccMapper.selectMembAccMngCnt */ 
+		SELECT COUNT(*)
+		FROM MB_ACC
+		WHERE MEMB_NO = #{membNo}
+		AND ACCT_NO = F_GET_CRYPT_ENC(#{acctNo})
+	</select> 
+	
+	<!-- 조합원계좌관리 계좌수정 -->
+	<update id="updateMembAccMng" parameterType="Map"  >
+		/* MembAccMapper.updateMembAccMng */
+		UPDATE MB_ACC
+		SET
+		    ACCT_NM 	= F_GET_CRYPT_ENC(#{acctNm})
+		    , USE_YN 	= #{useYn}
+		    , REMARK 	= #{remark}
+		    , MOD_DTM 	= SYSDATE
+		    , MOD_NM 	= #{userNm}
+		WHERE MEMB_NO 	= #{membNo}
+		  AND ACCT_NO = F_GET_CRYPT_ENC(#{acctNo})
+	</update>
+
+</mapper>

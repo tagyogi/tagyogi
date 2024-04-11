@@ -1,0 +1,412 @@
+<!--
+	파일정보 : ivnt/invtTakeUpt.html
+	파일명 : invtTakeDtl
+	업무명 : 출자증권지분취득 수정
+	생성자 : 윤가영1
+	생성일 : 2023-07-19
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "20206"}
+
+			var todayString = /*[[${today}]]*/;
+			var chkTranDt = "";
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//화면 처리
+				com.fnCodeSelectBox("IV02", "payWay", 1, ""); //선택 입금형태
+				com.fnCodeSelectBox("IV07", "takeType", 1, ""); //지분취득사유
+				com.fnCodeSelectBox("CM02", "payBank", 1, ""); //전체 은행목록
+
+				com.fnSetBankAccList("outBanks", 1);	//출금은행목록
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				fnIbsInvtTrans(gridOptList[0], "takeUpt"); //출자담보정보(공통부)
+
+			    //가압류현황 그리드
+				IBSheet.create({ id: "sheetAcciPrsr", el: "sheetDivAcciPrsr", options: gridOptList[1] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+
+					fnSearch(); //조회 호출
+				};
+
+			});
+
+			//검색
+			var fnSearch = function(){
+				var investNo = /*[[${paramMap.investNo}]]*/;
+				var transSeq = /*[[${paramMap.transSeq}]]*/;
+				var transMembNo = /*[[${paramMap.transMembNo}]]*/;
+				var takeMembNo = /*[[${paramMap.takeMembNo}]]*/;
+			    var atthType = /*[[${paramMap.atthType}]]*/;
+			    var param = {investNo : investNo, transSeq : transSeq, transMembNo : transMembNo, takeMembNo : takeMembNo, atthType: atthType, mode: 'upt'};
+
+				obj = {url:"/invtTran/selectInvtTakeDtl.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+
+			};
+
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+				console.log(resData);
+				//양도전좌수, 양도전금액 계산 => resData.invtTransData.transAmt : investCd 30(양도양수했던 좌수) + membData.investAmt (현재 조합원의 출자좌수, 즉 반환후의 좌수)
+				resData.membData.transBfAmt = com.addComma(Number(resData.invtTransData.transAmt)+Number(resData.membData.investAmt));
+				resData.membData.transBfNum = com.addComma(Number(resData.invtTransData.transNum)+Number(resData.membData.investNum));
+				resData.invtTransData.transAmt = com.addComma(resData.invtTransData.transAmt);
+				resData.membData.investAmt = com.addComma(resData.membData.investAmt);
+
+				//지분취득사유
+				if(resData.invtTransData.takeType === '90') $("#remark").show();
+
+				//값세팅
+				com.fnSetKeyVal(resData.invtTransData);
+				com.fnSetKeyVal(resData.membData);
+
+
+				//payBank,payAcct - 입금은행
+				var bankOp = resData.invtTransData.outBank+','+resData.invtTransData.outAcct
+				$("#outBanks").val(bankOp);
+
+				//변경된이력 확인 위한 날짜 세팅
+				chkTranDt = resData.invtTransData.transDt;
+				chkTranDt = chkTranDt.replace(/\-/g,"");
+
+				//시트값 설정
+				sheetInvtTrans.loadSearchData(resData.invtTransDataAllList);
+
+				//반환은행 조합원계좌로 재세팅
+				var accParam = {paramId: "payBanks", sMembNo: resData.membData.membNo, sUseYn: "Y", choiceType: 1}
+				com.fnSetMembAccList(accParam);
+
+				$("#payBanks").val(resData.invtTransData.payBank+","+resData.invtTransData.payAcct+","+resData.invtTransData.payNm);
+				$("#payBanks").trigger('change');
+
+				//가압류걸려있는 조합원
+				/*if(resData.membData.sestCnt > 0) {
+					//가압류 조회
+					$("#acciStatBox").show();
+		    		fnAcciSearch();
+				}else {
+					$("#acciStatBox").hide();
+				}*/
+
+				//콤마추가 클래스들 세팅
+				//$.each($(".setCommaCls"), function(idx,item){
+				//	$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
+				//});
+
+			};
+
+			//사고관리(가압류) 조회
+			/*var fnAcciSearch = function(){
+				var param = {sMembNo : $("#transMembNo").val()};
+				com.fnIbsSearch("/acciPrsr/selectAcciPrsrList.do", param, sheetAcciPrsr); //param, sheetId 생략 가능
+			};*/
+
+			//취득사유
+			function changeTakeType() {
+				$("#remark").val("");
+
+				if($("#takeType").val() === "90") $("#remark").show();
+				else $("#remark").hide();
+			}
+
+			//저장
+			var fnSave = function(saveType){
+
+				//저장 vs 저장후 계속등록
+				var msg = "";
+				var addMsg = "";
+
+				/*if(Number($("#ele_trans_investNum").text()) === Number($("#transNum").val()) && Number($("#transNum").val()) !==0 ) {
+					addMsg = "전체취득을 선택하였습니다.\n양도조합은 탈퇴처리 되며, 가압류가 존재하는 경우는 가압류가 종료됩니다.";
+				}*/
+
+				$("#saveType").val(saveType);
+				if($("#saveType").val( )=== "continue") msg = "" + addMsg;
+				else msg = "지분취득 정보를 수정하시겠습니까?" + addMsg;
+
+				if($('#transDt').val()===""){
+					alert("지분취득일자를 입력해 주십시오.");
+					$("#transDt").focus();
+					return false;
+				}
+
+				/*if($('#transNum').val()==="" || $('#transNum').val() === 0){
+					alert("치분취득 처리를 위한 증권이 선택되지 않았습니다.");
+					return false;
+				} */
+
+				//필수체크
+				var valChks = ["transDt", "payWay", "payNm", "payBank", "payAcct", "outBanks", "outBank", "outAcct"];
+
+				if(com.fnValChk(valChks)){
+
+					if(confirm(msg)){
+						var param = $("#saveFrm").serializeObject();
+						param.transBillData = sheetInvtTrans.getSaveJson();
+						if(saveType === "continue"){
+							obj = {url:"/invtTran/updateInvtTran.do", jParam:param, callBack:fnSaveKeepCallBack, fileId:"docFile", msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						}else {
+							obj = {url:"/invtTran/updateInvtTran.do", jParam:param, callBack:fnSaveCallBack, fileId:"docFile", msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						}
+						//var param = { paramData: $("#saveFrm").serializeObject(), AssBillData: sheetInvtMortAss.getSaveJson()};
+						//console.log(param);
+
+						//obj = {url:"/InvtBillAss/insertInvtBillAss.do", formId:"saveFrm", fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				if(resData.resultCode === 0) {
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+					//com.fnDoAfterClose();
+				}
+			};
+
+		    //달력 날짜선택시 액면가 호출
+			var fnGetFaceDeal = function(){
+				invtCom.selectFaceDeal('trans');
+			}
+
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="atthType"   id="atthType" th:value="${paramMap.atthType}"/>
+			<input type="hidden" name="imgAtthNo"  id="imgAtthNo" />
+			<input type="hidden" name="atthNo"     id="atthNo"/>
+			<input type="hidden" name="investNo"      id="investNo"    th:value="${paramMap.investNo}"/>
+			<input type="hidden" name="transSeq"      id="transSeq"    th:value="${paramMap.transSeq}"/>
+			<input type="hidden" name="transMembNo"   id="transMembNo" th:value="${paramMap.transMembNo}"/>
+			<input type="hidden" name="transMembNm"   id="transMembNm" th:value="${paramMap.mainMembNm}"/>
+			<input type="hidden" name="takeMembNo"    id="takeMembNo"  value="0"/>
+			<input type="hidden" name="takeMembNm"    id="takeMembNm"  value="한국콘텐츠공제조합"/>
+			<input type="hidden" name="faceAmt"       id="faceAmt" />
+    		<input type="hidden" name="dealAmt"       id="dealAmt" />
+			<div class="contents flex">
+				<div class="layer-flex collapseArea mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+
+						<!--조합원정보-->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">조합원정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup> 
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>조합원명</th>
+										<td><span id="ele_membNo"></span>&nbsp;/&nbsp;<span id="ele_membNm"></span></td>
+										<th>대표자</th>
+										<td><span id="ele_ceoNm"></span></td>
+										<th>주장르</th>
+										<td><span id="ele_mainBussNm"></span></td>
+									</tr>
+									<tr>
+										<th>사업자번호</th>
+										<td><span id="ele_bizNo"></span></td>
+										<th>법인등록번호</th>
+										<td><span id="ele_lawNo"></span></td>
+										<th>소속단체</th>
+										<td><span id="ele_belong"></span></td>
+
+									</tr>
+									<tr>
+										<th>전화번호</th>
+										<td><span id="ele_telNo"></span></td>
+										<th>주소</th>
+										<td colspan="3"><span id="ele_addrFull"></span></td>
+									</tr>
+									<tr>
+										<th>취득전좌수</th>
+										<td><span id="ele_transBfNum"></span></td>
+										<th>취득전금액</th>
+										<td colspan="3"><span id="ele_transBfAmt"></span></td>
+									</tr>
+									<tr>
+										<th>출자좌수</th>
+										<td><span id="ele_investNum"></span></td>
+										<th>출자금액</th>
+										<td colspan="3"><span id="ele_investAmt"></span></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--조합원정보 : e-->
+
+						<!--지분취득설정정보 : s-->
+						<div class="wrapBox mortFormat">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">지분취득설정정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup> 
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>지분취득일자</th>
+										<td colspan="5">
+											<input type="search" name="transDt" id="transDt" title="양도일자" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:120px"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'transDt', 'yyyy-mm-dd','','',fnGetFaceDeal)" />
+										</td>
+									</tr>
+									<tr>
+										<th>지분취득좌수</th>
+										<td colspan="2"><input type="search" id="transNum" name="transNum" style="width:100%" title="양도양수좌수" readonly></td>
+										<th>지분취득금액</th>
+										<td colspan="4">
+											<input type="search" id="transAmt" name="transAmt" style="width:100%" title="양도양수금액" readonly>
+										</td>
+									<tr>
+										<th>지분취득사유</th>
+										<td colspan="7">
+											<select name="takeType" id="takeType" title="지분취득사유" style="width:130px" onchange="changeTakeType();"></select>
+											<input type="search" id="remark" name="remark" style="display: none; width:100%; margin: 2px 0 0 0;" title="양도사유" >
+										</td>
+									</tr>
+									<tr>
+										<th>출금은행<span class="reqMark">*</span></th>
+										<td>
+											<select name="outBanks" id="outBanks" title="출금은행" style="width:130px" onchange="com.fnBankChange(this.value,'out');">
+												<optoin value=""></option>
+											</select>
+											<input type="hidden" name="outBank" id="outBank" />
+										</td>
+										<th>출금계좌<span class="reqMark">*</span></th>
+										<td colspan="4">
+											<input name="outAcct" type="search" id="outAcct" style="width:100%" title="출금계좌" readonly="readonly" />
+										</td>
+									</tr>
+									<tr>
+										<th>반환방법<span class="reqMark">*</span></th>
+										<td>
+											<select name="payWay" id="payWay" title="반환방법" style="width:120px" onchange=""></select>
+										</td>
+										<th>반환정보<span class="reqMark">*</span></th>
+										<td colspan="4">
+											<select name="payBanks" id="payBanks" title="반환은행" style="width:100%" onchange="com.fnMembAccChange(this.value)">
+												<option value="">선택</option>
+											</select>
+											<input type="hidden" id="payBank" name="payBank" style="width:100%" title="반환은행">
+										</td>
+									</tr>
+									<tr>
+										<th>반환예금주<span class="reqMark">*</span></th>
+										<td>
+											<input type="text" id="payNm" name="payNm" style="width:100%" title="반환예금주" readonly>
+										</td>
+										<th>반환계좌<span class="reqMark">*</span></th>
+										<td colspan="4">
+											<input type="text" id="payAcct" name="payAcct" style="width:100%" title="반환계좌" readonly>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--지분취득설정정보 : e-->
+
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+
+					<div class="collapseBox fixable" style="width:49%">
+						<!--출자증권담보설정목록 : s-->
+						<th:block th:include="com/comInvtTrans :: type1('출자증권목록')"></th:block> <!-- 줄자증권목록 -->
+
+						<!--조합원 가압류 현황 : s-->
+						<div id="acciStatBox" class="wrapBox mt15" style="display: none;">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">
+										조합원 가압류 현황
+										<span style="font-size: 12px; color: #ff6600;">(* 가압류가 존재합니다. 증권 전체 취득시 가압류가 자동으로 종료됩니다.)</span>
+									</h4>
+								</div>
+							</section>
+							<!-- 그리드 상단 부분 끝 -->
+							<div class="">
+						    	<div id="sheetDivAcciPrsr" style="width:100%;height:225px"></div>
+							</div>
+						</div>
+
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" id="takeUptBtn" class="btn style07">수정</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+
+				</div>
+
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

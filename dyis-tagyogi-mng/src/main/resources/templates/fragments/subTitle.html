@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<script th:inline="javascript">
+			/*<![CDATA[*/
+			var tarMenuCd = /*[[${menuInfo.menuCd}]]*/;
+			var fnMenuFavSet = function(){
+				if($(".mypage").hasClass("on") === true){
+					$(".mypage").removeClass("on");
+				}else{
+					$(".mypage").addClass("on");
+				}
+				
+				var param = {menuCd : /*[[${menuInfo.menuCd}]]*/}
+				obj = {url:"/com/insertUserMenuFav.do", param:param,  msgYn:"N", sessYn:"Y", loadYn:"N"};
+				com.fnAjaxDef(obj); 
+			}
+			
+			//검수요청팝업 호출
+			var fnOpenUnitTest = function(tarMenuCd){
+				var paramMap = {};
+				var frmPop = document.unitFrm;
+			    var url = '/index/pageCall.do';
+			    window.open('','PopupWin','width=800,height=600');   
+				paramMap.unitMenuCd=tarMenuCd //검수하려는 화면코드
+			     
+			    frmPop.action = url; 
+			    frmPop.target = 'PopupWin'; //window,open()의 두번째 인수와 같아야 하며 필수다.   
+			    frmPop.paramMap.value = JSON.stringify(paramMap);
+			    frmPop.submit(); 
+				
+			}
+			
+			$(document).ready(function(){
+				var favYn = /*[[${menuInfo.favYn}]]*/;
+				if(favYn === "Y"){
+					$(".mypage").addClass("on");
+				}
+			});
+			
+			
+		    /*]]>*/
+		</script>
+		<th:block th:if="${!#strings.equals(menuInfo.menuCd,'1070407')}">
+			<h2 id="menuTitle">[[${menuInfo.menuPath}]] 
+				<b style="color:#138cc4">[[${menuInfo.menuNm}]]</b>
+				<th:block th:if="${#strings.equals(session.userId,'admin')}"> 
+				&nbsp;[[${menuInfo.menuPage}]] &nbsp;[<b style="color:red">[[${paramMap.active}]]</b>] 
+				</th:block>
+				<button type="button" class="mark-btn mypage" onClick="fnMenuFavSet()"></button>
+			</h2>
+		</th:block>
+		
+		<!--검수요청팝업 일때 title-->
+		<th:block th:if="${#strings.equals(menuInfo.menuCd,'1070407')}"> 
+			<h2 id="menuTitle">[[${menuInfo.menuPath}]] 
+				<b style="color:#138cc4">[[${menuInfo.menuNm}]]</b>
+				<th:block th:if="${#strings.equals(session.userId, 'admin')}"> 
+				&nbsp;[[${menuInfo.menuPage}]] &nbsp;[<b style="color:red">[[${paramMap.active}]]</b>] 
+				</th:block>
+			</h2>
+		</th:block>
+		
+		<form name="unitFrm" id="unitFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="menuCd"   value="1070407" />
+			<input type="hidden" name="paramMap" value="" />
+		</form>
+</html>

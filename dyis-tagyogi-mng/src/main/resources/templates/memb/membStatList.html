@@ -1,0 +1,226 @@
+<!--
+	파일정보 : membStatList.html
+	파일명 : membStat현황
+	업무명 : 조합원현황 현황 조회, 등록, 수정
+	생성자 : 김상민1
+	생성일 : 2023-04-17
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "10107:10113"}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			   	IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetDtl", el: "sheetDivDtl", options: gridOptList[1] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter" || obj.kind === "Header") return;
+					var rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					if(obj.col === "mainBussCd"){
+						var mainBussCd = "";		//검색조건
+						var mainBussNm = "";		//조합원정보 옆에 설명이름 ex)조합원정보(캐릭터)
+
+						//합계(foot summary) 클릭시 포커스가 안가서 getFocusedRow 사용 불가
+						//그래서 obj에서 클릭된 셀 정보 아이디가 FormulaRow로 찾음 (나머지 아이디 : AR+행번호 -> ex AR1)
+						if(obj.row.id === "FormulaRow"){
+							mainBussCd = "";	//전체조회
+							mainBussNm = "전체"
+						}else{
+							mainBussCd = rowData.mainBussCd;
+							mainBussNm = rowData.mainBussNm;
+						}
+
+						$("#serchFrm #sMainBussCd").val(mainBussCd);
+						$("#mainBussNmArea").html("("+mainBussNm+")");
+
+						fnSearchDtl(); //조회 호출
+					};
+				});
+			});
+
+			//조합원현황 조회
+			var fnSearch = function(){
+				$("#ele_kocfcInvestNum").text("");	//콘텐츠공제조합 출자좌수 초기화
+				sheetDtl.removeAll();	//조합원현황 리스트 초기화
+				obj = {url:"/membStat/selectMembStatDesc.do", formId:"serchFrm", callBack:fnSearchMembStatDescCallback, msgYn:"N", sessYn:"Y", loadYn:"Y" };
+				com.fnAjaxPost(obj);
+			};
+
+
+			//조합원현황 조회 콜백
+			var fnSearchMembStatDescCallback = function(resData){
+				//console.log(resData);
+
+				sheet.loadSearchData(resData.data);	//리스트
+				com.fnSetKeyVal(resData.kocfc);	//콘텐츠공제조합
+
+				//콘텐츠공제조합 기준일
+				var statDt = "";
+				if($("#sMembStatEndDt").val() !== "")	statDt = $("#sMembStatEndDt").val();
+				else									statDt = /*[[${today}]]*/;
+
+				$("#txt_statTitl").text(" (기준일: " + statDt +")");
+			}
+
+			//조합원정보(장르별) 조회
+			var fnSearchDtl = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/membStat/selectMembStatList.do", param, sheetDtl); //param, sheetId 생략 가능
+			};
+
+			//엑셀 다운로드
+			var fnExcel = function(num ,paramSheet){	//0:조합원현황, 1:조합원정보
+				if(num === 1 && paramSheet.getFirstVisibleRow() === null){	//조합원정보 검색된 데이터가 없을때(첫번째 행 데이터가 없으면)
+					alert("다운로드할 목록이 없습니다.");
+					return;
+				}
+				//console.log(gridOptList[num])
+				com.fnExcelToJs(paramSheet, gridOptList[num].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				fnSearch();
+			};
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="sMainBussCd" id="sMainBussCd" value="">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>기준일자</dt>
+							<dd style="width:260px;">
+								<input type="text" name="sMembStatStaDt" id="sMembStatStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sMembStatStaDt','sMembStatEndDt','F');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sMembStatStaDt', 'yyyy-mm-dd','sMembStatEndDt', 1)" />
+								<input type="text" name="sMembStatEndDt" id="sMembStatEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sMembStatStaDt','sMembStatEndDt','T');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sMembStatEndDt', 'yyyy-mm-dd','sMembStatStaDt', 2)" />
+							</dd>
+						</dl>
+						<dl>
+							<dt>출자좌수</dt>
+							<dd style="width:120px;">
+								<input type="text" name="sFromNum" id="sFromNum" style="width:50px" maxlength="5" onkeyup="com.fnOnlyNum(this);" />
+								&nbsp;~
+								<input type="text" name="sToNum" id="sToNum" style="width:50px" maxlength="5" onkeyup="com.fnOnlyNum(this);" />
+							</dd>
+						</dl>
+						<dl>
+							<dt>검색구분</dt>
+							<dd style="margin-left:20px; width:150px;">
+								<input type="checkBox" name="sAllYn" id="sAllYn" value="Y"/>&nbsp;&nbsp;누적조합원
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+
+				<div class="layer-flex collapseArea mt20">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:35%">
+
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">콘텐츠공제조합<font color="blue" id="txt_statTitl"></font></h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:150px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>출자좌수</th>
+									<td><span id="ele_kocfcInvestNum"></span><span> 좌</span></td>
+								</tr>
+							</tbody>
+						</table>
+						</br>
+
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">조합원현황</h4>
+							</div>
+
+							<div class="fr">
+								<button type="button" onclick="javascript:fnExcel(0, sheet);" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:420px"></div>
+						</div>
+
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+					<div class="collapseBox fixable" style="width:63%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">조합원정보<span id="mainBussNmArea"></span></h4>
+							</div>
+
+							<div class="fr">
+								<button type="button" onclick="javascript:fnExcel(1, sheetDtl);" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDivDtl" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

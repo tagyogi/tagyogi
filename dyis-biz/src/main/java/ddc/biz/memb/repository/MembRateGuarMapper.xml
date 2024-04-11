@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.memb.repository.MembRateGuarMapper">
+
+	<!-- 조합원보증요율 현황 조회 -->
+	<select id="selectMembRateGuarList" parameterType="Map" resultType="camelMap">
+		/* MembRateGuarMapper.selectMembRateGuarList */
+		SELECT
+			R.MEMB_NO
+			, M.MEMB_NM
+			, M.CEO_NM
+			, M.BIZ_NO
+			, M.MAIN_BUSS_CD
+			, F_GET_CD_NM('MB02',M.MAIN_BUSS_CD) MAIN_BUSS_NM
+			, F_GET_PATTERN(R.APP_DT, 'DT') AS APP_DT
+			, R.FINAL_GRADE
+			, R.ORG_BID_RATE
+			, R.ORG_CONTR_RATE
+			, R.ORG_DEFECT_RATE
+			, R.ORG_PAY_RATE
+			, R.ORG_PERF_RATE
+			, R.ORG_DEBT_RATE
+			, R.ORG_EFFI_RATE
+			, R.ORG_PERM_RATE
+			, R.ORG_SELL_RATE
+			, R.ORG_REPE_RATE
+			, R.DISC_BID_RATE
+			, R.DISC_CONTR_RATE
+			, R.DISC_DEFECT_RATE
+			, R.DISC_PAY_RATE
+			, R.DISC_PERF_RATE
+			, R.DISC_DEBT_RATE
+			, R.DISC_EFFI_RATE
+			, R.DISC_PERM_RATE
+			, R.DISC_SELL_RATE
+			, R.DISC_REPE_RATE
+			, R.DISC_REASON
+          FROM GR_MEMB_RATE R,
+               MB_MASTER M
+         WHERE M.MEMB_NO = R.MEMB_NO
+     	<if test="sMembNo != null and sMembNo != ''"> 	<!-- 조합원번호 -->
+		   AND M.MEMB_NO = #{sMembNo}
+		</if>
+		<if test="sMembNm != null and sMembNm != ''"> 	<!-- 조합원명 -->
+		   AND M.MEMB_NM LIKE '%' || REPLACE( #{sMembNm},' ','' ) || '%'
+		</if>
+		<if test="sCeoNm != null and sCeoNm != ''"> 		<!-- 대표자명 -->
+		   AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+		</if>
+		<if test="sMainBussCd != null and sMainBussCd != ''"> <!-- 장르 -->
+		   AND M.MAIN_BUSS_CD = #{sMainBussCd}
+		</if>
+		<if test="sMembRateGuarStaDt != null and sMembRateGuarStaDt != ''"> 	<!-- 적용일자 시작일 -->
+		   AND R.APP_DT &gt;= REPLACE(#{sMembRateGuarStaDt},'-','')
+		</if>
+		<if test="sMembRateGuarEndDt != null and sMembRateGuarEndDt != ''"> 	<!-- 적용일자 종료일 -->
+		   AND R.APP_DT &lt;= REPLACE(#{sMembRateGuarEndDt},'-','')
+		</if>
+		<if test="sBizNo != null and sBizNo != ''"> 		<!-- 사업자등록번호 -->
+		    AND M.BIZ_NO = REPLACE( #{sBizNo},'-','' )
+		</if>
+		<if test="sLawNo != null and sLawNo != ''"> 		<!-- 법인등록번호 -->
+		    AND M.LAW_NO = REPLACE( #{sLawNo},'-','' )
+		</if>
+         ORDER BY R.APP_DT DESC, R.MEMB_NO
+	</select>
+
+	<!-- 조합원보증요율 상세 조회 -->
+	<select id="selectMembRateGuar" parameterType="Map" resultType="camelMap">
+		/* MembRateGuarMapper.selectMembRateGuar*/
+		SELECT
+			MEMB_NO
+			, F_GET_PATTERN(APP_DT, 'DT') AS APP_DT
+			, FINAL_GRADE
+			, ORG_BID_RATE
+			, ORG_CONTR_RATE
+			, ORG_DEFECT_RATE
+			, ORG_PAY_RATE
+			, ORG_PERF_RATE
+			, ORG_DEBT_RATE
+			, DISC_BID_RATE
+			, DISC_CONTR_RATE
+			, DISC_DEFECT_RATE
+			, DISC_PAY_RATE
+			, DISC_PERF_RATE
+			, DISC_DEBT_RATE
+			, DISC_REASON
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, ORG_EFFI_RATE
+			, ORG_PERM_RATE
+			, ORG_SELL_RATE
+			, ORG_REPE_RATE
+			, DISC_EFFI_RATE
+			, DISC_PERM_RATE
+			, DISC_SELL_RATE
+			, DISC_REPE_RATE
+			, PUB_BID_RATE
+			, PUB_CONTR_RATE
+			, PUB_DEFECT_RATE
+			, PUB_PAY_RATE
+			, PUB_PERF_RATE
+			, PUB_DEBT_RATE
+			, PUB_EFFI_RATE
+			, PUB_PERM_RATE
+			, PUB_SELL_RATE
+			, PUB_REPE_RATE
+		  FROM GR_MEMB_RATE
+		 WHERE MEMB_NO = #{membNo}
+		   AND APP_DT = REPLACE(#{appDt}, '-', '')
+	</select>
+
+	<!-- 조합원보증요율 등록 처리 -->
+	<insert id="insertMembRateGuar" parameterType="Map"  >
+		/* MembRateGuarMapper.insertMembRateGuar */
+		INSERT INTO GR_MEMB_RATE (
+			MEMB_NO
+			, APP_DT
+			, FINAL_GRADE
+			, ORG_BID_RATE
+			, ORG_CONTR_RATE
+			, ORG_DEFECT_RATE
+			, ORG_PAY_RATE
+			, ORG_PERF_RATE
+			, ORG_DEBT_RATE
+			, DISC_BID_RATE
+			, DISC_CONTR_RATE
+			, DISC_DEFECT_RATE
+			, DISC_PAY_RATE
+			, DISC_PERF_RATE
+			, DISC_DEBT_RATE
+			, DISC_REASON
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, ORG_EFFI_RATE
+			, ORG_PERM_RATE
+			, ORG_SELL_RATE
+			, ORG_REPE_RATE
+			, DISC_EFFI_RATE
+			, DISC_PERM_RATE
+			, DISC_SELL_RATE
+			, DISC_REPE_RATE
+			, PUB_BID_RATE
+			, PUB_CONTR_RATE
+			, PUB_DEFECT_RATE
+			, PUB_PAY_RATE
+			, PUB_PERF_RATE
+			, PUB_DEBT_RATE
+			, PUB_EFFI_RATE
+			, PUB_PERM_RATE
+			, PUB_SELL_RATE
+			, PUB_REPE_RATE
+		) VALUES (
+			#{membNo}
+			, REPLACE(#{appDt}, '-', '')
+			, #{finalGrade}
+			, #{orgBidRate}
+			, #{orgContrRate}
+			, #{orgDefectRate}
+			, #{orgPayRate}
+			, #{orgPerfRate}
+			, #{orgDebtRate}
+			, #{discBidRate}
+			, #{discContrRate}
+			, #{discDefectRate}
+			, #{discPayRate}
+			, #{discPerfRate}
+			, #{discDebtRate}
+			, #{discReason}
+			, SYSDATE
+			, #{userNm}
+			, SYSDATE
+			, #{userNm}
+			, #{orgEffiRate}
+			, #{orgPermRate}
+			, #{orgSellRate}
+			, #{orgRepeRate}
+			, #{discEffiRate}
+			, #{discPermRate}
+			, #{discSellRate}
+			, #{discRepeRate}
+			, #{pubBidRate}
+			, #{pubContrRate}
+			, #{pubDefectRate}
+			, #{pubPayRate}
+			, #{pubPerfRate}
+			, #{pubDebtRate}
+			, #{pubEffiRate}
+			, #{pubPermRate}
+			, #{pubSellRate}
+			, #{pubRepeRate}
+		)
+	</insert>
+
+	<!-- 조합원보증요율 수정 처리 -->
+	<update id="updateMembRateGuar" parameterType="Map"  >
+		/* MembRateGuarMapper.updateMembRateGuar */
+		UPDATE GR_MEMB_RATE
+		SET
+			APP_DT = REPLACE(#{appDt}, '-', '')
+			, FINAL_GRADE = #{finalGrade}
+			, ORG_BID_RATE = #{orgBidRate}
+			, ORG_CONTR_RATE = #{orgContrRate}
+			, ORG_DEFECT_RATE = #{orgDefectRate}
+			, ORG_PAY_RATE = #{orgPayRate}
+			, ORG_PERF_RATE = #{orgPerfRate}
+			, ORG_DEBT_RATE = #{orgDebtRate}
+			, DISC_BID_RATE = #{discBidRate}
+			, DISC_CONTR_RATE = #{discContrRate}
+			, DISC_DEFECT_RATE = #{discDefectRate}
+			, DISC_PAY_RATE = #{discPayRate}
+			, DISC_PERF_RATE = #{discPerfRate}
+			, DISC_DEBT_RATE = #{discDebtRate}
+			, DISC_REASON = #{discReason}
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{userNm}
+			, ORG_EFFI_RATE = #{orgEffiRate}
+			, ORG_PERM_RATE = #{orgPermRate}
+			, ORG_SELL_RATE = #{orgSellRate}
+			, ORG_REPE_RATE = #{orgRepeRate}
+			, DISC_EFFI_RATE = #{discEffiRate}
+			, DISC_PERM_RATE = #{discPermRate}
+			, DISC_SELL_RATE = #{discSellRate}
+			, DISC_REPE_RATE = #{discRepeRate}
+			, PUB_BID_RATE = #{pubBidRate}
+			, PUB_CONTR_RATE = #{pubContrRate}
+			, PUB_DEFECT_RATE = #{pubDefectRate}
+			, PUB_PAY_RATE = #{pubPayRate}
+			, PUB_PERF_RATE = #{pubPerfRate}
+			, PUB_DEBT_RATE = #{pubDebtRate}
+			, PUB_EFFI_RATE = #{pubEffiRate}
+			, PUB_PERM_RATE = #{pubPermRate}
+			, PUB_SELL_RATE = #{pubSellRate}
+			, PUB_REPE_RATE = #{pubRepeRate}
+		WHERE MEMB_NO = #{membNo}
+  		  AND APP_DT = REPLACE(#{orgAppDt}, '-', '')
+	</update>
+
+	<!-- 조합원보증요율 삭제 처리 -->
+	<delete id="deleteMembRateGuar" parameterType="Map"  >
+		/* MembRateGuarMapper.deleteMembRateGuar */
+		DELETE FROM GR_MEMB_RATE
+		 WHERE MEMB_NO = #{membNo}
+  		   AND APP_DT = REPLACE(#{appDt}, '-', '')
+	</delete>
+
+		<!-- 신용도별 요율 조회 -->
+	<select id="selectGuarRate" parameterType="Map" resultType="camelMap">
+		/* ConfGuarRateMapper.selectGuarRate */
+		SELECT
+			FINAL_GRADE
+            , BID_RATE
+            , CONTR_RATE
+            , DEBT_RATE
+            , DEFECT_RATE
+            , DELAY_INTER_RATE
+            , MORT_DISC_RATE
+            , PAY_RATE
+            , PERF_KOCCA_RATE
+            , PERF_RATE
+            , EFFI_RATE
+            , PERM_RATE
+            , SELL_RATE
+            , REPE_RATE
+            , NVL((SELECT EXEM_LIMIT_AMT
+            		 FROM CM_RISK
+                    WHERE APP_DT = (SELECT MAX(APP_DT)
+                                      FROM CM_RISK
+                                     WHERE APP_DT &lt;= SUBSTR (REPLACE(#{appDt},'-',''), 1, 8))), 50000000) EXEM_LIMIT_AMT
+            , (SELECT (CASE WHEN #{guarType} = '11' THEN DISC_BID_RATE
+                            WHEN #{guarType} = '12' THEN DISC_CONTR_RATE
+                            WHEN #{guarType} = '13' THEN DISC_DEFECT_RATE
+                            WHEN #{guarType} = '14' THEN DISC_PAY_RATE
+                            WHEN #{guarType} = '15' THEN DISC_PERF_RATE
+                            WHEN #{guarType} = '21' THEN DISC_DEBT_RATE
+                            WHEN #{guarType} = '31' THEN DISC_EFFI_RATE
+                            WHEN #{guarType} = '32' THEN DISC_PERM_RATE
+                            WHEN #{guarType} = '33' THEN DISC_SELL_RATE
+                            WHEN #{guarType} = '34' THEN DISC_REPE_RATE
+                        END)
+                 FROM GR_MEMB_RATE
+                WHERE APP_DT = (SELECT MAX(APP_DT)
+                                 FROM GR_MEMB_RATE
+                                WHERE APP_DT &lt;= SUBSTR (REPLACE(#{appDt},'-',''), 1, 8)
+                                  AND MEMB_NO = #{membNo})
+                  AND MEMB_NO = #{membNo}) DISC_RATE
+          FROM CM_GUAR_RATE
+         WHERE APP_DT = (SELECT MAX (APP_DT)
+                           FROM CM_GUAR_RATE
+                          WHERE
+		                    <choose>
+		                        <when test="appDt == null">    /** 기간 : 거래일기준 */
+		                        APP_DT &lt;= TO_CHAR(SYSDATE, 'yyyyMMdd')
+		                        </when>
+		                    </choose>
+		                    <choose>
+		                        <when test="appDt != null and appDt != ''">    /** 기간 : 등록일기준 */
+		                        APP_DT &lt;= SUBSTR(REPLACE(#{appDt},'-',''), 1, 8)
+		                        </when>
+		                    </choose>
+           				 )
+           <if test="finalGrade != null and finalGrade != ''">
+		   AND FINAL_GRADE = #{finalGrade}
+		   </if>
+	</select>
+
+</mapper>

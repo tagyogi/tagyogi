@@ -1,0 +1,211 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : subPage.html
+	파일명 : 서브페이지
+	업무명 : 서브페이지
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/basicLayout" xml:lang="ko">
+	<body>
+   		<script th:inline="javascript">
+	    /*<![CDATA[*/
+	    	var membNo = /*[[${session.membNo}]]*/;
+	    	var bizNo =  /*[[${session.bizNo}]]*/;
+	    	var menuCd =  /*[[${menuCd}]]*/;
+	        $(document).ready(function () {
+				//alert(menuCd);
+				
+				//var sKeyword = $("#sKeyword").val();
+alert(menuCd);
+				param = {menuCd:menuCd};
+				obj = {url:"/kocfc.do", param:param, callBack:fnPageCallBack, msgYn:"N", sessYn:"N", loadYn:"N"};
+				com.fnAjaxHtml(obj); 
+				
+            });
+        
+			var fnPageCallBack = function(resData){
+				//console.log(resData);
+				$("#contFrme").html(resData);
+			
+			}
+			
+   		 /*]]>*/
+		</script>
+		<form name="pageFrm" id="pageFrm" method="POST" onSubmit="return false;">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<input type="hidden" name="menuCd" id="menuCd" value=""/>
+			<input type="hidden" name="param" id="param" value=""/>
+		</form>	
+		<form name="certFrm" id="certFrm" method="post" onSubmit="return false;">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<input type="hidden" name="certSingData" id="certSingData" value=""/>
+		</form>	
+		<div id="wrap">
+	        <ul id="skip">
+	            <li><a href="#content">본문바로가기</a></li>
+	            <li><a href="#gnb">주메뉴바로가기</a></li>
+	        </ul>
+	        <header>
+				<!-- 상단 pc 버전 -->
+	            <div class="inner">
+	                <div id="gnb" class="gnb flex-box">
+	                    <h1 class="logo">
+	                        <a href="/main.do"><img src="../images/logo.png" alt="logo-한국콘텐츠공제조합"></a>
+	                    </h1>
+	                    <nav>
+							<ul class="flex-box menu-dept1">
+							<th:block th:each="topItem : ${menuTopList}">
+								<li th:if="${#strings.equals(topItem.menuYn, 'Y')}">
+									<a href="#;" class="ko-bold"><span th:id="'topMenu'+${topItem.menuCd}" th:text="${topItem.menuNm}" ></span></a>
+	                                <ul class="menu-dept2">
+										<th:block th:each="item : ${menuList}"> 
+										    <li th:if="${#strings.equals(topItem.menuCd, item.parentCd) && #strings.equals(item.menuYn, 'Y')}">
+												<!-- 2depth 명 -->
+												<a href="javascript:void(0);" th:if="${!#strings.equals(item.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${item.refMenuCd}]])" th:text="${item.menuNm}" th:title="${item.menuNm}" th:id="${item.menuCd}" style="cursor:pointer"></a> 
+												<a href="javascript:void(0);" th:if="${#strings.equals(item.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${item.menuCd}]])"    th:text="${item.menuNm}" th:title="${item.menuNm}" th:id="${item.menuCd}" style="cursor:pointer"></a> 
+												 <!-- 3depth 명 -->
+												<!--<a href="javascript:void(0);" th:onclick="fnPage([[${item.refMenuCd}]])" th:text="${item.menuNm}" th:title="${item.menuNm}" th:id="${item.menuCd}" style="cursor:pointer"></a>-->
+											</li>
+	                                	</th:block>
+									</ul>
+	                                
+	                            </li>
+							</th:block>
+	                        </ul>
+	                    </nav>
+	                    <ul class="nav-right">
+							<li><a href="#;" onclick="fnPage('20601'); return false;" class="ko-medium login" id="btnLogin" style="display:none">로그인</a></li>
+							<li><a href="/login/logout.do" class="ko-medium login" id="btnLogout" style="display:none">로그아웃</a></li>
+							<li><a href="#;" onclick="fnPage('20602'); return false;" class="ko-medium login" id="btnMypage" style="display:none" >마이페이지</a></li>
+						
+	                        <li><a href="javascript:void(0);" onclick="fnPage('20207'); return false;" class="ko-medium search">검색</a></li>
+	                        <li><a href="https://939.co.kr/dongyangis/" target="_blank" class="ko-medium remote">원격지원</a></li>
+	                        <li><a href="javascript:com.fnSubPage('20601')" class="ko-medium remote">원격지원1</a></li>
+	                    </ul>
+	                    <button class="side-bar" type="button"></button>
+	                </div>
+	            </div>
+	            <!-- 상단 모바일 버전 -->
+	            <div class="gnb-layout"></div>
+	            <div class="m-gnb-wrap"> 
+	                <div class="m-top">
+	                    <div class="side-close">
+	                        <button type="button"></button>
+	                    </div>
+	                    <p>홍길동님, 반갑습니다.</p>
+	                    <div class="user">
+	                        <p><a href="javascript:fnTest();" class="ko-medium">로그인</a></p>
+	                        <p><a href="#;" class="ko-medium">검색</a></p>
+	                        <p><a href="#;" class="ko-medium">원격지원</a></p>
+	                    </div>
+	                </div>
+	                <div class="m-gnb">
+	                    <ul class="menu-dept1">
+							<th:block th:each="topItem : ${menuTopList}">
+								<li th:if="${#strings.equals(topItem.menuYn, 'Y')}">
+									<!-- 1depth -->
+									<a href="#;" class="ko-bold init"><span th:id="'topMenu'+${topItem.menuCd}" th:text="${topItem.menuNm}" ></span></a>
+									<!-- 2depth -->
+	                                <ul class="menu-dept2">
+										<th:block th:each="depth2 : ${menuList}"> 
+											<li th:if="${#strings.equals(topItem.menuCd,depth2.parentCd) && #strings.equals(depth2.menuYn, 'Y') && #strings.equals(depth2.menuStep.toString(), '2')}">
+												<a href="javascript:void(0);" th:if="${!#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer"></a> <!-- 2depth 명 -->
+												<a href="javascript:void(0);" th:if="${#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${depth2.menuCd}]])" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer"></a> <!-- 2depth 명 -->
+												<!-- 3depth -->
+												<ul th:if="${depth2.depth3Cnt > 0}" class="menu-dept3 back-gray" >
+													<th:block th:each="depth3 : ${menuList}">
+														 <li th:if="${#strings.equals(depth2.menuCd, depth3.parentCd) && #strings.equals(depth3.menuYn, 'Y') && #strings.equals(depth3.menuStep.toString(), '3')}" >
+															 <a href="javascript:void(0);" th:onclick="fnPage([[${depth3.menuCd}]])" th:text="${depth3.menuNm}" th:title="${depth3.menuNm}" style="cursor:pointer"></a> <!-- 3depth 명 -->
+														 </li>
+													</th:block>		
+												</ul>		
+											</li>
+	                                	</th:block>
+									</ul>
+	                                
+	                            </li>
+							</th:block>
+	                    </ul>
+	                </div>
+	            </div>
+	            <div class="overlay"></div>
+					<div class="lnb-wrap hide">
+						<th:block th:each="topItem : ${menuTopList}">
+	                    <ul  th:id="lnb + ${topItem.menuCd}" class="lnb menu1">
+							<th:block th:each="depth2 : ${menuList}"> 
+								<th:block th:if="${#strings.equals(topItem.menuCd, depth2.parentCd) && #strings.equals(depth2.menuYn, 'Y') && #strings.equals(depth2.menuStep.toString(),'2')}" > 
+		                            <li th:if="${#strings.equals(depth2.menuYn, 'Y') || #strings.equals(depth2.parentCd, '206')}" class="ko-medium lnb-dept1">
+										<a href="javascript:void(0);" th:if="${!#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer" class="init"></a> <!-- 2depth 명 -->
+										<a href="javascript:void(0);" th:if="${#strings.equals(depth2.depth3Cnt.toString(), '0')}" th:onclick="fnPage([[${depth2.menuCd}]])" th:text="${depth2.menuNm}" th:title="${depth2.menuNm}" style="cursor:pointer"></a> <!-- 2depth 명 -->
+										<ul th:if="${depth2.depth3Cnt > 0}" class="lnb-dept2" >
+											<th:block th:each="depth3 : ${menuList}">
+										 		<li th:if="${#strings.equals(depth2.menuCd, depth3.parentCd) && #strings.equals(depth3.menuYn, 'Y') && #strings.equals(depth3.menuStep.toString(), '3')}">
+											 		<a href="javascript:void(0);" th:onclick="fnPage([[${depth3.menuCd}]])" th:text="${depth3.menuNm}" th:title="${depth3.menuNm}" style="cursor:pointer"></a> <!-- 3depth 명 -->
+										 		</li>
+											</th:block>	
+		                                </ul>
+		                            </li>
+								</th:block>
+                            </th:block>
+                        </ul>
+                        </th:block>
+                    </div>
+                            
+	        </header>
+	        <!-- 헤더 끝 -->
+			<main class="main" id="contFrme">
+				 
+	        </main>
+	        <!-- 가운데 부분 끝 -->
+			<footer>
+	            <div class="footer-btn-wrap">
+	                <div class="inner">
+	                    <div class="footer-btn">
+	                        <span class="ko-medium pdl0"><a href="javascript:void(0);" onClick="fnPage('20510'); return false;" class=" color-up">개인정보처리방침</a></span>
+	                        <span><a href="javascript:void(0);" onClick="fnPage('20202'); return false;" class="ko-medium">질문과답변</a></span>
+	                        <span><a href="#;" class="ko-medium">Contact us</a></span>
+	                        <span><a href="javascript:void(0);" onClick="fnPage('20508'); return false;" class="ko-medium">찾아오시는길</a></span>
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="footer-cont">
+	                <div class="inner flex-box jc-between">
+	                    <ul>
+	                        <li>서울특별시 강서구 공항대로 219 (마곡동), 센테니아 13층(우 07802)
+	                        </li>
+	                        <li>
+	                            <span class="pdl0">대표번호 : 02- 3661-5160</span>
+	                            <span>팩스 : 02-3661-5388</span>
+	                            <span>www.kocfc.or.kr</span>
+	                            <span>사업자등록번호 : 105-82-21572</span>
+	                        </li>
+	                        <li class="ko-light">Copyright(C)2013 Korea Content Financial Cooperative. All rights reserved.
+	                        </li>
+	                    </ul>
+	                </div><!--inner-->
+	            </div>
+        	</footer>
+	        
+	        <div id="quick-menu">
+	            <button type="button" class="quick-open">Quick Menu</button>
+	            <button type="button" class="quick-close"></button>
+	            <ul>
+	                <li><a href="#;" class="quick1">사이버보증</a></li>
+	                <li><a href="#;" class="quick2">서식자료실</a></li>
+	                <li><a href="#;" class="quick3">보증증권<br>진위확인</a></li>
+	                <li><a href="#;" class="quick4">출자좌수<br>증명원</a></li>
+	            </ul>
+	            <button type="button" class="quick-top" onclick="goTop()">TOP</button>
+	        </div>
+	    </div>
+	    <div id="ele_loading" style="display:none">
+			<img src="/images/loading.gif" onerror="" alt="로딩바"/>
+		</div>
+		<div id="dialog" style="display:none">
+			<iframe name="popFrm" id="popFrm" style="width: 100%; height: 100%; overflow: auto; border: none;" title="팝업"></iframe>
+		</div>
+	</body>
+
+</html>

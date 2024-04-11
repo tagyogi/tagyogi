@@ -1,0 +1,769 @@
+<!--
+	파일정보 : membReq/membReqIns.html
+	파일명 : membReq
+	업무명 : 공제가입등록 수정
+	생성자 : 김상민1
+	생성일 : 2023-05-04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB01:MB02:MB03:CM02:MB32:MB23", gridNoList : ""}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//보조장르 클릭 이벤트
+				$(document).on("click", "input[name=subBussCd]", function(e){
+					//주장르, 보조장르 같을때
+					if($(this).val() === $("#mainBussCd").val()){
+						e.preventDefault();
+						alert("주장르와 보조장르는 중복입력될 수 없습니다.");
+		                return;
+					}
+					//기타 체크됬을때
+					if($(this).val() === "14")	$("#bussEtc").prop("disabled", !$(this).is(":checked"));
+				});
+
+				//주장르 클릭 이벤트
+				$("#mainBussCd").on({
+					//클릭했을때 이벤트
+					click: function(){
+						bfClickVal = $(this).val();	//select 박스 클릭시 최초값 저장
+					},
+
+					//변경했을때 이벤트
+					change: function(){
+						var selectVal = $(this).val();
+						$("input[name=subBussCd]:checked").each(function(){
+							if(selectVal === $(this).val()){
+								$("#mainBussCd").val(bfClickVal);	//변경전 값으로 변경
+								alert("주장르와 보조장르는 중복입력될 수 없습니다.");
+				                return;
+							}
+						});
+					}
+				});
+
+				//코드값 처리
+				com.fnCodeSelectBox("MB02", "mainBussCd", 1, "");	//주장르
+				com.fnCodeSelectBox("MB23", "postGetCd", 1, "");	//우편수령처
+				com.fnCodeSelectBox("CM02", "bankCd", 1, "");		//거래은행
+				com.fnCodeSelectBox("MB03", "procStat", 0, "");		//처리상태
+
+				com.fnCodeCheckBox("MB02", "span_subBussCd", "subBussCd", false); //보조장르
+
+				//동적 첨부파일 생성(동적)
+				com.fnFileSet("MB32", "myUpload");
+
+				//화면 처리 (공제가입등록 정보 조회)
+				var param = { bizNo : $("#bizNo").val(), atthType : $("#atthType").val() };
+				obj = {url:"/membReq/selectMembReq.do", param:param, callBack:fnSelectCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			});
+
+
+			//공제가입등록 정보 조회 콜백
+			var fnSelectCallBack = function(resData){
+				//console.log(resData);
+				var data = resData.data;
+				var invtData = resData.invtData;
+
+				//기본 데이터
+				com.fnSetKeyVal(data);
+
+				//법인번호
+				var lawNo = data.lawNo;
+				if(!com.fnIsEmpty(lawNo)){
+					$("#lawNo1").val(lawNo.substring(0,6));
+					$("#lawNo2").val(lawNo.substring(7));
+				}
+				//주민번호
+				var ceoSsn = data.ceoSsn;
+				if(!com.fnIsEmpty(ceoSsn)){
+					$("#ceoSsn1").val(ceoSsn.substring(0,6));
+					$("#ceoSsn2").val(ceoSsn.substring(7));
+				}
+
+				//checkBox 관련
+				com.checkBoxCheckValue(data.knowCds, "knowCd");			//알게된 사유
+				com.checkBoxCheckValue(data.subBussCds, "subBussCd");	//보조장르
+				com.checkBoxCheckValue(data.smsYn, "smsYn");			//SMS수신
+				com.checkBoxCheckValue(data.emailYn, "emailYn");		//이메일수신
+
+				if($("input[name=subBussCd][value=14]").is(":checked"))	$("#bussEtc").prop("disabled", false);
+
+				//좌당지분액 정보
+				var faceAmt = com.addComma(invtData.faceAmt);
+				$("#faceAmt").val(invtData.faceAmt);	//좌당지분액
+				$("#ele_faceAmt").text('(1좌당 '+faceAmt+'만원)');	//좌당지분액
+
+				//심사서류정보(파일)
+				com.fnIbsUploadViewOne(resData.fileList, "upt");
+
+				$("input[name=addrDiv][value="+resData.data.addrDiv+"]").prop("checked", true);
+				$("input[name=bussAddrDiv][value="+resData.data.bussAddrDiv+"]").prop("checked", true);
+				$("input[name=ceoAddrDiv][value="+resData.data.ceoAddrDiv+"]").prop("checked", true);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+				
+			}
+
+			//출자좌수 입력시 출자금액 자동입력
+			var fnSetInvtAmt = function(val) {
+				var investCnt = Number(com.rmComma(val));
+			    var faceAmt = Number($("#faceAmt").val());
+			    var investAmt = investCnt * faceAmt;
+			    $("#investAmt").val(com.addComma(investAmt));
+			}
+			
+			//가입완료일때만 알림톡정보 UI표출
+			var fnSetAlramInfo = function(val){
+				if(val === "90") $("#alarmBox").show();
+				else{
+					$("#talkpers").val('').trigger('change');
+					$("#alarmBox").hide();
+				} 
+			}
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["membNm", "bizNo1", "bizNo2", "bizNo3", "ceoNm", "ceoCellNo", "ceoSsn1", "ceoSsn2", "telNo", "mainBussCd", "bussStartDt",
+							   "postNo", "email", "investCnt", "reqDt", "procStat", "procDt", "histReason"];
+				//var valChks = [];
+
+				if(com.fnValChk(valChks)){
+					//가입(출자) 신청서 파일 체크
+					var fileList = $("#docFileJR").IBUpload('fileList');
+					if(fileList.length === 0){
+						alert("가입(출자)신청서 파일을 첨부하십시오.");
+						return;
+					}
+
+					let procStat = $("#procStat").val();
+					let msg = "수정 처리 하시겠습니까?";
+					if(procStat === "90") msg = "가입완료 처리시 조합등록 처리가 진행됩니다\n수정 처리 하시겠습니까?";
+
+					if(confirm(msg)){
+						//첨부파일 첨부한 순서 코드따오기 (물리적저장순서 맞춰야해서 필수)
+						com.fnGetModCds("docFile");
+
+						$("#lawNo").val($("#lawNo1").val()+$("#lawNo2").val());
+						$("#ceoSsn").val($("#ceoSsn1").val()+$("#ceoSsn2").val());
+
+						//보조장르
+						let subBussCds = "";
+						$("input[name=subBussCd]:checked").each(function(){
+							if(subBussCds === "") subBussCds = $(this).val();
+							else subBussCds += ","+$(this).val();
+						});
+						$("#subBussCds").val(subBussCds);
+
+						//알게된 사유
+						let knowCds = "";
+						$("input[name=knowCd]:checked").each(function(){
+							if(knowCds === "") knowCds = $(this).val();
+							else knowCds += ","+$(this).val();
+						});
+						$("#knowCds").val(knowCds);
+
+
+						obj = {url:"/membReq/updateMembReq.do", formId:"saveFrm", fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				
+				if(resData.resultCode === 0) {
+					if($("#procStat").val() === "90"){
+						//저장성공시 알림톡발송
+						/*
+						param1 조합원의 한국콘텐츠공제조합 가입이 완료되었습니다.
+						*/
+						var paramsArray = [
+						  $("#membNm").val(), //조합원명
+						];
+						
+						// 배열을 콜론으로 구분된 문자열로 합치기
+						var paramVal = paramsArray.join(':');
+						param = {msgSeq:"1", membNo:"", param:paramVal, telNo:$("#talkTel").val(), telNm:$("#talkNm").val(), msgYn: "N"}
+						com.fnSendTalkMsg(param);
+					}
+					
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+				}
+			};
+
+			//주소 팝업 열기
+			var addrTagt = "";
+			var fnAddrSerch = function(tagt){
+				addrTagt = tagt;
+				com.fnAddrSerch('popup');
+			}
+
+			//주소 검색 콜백
+			var fnAddrCallBack = function(resData){
+
+				//addrPopGubun(01: 주사무소, 02:사업장, 03: 대표자)
+				if(addrTagt === "01"){	//주사무소
+
+					//console.log(resData);
+					$("#postNo").val(resData.zipNo); //우편
+					$("#doroCd").val(resData.rnMgtSn); //도로코드
+					$("#doroNm").val(resData.roadAddrPart1); //도로명
+					$("#doroBunho").val(resData.doroBunho); //도로번지
+					$("#doroDong").val(resData.emdNm); //주소동
+					$("#doroBdNo").val(resData.doroBdNo); //주소번지
+
+					$("#addrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+					$("#addr1").val(resData.jibunAddr);
+
+				}else if(addrTagt === "02"){	//사업장
+
+					//console.log(resData);
+					$("#bussPostNo").val(resData.zipNo); //우편
+					$("#bussDoroCd").val(resData.rnMgtSn); //도로코드
+					$("#bussDoroNm").val(resData.roadAddrPart1); //도로명
+					$("#bussDoroBunho").val(resData.doroBunho); //도로번지
+					$("#bussDoroDong").val(resData.emdNm); //주소동
+					$("#bussDoroBdNo").val(resData.doroBdNo); //주소번지
+
+					$("#bussAddrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+					$("#bussAddr1").val(resData.jibunAddr);
+
+				}else if(addrTagt === "03"){	//대표자
+					//console.log(resData);
+					$("#ceoPostNo").val(resData.zipNo); //우편
+					$("#ceoDoroCd").val(resData.rnMgtSn); //도로코드
+					$("#ceoDoroNm").val(resData.roadAddrPart1); //도로명
+					$("#ceoDoroBunho").val(resData.doroBunho); //도로번지
+					$("#ceoDoroDong").val(resData.emdNm); //주소동
+					$("#ceoDoroBdNo").val(resData.doroBdNo); //주소번지
+
+					$("#ceoAddrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+					$("#ceoAddr1").val(resData.jibunAddr);
+
+				}
+
+				addrTagt = "";	//전역변수 조기화
+			}
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="bizNo" id="bizNo" th:value="${paramMap.bizNo}" />
+			<input type="hidden" name="lawNo" id="lawNo" value="" />
+			<input type="hidden" name="ceoSsn" id="ceoSsn" value="" />
+			<input type="hidden" name="subBussCds" id="subBussCds" value="" /> <!-- 보조장르 -->
+			<input type="hidden" name="knowCds" id="knowCds" value="" /> <!-- 알게된사유 -->
+
+			<input type="hidden" name="faceAmt" id="faceAmt" value="" />
+			<input type="hidden" name="atthNo" id="atthNo"/>
+			<input type="hidden" name="modFileCds" id="modFileCds" />
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>	<!-- 메뉴관리 > 관련첨부코드 -->
+
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:50%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">업체정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:70px;">
+								<col style="width:70px;">
+								<col style="width:220px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th colspan="2"><span class="reqMark">*</span>업체명</th>
+									<td>
+										<input type="search" name="membNm" id="membNm" size="19" maxlength="25" value="" title="업체명"/>
+									</td>
+									<th><span class="reqMark">*</span>대표자</th>
+									<td >
+										<input type="search" name="ceoNm" id="ceoNm" size="8" maxlength="30" value="" title="대표자" style="width:150px"/>
+									</td>
+								</tr>
+								<tr>
+									<th colspan="2"><span class="reqMark">*</span>사업자번호</th>
+									<td><span id="ele_bizNo"></span></td>
+									<th>법인번호</th>
+									<td>
+										<input type="search" name="lawNo1" id="lawNo1" size="6" maxlength="6" value="" style="float:none; width:80px;" onKeyUp="com.fnOnlyNum(this);"/>
+					                    -
+					                    <input type="search" name="lawNo2" id="lawNo2" size="7" maxlength="7" value="" style="float:none; width:90px;" onKeyUp="com.fnOnlyNum(this);"/>
+									</td>
+								</tr>
+								<tr>
+									<th colspan="2"><span class="reqMark">*</span>휴대전화</th>
+									<td>
+										<input type="search" name="ceoCellNo" id="ceoCellNo" size="14" maxlength="14" value="" title="휴대전화" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)"  style="width:140px"/>
+									</td>
+									<th><span class="reqMark">*</span>주민번호</th>
+									<td>
+										<input type="search" name="ceoSsn1" id="ceoSsn1" size="6" maxlength="6" value="" title="주민번호" style="float:none; width:80px;" onKeyUp="com.fnOnlyNum(this);"/>
+					                    -
+					                    <input type="search" name="ceoSsn2" id="ceoSsn2" size="7" maxlength="7" value="" title="주민번호" style="float:none; width:90px;" onKeyUp="com.fnOnlyNum(this);"/>
+									</td>
+								</tr>
+								<tr>
+									<th rowspan="3">주사무소<br>(본사)</th>
+									<th><span class="reqMark">*</span>주소</th>
+									<td colspan="3">
+										<!--<input type="hidden" name="addrDiv" value="DR" />-->
+										<input type="hidden" name="doroCd" id="doroCd" title="" />
+										<input type="hidden" name="doroNm" id="doroNm" title="" />
+										<input type="hidden" name="doroBunho" id="doroBunho" title="" />
+										<input type="hidden" name="doroDong" id="doroDong" title="" />
+										<input type="hidden" name="doroBdNo" id="doroBdNo" title="" />
+										<ul>
+											<li>
+												<label><input type="radio" name="addrDiv" value="DR" class="input1"><span>도로</span></label>
+												<input type="search" name="postNo" id="postNo" title="우편번호" style="width:60px" readonly/>
+												<button type="button" class="btn icoSearch" onclick="fnAddrSerch('01');">주소검색</button>
+												<input type="search" name="addrFullDoro" id="addrFullDoro" title="도로주소" style="width:220px;" readonly/>
+												<input type="search" name="doroDtl" id="doroDtl" title="도로상세" style="width:130px;" maxlength="50"/>
+											</li>
+											<li class="mt3">
+												<!--지번주소-->
+												<label><input type="radio" name="addrDiv" value="JB" class="input1" ><span>지번</span></label>
+												<!--<input type="text" name="addrFull" id="addrFull" title="지번주소" style="width:400px;" readonly/>-->
+												<input type="text" name="addr1" id="addr1" title="" style="width:315px;" readonly/>
+												<input type="text" name="addr2" id="addr2" title="" style="width:130px;" maxlength="50"/>
+											</li>
+										</ul>
+
+									</td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>전화번호</th>
+									<td>
+										<input type="search" name="telNo" id="telNo" size="13" maxlength="13" value="" title="전화번호" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+									</td>
+									<th>팩스번호</th>
+									<td>
+										<input type="search" name="faxNo" id="faxNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+									</td>
+								</tr>
+								<tr>
+									<th>홈페이지</th>
+									<td colspan="4">
+										<input type="search" name="homepage" id="homepage" size="25" maxlength="50" value="" style="width:190px"/>
+									</td>
+								</tr>
+								<tr>
+									<th rowspan="3">사업장<br>(공장,지점)</th>
+									<th>주소</th>
+									<td colspan="5">
+										<!--<input type="hidden" name="bussAddrDiv" value="DR" />-->
+										<input type="hidden" name="bussDoroCd" id="bussDoroCd" title="" />
+										<input type="hidden" name="bussDoroNm" id="bussDoroNm" title="" />
+										<input type="hidden" name="bussDoroBunho" id="bussDoroBunho" title="" />
+										<input type="hidden" name="bussDoroDong" id="bussDoroDong" title="" />
+										<input type="hidden" name="bussDoroBdNo" id="bussDoroBdNo" title="" />
+										<ul>
+											<li>
+												<label><input type="radio" name="bussAddrDiv" value="DR" class="input1"><span>도로</span></label>
+												<input type="search" name="bussPostNo" id="bussPostNo" title="우편번호" style="width:60px" readonly/>
+												<button type="button" class="btn icoSearch" onclick="fnAddrSerch('02');">주소검색</button>
+												<input type="search" name="bussAddrFullDoro" id="bussAddrFullDoro" title="도로주소" style="width:220px;" readonly/>
+												<input type="search" name="bussDoroDtl" id="bussDoroDtl" title="도로상세" style="width:130px;" maxlength="50"/>
+											</li>
+											<li class="mt3">
+												<!--지번주소-->
+												<label><input type="radio" name="bussAddrDiv" value="JB" class="input1" ><span>지번</span></label>
+												<input type="text" name="bussAddr1" id="bussAddr1" title="" style="width:315px;" readonly/>
+												<input type="text" name="bussAddr2" id="bussAddr2" title="" style="width:130px;" maxlength="50"/>
+											</li>
+										</ul>
+									</td>
+								</tr>
+								<tr>
+									<th>전화번호</th>
+									<td>
+										<input type="search" name="bussTelNo" id="bussTelNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+									</td>
+									<th>팩스번호</th>
+									<td>
+										<input type="search" name="bussFaxNo" id="bussFaxNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+									</td>
+								</tr>
+								<tr>
+									<th>홈페이지</th>
+									<td colspan="3">
+										<input type="search" name="bussHomepage" id="bussHomepage" size="25" maxlength="50" value="" style="width:190px"/>
+									</td>
+								</tr>
+								<tr>
+									<th rowspan="3">대표자<br>(자택)</th>
+									<th>주소</th>
+									<td colspan="5">
+										<!--<input type="hidden" name="ceoAddrDiv" value="DR" />-->
+										<input type="hidden" name="ceoDoroCd" id="ceoDoroCd" title="" />
+										<input type="hidden" name="ceoDoroNm" id="ceoDoroNm" title="" />
+										<input type="hidden" name="ceoDoroBunho" id="ceoDoroBunho" title="" />
+										<input type="hidden" name="ceoDoroDong" id="ceoDoroDong" title="" />
+										<input type="hidden" name="ceoDoroBdNo" id="ceoDoroBdNo" title="" />
+										<ul>
+											<li>
+												<label><input type="radio" name="ceoAddrDiv" value="DR" class="input1"><span>도로</span></label>
+												<input type="search" name="ceoPostNo" id="ceoPostNo" title="우편번호" style="width:60px" readonly/>
+												<button type="button" class="btn icoSearch" onclick="fnAddrSerch('03');">주소검색</button>
+												<input type="search" name="ceoAddrFullDoro" id="ceoAddrFullDoro" title="도로주소" style="width:220px;" readonly/>
+												<input type="search" name="ceoDoroDtl" id="ceoDoroDtl" title="도로상세" style="width:130px;" maxlength="50"/>
+											</li>
+											<li class="mt3">
+												<!--지번주소-->
+												<label><input type="radio" name="ceoAddrDiv" value="JB" class="input1" ><span>지번</span></label>
+												<input type="text" name="ceoAddr1" id="ceoAddr1" title="" style="width:315px;" readonly/>
+												<input type="text" name="ceoAddr2" id="ceoAddr2" title="" style="width:130px;" maxlength="50"/>
+											</li>
+										</ul>
+									</td>
+								</tr>
+								<tr>
+									<th>전화번호</th>
+									<td>
+										<input type="search" name="ceoTelNo" id="ceoTelNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+									</td>
+									<th>팩스번호</th>
+									<td>
+										<input type="search" name="ceoFaxNo" id="ceoFaxNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+									</td>
+								</tr>
+								<tr>
+									<th>이메일</th>
+									<td colspan="3">
+										<input type="search" name="ceoEmail" id="ceoEmail" size="25" maxlength="50" value="" style="width:190px;"/>
+									</td>
+								</tr>
+								<tr>
+									<th colspan="2"><span class="reqMark">*</span>업체이메일</th>
+									<td >
+										<input type="search" name="email" id="email" size="25" maxlength="100" value="" title="업체이메일" style="width:190px;"/>
+									</td>
+									<th>우편수령처</th>
+									<td >
+										<select name="postGetCd" id="postGetCd" style="width:130px" title="우편수령처"></select>
+									</td>
+								</tr>
+								<tr>
+									<th colspan="2"><span class="reqMark">*</span>주장르</th>
+									<td>
+										<select name="mainBussCd" id="mainBussCd" style="width:120px" title="주장르"></select>
+									</td>
+									<th><span class="reqMark">*</span>사업게시일</th>
+									<td>
+										<input type="search" name="bussStartDt" id="bussStartDt" value="" title="사업게시일" style="width:100px" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'bussStartDt', 'yyyy-mm-dd')" />
+									</td>
+								</tr>
+								<tr>
+									<th colspan="2">보조장르</th>
+									<td colspan="3">
+										<span id="span_subBussCd"></span>
+										(<input type="text" name="bussEtc" id="bussEtc" size="50" maxlength="100" value="" style="width:140px; float:none;" disabled/>)
+									</td>
+								</tr>
+							</tbody>
+						</table>
+
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">신청 및 심사 정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:120px;">
+								<col style="width:200px;">
+								<col style="width:120px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr style="display:none;">
+									<th>전자 서명</th>
+									<td colspan="7"></td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>신청일자</th>
+									<td>
+										<input type="search" name="reqDt" id="reqDt" value="" title="신청일자" maxlength="10" style="width:100px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" th:value="${today}"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd')" />
+									</td>
+									<th><span class="reqMark">*</span>처리상태</th>
+									<td>
+										<select name="procStat" id="procStat" style="width:160px" title="처리상태" onchange="fnSetAlramInfo(this.value);"></select>
+									</td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>처리일자</th>
+									<td>
+										<input type="search" name="procDt" id="procDt" value="" title="처리일자" maxlength="10" style="width:100px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" th:value="${today}"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'procDt', 'yyyy-mm-dd')" />
+									</td>
+									<th>처리인</th>
+									<td id="procNm">
+										[[${session.userNm}]] ([[${session.userId}]])
+										<input type="hidden" name="procNm" th:value="${session.userNm}">
+									</td>
+								</tr>
+								<tr>
+									<th>심사내용</th>
+									<td colspan="7">
+										<textarea name="procCont" id="procCont" cols="100" rows="2"></textarea>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+
+						<!--수정사유 : s-->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">수정사유</h4>
+							</div>
+							<div>
+								<textarea id="histReason" name="histReason" title="수정사유" cols="10" rows="3"></textarea>
+							</div>
+						</section>
+						<!--수정사유 : e-->
+
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">추가정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="width:180px;">
+									<col style="width:90px;">
+									<col style="width:160px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th ><span class="reqMark">*</span>최초출자좌수</th>
+										<td>
+											<input type="search" name="investCnt" id="investCnt" size="5" maxlength="6" title="최초출자좌수" onkeyup="fnSetInvtAmt(this.value);com.makeComma(this);" value="" style="width:65px"/>
+											<div id="ele_faceAmt"></div>
+										</td>
+										<th>최초출자금액</th>
+										<td>
+											<input type="search" name="investAmt" id="investAmt" size="15" maxlength="19" value="" style="width:80%" readonly="readonly"/> 원
+										</td>
+
+										<th>출자권종</th>
+										<td>
+											<input type="search" name="billTypeNm" id="billTypeNm" size="10" maxlength="100" value="" style="max-width: 200px;"/>
+										</td>
+									</tr>
+									<tr>
+										<th>자산총액</th>
+										<td>
+											<input type="search" name="assetAmt" id="assetAmt" size="17" maxlength="19" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%;"/> 원
+										</td>
+										<th>자본금총액</th>
+										<td>
+											<input type="search" name="capiAmt" id="capiAmt" size="17" maxlength="19" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%; max-width: 200px;"/> 원
+										</td>
+										<th>종업원수</th>
+										<td>
+											<input type="search" name="empCnt" id="empCnt" size="5" maxlength="6" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%;"/> 명
+										</td>
+									</tr>
+
+
+									<tr>
+										<th>주생산품</th>
+										<td>
+											<input type="search" name="mainProd" id="mainProd" size="20" maxlength="100" value=""/>
+										</td>
+										<th>업태</th>
+										<td colspan="3">
+											<input type="search" name="bussCond" id="bussCond" size="60" maxlength="100" value="" style="max-width: 200px;"/>
+										</td>
+									</tr>
+									<tr>
+										<th>년매출액</th>
+										<td>
+											<input type="search" name="yearSaleAmt" id="yearSaleAmt" size="17" maxlength="19" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%;"/> 원
+										</td>
+
+										<th>종목</th>
+										<td colspan="3">
+											<input type="search" name="bussEvent" id="bussEvent" size="60" maxlength="100" value="" style="max-width: 200px;"/>
+										</td>
+									</tr>
+									<tr>
+										<th>소속 협회/단체</th>
+										<td colspan="5">
+											<textarea name="belong" id="belong" cols="65" rows="2"></textarea>
+										</td>
+									</tr>
+									<!--<tr>
+										<th>거래은행</th>
+										<td>
+											<select name="bankCd" id="bankCd" style="width:140px" title="거래은행"></select>
+										</td>
+										<th>계좌번호</th>
+										<td>
+											<input type="search" name="acctNo" id="acctNo" size="15" maxlength="30" value=""/>
+										</td>
+										<th>예금주</th>
+										<td>
+											<input type="search" name="depoNm" id="depoNm" size="8" maxlength="50" value="" style="max-width: 200px;"/>
+										</td>
+									</tr>-->
+									<tr>
+										<th>업체담당자</th>
+										<td>
+											<input type="search" name="persNm" id="persNm" size="8" maxlength="30" value=""/>
+										</td>
+										<th>휴대전화</th>
+										<td>
+											<input type="search" name="persCellNo" id="persCellNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" />
+										</td>
+										<th>SMS수신</th>
+										<td>
+											<label><input type="checkbox" name="smsYn" value="Y"/>SMS수신</label>
+										</td>
+									</tr>
+									<tr>
+										<th>직위</th>
+										<td>
+											<input type="search" name="persPos" id="persPos" size="10" maxlength="25" value=""/>
+										</td>
+										<th>이메일</th>
+										<td>
+											<input type="search" name="persEmail" id="persEmail" size="25" maxlength="50" value=""/>
+										</td>
+										<th>이메일수신</th>
+										<td>
+											<label><input type="checkbox" name="emailYn" value="Y"/>이메일수신</label>
+										</td>
+									</tr>
+									<tr>
+										<th>알게된 사유</th>
+										<td colspan="5">
+											<div id="ele_checkBoxCm01" title="체크세로1" style="float:left; margin-left:10px;">
+												<input type="checkbox" name="knowCd" id="knowCd1" value="1">
+												&nbsp;&nbsp;인터넷검색&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd2" value="2">
+												&nbsp;&nbsp;지인 추천&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd3" value="3">
+												&nbsp;&nbsp;콘텐츠 관련기관 추천&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+											</div>
+
+											<div id="ele_checkBoxCm01" title="체크세로1" style="float:left; margin-left:10px;">
+												(검색어 :
+												<input type="search" name="webKeyword" id="webKeyword" size="20" value="" maxlength="25" style="width:150px; float:none; margin-left:0px;"/>
+												)
+												<br>
+												(추천인 :
+												<input type="search" name="recPers" id="recPers" size="20" value="" maxlength="20" style="width:150px; float:none; margin-left:0px;"/>
+												)
+												<br>
+												(추천인 :
+												<input type="search" name="recComp" id="recComp" size="20" value="" maxlength="20" style="width:150px; float:none; margin-left:0px;"/>
+												)
+												<br>
+											</div>
+
+											<div id="ele_checkBoxCm01" title="체크세로1" style="float:left; margin-left:10px;">
+												<input type="checkbox" name="knowCd" id="knowCd4" value="4">
+												&nbsp;&nbsp;조합 홍보물&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd5" value="5">
+												&nbsp;&nbsp;언론보도&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												<br>
+												<input type="checkbox" name="knowCd" id="knowCd6" value="6">
+												&nbsp;&nbsp;기타&nbsp;(<input type="search" name="etcCont" id="etcCont" size="20" value="" maxlength="25" style="width:200px; float:none; margin-left:0px;"/>)
+												<br>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">심사서류정보<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+							</section>
+							<table class="tbl" id="myUpload"></table>
+						</div>
+						
+						<!--알림톡정보 : s-->
+						<div id="alarmBox" class="wrapBox mt10" style="display:none;">
+							<th:block th:include="com/comAlarmTalk"></th:block> <!--알람톡정보 -->
+							<!--<th:block th:include="com/comAlarmTalk :: type('invtSeprt')"></th:block> -->
+						</div><!-- //wrapbox-->
+						<!--알림톡정보 : e-->
+						
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+				<!-- 처리 버튼 영역 -->
+				<div class="layer-flex mt50">
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">수정</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

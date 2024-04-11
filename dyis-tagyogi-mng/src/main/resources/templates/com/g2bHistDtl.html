@@ -1,0 +1,226 @@
+<!--
+	파일정보 : serchG2bBid.html
+	파일명 : g2b
+	업무명 : 전자보증이력 상세
+	생성자 : 권다슬
+	생성일 : 2023-08-09
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : ""}
+
+			$(document).ready(function(){
+				//console.log(/*[[${paramMap}]]*/);
+				fnG2bSearch();
+			});
+
+			//조회
+			var fnG2bSearch = function(){
+				obj = {url:"/guarElect/selectGuarElectHist.do", formId:"serchFrm", callBack:fnG2bSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxPost(obj);
+			}
+
+			//조회 콜백
+			var fnG2bSearchCallBack = function(resData){
+				console.log(resData);
+
+				//g2b 데이터 정리
+				//var g2b = makeG2bData(resData.data);
+				//console.log(g2b);
+
+				//g2b 데이터 set
+				//com.fnSetKeyVal(g2b);
+			}
+
+			
+
+		    /*]]>*/
+		</script>
+
+		<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="histSeq" id="histSeq" th:value="${paramMap.histSeq}"/>
+			<input type="hidden" name="guarNo" id="guarNo" th:value="${paramMap.guarNo}"/>
+		</form>
+
+		<!-- 응답서정보 -->
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">응답서정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:80px;">
+				<col style="">
+				<col style="width:80px;">
+				<col style="">
+			</colgroup>
+			<tbody>
+				<tr>
+	                <th>송신자ID</th>
+	                <td><span id="ele_senderId"></span></td>
+	                <th>수신자ID</th>
+	                <td><span id="ele_receiverId"></span></td>
+	            </tr>
+	            <tr>
+	                <th>문서기능</th>
+	                <td><span id="ele_msgFunction"></span></td>
+	                <th>문서코드</th>
+	                <td><span id="ele_msgIdentifier"></span></td>
+	            </tr>
+	            <tr>
+	                <th>문서이름</th>
+	                <td><span id="ele_docName"></span></td>
+	                <th >전자문서버전</th>
+	                <td><span id="ele_docVersion"></span></td>
+	            </tr>
+	            <tr>
+	                <th>문서번호</th>
+	                <td><span id="ele_docNumber"></span></td>
+	                <th>문서관리번호</th>
+	                <td><span id="ele_docManageNumber"></span></td>
+	            </tr>
+	            <tr>
+	                <th>참저번호</th>
+	                <td><span id="ele_docReferNumber"></span></td>
+	                <th>문서개요</th>
+	                <td><span id="ele_docTitle"></span></td>
+	            </tr>
+			</tbody>
+		</table>
+
+		</br>
+
+		<table class="tbl">
+			<colgroup>
+				<col style="width:80px;">
+				<col style="">
+				<col style="width:80px;">
+				<col style="">
+			</colgroup>
+			<tbody>
+				<tr>
+	                <th>보증기관명</th>
+	                <td><span id="ele_orgNm"></span></td>
+	                <th>G2B등록코드</th>
+	                <td><span id="ele_orgId"></span></td>
+	            </tr>
+	            <tr>
+	                <th>조달청등록코드</th>
+	                <td><span id="ele_orgAdd"></span></td>
+	                <th>대표자명</th>
+	                <td><span id="ele_orgCeoNm"></span></td>
+	            </tr>
+	            <tr>
+	                <th>문서작성일자</th>
+	                <td><span id="ele_docIssueDate"></span></td>
+	                <th>문서기능</th>
+	                <td><span id="ele_docFunction"></span></td>
+	            </tr>
+			</tbody>
+		</table>
+
+		</br>
+
+		<table class="tbl">
+			<colgroup>
+				<col style="width:80px;">
+				<col style="">
+				<col style="width:80px;">
+				<col style="">
+			</colgroup>
+			<tbody>
+				<tr>
+	                <th>보증금액</th>
+	                <td><span id="ele_guarAmtHan"></span> 원정</td>
+	                <th>보증금액</th>
+	                <td><span id="ele_guarAmtNum"></span> 원</td>
+	            </tr>
+	            <tr>
+	                <th>보증일자</th>
+	                <td><span id="ele_guarBegDt"></span> ~ <span id="ele_guarExpDt"></span></td>
+	                <th>수수료</th>
+	                <td><span id="ele_commAmtNum"></span> 원</td>
+	            </tr>
+	            <tr>
+	                <th>보증금율</th>
+	                <td colspan="3"><span id="ele_guarRate"></span> %</td>
+	            </tr>
+	            <tr>
+	                <th>업체명</th>
+	                <td><span id="ele_membNm"></span></td>
+	                <th>대표자명</th>
+	                <td><span id="ele_ceoNm"></span></td>
+	            </tr>
+	            <tr>
+	                <th>사업자번호</th>
+	                <td colspan="3"><span id="ele_bizNo"></span></td>
+	            </tr>
+	            <tr>
+	                <th>채권자 기관명</th>
+	                <td><span id="ele_orderNm"></span> / <span id="ele_orderCrdtNm"></span></td>
+	                <th>채권자 사업자번호</th>
+	                <td><span id="ele_orderBizNo"></span></td>
+	            </tr>
+			</tbody>
+		</table>
+
+		<!-- 계약정보 -->
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">계약정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:80px;">
+				<col style="">
+				<col style="width:80px;">
+				<col style="">
+			</colgroup>
+			<tbody>
+				<tr>
+	                <th>입찰건명</th>
+	                <td><span id="ele_servNm"></span></td>
+	                <th>입찰금액</th>
+	                <td><span id="ele_servAmt"></span></td>
+	            </tr>
+	            <tr>
+	                <th>공고번호</th>
+	                <td><span id="ele_sendNumber"></span></td>
+	                <th>일자</th>
+	                <td><span id="ele_releDt"></span></td>
+	            </tr>
+	            <tr>
+	                <th>보증문</th>
+	                <td colspan="3"><span id="ele_guarStmt"></span></td>
+	            </tr>
+	            <tr>
+	                <th>특기사항</th>
+	                <td colspan="3"><span id="ele_specCondi"></span></td>
+	            </tr>
+			</tbody>
+		</table>
+
+		<textarea id="xmlStr" cols="116" rows="40"></textarea>
+
+		<!--하단 버튼 영역-->
+		<div class="layer-flex mt20">
+			<!-- 처리 버튼 영역 -->
+			<div class="" style="width:100%">
+				<section class="area">
+					<div class="fc">
+						<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style08">닫기</button>
+					</div>
+				</section>
+			</div>
+		</div>
+
+	</body>
+</html>

@@ -1,0 +1,275 @@
+<!--
+	파일정보 : membAcc/membAccIns.html
+	파일명 : membAcc
+	업무명 : 조합원계좌 수정
+	생성자 : 김상민1
+	생성일 : 2023-05-03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB34:CM02", gridNoList : ""};
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				com.fnCodeSelectBox("MB34", "procStat", 1, "");	//처리상태
+				com.fnCodeSelectBox("CM02", "bankCd", 1, "");	//은행
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#docFile"));
+
+				fnSearch();
+			});
+
+			//검색
+			var fnSearch = function(){
+			    //화면 처리 (조합원 정보 조회)
+				var selectParam = { reqSeq : /*[[${paramMap.reqSeq}]]*/, membNo : /*[[${paramMap.membNo}]]*/, atthType : $("#atthType").val() };
+				obj = {url:"/membAcc/selectMembAcc.do", param:selectParam, callBack:fnSelectCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//조합원 정보 조회 콜백
+			var fnSelectCallBack = function(resData){
+				//console.log(resData);
+
+				//기본 데이터
+				com.fnSetKeyVal(resData.memb);
+				com.fnSetKeyVal(resData.data);
+
+				//체크박스 데이터
+				com.checkBoxCheckValue(resData.data.chgBankCdYn, "chgBankCdYn");	//은행 변경구분
+				com.checkBoxCheckValue(resData.data.chgAcctNoYn, "chgAcctNoYn");	//계좌번호 변경구분
+				com.checkBoxCheckValue(resData.data.chgDepoNmYn, "chgDepoNmYn");	//예금주 변경구분
+
+				//첨부파일
+				com.fnIbsUploadView($("#docFile"), resData.fileList);
+
+				//처리자
+				$("#contrApprNm").val(/*[[${session.userNm}]]*/); //수정시에는 수정한 처리자 이름 로그인한 사람으로 세텡
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+				
+			}
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["membNo", "procStat", "regNm"];
+
+				//은행 체크(체크 되어있으면 필수체크에 추가)
+				if($("input[name=chgBankCdYn]").is(":checked"))		valChks.push("bankCd");
+
+				//계좌번호 체크(체크 되어있으면 필수체크에 추가)
+				if($("input[name=chgAcctNoYn]").is(":checked")) 	valChks.push("acctNo");
+
+			    //예금주 체크(체크 되어있으면 필수체크에 추가)
+			    if($("input[name=chgDepoNmYn]").is(":checked")) 	valChks.push("depoNm");
+
+				if(com.fnValChk(valChks)){
+					var msg = "";
+					var beProcStat = $("#beProcStat").val();
+					if(beProcStat !== "30" && $("#procStat").val() === "30" ){
+						msg = "'처리완료'가 되어 조합원의 계좌정보가 수정됩니다.\n";
+					}
+
+					if(confirm(msg + "저장 처리 하시겠습니까?")){
+						obj = {url:"/membAcc/updateMembAcc.do", formId:"saveFrm", fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+					}
+				}
+			}
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				//alert(1)
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+			};
+
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="membNo" id="membNo" value="" title="조합원번호"/>
+			<input type="hidden" name="reqSeq" id="reqSeq" value="" title="요청순번"/>
+			<input type="hidden" name="beProcStat" id="beProcStat" />
+    		<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/> <!-- 메뉴관리 > 관련첨부코드 -->
+    		<input type="hidden" name="atthNo" id="atthNo"/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<!--조합원조회 -->
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+
+						<!-- 변경정보 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">변경정보</h4>
+							</div>
+						</section>
+						<table class="tbl" id="chgTableArea">
+							<colgroup>
+								<col style="width:70px;">
+								<col style="width:50px;">
+								<col style="width:200px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th colspan="2">변경구분</th>
+									<th rowspan="2">변경전사항</th>
+									<th rowspan="2">변경후사항</th>
+								</tr>
+								<tr>
+									<th>내용</th>
+									<th>체크</th>
+								</tr>
+								<tr>
+									<th>은행</th>
+									<td style="text-align: center;"><input type="checkBox" name="chgBankCdYn" value="Y" disabled="disabled"></td>
+									<td>
+										<input type="text" name="beBankNm" id="beBankNm" size="25" value="" readonly="readonly" style="width:150px" />
+										<input type="hidden" name="beBankCd" id="beBankCd" size="25" value="" />
+									</td>
+									<td><select name="bankCd" id="bankCd" style="width:120px" title="은행"></select></td>
+								</tr>
+								<tr>
+									<th>계좌번호</th>
+									<td style="text-align: center;"><input type="checkBox" name="chgAcctNoYn" value="Y" disabled="disabled"></td>
+									<td><input type="text" name="beAcctNo" id="beAcctNo" size="25" value="" readonly="readonly" style="width:150px"/></td>
+									<td><input type="text" name="acctNo" id="acctNo" size="25" value="" style="width:150px" title="계좌번호 변경후사항"/></td>
+								</tr>
+								<tr>
+									<th>예금주</th>
+									<td style="text-align: center;"><input type="checkBox" name="chgDepoNmYn" value="Y" disabled="disabled"></td>
+									<td><input type="text" name="beDepoNm" id="beDepoNm"  value="" readonly="readonly" size="40" />
+									<td><input type="text" name="depoNm" id="depoNm" size="25" value="" style="width:150px" title="예금주 변경후사항"/></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">신청정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>신청일자</th>
+										<td>
+											<input type="text" name="reqDt" id="reqDt" value="${today}" title="신청일자" style="width:90px" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd')" />
+										</td>
+										<th><span class="reqMark">*</span>신청자</th>
+										<td><input type="text" name="regNm" id="regNm" value="" title="신청자" style="width:150px" readonly="readonly" /></td>
+									</tr>
+									<tr>
+										<th>전자서명</th>
+										<td colspan="3"><div id=""></div></td>	<!-- style="min-height: 138px;" -->
+									</tr>
+								</tbody>
+							</table>
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">승인정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th><span class="reqMark">*</span>처리상태</th>
+										<td><select name="procStat" id="procStat" style="width:100px" title="처리상태"></select></td>
+										<th>처리일자</th>
+										<td>
+											<input type="text" name="contrApprDt" id="contrApprDt" value="" title="처리일자" style="width:90px" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'contrApprDt', 'yyyy-mm-dd')" />
+										</td>
+										<th>처리자</th>
+										<td><input type="text" name="contrApprNm" id="contrApprNm" value="" readonly="readonly" style="width:100px"/></td>
+									</tr>
+									<tr>
+										<th>처리사유</th>
+										<td colspan="5"><input type="text" name="procReason" id="procReason" size="75" value="" style="width:470px;" maxlength="50"/></td>
+									</tr>
+								</tbody>
+							</table>
+
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+			                           <button type="button" onclick="javascript:com.fnIbsFileAdd($('#docFile'));" class="btn small style08">추가</button>
+			                           <button type="button" onclick="javascript:com.fnIbsFileDel($('#docFile'));" class="btn small style08">삭제</button>
+			                    </div>
+							</section>
+							<div id="docFile" style="height:140px;"></div>
+						</div>
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+				<!-- 처리 버튼 영역 -->
+				<div class="layer-flex mt50">
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,115 @@
+<!--
+	파일정보 : com/serchG2bReq.html
+	파일명 : serchG2bReq
+	업무명 : 조달청 차세대 보증서신청서 수신 현황 조회 팝업
+	생성자 : BSG
+	생성일 : 2023.11.22
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "80103"}
+
+			var paramMap = /*[[${paramMap}]]*/;
+			//console.log(paramMap);
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				//com.fnIbsInit(resData.gridOptList);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					//console.log(rowData);
+					if(com.fnIsEmpty(rowData.guarNo))	return;	//그리드 검색필터 방지용
+
+					parent.fnGuarSearchSet(rowData)
+					parent.$("#dialog").dialog("close");
+				});
+
+				//sheetDiv 조회 완료 후
+				sheet.bind("onSearchFinish" , function(obj) {
+					$("#ele_loading").css("display","none"); //로딩바
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				$("#ele_loading").css("display","block"); //로딩바
+
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/guarElectReq/selectGuarElectReqList.do", param); //param, sheetId 생략 가능
+			};
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<section class="searchArea">
+				<div class="row">
+					<dl>
+						<dt>조합원명</dt>
+						<dd style="width:250px;">
+							<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onKeyup="com.fnOnlyNum(this)"/>
+							<input type="search" name="sMembNm" id="sMembNm" style="width:150px;"  maxlength="40"/>
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="row">
+					<dl>
+						<dt>계약명</dt>
+						<dd style="width:160px;">
+							<input type="search" name="sCtrtNm" id="sCtrtNm" style="width:160px;" maxlength="50"/>
+						</dd>
+					</dl>
+					<dl>
+						<dt>공공기관명</dt>
+						<dd>
+							<input type="search" name="sPblcInstNm" id="sPblcInstNm" style="width:140px;" maxlength="30"/>
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="row">
+					<dl>
+						<dt>수신일자</dt>
+						<dd style="width:350px;">
+							<input type="search" name="sSerchStaDt" id="sSerchStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sSerchStaDt', 'yyyy-mm-dd','sSerchEndDt', 1)" />
+                        	<input type="search" name="sSerchEndDt" id="sSerchEndDt" title="종료일" maxlength="10" style="width:100px" th:value="${today}" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sSerchEndDt', 'yyyy-mm-dd', 'sSerchStaDt', 2)" />
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="searchBtn">
+					<button type="button" onclick="fnSearch();" class="btn search">조회</button>
+				</div>
+			</section>
+			</form>
+			<div class="mt10">
+		    	<div id="sheetDiv" style="width:100%;height:300px"></div>
+			</div>
+		</div><!-- //contentsArea -->
+		<div id="ele_loading" style="display:none">
+			<img src="/images/loading.gif" onerror=""/>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-definition>
+	<active>prd</active>
+    <domain>http://adm.dyis.co.kr/</domain>
+	
+    <devUser>
+        <mac>8C-B0-E9-21-13-E2</mac> <!-- bsg -->
+        <mac>8C-B0-E9-21-13-E3</mac> <!-- bsg -->
+    
+        <id>bsg</id> <!-- bsg -->
+        <id>bsg1</id> <!-- bsg -->
+    
+        <name>변성균</name> <!-- bsg -->
+        <name>변성균1</name> <!-- bsg -->
+    
+    </devUser>
+    
+</application-definition>

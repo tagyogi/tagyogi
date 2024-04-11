@@ -1,0 +1,308 @@
+<!--
+	파일정보 : invtBillIssueList.html
+	파일명 : 출자증권발행
+	업무명 : 출자증권발행
+	생성자 : 윤가영
+	생성일 : 2023-05-03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				$("#sInvtStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //
+
+				//코드값 처리
+				com.fnCodeSelectBox("IV03", "sBillType", 2, "");	//권종
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					var checkYn = sheet.getValue(rowData, "checkYn"); //체크박스에 체크한경우
+					if(checkYn === 1) $("#serchFrm #billNo").val(rowData.billNo);
+
+				});
+
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/invtIssue/selectInvtIssueList.do", param); //param, sheetId 생략 가능
+			};
+
+			//출력 버튼 이벤트
+			var fnPrint = function(){
+				var billNos = "";
+
+				$.each(sheet.getSaveJson().data, function(idx, item){
+					if(billNos !== "")	billNos += ",";
+					billNos += item.billNo;
+				});
+
+				if(billNos === "") {
+					alert("선택된 항목이 없습니다.");
+					return;
+				}
+
+				if($("#pubType").val() === ""){
+					alert("출력할 증권의 서식을 선택해 주세요");
+					$("#pubType").focus();
+					return;
+				};
+
+				var msg = "";
+
+				if($("#pubType").val() === "F") msg += "출자증권(앞)을 선택하셨고";
+				else if($("#pubType").val() === "B") msg += "출자증권(뒤)을 선택하셨고";
+
+				if($("#isIssue").is(":checked")) msg += "\n출력성공시 출력완료변경을 선택하셨습니다.\n츨력하시겠습니까?";
+				else msg += "\n출력성공시 출력완료변경을 선택하지않았습니다.\n츨력하시겠습니까?"
+
+
+
+				if(confirm(msg)){
+					var gbn = $("#pubType").val();
+					var isIssue = $("#isIssue").is(":checked");
+					fnIssue(gbn,isIssue);
+				}
+
+				//parent.billPrint($("#pub_type").val(), $("#is_issue").is(":checked"));
+
+				/*var nameArr = ["memb_nos"];
+				var valueArr = [membNos];
+				ozLoad("MB_라벨지", nameArr, valueArr, 1, false);*/
+			};
+
+			//출력시작
+			var fnIssue = function(gbn,isIssue){
+				//선택 대상 담기
+    			fnElementAdd();
+
+				var ozName = "IV_출자증권_";
+
+				if(gbn === "F") ozName += "앞";
+				else ozName += "뒤";
+
+				var rtnProc = "";
+				if(isIssue) rtnProc = "investBill";
+				else rtnProc = "";
+
+				if($("#printCnt").val() === "1"){ //출력물이 한개인경우
+					var nameArr =  ["print_cnt","bill_no"];
+					var valArr = [1,$("#billNo").val()];
+
+				    ozLoad(ozName, nameArr, valArr, 1, false, false, rtnProc);
+
+				}else{
+					var ozNameArr = new Array();
+				    var nameArr = new Array();
+
+				    var reverceArr = new Array();//역순
+				    var valArr = new Array();
+
+					var cnt = $("#printCnt").val();
+					for(i = 0; i < cnt; i++){
+						ozNameArr.push(ozName);
+				        nameArr.push(new Array("bill_no"));
+				        reverceArr.push(new Array(document.getElementsByName("i_bill_no")[i].value));
+				    }
+					//역순
+					for(x = reverceArr.length - 1; x >= 0; x--){
+						valArr.push(reverceArr[x]);
+				    }
+
+					ozLoadMulti(ozNameArr, nameArr, valArr, 1, false, rtnProc);
+				}
+
+
+			}
+
+			//선택한 대상 넣기
+			var fnElementAdd = function(){
+
+				//키제거
+				fnElementRemove("i_bill_no");
+
+				//선택된 키를 폼에 추가
+				var oInput;
+				var cnt = 0;
+				var rows = sheet.getDataRows();
+				for(var i in rows) {
+					var checkYn    = sheet.getValue(rows[i], "checkYn"); //선택여부
+				    var keyBill    = sheet.getValue(rows[i], "billNo"); //billno값
+				    //var ret = $("#mainGrid").jqGrid('getRowData', ids[i]);
+					if(checkYn === 1) {
+					    oInput = document.createElement('input');
+					    oInput.setAttribute("type", "hidden");
+					    oInput.setAttribute("name", "i_bill_no");
+					    oInput.setAttribute("value", keyBill);
+					    serchFrm.insertAdjacentElement("afterBegin", oInput);
+						cnt++;
+					}
+				}
+
+				$("#printCnt").val(cnt);
+			}
+
+			//키제거
+			var fnElementRemove = function(oName){
+				var formElements = serchFrm.elements;
+				var formLength = formElements.length;
+
+				var removeArray = new Array();
+				for(var i=formLength-1; i>=0; i--) {
+				     vObj = formElements[i];
+				     if (vObj.name === oName) {
+				    	 vObj.parentNode.removeChild(vObj);
+				     }
+				}
+			}
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				fnSearch();
+			};
+
+
+			//처리후 새로고침
+			var doAfter = function() {
+				fnReLoad();
+				//if($("#isIssue").val() === true) {
+				/*if($("#isIssue")) {
+					$("#isIssue").val(false);
+			
+					serchFrm.action="../invt/updateInvtBillIssue.do";
+			        serchFrm.target = "empty_frm";
+			        serchFrm.submit();
+				} else {
+					serchFrm.action="../invt/billIssueList.do";
+				    serchFrm.target = "_self";
+				    serchFrm.submit();
+				}*/
+			}
+			
+			//새로고침
+			var fnReLoad = function(){
+				$(".reLoadFrm").click();
+			}
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<!--<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="billNo" id="billNo"/>
+		        <input type="hidden" name="membNo" id="membNo"/>
+		        <input type="hidden" name="gbn" id="gbn"/>
+		        <input type="hidden" name="printCnt" id="printCnt"/>
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>권종</dt>
+							<dd style="width:100px;">
+								<select name="sBillType" id="sBillType" style="width:100px;"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+					<div class="row">
+						<dl>
+							<dt>출자일자</dt>
+							<dd style="width:260px;">
+								<input type="text" name="sInvtStaDt" id="sInvtStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sInvtStaDt','sInvtEndDt','F');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sInvtStaDt', 'yyyy-mm-dd','sInvtEndDt', 1)" />
+								<input type="text" name="sInvtEndDt" id="sInvtEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sInvtStaDt','sInvtEndDt','T');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sInvtEndDt', 'yyyy-mm-dd', 'sInvtStaDt', 2)" />
+							</dd>
+							<dt>출력여부</dt>
+							<dd style="width:100px;">
+								<select name="sIssueYn" id="sIssueYn" selected="selected">
+			                        <option value="">전체</option>
+			                        <option value="Y">출력완료</option>
+			                        <option value="N">미출력</option>
+			                    </select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt20">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr" style="display: flex; align-items: center;">
+								<div style="display: flex; align-items: center;">
+									<label class="mr5">서식종류</label>
+									<select name="pubType" id="pubType" style="width: 120px;">
+				                        <option value="">선택</option>
+				                        <option value="F">출자증권(앞)</option>
+				                        <option value="B">출자증권(뒤)</option>
+				                    </select>
+									<label class="ml15 mr15"><input type="checkbox" name="isIssue" id="isIssue" value="Y" class="mr5">출력성공시 출력완료로 변경</label>
+								</div>
+								<button type="button" onclick="javascript:fnPrint();" class="btn style02">출력</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

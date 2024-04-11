@@ -1,0 +1,283 @@
+<!--
+	파일정보 : invt/invtMergUpt.html
+	파일명 : invtMergUpt
+	업무명 : 출자증권병합 수정
+	생성자 : 윤가영1
+	생성일 : 2023-08-04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			
+			var sMembType = ""; //조합원검색구분
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				$("#sepmerDt").val(/*[[${today}]]*/);
+					
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				//분할병합공통그리드
+				fnIbsInvtTrans(gridOptList[0], "uptMerg");
+				
+				//시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				}; 
+				
+			});
+			
+			
+			//검색
+			var fnSearch = function(){
+				//상세정보 조회
+				
+			    var sepmerSeq = /*[[${paramMap.sepmerSeq}]]*/;
+			    var investNo = /*[[${paramMap.investNo}]]*/;
+			    var membNo = /*[[${paramMap.membNo}]]*/;
+			    var sepmerCd = /*[[${paramMap.sepmerCd}]]*/;
+			    var befBillNo = /*[[${paramMap.befBillNo}]]*/;
+			    var aftBillNo = /*[[${paramMap.aftBillNo}]]*/;
+			    
+			    
+			    var param = {sepmerSeq : sepmerSeq, investNo : investNo, membNo : membNo, mode : "upt" };
+				obj = {url:"/invtSpltMerg/selectInvtMergDtl.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+			
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+				console.log(resData);
+				resData.invtMergData.sepmerDt       = com.fnDateFormat(resData.invtMergData.mersepDt); //병합날짜
+				resData.invtMergData.sepmerBillType = resData.invtMergData.aftBillType; //병합권종
+				resData.invtMergData.sepmerNum      = resData.invtMergData.aftBillType; //병합좌수
+				resData.invtMergData.sepmerAmt      = resData.invtMergData.aftAmt; //병합금액
+				
+				//조합원정보
+				com.fnSetKeyVal(resData.membData);
+								
+				//출자증권분할정보, 출자증권병합정보 공통조회
+				com.fnSetKeyVal(resData.invtMergData);
+				
+				//ele_aftBillTypeNm 병합권종 / ele_aftAmt 병합증권금액 /ele_mersepDt 병합일자				
+								
+				//콤마추가 클래스들 세팅
+				$.each($(".setCommaCls"), function(idx,item){
+					$(item).text($(item).text() === "" ? "0":com.addComma($(item).text()));
+					//$(item).text(com.addComma($(item).text()));
+				});
+				
+				//등록시 선택했던 증권 세팅
+				var befBillNos = [];
+				$.each(resData.invtMergDataList, function(idx,item){
+					befBillNos.push(item.befBillNo);
+					$("#befBillNos").val(befBillNos.join());
+				});
+				
+				//액면가조회()
+				invtCom.selectFaceDeal('sepmer');
+				
+				//시트값 설정
+				sheetInvtTrans.loadSearchData(resData.billList);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+				
+			};
+			
+			//출자증권정보(담보정보) 조회
+			/*var fnSearchDtl = function(){
+				var param = {membNo : $("#sMembNo").val(), billStat: '10'};
+				com.fnIbsSearch("/invtBill/selectInvtMortBillList.do", param, sheetInvtTrans ); //param, sheetId 생략 가능
+			};*/
+			
+			//저장
+			var fnSave = function(saveType){
+				
+				//저장 vs 저장후 계속등록
+				var msg = "";
+				msg = "출자증권 병합 정보를 수정하시겠습니까?";
+				
+				//필수체크
+				if($('#ele_ceoNm').text()===""){
+					alert("조합원을 선택해 주십시오.");
+					$("#ele_ceoNm").focus();
+					return false;
+				}
+				
+				if($('#sepmerDt').val()===""){
+					$("#sepmerDt").focus();
+					alert("병합일자를 입력해 주십시오.");
+					return false;
+				}		
+				
+				if($('#sepmerNum').val()==="" || $('#sepmerNum').val() === 0){
+					alert("병합처리를 위한 증권이 선택되지 않았습니다.");
+					$("#sepmerNum").focus();
+					return false;
+				} 
+				
+				if($("#sepmerBillType").val() === "" || com.rmComma($("#sepmerBillType").val()) !== com.rmComma($("#sepmerNum").val())) {
+			            alert("병합할 출자증권의 좌수(금액)와 병합 정보가 일치하지 않습니다.\n병합 정보를 확인하여 주십시오.");
+			            return false;
+			        }
+				
+				//필수체크
+				var valChks = ["sepmerDt"];
+				
+				if(com.fnValChk(valChks)){
+					
+					if(confirm(msg)){
+						var param = $("#saveFrm").serializeObject();
+						param.mergBillData = sheetInvtTrans.getSaveJson();
+						
+						obj = {url:"/invtSpltMerg/updateInvtMerg.do", jParam:param, callBack:fnSaveCallBack, fileId:"docFile", msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						//var param = { paramData: $("#saveFrm").serializeObject(), AssBillData: sheetInvtMortAss.getSaveJson()};
+						//console.log(param);
+						
+						//obj = {url:"/InvtBillAss/insertInvtBillAss.do", formId:"saveFrm", fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+	
+					}
+				}	
+			};
+			
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				if(resData.resultCode === 0) {
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+					//com.fnDoAfterClose(); 
+				}
+			};
+			
+			//달력 날짜선택시 액면가 호출
+			var fnGetFaceDeal = function(){
+				invtCom.selectFaceDeal('sepmer');
+			}
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+			
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="investNo"   id="investNo" value=""/>
+			<input type="hidden" name="faceAmt"    id="faceAmt" />
+    		<input type="hidden" name="dealAmt"    id="dealAmt" />
+    		<input type="hidden" name="aftBillNo"  id="aftBillNo">
+    		<input type="hidden" name="befBillNos"  id="befBillNos">
+    		
+			<div class="contents flex ">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:47%">
+						
+						<!--조합원정보 : s-->
+						<div class="wrapBox mb5">
+							<th:block th:include="com/comMemb :: type('invtSpltMerg')"></th:block> <!--조합원조회 -->
+						</div>
+						<!--조합원정보 : e-->
+						
+						<!--양수조합원 : s-->
+						<div class="wrapBox mt5">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">증권병합정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup> 
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th><span class="reqMark">*</span>병합일자</th>
+										<td>
+											<input type="search" name="sepmerDt" id="sepmerDt" title="병합일자" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:120px" maxlength="10"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sepmerDt', 'yyyy-mm-dd','','',fnGetFaceDeal)" />
+										</td>
+										<th><span class="reqMark">*</span>병합권종</th>
+										<td><input type="search" id="sepmerBillType" name="sepmerBillType" style="width:80px" title="병합권종" readonly>좌권</td>
+									</tr>	
+									<tr>
+										<th><span class="reqMark">*</span>병합선택좌수</th>
+										<td><input type="search" id="sepmerNum" name="sepmerNum" style="width:80px" title="병합선택좌수" readonly></td>
+										<th><span class="reqMark">*</span>병합선택금액</th>
+										<td colspan="3"><input type="search" id="sepmerAmt" name="sepmerAmt" style="width:120px" title="병합증권금액" readonly></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--양수조합원 : e-->
+						
+					</div>
+					
+					
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:52%">	
+						
+						<!--출자증권목록 : s-->
+						<!--출자증권담보설정목록 : s-->
+						<th:block th:include="com/comInvtTrans :: type1('출자증권목록')"></th:block> <!-- 줄자증권목록 -->
+						<!-- //wrapbox-->
+						<!--출자증권목록 : e-->
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+						
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">수정</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+						
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

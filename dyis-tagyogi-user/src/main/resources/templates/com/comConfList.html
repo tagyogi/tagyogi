@@ -1,0 +1,504 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : comConfList.html
+	파일명 : comConfList.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+			
+			$("#sReqStaDt").val(com.fnDateGet(/*[[${today}]]*/, -90)); //발급일자 시작일설정
+			$("#sReqEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //발급일자 종료알 설정
+			
+			fnSerchConfPage();//게시글 부르기
+			
+		});
+		//대출검색
+		var fnSearchLendPop = function(){
+			com.dialpopupOpen("대출정보 조회", "/index/popPageCall.do?menuPage=com/comLendPop", "900", "500"); //menuCd=1070720
+		}
+		
+		//대출정보 setting
+		var setLendData = function(lendNo, lendTypeNm, lendStatNm, lendDt, lendAmt, repayPreDt, sumPayAmt, remainAmt) {
+		    //팝업닫기
+		    com.dialpopupClose();
+		    
+		    $("#lendNo").val(lendNo);
+		    $("#lendTypeNm").val(lendTypeNm);
+		    $("#lendDt").val(com.fnDateFormat(lendDt));
+		    $("#lendAmt").val(com.addComma(lendAmt));
+		    $("#repayPreDt").val(com.fnDateFormat(repayPreDt));
+		    $("#remainAmt").val(com.addComma(remainAmt));
+		    $("#sumPayAmt").val(com.addComma(sumPayAmt));
+		}
+		
+		//민원신청 필수체크, 전자서명
+		var fnSave = function(valChks){
+			var cd = $("#confCd").val(); //메뉴 참조값
+			var valChks = ""; //필수체크
+			var plan = ""; //인증서 내용
+			
+			//출자좌수증명원, 금융거래확인서, 예수금증명원, 보증잔액증명서
+			if(cd === 'IP' || cd === 'FL' || cd === 'DP' || cd === 'GR'){
+				valChks = ["reqDt", "reqNm", "basDt", "reqCnt", "purpose"]; //필수체크
+				
+				//보증상품선택
+				if(cd === 'GR'){
+					var guarTypes = "";
+					$("input[name='guarType']").each(function() {
+						if($(this).is(":checked")){
+							if(guarTypes === "") guarTypes = $(this).val();
+							else 	 			guarTypes += ","+$(this).val();
+						}
+					});
+					$("#refVal").val(guarTypes);
+				}
+				
+				if(com.fnValChk(valChks)){
+					if(confirm("신청을 등록 하시겠습니까?")){
+						
+						//인증서 내용
+						var reqDt = $("#reqDt").val().split("-");
+						var reqNm = $("#reqNm").val();
+						var basDt = $("#basDt").val().split("-");
+						var reqCnt = $("#reqCnt option:selected").val();
+						var prp = $("#purpose").val();
+						
+						plan = "신청일자 : " + reqDt[0] + "년 " + reqDt[1] + "월 " + reqDt[2] + "일"
+						         + "\n신청자 : " + reqNm
+						         + "\n기준일자 : " + basDt[0] + "년 " + basDt[1] + "월 " + basDt[2] + "일"
+						         + "\n신청매수 : " + reqCnt + "매"
+						         + "\n용도 : " + prp;
+						         
+			         	if(cd === 'GR'){
+							 var refVal = $("#refVal").val();
+							 plan = "신청일자 : " + reqDt[0] + "년 " + reqDt[1] + "월 " + reqDt[2] + "일"
+						         + "\n신청자 : " + reqNm
+						         + "\n기준일자 : " + basDt[0] + "년 " + basDt[1] + "월 " + basDt[2] + "일"
+						         + "\n신청매수 : " + reqCnt + "매"
+						         + "\n보증상품 : " + refVal
+						         + "\n용도 : " + prp;
+						         
+						         alert(plan);
+						 }
+						         
+						//alert(plan);								
+						param = {plan:plan, idn:""};
+						com.fnCertSign(param); //전자서명 처리
+					}
+				}	
+			}
+			
+			 //대출상환증명서, 대출잔액증명서, 대출이자납입증명서
+		    else if(cd === "LP" || cd === "LR" || cd === "LI"){
+				valChks = ["lendTypeNm","reqDt", "reqNm", "basDt", "reqCnt", "purpose"]; //필수체크
+			
+				if(com.fnValChk(valChks)){
+					if(confirm("신청을 등록 하시겠습니까?")){
+						
+						//인증서 내용
+						var lendNo = $("#lendNo").val();
+						var reqDt = $("#reqDt").val().split("-");
+				        var basDt = $("#basDt").val().split("-");
+				        var prp = $("#purpose").val();
+				
+				        plan = "대출번호 : " + lendNo
+				                + "\n신청일자 : " + reqDt[0] + "년 " + reqDt[1] + "월 " + reqDt[2] + "일"
+				                + "\n기준일자 : " + basDt[0] + "년 " + basDt[1] + "월 " + basDt[2] + "일"
+				                + "\n용도 : " + prp;
+				                
+						alert(plan);								
+						param = {plan:plan, idn:""};
+						com.fnCertSign(param); //전자서명 처리
+					}
+				}	
+			}
+		}
+		
+		//전자서명 콜백
+		var fnCertSingCallBack = function(rVal){
+			fnInsConfPage();//민원신청
+		}
+		
+		//민원신청
+		var fnInsConfPage = function(){
+			obj = {url:"/comConf/insertComConf.do", formId:"conf", callBack:fnInsConfPagecallback, msgYn:"N", sessYn:"N", loadYn:"N"};
+			com.fnAjaxPost(obj); 
+		}
+		
+		//민원삭제
+	    var fnDelConfPage = function(val){
+			if(confirm("삭제 처리 하시겠습니까?")){
+				$("#confNo").val(val);
+				obj = {url:"/comConf/deleteHomeComConf.do", formId:"conf", callBack:fnInsConfPagecallback, msgYn:"N", sessYn:"N", loadYn:"N"};
+				com.fnAjaxPost(obj); 
+			}
+		}
+		
+		//민원신청,삭제 리턴
+		var fnInsConfPagecallback = function(resData){
+			alert(resData.resultMsg);
+			fnPage(resData.menuCd);
+		}
+		
+		//발급버튼 누르면 pub_dt먼저 저장
+		var fnSavePubDt = function(vals){
+			
+			//발급날짜없으면 발급날짜 먼저 세팅후 레포트 호출
+			if(vals[2] === "" || vals[2] === undefined){
+				var param = {confNo:vals[6], confCd:vals[5], val:vals}
+				
+				//오늘날짜로 발급날짜 세팅
+				vals[2] = /*[[${today}]]*/;
+				obj = {url:"/comConf/updateComConfPubDt.do", param: param, callBack:fnSavePubDtCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				console.log(param);
+				com.fnAjaxDef(obj);
+				
+			}else{ //발급날짜있으면 바로 레포트 호출
+				fnReport(vals);
+			}
+			
+			
+		}
+		
+		var fnSavePubDtCallBack = function(resData){
+			fnReport(resData.paramMap); //레포트호출
+		}
+		
+		//민원 발급
+		var fnReport = function(valArr){
+			var confCd = $("#confCd").val();
+			var ozName = "";
+			var rtnProc = "conf";
+			
+			//alert(valArr);
+			
+			if(confCd === "LP") ozName = "LD_대출상환증명서";
+		    if(confCd === "LR") ozName = "LD_대출잔액증명서";
+		    if(confCd === "LI") ozName = "LD_대출이자납입증명서"; 
+		    if(confCd === "FL") ozName = "LD_금융거래확인서"; 
+		    
+		    if(confCd === "GR") ozName = "GR_보증거래확인서"; 
+		    if(confCd === "IP") ozName = "IV_출자좌수증명원"; 
+		    if(confCd === "IK") ozName = "IV_출자증권보관증"; 
+		    if(confCd === "DP") ozName = "IV_예치금증명원"; 
+		    
+		    var nameArr = new Array("memb_no", "bas_dt", "pub_dt", "purpose", "st_yn","conf_cd", "conf_no","lend_no","req_cnt","contr_no");
+		    var valueArr = new Array(valArr[0], valArr[1], valArr[2], valArr[3], valArr[4], valArr[5], valArr[6], valArr[7], valArr[8], valArr[9]);
+		    
+		    //console.log(valArr[0], valArr[1], valArr[2], valArr[3], valArr[4], valArr[5], valArr[6], valArr[7], valArr[8], valArr[9]);
+		    
+		    //오즈파일명, 변수명, 변수값, 출력수, pdf저장여부, 결과처리여부
+		    ozLoad(ozName, nameArr, valueArr, valArr[8], "pdf", rtnProc);
+		}
+		
+		//신청기간 검색
+		var fnSerchConfPage = function(){
+			//페이징 초기화
+			//$("#curPage").val('');	
+			obj = {url:"/comConf/selectComConfList.do", formId:"conf", callBack:fnConfPagecallback, msgYn:"N", sessYn:"N", loadYn:"N"};
+			com.fnAjaxPost(obj); 
+		}
+		
+		//민원조회 리턴 
+		var fnConfPagecallback = function(resData){
+		
+			//console.log("resData object:" + JSON.stringify(resData));
+			
+			//table 내용 추가
+			var data = resData.data;
+			$("#confList").empty();
+			
+			if( data === ''){
+				var html = '<tr><td colspan="8">검색 결과가 없습니다.</td><tr>';
+				$("#confList").append(html);
+			}
+			
+			$.each(data, function(index, item) {
+				
+				var valArr = new Array(item.membNo, com.fnDateFormat(item.basDt), com.fnDateFormat(item.pubDt), item.purpose, "Y", item.confCd, item.confNo,  item.lendNo, item.reqCnt, item.contrNo);
+					valArr = JSON.stringify(valArr);
+				
+				var html  = '<tr>';
+					html += '<td>'+ (index + 1) + '</td>';
+		            html += '<td>'+ com.fnDateFormat(item.reqDt) +'</td>';
+					html += '<td>'+ item.reqNm+'</td>';
+					html += '<td>'+ item.reqCnt+'</td>';
+					html += '<td>'+ item.purpose +'</td>';
+					html += '<td>'+ com.fnDateFormat(item.pubDt) +'</td>';
+					html += '<td>'+ com.fnNvlChk(item.procStatNm) +'</td>';
+					html += '<td>';
+					if(item.procStat === '30'){
+						html += '<div class="flex-box al-center gap-5 jc-center">';
+						html += '<button onclick=\'fnSavePubDt(' + valArr + ')\' class="sub-btn btn-auto file-reset">발급</button>';
+						html += '<button onclick="fnDelConfPage(\'' + item.confNo + '\')" class="sub-btn btn-auto file-del">삭제</button>';
+						html += '</div>';
+					}
+					html += '</td>';
+					html += '</tr>';
+					
+				$("#confList").append(html);
+			});
+			//페이지네이션 세팅
+			//com.fnPageInit(resData.pageInfo);
+		}
+		
+		//민원조회(페이징)
+		/*var fnConfPage = function(){
+			obj = {url:"/comConf/selectHomeComConfList.do", param:param, formId:"conf", callBack:fnConfPagecallback, msgYn:"N", sessYn:"N", loadYn:"N"};
+			com.fnAjaxPost(obj); 
+		}*/
+		
+		//페이지이동
+	    /*var fnChPage = function(val){
+			$("#curPage").attr('value', val);
+			fnConfPage();
+		}*/
+	
+		/*]]>*/
+	</script>
+    <div class="main-top sub">
+		<ul class="inner">
+            <li class="move1"></li>
+            <li class="move2"></li>
+            <li class="move3"></li>
+            <li class="move4"></li>
+            <li class="move5"></li>
+        </ul>
+    </div>
+    <div class="content-wrap">
+        <div class="inner">
+            <div class="content-box flex-box jc-between">
+                <!-- 업무 안내 영역 -->
+                <div id="lnb" class="lnb-wrap">
+                    <h3 class="ko-bold h3-txt"></h3>
+                    
+                </div>
+
+                <!-- 업무 안내 영역 끝 -->
+                <div class="content-main">
+					<!-- 경로 영역 시작 -->
+                    <div th:insert="~{/fragments/subTitle}"></div>
+                    <form name="conf" id="conf" method="post" onSubmit="return false;">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="sConfCd" id="sConfCd" th:value="${menuInfo.refVal}"/>
+						<input type="hidden" name="confCd" id="confCd" th:value="${menuInfo.refVal}"/>
+						<input type="hidden" name="menuCd" id="menuCd" th:value="${menuInfo.menuCd}"/>
+						<input type="hidden" name="signedCont" id="signedCont" value=""/>
+						<input type="hidden" name="confNo" id="confNo" value=""/>
+						<input type="hidden" name="lendNo" id="lendNo" value=""/>
+                        <input type="hidden" name="refVal" id="refVal" value=""/>
+                        <input type="hidden" name="curPage" id="curPage" value=""/>
+                        <!-- 경로 영역 끝 -->
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article class="onlyPc">
+                                    <p class="title-dept1">증명원 신청</p>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll v3">
+											<th:block th:if="${#strings.equals(menuInfo.refVal, 'IP') || #strings.equals(menuInfo.refVal, 'FL') || #strings.equals(menuInfo.refVal, 'DP') || #strings.equals(menuInfo.refVal, 'GR')}">
+	                                            <table>
+	                                                <caption>증명원 신청</caption>
+	                                                <colgroup>
+	                                                    <col style="width:15%;">
+	                                                    <col style="width:30%;">
+	                                                    <col style="width:15%;">
+	                                                    <col style="width:25%;">
+	                                                </colgroup>
+	                                                <tbody>
+	                                                    <tr>
+	                                                        <th>신청일자</th>
+	                                                        <td>
+	                                                            <div class="flex-box al-center">
+	                                                                <input type="text" name="reqDt" id="reqDt" value="" class="w-100" title="신청일자" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off">
+                                                            		<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd')" />
+                                                            	</div>
+	                                                        </td>
+	                                                        <th>신청자</th>
+	                                                        <td class="br-1"><input type="text" name="reqNm" id="reqNm" size="7" title="신청자" maxlength="20"></td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th>기준일자</th>
+	                                                        <td>
+	                                                            <div class="flex-box al-center">
+	                                                                <input type="text" name="basDt" id="basDt" value="" class="w-100" title="기준일자" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off">
+                                                            		<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'basDt', 'yyyy-mm-dd')" />
+                                                            	</div>
+	                                                        </td>
+	                                                        <th>신청매수</th>
+	                                                        <td class="br-1"><select name="reqCnt" id="reqCnt" title="신청매수">
+	                                                                <option value="1" selected="selected">1</option>
+	                                                                <option value="2">2</option>
+	                                                                <option value="3">3</option>
+	                                                                <option value="4">4</option>
+	                                                                <option value="5">5</option>
+	                                                            </select>
+	                                                        </td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th>용도</th>
+	                                                        <td colspan="3" class="br-1">
+	                                                            <input type="text" name="purpose" id="purpose" class="stxt" title="용도">
+	                                                        </td>
+	                                                    </tr>
+	                                                </tbody>
+	                                            </table>
+                                            </th:block>
+                                            <th:block th:if="${#strings.equals(menuInfo.refVal, 'LP') || #strings.equals(menuInfo.refVal, 'LR')|| #strings.equals(menuInfo.refVal, 'LI')}">
+												<table>
+	                                                <caption>증명서 신청</caption>
+	                                                <colgroup>
+	                                                	<col style="width:10%;">
+	                                                	<col style="width:20%;">
+	                                                	<col style="width:10%;">
+	                                                	<col style="width:20%;">
+	                                                	<col style="width:10%;">
+	                                                	<col style="width:20%;">
+	                                                </colgroup>
+	                                                <tbody>
+	                                                    <tr>
+	                                                        <th>대출종류</th>
+	                                                        <td>
+	                                                            <div class="position-r"><input type="text" name="lendTypeNm" id="lendTypeNm" size="7" class="readonly" readonly="readonly" title="대출종류">
+	                                                                <button class="address-btn2" onclick="fnSearchLendPop();"></button>
+	                                                            </div>
+	                                                        </td>
+	                                                        <th>대출일자</th>
+	                                                        <td><input type="text" name="lendDt" id="lendDt" size="7" class="readonly" readonly="readonly"></td>
+	
+	                                                        <th>상환기한</th>
+	                                                        <td class="br-1"><input type="text" name="repayPreDt" id="repayPreDt" size="7" class="readonly" readonly="readonly"></td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th>대출금액</th>
+	                                                        <td><input type="text" name="lendAmt" id="lendAmt" size="7" class="readonly" readonly="readonly"></td>
+	                                                        <th>상환금액</th>
+	                                                        <td><input type="text" name="sumPayAmt" id="sumPayAmt" size="7" class="readonly" readonly="readonly"></td>
+	                                                        <th>잔액</th>
+	                                                        <td class="br-1"><input type="text" name="remainAmt" id="remainAmt" size="7" class="readonly" readonly="readonly"></td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th>신청일자</th>
+	                                                        <td>
+	                                                            <div class="flex-box al-center">
+	                                                                <input type="text" name="reqDt" id="reqDt" value="" maxlength="10" class="w-100" title="신청일자" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off">
+                                                            		<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd')" />
+                                                            	</div>
+	                                                        </td>
+	                                                        <th>신청자</th>
+	                                                        <td><input type="text" name="reqNm" id="reqNm" size="7" alt="신청자" title="신청자" maxlength="20"></td>
+	                                                        <th>신청매수</th>
+	                                                        <td class="br-1"><select name="reqCnt" id="reqCnt">
+	                                                                <option value="1" selected="selected">1</option>
+	                                                                <option value="2">2</option>
+	                                                                <option value="3">3</option>
+	                                                                <option value="4">4</option>
+	                                                                <option value="5">5</option>
+	                                                            </select>
+	                                                        </td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th>기준일자</th>
+	                                                        <td>
+	                                                            <div class="flex-box al-center">
+	                                                                <input type="text" name="basDt" id="basDt" value="" maxlength="10" class="w-100" title="기준일자" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off">
+                                                            		<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'basDt', 'yyyy-mm-dd')" />
+                                                            	</div>
+	                                                        </td>
+	                                                        <th>용도</th>
+	                                                        <td colspan="3" class="br-1"><input type="text" name="purpose" id="purpose" size="20" class="stxt" title="용도"></td>
+	                                                    </tr>
+	                                                </tbody>
+	                                            </table>
+                                            </th:block>	
+                                            <div class="btn-table">
+                                                <button type="button" onClick="fnSave()" class="sub-btn btn-color">신청</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                                <p class="title-dept1">증명원 신청목록</p>
+                                <div class="search-wrap txt-border-wrap mb40 pd20">
+                                    <table class="block">
+                                        <colgroup>
+                                        	<col style="width:11%;">
+                                        	<col style="width:45%;">
+                                        	<col style="width:44%;">
+                                        </colgroup>
+                                        <tbody>
+                                            <tr>
+                                                <th>신청일자</th>
+                                                <td class="m-mb10">
+                                                    <div class="flex-box al-center gap-5">
+                                                        <div class="flex-box al-center">
+                                                            <input type="text" name="sReqStaDt" id="sReqStaDt" value="" maxlength="10" class="w-100" title="신청일 입력" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+                                                        	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sReqStaDt', 'yyyy-mm-dd','sReqEndDt', 1)"/>
+                                                        </div>
+                                                        ~
+                                                        <div class="flex-box al-center">
+                                                            <input type="text" name="sReqEndDt" id="sReqEndDt" value="" maxlength="10" class="w-100" title="신청일 입력" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+                                                            <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sReqEndDt', 'yyyy-mm-dd', 'sReqStaDt', 2)"/>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="alignR btn-position">
+										<button type="button" onClick="fnSerchConfPage()" class="sub-btn btn-black m-w-100">조회</button>
+									</div>
+                                </div>
+                                <article>
+                                    <div class="table-wrap board">
+                                        <div class="table-scroll v2">
+                                            <table>
+                                                <caption>증명원 신청목록</caption>
+                                                <colgroup>
+		                                        	<col style="width:7%;">
+		                                        	<col style="width:13%;">
+		                                        	<col style="width:11%;">
+		                                        	<col style="width:10%;">
+		                                        	<col style="width:19%;">
+		                                        	<col style="width:12%;">
+		                                        	<col style="width:12%;">
+		                                        	<col style="width:17%;">
+		                                        </colgroup>
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th scope="col">번호</th>
+                                                        <th scope="col">신청일자</th>
+                                                        <th scope="col">신청자</th>
+                                                        <th scope="col">신청매수</th>
+                                                        <th scope="col">용도</th>
+                                                        <th scope="col">발급일자</th>
+                                                        <th scope="col">처리상태</th>
+                                                        <th scope="col">발급/취소</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="confList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <div class="pagination-wrap" style="display:none;">
+                                    <ul id="pagination" class="pagination"></ul>
+                                </div>
+                            </div>
+                        </section>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</html>

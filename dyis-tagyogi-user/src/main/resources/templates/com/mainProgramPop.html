@@ -1,0 +1,117 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : mainProgramPop.html
+	파일명 : mainProgramPop.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xml:lang="ko">
+   
+<head>
+   <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/content.css">
+    <script src="/js/jquery-1.10.2.min.js"></script>
+	<script src="/js/jquery-3.3.1.min.js"></script>
+	<script src="/js/jquery-ui-1.10.3.js"></script>
+	<script src="/js/jquery.modal.js"></script>
+	<script src="/js/main.js"></script>
+	<script src="/js/common.js"></script>
+</head>
+<body>
+    <!-- 업무 안내 영역 끝 -->
+    <div class="popWrap">
+		<div>
+            <ul>
+                <li class="ko-bold font-size-20 mb30 alignC">※ 프로그램 설치 안내 ※</li>
+                <li class="txt-dept1 font-size-15">홈페이지 > 로그인 페이지 내에서 자동으로 프로그램 설치 유무를 확인하여 설치 진행을 지원하고 있습니다. <br> 다음은 설치가 정상적으로 처리 되지 않을 경우에 대한 처리 방법 입니다.</li>
+            </ul>
+            <div class="pd30">
+                <ul class="dot-list">
+                    <li class="title-dept1">업무 관련 프로그램</li>
+                    <li class="dot-dept1-blue">공인인증서(CROSSCERT)</li>
+                    <li class="dot-dept1-blue">레포트(출력물) 위변조 프로그램(MarkAny)</li>
+                    <li class="dot-dept1-blue">레포트(출력물) 오즈레포트(OZReport)</li>
+                </ul>
+                <ul class="dot-list">
+                    <li class="title-dept1">공인인증서(CROSSCERT)</li>
+                    <li class="alignC mb10 border-wrap ml20"><img src="../images/install_pki.gif" alt="이미지"></li>
+                    <li class="dot-dept1-blue"><img src="../images/pki_info_img1.gif" style="max-width: 100%;" alt="이미지1"></li>
+                    <li class="dot-dept1-blue">제어판 > 프로그램 삭제 > 상위 관련 프로그램 일괄 삭제 후 재설치 진행</li>
+                </ul>
+                <ul class="dot-list">
+                    <li class="title-dept1">레포트(출력물) 위변조 프로그램(MarkAny)</li>
+                    <li class="border-wrap ml20 font-size-12">
+                        <div style="margin: 0 auto;">
+                            <div class="flex-box jc-center m-col gap-20 al-center">
+                                <img src="/images/install_markany.png" alt="마크애니">
+                                <ul class="alignL">
+                                    <li class="ko-bold font-size-16">고객님의 안전한 서비스 이용을 위한 <br><span class="color-up">수동설치 안내 페이지 입니다.</span></li>
+                                    <li class="mt10">정상적으로 문서발급이 진행되지 않을 경우 아래의 절차에 따라 수동설치를 진행해 주시기 바랍니다.
+                                        <ul class="mt10">
+                                            <li>1. 아래의 다운로드 버튼을 클릭하여 PC에 수동설치 파일을 저장합니다.</li>
+                                            <li>2. PC에 다운로드 받은 파일을 실행하여 설치합니다.</li>
+                                            <li>3. 설치가 완료되면 수동설치 안내 페이지를 종료 후 발급을 재 진행합니다.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="table-wrap info mt20">
+                                <div class="table-scroll">
+                                    <table>
+                                        <colgroup>
+                                            <col style="width: 20%;">
+                                            <col style="width: 25%;">
+                                            <col style="width: 40%;">
+                                            <col style="width: 15%;">
+                                        </colgroup>
+                                        <thead>
+                                            <tr>
+                                                <th class="font-size-12">프로그램명</th>
+                                                <th class="font-size-12">운영체제 지원범위</th>
+                                                <th class="font-size-12">내용</th>
+                                                <th class="font-size-12">다운로드</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="alignC font-size-12 pd5">MaEPSBroker</td>
+                                                <td class="alignC font-size-12 pd5">XP, Vista, 7, 8, 8.1, 10</td>
+                                                <td class="font-size-12 pd5">설치체크 프로그램입니다. 해당 프로그램이 미설치 시 아래의 프로그램에 대한 설치체크를 진행할 수 없습니다.</td>
+                                                <td class="alignC font-size-12 pd5">미설치</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="dot-dept1-blue mt10"><img src="../images/install_markany_info.gif" alt="마크애니" style="max-width: 100%;"></li>
+                    <li class="dot-dept1-blue">제어판 > 프로그램 삭제 > 상위 관련 프로그램 일괄 삭제 후 재설치 진행</li>
+                </ul>
+                <ul class="dot-list">
+                    <li class="title-dept1">레포트(출력물) 오즈레포트(OZReport)</li>
+                    <li class="alignC mb10 border-wrap ml20"><img src="../images/install_oz1.gif" alt="오즈"></li>
+                    <li class="dot-dept1-blue"><img src="../images/install_oz_info.gif" style="max-width: 100%;" alt="오즈"></li>
+                    <li class="dot-dept1-blue">제어판 > 프로그램 삭제 > 상위 관련 프로그램 일괄 삭제 후 재설치 진행</li>
+                </ul>
+                <ul class="dot-list">
+                    <li class="title-dept1">문의 사항</li>
+                    <li class="dot-dept1-blue">02-3661-5384 한국콘텐츠공제조합 전산운영팀</li>
+                    <!--
+                    <li class="dot-dept1-blue">원격 접속정보 : <a href="https://939.co.kr/dongyangis" target="_blank">https://939.co.kr/dongyangis</a></li>
+                    -->
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

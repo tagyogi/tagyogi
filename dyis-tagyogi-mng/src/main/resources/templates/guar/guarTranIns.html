@@ -1,0 +1,578 @@
+<!--
+	파일정보 : guarTran/guarTranIns.html
+	파일명 : guarTran
+	업무명 : guarTran등록, 수정
+	생성자 : 변성균
+	생성일 : 2023-04-12
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "CM01:MB04:GR01:GR21", gridNoList : "30311"}
+			var sMembType = ""; //조합원검색구분
+			var valChks = ""; //필수값체크
+
+			var contrLimit; //약정한도정보
+			var limitOverYn = 0; //한도초과여부
+			//var limitOverMsg = "";
+
+			var guarTypes = ['11','12','13','14','15'];
+		//	var guarTypeNm = ['입찰','계약','하자','선급','인허가'];
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//화면 처리
+
+				//코드값처리
+				com.fnCodeSelectBox("GR15", "transCd", 1, ""); //선택
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//fnSearch(); //조회 호출
+				};
+
+			    guarCom.fnSetGuarLimitView("GR22", "tbl_guarLimit");
+
+				//양도보증서 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+				//	console.log(rowData);
+					if(obj.col === "selChk"){
+
+						// 필수값체크
+						valChks = ["sTakeMembNm", "transCd"];
+						if(com.fnValChk(valChks)){
+						}else{
+							sheet.setAllCheck("selChk", 0);
+							return;
+						}
+
+						fnTranGuarCalc();
+					}
+				});
+
+				/*
+				sheet.bind("onCheckAllFinish" , function(obj) {
+					rowData = this.getSelectedRows();
+				//	chkStr = this.grd_data.countCheckedRows(0);
+					console.log(rowData);
+				});
+				*/
+
+			});
+
+			//조합원조회 콜백
+			var fnMembInfoSet = function(obj){
+
+				//초기화 (조합원검색이 두개 이상일때, 한쪽 검색후 돋보기아이콘 클릭시 조회했던 조합원 초기화)
+				$("#sMembNo").val("");
+				$("#sMembNm").val("");
+
+			    //검색input결과세팅
+				$("#"+sMembType+"No").val(obj.membNo);
+				$("#"+sMembType+"Nm").val(obj.membNm);
+
+				if(sMembType === "sTakeMemb"){
+					$("#takeContrNo").val(obj.guarContrNo);
+					$("#takeCeoNm").val(obj.ceoNm);
+				}
+
+			//	console.log('조합원콜백');
+			//	console.log(obj);
+
+				//조합원 상태 체크
+				var msg = "";
+				if(obj.membStat !== "10" && obj.membCretopNm !== "정상"){
+					msg += "조회된 업체는 현재" + obj.membStatNm + "상태이고\n";
+					msg += "조기경보" + obj.membCretopNm + "등급인 조합원입니다.";
+				}else if(obj.membStat !== "10"){
+					msg += "조회된 업체는 현재" + obj.membStatNm + "상태입니다.";
+				}else if(obj.membStat !== "10"){
+					msg += "조회된 업체는 조기경보" + obj.membCretopNm + "등급인 조합원입니다.";
+				}
+
+				if(msg !== "" && !confirm(msg + "\n업무를 계속 진행하시겠습니까?")) {
+					//ele_take_ceoNm
+					$("#sTakeMembNo, #sTakeMembNm").val('');
+					$("[id^=ele_take]").text('');
+					return;
+				}
+
+				if(obj.sestCnt > 0){
+					alert("해당 조합원은 현재 가압류 정보가" + obj.sestCnt + "건 등록되어 있습니다. \n 관련 내용 확인후 진행하시기 바랍니다.");
+					$("#"+sMembType+"No").val("");
+					$("#"+sMembType+"Nm").val("");
+					return;
+
+				}
+
+				//양도조합원 셋팅
+			//	com.fnSetKeyVal(obj);
+			//	alert(obj.guarContrNo);
+			//	alert(vMembType);
+				if(obj.guarContrNo === null && vMembType === "take"){
+					alert("체결된 약정정보가 없습니다.");
+					$("#sTakeMembNo, #sTakeMembNm").val('');
+					return;
+				}
+				invtCom.fnAssSetKeyVal(obj,vMembType);
+
+				//콤마추가 클래스들 세팅
+				$.each($(".setCommaCls"), function(idx,item){
+					$(item).text(com.addComma($(item).text()));
+				});
+
+				//양도 양수 조합검색
+			    if(vMembType === "trans") {
+                	//증권조회
+                	fnSearchDtl();
+			    }else{
+					fnSearchContrDtl();
+				}
+			}
+
+			//보증서정보 조회
+			var fnSearchDtl = function(){
+				var param = {sMembNo : $("#sTransMembNo").val()};
+				com.fnIbsSearch("/guarTran/selectTranGuarTargList.do", param ); //param, sheetId 생략 가능
+			};
+
+			//약정정보 조회
+			var fnSearchContrDtl = function(){
+
+				param = {sMembNo : $("#sTakeMembNo").val(), contrNo : $("#takeContrNo").val()};
+				obj = {url:"/guarContr/selectGuarContr.do", param:param, callBack:fnDtlCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+
+			};
+
+			var fnDtlCallBack = function (resData){
+			//	console.log(resData.contr);
+				guarCom.fnSetGuarLimitView("GR22", "tbl_guarLimit", resData.contr);//상품정보 목록
+
+				contrLimit = resData.contr;
+
+			};
+
+			//양도양수 선택 처리
+			var fnTransSel = function(){
+				var transCd = $("#transCd").val();
+				if(transCd === "") return;
+
+				//필수체크
+				valChks = ["sTransMembNo", "sTakeMembNo"];
+
+				if(com.fnValChk(valChks)){
+					if(transCd === "A"){
+						sheet.setAllCheck("selChk", 1);
+
+						fnTranGuarCalc();
+
+					}else{
+						sheet.setAllCheck("selChk", 0);
+
+						fnTranInit(); //초기화
+
+					}
+				}
+			};
+
+			//합산초기화
+			var fnTranInit = function(){
+				guarTypes.forEach(function(item, idx) {
+					$("#ele_guarCnt" + item).text("");
+					$("#ele_guarAmt" + item).text("");
+				});
+					// 합계 초기화
+					$("#ele_guarCntTot").text("");
+					$("#ele_guarAmtTot").text("");
+			}
+
+			//양도 산출 대상 계산
+			var fnTranGuarCalc = function(){
+				fnTranInit();
+				var guarTranSet = {};
+				var guarTranSetTot = {};
+				let rows = sheet.getSaveJson();
+
+				rows.data.forEach(function(item, idx) {
+
+					guarType = item.guarType;
+
+					var typeValue = guarType;
+					if(guarType === "31")	typeValue = "13";
+					if(guarType === "32")	typeValue = "12";
+					if(guarType === "33" || guarType === "34")	typeValue = "15";
+
+
+					if(guarTranSet["guarAmt" + typeValue] === undefined) {
+						guarTranSet["guarAmt" + typeValue] = Number(item.guarAmt);
+						guarTranSet["guarCnt" + typeValue] = 1;
+					}else{
+						guarTranSet["guarAmt" + typeValue] += Number(item.guarAmt);
+						guarTranSet["guarCnt" + typeValue] += 1;
+					}
+
+					//합계
+					if(guarTranSetTot["guarAmt"] === undefined) {
+						guarTranSetTot["guarAmt" ] = Number(item.guarAmt);
+						guarTranSetTot["guarCnt" ] = 1;
+					}else{
+						guarTranSetTot["guarAmt" ] += Number(item.guarAmt);
+						guarTranSetTot["guarCnt" ] += 1;
+					}
+				//	alert(item.guarType);
+				});
+				//console.log(guarTranSet);
+
+				guarTypes.forEach(function(item, idx) {
+
+					var limitAmt = contrLimit["limitAmt" + item]; //한도금액
+					var useAmt = contrLimit["useAmt" + item]; //사용금액
+					var tranAmt = guarTranSet["guarAmt" + item]; //양도금액
+
+					if(limitAmt < Number(useAmt) + Number(tranAmt) ){
+						$("#ele_guarCnt" + item).html(guarTranSet["guarCnt" + item]);
+						$("#ele_guarAmt" + item).html("<font color='red'>" + com.addComma(tranAmt) + "</font>");
+
+						limitOverYn++;
+
+						//if(limitOverMsg === "") limitOverMsg =  guarTypeNm[idx] + "상품 한도초과 ( 한도 : " + limitAmt + " / 양도 합 : " + Number(useAmt) + Number(tranAmt) + ")";
+						//else limitOverMsg += "\n" + guarTypeNm[idx] + "상품 한도초과 ( 한도 : " + limitAmt + " / 양도 합 : " + Number(useAmt) + Number(tranAmt) + ")";
+					}else{
+						$("#ele_guarCnt" + item).html(guarTranSet["guarCnt" + item]);
+						$("#ele_guarAmt" + item).html(com.addComma(tranAmt));
+					}
+
+				//	console.log(guarTranSet);
+				});
+
+				$("#ele_guarCntTot").html(guarTranSetTot["guarCnt"]);
+				$("#ele_guarAmtTot").html(com.addComma(guarTranSetTot["guarAmt"]));
+			};
+
+
+
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				valChks = ["procDt", "transReason"];
+
+				if(com.fnValChk(valChks)){
+
+					if(limitOverYn > 0){
+						alert("한도가 초과된 상품이 있습니다. 확인해주시기 바랍니다.");
+						return;
+					}
+					if(confirm("저장 처리 하시겠습니까?")){
+						$("#transMembNo").val($("#sTransMembNo").val());
+						$("#takeMembNo").val($("#sTakeMembNo").val());
+						$("#takeMembNm").val($("#sTakeMembNm").val());
+
+
+						var param = $("#saveFrm").serializeObject();
+						param.guar = sheet.getSaveJson(); // 양도양수보증서
+						obj = {url:"/guarTran/insertGuarTranProc.do", callBack:fnSaveCallBack, param:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+						com.fnAjaxDef(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+			//	console.log(resData);
+				if(resData.resultCode === 0){
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+				}
+			};
+
+			/*]]>*/
+
+
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+	<!--				<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<!--조합원 공통검색용-->
+			<input type="hidden" name="sMembNo"    id="sMembNo" value=""/>
+			<input type="hidden" name="transMembNo"    id="transMembNo" value=""/>
+			<input type="hidden" name="takeMembNo"    id="takeMembNo" value=""/>
+			<input type="hidden" name="takeMembNm"    id="takeMembNm" value=""/>
+			<input type="hidden" name="takeCeoNm"    id="takeCeoNm" value=""/>
+			<input type="hidden" name="takeContrNo"    id="takeContrNo" value=""/>
+			<input type="hidden" name="transType"    id="transType" value="T"/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:48%">
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">양도조합원</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:120px;">
+									<col style="width:80px;">
+									<col style="width:120px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>조합원명</th>
+										<td colspan="3">
+											<input type="search" name="sTransMembNo" id="sTransMembNo" title="양도조합원" style="width:50px;" maxlength="4" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'trans')}" onchange="com.fnMembInfoMulti(event,'trans')">
+											<input type="search" name="sTransMembNm" id="sTransMembNm" title="양도조합원" style="width:150px;" maxlength="40" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'trans')}" onchange="com.fnMembInfoMulti(event,'trans')">
+											<button type="button" class="btn icoSearch" onclick="com.fnMembInfoMulti(event,'trans')">검색</button>
+										</td>
+										<th>대표자</th>
+										<td><div id="ele_trans_ceoNm"></div></td>
+									</tr>
+									<tr>
+										<th>법인번호</th>
+										<td><div id="ele_trans_lawNo"></div></td>
+										<th>사업자번호</th>
+										<td><div id="ele_trans_bizNo"></div></td>
+										<th>전화번호</th>
+										<td><div id="ele_trans_telNo"></div></td>
+									</tr>
+									<tr>
+										<th>상태</th>
+										<td><div id="ele_trans_membStatNm"></div></td>
+										<th>주장르</th>
+										<td><div id="ele_trans_mainBussNm"></div></td>
+										<th>소속단체</th>
+										<td><div id="ele_trans_belong"></div></td>
+									</tr>
+									<tr>
+										<th>주소</th>
+										<td colspan="5"><div id="ele_trans_addrFull"></div></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">양도양수정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:90px;">
+								<col style="width:100px;">
+								<col style="width:100px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>처리일자</th>
+									<td>
+										<input type="search" name="procDt" id="procDt" title="처리일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:100px"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'procDt', 'yyyy-mm-dd')" />
+									</td>
+									<th>처리자</th>
+									<td>
+										<span>[[${session.userNm}]]</span>
+									</td>
+									<th>양도구분선택</th>
+									<td>
+										<select name="transCd" id="transCd" title="양도구분선택" onChange="fnTransSel()" style="width:130px"  ></select>
+									</td>
+								</tr>
+								<tr>
+									<th>처리사유</th>
+									<td colspan="5">
+										<input type="search" name="transReason" id="transReason" title="처리사유" style="width:500px;" maxlength="100" >
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<div class="reset" >
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">양도보증합계</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:110px;">
+									<col style="width:50px;">
+									<col style="width:100px;">
+									<col style="width:80px;">
+									<col style="width:50px;">
+									<col style="width:130px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>입찰</th>
+										<td style="text-align:right;">
+											<span id="ele_guarCnt11"></span>건
+										</td>
+										<td style="text-align:right;">
+											<span id="ele_guarAmt11"></span>
+										</td>
+										<th>계약(인·허가)</th>
+										<td style="text-align:right;">
+											<span id="ele_guarCnt12"></span>건
+										</td>
+										<td style="text-align:right;">
+											<span id="ele_guarAmt12" ></span>
+										</td>
+									</tr>
+									<tr>
+										<th>하자(성능)</th>
+										<td style="text-align:right;">
+											<span id="ele_guarCnt13"></span>건
+										</td>
+										<td style="text-align:right;">
+											<span id="ele_guarAmt13"></span>
+										</td>
+										<th>선금급</th>
+										<td style="text-align:right;">
+											<span id="ele_guarCnt14"></span>건
+										</td>
+										<td style="text-align:right;">
+											<span id="ele_guarAmt14"></span>
+										</td>
+									</tr>
+									<tr>
+										<th>지급(상품,지급)</th>
+										<td style="text-align:right;">
+											<span id="ele_guarCnt15"></span>건
+										</td>
+										<td style="text-align:right;">
+											<span id="ele_guarAmt15"></span>
+										</td>
+										<th >합계</th>
+										<td style="text-align:right;">
+											<span id="ele_guarCntTot"></span>건
+										</td>
+										<td style="text-align:right;">
+											<span id="ele_guarAmtTot"></span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:51%">
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">양수조합원</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:70px;">
+								<col style="width:170px;">
+								<col style="width:80px;">
+								<col style="width:150px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>조합원명</th>
+									<td colspan="3">
+										<input type="search" name="sTakeMembNo" id="sTakeMembNo" title="양수조합원" style="width:50px;" maxlength="4" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'take')}" onchange="com.fnMembInfoMulti(event,'take')">
+										<input type="search" name="sTakeMembNm" id="sTakeMembNm" title="양수조합원" style="width:150px;" maxlength="40" onkeyup="if(window.event.keyCode===13){com.fnMembInfoMulti(event,'take')}" onchange="com.fnMembInfoMulti(event,'take')">
+										<button type="button" class="btn icoSearch" onclick="com.fnMembInfoMulti(event,'take')">검색</button>
+									</td>
+									<th>대표자</th>
+									<td><div id="ele_take_ceoNm"></div></td>
+								</tr>
+								<tr>
+									<th>법인번호</th>
+									<td><div id="ele_take_lawNo"></div></td>
+									<th>사업자번호</th>
+									<td><div id="ele_take_bizNo"></div></td>
+									<th>전화번호</th>
+									<td><div id="ele_take_telNo"></div></td>
+								</tr>
+								<tr>
+									<th>상태</th>
+									<td><div id="ele_take_membStatNm"></div></td>
+									<th>주장르</th>
+									<td><div id="ele_take_mainBussNm"></div></td>
+									<th>소속단체</th>
+									<td><div id="ele_take_belong" ></div></td>
+								</tr>
+								<tr>
+									<th>주소</th>
+									<td colspan="5"><div id="ele_take_addrFull"></div></td>
+								</tr>
+							</tbody>
+						</table>
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">보증상품정보</h4>
+							</div>
+						</section>
+						<table class="tbl" id="tbl_guarLimit" ></table>
+					</div>
+				</div>
+				<!-- 그리드 우측 부분 끝 -->
+
+				<!-- 양도보증 부분 부분 -->
+				<div class="layer-flex ">
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">양도보증서정보</h4>
+							</div>
+						</section>
+					    	<div id="sheetDiv" style="width:100%;height:300px"></div>
+					</div>
+				</div>
+				<!-- 하단 버튼 부분 -->
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+				</div>
+			<!-- END 컨텐츠 영역 -->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

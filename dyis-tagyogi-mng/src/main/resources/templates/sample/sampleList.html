@@ -1,0 +1,138 @@
+<!--
+	파일정보 : sampleList.html
+	파일명 : sample현황
+	업무명 : jobContent 현황 조회, 등록, 수정
+	생성자 : DEV
+	생성일 : 1900.01.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+			    //저장후 이벤트
+			    sheet.bind("onAfterSave" , function(obj) {
+					resData = JSON.parse(obj.response.response);
+					alert(resData.resultMsg);
+			        if (resData.resultCode === 0) {
+					    //fnSearchDtl(); //조회 호출
+			        }
+				});
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/sample/selectSampleList.do", param); //param, sheetId 생략 가능
+			};
+
+			//상세 화면 호출
+			var fnView = function(){
+				param = {menuCd:7010103, paramMap:{val1:1234, val2:3456} };
+				parent.menuOpen(param);
+			};
+
+			//행 추가
+			var fnRowAdd = function(){
+				initData = {};
+				com.fnIbsRowAdd("cur", initData, sheet, "Y");//위치, 삽입데이터, sheetId, edit 활성화여부
+			};
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:250px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" >
+								<input type="search" name="sMembNm" id="sMembNm" style="width:150px;"  maxlength="40" >
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+						</dl>
+						<dl>
+							<dt>일자</dt>
+							<dd style="width:250px;">
+								<input type="text" name="sampleStaDt" id="sampleStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sampleStaDt','sampleEndDt','F');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sampleStaDt', 'yyyy-mm-dd','sampleEndDt', 1)" />
+								<input type="text" name="sampleEndDt" id="sampleEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sampleStaDt','sampleEndDt','T');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sampleEndDt', 'yyyy-mm-dd','sampleStaDt', 1)" />
+
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnView();" class="btn style08">상세</button>
+								<button type="button" onclick="javascript:fnRowAdd();" class="btn style08">행추가</button>
+								<button type="button" onclick="javascript:com.fnIbsRowDel();" class="btn style08">행삭제</button>
+								<button type="button" onclick="javascript:com.fnIbsSave('/sample/saveSample.do');" class="btn style07">저장</button>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

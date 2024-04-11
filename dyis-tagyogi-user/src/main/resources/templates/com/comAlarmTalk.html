@@ -1,0 +1,73 @@
+<!--
+	파일정보 : comAlarmTalk.html
+	파일명 : comAlarmTalk
+	업무명 : 알람톡정보
+	생성자 : 윤가영
+	생성일 : 2023.12.13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body  th:fragment="type(type)">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+
+		    /*]]>*/
+		</script>
+		
+		<article>
+            <p class="title-dept1">알림톡정보</p>
+            <div class="table-wrap info">
+                <div class="table-scroll">
+                    <table summary="신청정보">
+                        <colgroup>
+                            <col style="width:12%;">
+                            <col style="width:23%;">
+                            <col style="width:12%;">
+                            <col style="width:18%;">
+                            <col style="width:12%;">
+                            <col style="width:23%;">
+                        </colgroup>
+                        <tbody>
+							<th:block  th:if="${#strings.isEmpty(type)}">
+	                            <tr>
+	                                <th>수신자</th>
+	                                <td>
+										<select name="talkpers" id="talkpers" title="수신자" style="width:120px">
+											<option value="">직접입력</option>
+										</select>
+									</td>
+	                                <th>수신자</th>
+	                                <td><input type="text" name="talkNm" id="talkNm" title="수신자" style="width:130px" maxlength="20"/></td>
+	                                <th>수신자연락처</th>
+	                                <td>
+	                                    <input type="text" name="talkTel" id="talkTel" title="수신자연락처" style="width:150px" maxlength="13" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)"/>
+	                                </td>
+	                            </tr>
+							</th:block>
+							<th:block  th:if="${!#strings.isEmpty(type) and #strings.equals(type, 'dtl')}">
+								<tr>
+	                                <th>수신자</th>
+	                                <td>
+										<select name="talkpers" id="talkpers" title="수신자" style="width:120px" disabled>
+											<option value="">직접입력</option>
+										</select>
+									</td>
+	                                <th>수신자</th>
+	                                <td><input type="text" name="talkNm" id="talkNm" title="수신자" style="width:130px" maxlength="20" readonly/></td>
+	                                <th>수신자연락처</th>
+	                                <td>
+	                                    <input type="text" name="talkTel" id="talkTel" title="수신자연락처" style="width:150px" maxlength="13" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" readonly/>
+	                                </td>
+	                            </tr>
+							</th:block>
+                        </tbody>
+                    </table>
+                    
+                    <th:block  th:if="${!#strings.isEmpty(type) and #strings.equals(type, 'type1')}"> <!--알림톡 파라미터별 UI-->
+					</th:block>
+                </div>
+            </div>
+        </article>
+		
+	</body>
+</html>

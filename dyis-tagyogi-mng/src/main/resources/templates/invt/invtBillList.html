@@ -1,0 +1,287 @@
+<!--
+	파일정보 : invtBillList.html
+	파일명 : 출자증권현황
+	업무명 : 출자증권현황 조회, 등록, 수정
+	생성자 : 윤가영1
+	생성일 : 2023-04-14
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "20103:20108"}
+
+			var rowData = {}; //선택된 행
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//초기화
+				$("#sInvtStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetHis", el: "sheetDivHis", options: gridOptList[1] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				/////////////////////sheet 이벤트 시작 /////////////////////////////////
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter" || obj.kind === "Header") return;
+					sheetHis.removeAll();//마스터 값이 없을 경우
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					if(rowData.billNo !== "" && rowData.billNo !== undefined){
+						$("#serchFrm #billNo").val(rowData.billNo);
+					}
+
+					if(String(rowData.membNo) !== ""){
+						fnSearchDtl(); //조회 호출
+					};
+
+				});
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+					fnView("V");
+				});
+
+				/////////////////////sheet 이벤트 시작 /////////////////////////////////
+			});
+
+			//출자증권현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/invtBill/selectInvtBillList.do", param, sheet); //param, sheetId 생략 가능
+			};
+
+			//출자증권이력 조회
+			var fnSearchDtl = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/invt/selectInvtBillHistList.do", param, sheetHis); //param, sheetId 생략 가능
+			};
+
+			//화면 호출
+			var fnView = function(type){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				if(type === "V" || type === "U") {
+					if(com.fnIsEmpty(rowData)) {
+						alert('목록이 선택되지 않았습니다.');
+						return false;
+					}
+				}
+
+				// 출자증권 분할 혹은 병합 상세
+				if(type === "V"){
+					if(rowData.investCd === 20 ){
+						if(rowData.assMembNo === "" || rowData.assMembNo === undefined || rowData.assMembNo === null){
+							menuCd = "1020119"; //담보배정해제정보 상세보기
+						}else{
+							menuCd = "1020116"; //담보배정정보 상세보기
+						}
+
+					}else if(rowData.investCd === 30 ){
+						if(rowData.transMembNo === 0){
+							menuCd = "1020211"; //지분처분정보 상세보기
+						}else if(rowData.takeMembNo === 0){
+							menuCd = "1020210"; //지분취득정보 상세보기
+						}else{
+							menuCd = "1020209"; //양도양수정보 상세보기
+						}
+
+					}else if(rowData.investCd === 31){
+						menuCd = "1020216"; //출자증권 분할정보 상세보기
+
+					}else if(rowData.investCd === 32 ){
+						menuCd = "1020217"; //출자증권 병합정보 상세보기
+
+					}else {
+						menuCd = "1020109"; //출자정보 상세보기
+						//atthType = "IV08";
+					};
+				}
+
+				param = {menuCd:menuCd,
+						paramMap:{
+							investNo: rowData.investNo,
+							membNo: rowData.membNo,
+							investCd: rowData.investCd,
+							assignSeq: rowData.assignSeq,
+							ownMembNo: rowData.ownMembNo,
+							ownMembNm: rowData.ownMembNm,
+							assMembNo: rowData.assMembNo, //담보배정
+							assMembNm: rowData.assMembNm, //담보배정
+							transSeq: rowData.transSeq,
+							transMembNo: rowData.transMembNo,
+							transMembNm: rowData.transMembNm,
+							takeMembNo: rowData.takeMembNo,
+							takeMembNm: rowData.takeMembNm
+						}
+				 };
+
+				 if(rowData.investCd === 20){
+				//문제 : 해제된경우는 assignNo(그리드에 보여지는거) 안나옴 그래서 hidden 값으로 assMembNoHide로 해제된경우에도 배정되었던 조합월번호를
+				 //가져와서 해제상세화면으로 이동, asis 는 무조건 설정화면으로 이동하는등 제대로된 상세화면이 보여지지 않음 이부분을 어떻게 할건지 상의 빌효
+					 if(rowData.assMembNo === "" || rowData.assMembNo === undefined || rowData.assMembNo === null){
+						 param.paramMap.assMembNo = rowData.assMembNoHide; //해제된배정
+						 param.paramMap.orgAssMembNm = "";
+					 }else {
+						 param.paramMap.orgAssMembNm = rowData.assMembNm;
+					 }
+				 }else if(rowData.investCd === 30 ){
+						if(rowData.transMembNo === 0){
+							//지분처분정보
+							 param.paramMap.mainMembNm = rowData.takeMembNm;
+						}else if(rowData.takeMembNo === 0){
+							//지분취득정보
+							 param.paramMap.mainMembNm = rowData.transMembNm;
+						}else{
+							menuCd = "1020209"; //양도양수정보 상세보기
+						}
+
+				}else if(rowData.investCd === 31){ //분할
+					 param.paramMap.sepmerCd = "31";
+					 param.paramMap.sepmerSeq = "1"; //현재로서는 알수없음, 쿼리추가나 로직필요
+					 param.paramMap.aftBillNo = rowData.billNo;
+					 param.paramMap.befBillNo = ""; //현재로서는 알수없음, 쿼리추가나 로직필요
+
+				 }else if(rowData.investCd === 32){
+					 param.paramMap.sepmerCd = "32";
+					 param.paramMap.sepmerSeq = "1"; //현재로서는 알수없음, 쿼리추가나 로직필요
+					 param.paramMap.aftBillNo = rowData.billNo;
+					 param.paramMap.befBillNo = ""; //현재로서는 알수없음, 쿼리추가나 로직필요
+				 }
+
+				parent.menuOpen(param);
+			};
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/); //초기화 호출
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				$("#sInvtStaDt").val(com.fnDateGet(/*[[${today}]]*/, -365)); //
+				$("#sInvtEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //
+				fnSearch();
+			};
+
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="membNo" id="membNo" value=""/>
+				<input type="hidden" name="billNo" id="billNo" value=""/>
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>출자일자</dt>
+							<dd style="width:260px;">
+								<input type="text" name="sInvtStaDt" id="sInvtStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sInvtStaDt', 'yyyy-mm-dd','sInvtEndDt', 1)" />
+	                        	<input type="text" name="sInvtEndDt" id="sInvtEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sInvtEndDt', 'yyyy-mm-dd', 'sInvtStaDt', 2)" />
+	                        </dd>
+							<dt>증권번호</dt>
+							<dd style="width:240px;">
+								<input type="search" name="sBillNo" id="sBillNo" title="" maxlength="10" />
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex collapseArea mt20">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<!--<button type="button" onclick="javascript:fnView('D');" class="btn style08">상세</button>-->
+								<button type="button" onclick="javascript:fnView('V');" class="btn style08">상세</button>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+
+						<!--출자증권현황 리스트 :s-->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:400px"></div>
+						</div>
+						<!--출자증권현황 리스트 :e-->
+
+						<!--출자증권변경이력 리스트 :s-->
+						<section class="area mt15">
+							<div class="fl">
+								<h4 class="title">출자증권 변경이력</h4>
+							</div>
+						</section>
+						<div class="mt10">
+					    	<div id="sheetDivHis" style="width:100%;height:200px"></div>
+						</div>
+						<!--출자증권변경이력 리스트 :e-->
+
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

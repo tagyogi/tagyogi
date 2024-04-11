@@ -1,0 +1,95 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : mainPop.html
+	파일명 : mainPop.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xml:lang="ko">
+   
+<head>
+   <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/content.css">
+    <script src="/js/jquery-1.10.2.min.js"></script>
+	<script src="/js/jquery-3.3.1.min.js"></script>
+	<script src="/js/jquery-ui-1.10.3.js"></script>
+	<script src="/js/jquery.modal.js"></script>
+	<script src="/js/main.js"></script>
+	<script src="/js/common.js"></script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		
+		var seq =  /*[[${seq}]]*/; //팝업 seq
+		
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//html를 공통으로 쓰고있기 때문에 호출한 게시판의 atthType을 꼭 넘겨주어야 첨부파일 조회가능
+			$("input[name='atthType']").val('PP01');
+			
+			//기본세팅
+			fnMainPopView('PP01');
+				
+		});
+		
+		
+		//팝업 상세페이지 내용호출
+		var fnMainPopView = function(){
+			param = {};
+			obj = {url:"/selectMainPop.do", param:param, formId:"serch", callBack:fnMainPopViewCallback, msgYn:"N", sessYn:"N", loadYn:"N"};
+			com.fnAjaxPost(obj);
+		}
+		
+		//팝업 상세페이지 return함수
+		var fnMainPopViewCallback = function(resData){
+			//상세화면 변수값 세팅, 내용 추가
+			com.fnSetKeyVal(resData.data);
+			$('#cont').html(resData.data.cont);
+			
+			//아이비다운로드 안될시 사용할 첨부파일 다운로드
+			com.fnFileDownOne(resData.fileList);
+		}
+		
+		//아이비업로드 안될시 사용할 다운로드 샘플
+		var fnDownloadFile = function(fileInfo){
+			$("#saveFile")[0].reset();
+			com.fnFileDownBrd(fileInfo);
+		}
+		
+		/*]]>*/
+	</script>
+</head>
+<body>
+    <div>
+		<form name="saveFile" id="saveFile" method="post" onSubmit="return false;" action="">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<input type="hidden" name="atthType" value=""/>
+			<input type="hidden" name="atthSeq" value=""/>
+		</form>
+		<form name="serch" id="serch" method="post" onSubmit="return false;" action="">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<input type="hidden" name="seq" id="seq" th:value="${seq}" title="시퀀스"/>
+			<input type="hidden" name="atthType" id="atthType" value=""/>
+			<div class="detail pop flex-box fd-col">
+	    		<div class="detail-top">
+		            <p id="ele_subj" class="ko-medium"></p>
+		        </div>
+		        
+		        <div id="atthWrap" class="detail-file hide">
+		            <ul class="file"></ul>
+		        </div>
+		        
+		        <div id="cont" class="detail-txt brdCont fg-1"></div>
+		        
+	        </div>
+        </form>
+    </div>
+</body>
+</html>

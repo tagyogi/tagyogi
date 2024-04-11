@@ -1,0 +1,137 @@
+<!--
+	파일정보 : sample/sampleTab.html
+	파일명 : sample
+	업무명 : jobContent 등록, 수정
+	생성자 : DEV
+	생성일 : 1900.01.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//화면 처리
+				//달력부분
+
+				//코드값 처리
+				com.fnCodeSelectBox("GR01", "guarStat1", 1, ""); //선택
+				com.fnCodeSelectBox("GR01", "guarStat2", 2, ""); //전체
+				com.fnCodeSelectBox("GR01", "guarStat3", 1, "12"); //선택에 값 설정
+
+				com.fnCodeRadio("MB04", "div_raidoMb04", "rdoMb04", false); //가로
+				com.fnCodeRadio("CM01", "div_raidoCm01", "rdoCm01", true); //세로
+
+				com.fnCodeCheckBox("MB04", "div_checkBoxMb04", "chkMb01", false); //가로
+				com.fnCodeCheckBox("CM01", "div_checkBoxCm01", "chkCm01", true); //세로
+
+				//동적 첨부파일 생성(동적)
+				com.fnFileSet("GR21", "myUpload");
+
+				//IBsheet 초기화
+				//com.fnIbsInit(resData.gridOptList);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    //IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    //IBSheet.onRenderFirstFinishAll = function(obj){
+					//fnSearch(); //조회 호출
+				//};
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					alert(rowData.id);
+				});
+			});
+
+			//조합원조회 콜백
+			var fnMembInfoSet = function(resData){
+
+				var keyList = Object.getOwnPropertyNames(resData.membInfo);
+				for(var key in keyList ){
+					var k = keyList[key].replace(" ", "");
+					$("#div_"+k).text(resData.membInfo[k]);
+			 	}
+			};
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["today"];
+
+				if(com.fnValChk(valChks)){
+					if(confirm("저장 처리 하시겠습니까?")){
+						obj = {url:"/sample/saveSample.do", callBack:fnSaveCallBack, formId:"saveFrm", fileId:"doc_file" };
+						com.fnAjaxMulti(obj);
+
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				alert(1)
+			};
+
+			//탭공통
+			$(document).ready(function(){
+				$('#first-tab-group > div').hide();
+				$('#tab1').show();
+		        $('.tabBasic a').click(function(e) {
+		            e.preventDefault();
+		            var $this = $(this),
+		                tabgroup = '#' + $this.parents('.tabBasic').data('tabgroup'),
+		                tabfn =  $this.parents('.tabBasic').data('tabfunction'),
+		                others = $this.closest('li').siblings().children('a'),
+		                target = $this.attr('href');
+
+		            others.removeClass('active');
+		            $this.addClass('active');
+		            $(tabgroup).children('div').hide();
+		            $(target).show();
+
+		        });
+			});
+
+			/*]]>*/
+
+
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<div class="contents flex">
+				<!--탭메뉴 시작-->
+				<div class="tabBasicWrap">
+					<ul class="tabBasic" data-tabgroup="first-tab-group">
+						<li><a href="#tab1" class="active">탭1</a></li>
+						<li><a href="#tab2" class="">탭2</a></li>
+						<li><a href="#tab3" class="">탭3</a></li>
+					</ul>
+				</div>
+				<div id="first-tab-group">
+					<div id="tab1">탭1번내용</div>
+					<div id="tab2">탭2번내용</div>
+					<div id="tab3">탭3번내용</div>
+				</div>
+				<!--탭메뉴 종류-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

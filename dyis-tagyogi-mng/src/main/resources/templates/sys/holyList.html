@@ -1,0 +1,116 @@
+<!--
+	파일정보 : holy3List.html
+	파일명 : holy현황
+	업무명 : holy현황 등록 폼
+	생성자 : 변성균
+	생성일 : 2023-03-31
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				var today = /*[[${today}]]*/
+				$("#sHoliYear").val(today.substring(0,4));
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				/////////////////////sheet 이벤트 시작 /////////////////////////////////
+				//그리드 이벤트 바인드 처리
+			    //sheetDivMas 저장 후 처리
+			    sheet.bind("onAfterSave" , function(obj) {
+					resData = JSON.parse(obj.response.response);
+					alert(resData.resultMsg);
+			        if (resData.resultCode === 0) {
+					    fnSearch(); //조회 호출
+			        }
+				});
+
+				//sheetDivMas 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/holy/selectHolyList.do", param); //param, sheetId 생략 가능
+			};
+
+			//행 추가
+			var fnRowAdd = function(){
+				initData = {};
+				com.fnIbsRowAdd("pre", initData, sheet);
+			};
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>공휴일년도</dt>
+							<dd style="width:130px;">
+								<input type="text" name="sHoliYear" id="sHoliYear" style="width:60px;" >
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+
+				<div class="layer-flex mt20">
+					<!-- 내용 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnRowAdd();" class="btn style08">행추가</button>
+								<button type="button" onclick="javascript:com.fnIbsRowDel();" class="btn style08">행삭제</button>
+								<button type="button" onclick="javascript:com.fnIbsSave('/holy/saveHoly.do');" class="btn style07">저장</button>
+							</div>
+						</section>
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 내용 좌측 부분 끝 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

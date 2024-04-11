@@ -1,0 +1,334 @@
+<!--
+	파일정보 : lend/comLendReqContr.html
+	파일명 : comLendReqContr
+	업무명 : 대출상품별 화면 제어
+	생성자 : 김대성
+	생성일 : 2023-06-29
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			//계약상품정보 초기화
+			var fnLendContrViewSet = function(lendType){
+				
+				if(lendType === "11"){
+					$("#ele_concl").css("display", "");
+					if(typeof sheetConcl === "undefined"){
+						IBSheet.create({ id: "sheetConcl", el: "sheetDivConcl", options: gridOptList[1] }); //계약체결명세현황
+						
+						//계약체결명세 원클릭
+					    sheetConcl.bind("onAfterClick" , function(obj) { //원클릭
+					    	//삭제
+							if(obj.col === "delChk"){
+								com.fnIbsStatusChg(this, "D");//삭제상태변경
+							}; 	
+						});
+					} 
+					
+				}else if(lendType === "13"){
+					$("#ele_note").css("display", "");
+					if(typeof sheetNote === "undefined"){
+						IBSheet.create({ id: "sheetNote", el: "sheetDivNote", options: gridOptList[1] }); //어음담보명세현황
+						
+						//담보명세	
+						sheetNote.bind("onAfterClick" , function(obj) { //원클릭
+					    	//삭제
+							if(obj.col === "delChk"){
+								com.fnIbsStatusChg(this, "D");//삭제상태변경
+							}; 
+						});
+						
+					} 
+				
+				}else if(lendType === "14"){
+					$("#ele_bond").css("display", "");
+					if(typeof sheetBond === "undefined"){
+						IBSheet.create({ id: "sheetBond", el: "sheetDivBond", options: gridOptList[1] }); //매출채권명세현황
+						
+						//양도 매출채권 및 대출신청 명세 원클릭
+					    sheetBond.bind("onAfterClick" , function(obj) { //원클릭
+					    	//삭제
+							if(obj.col === "delChk"){
+								com.fnIbsStatusChg(this, "D");//삭제상태변경
+							}; 	
+						});
+						
+					} 
+				
+				}else if(lendType === "15"){
+					$("#ele_claim").css("display", "");
+					$("#ele_bond").css("display", "");
+					
+					if(typeof sheetClaim === "undefined"){
+						IBSheet.create({ id: "sheetClaim", el: "sheetDivClaim", options: gridOptList[1] }); //보험청구권현황
+						
+						//매출채권보험청구권현황 원클릭 (보험청구권)
+					    sheetClaim.bind("onAfterClick" , function(obj) { //원클릭
+					    	//삭제
+							if(obj.col === "delChk"){
+								com.fnIbsStatusChg(this, "D");//삭제상태변경
+							}; 	
+						});
+					} 
+					if(typeof sheetBond === "undefined"){
+						IBSheet.create({ id: "sheetBond", el: "sheetDivBond", options: gridOptList[2] }); //매출채권명세현황
+						
+						//양도 매출채권 및 대출신청 명세 원클릭
+					    sheetBond.bind("onAfterClick" , function(obj) { //원클릭
+					    	//삭제
+							if(obj.col === "delChk"){
+								com.fnIbsStatusChg(this, "D");//삭제상태변경
+							}; 	
+						});
+					} 
+			    
+				}
+			};
+			
+			//행 추가
+			var fnRowAdd = function(sheetId){
+				initData = {};
+				com.fnIbsRowAdd("pre", initData, sheetId);
+			};
+			
+			//화면 초기화 처리 호출 (입금방법, 자산구분, 보증종류, 보증약정서식종류 )(샘플현황)
+			$(document).ready(function(){
+				
+			});
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<section class="area mt5">
+			<div class="fl">
+				<h4 class="title">대출상품정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:80px;">
+				<col style="width:90px;">
+				<col style="width:240px;">
+				<col style="width:130px;">
+				<col style="">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th colspan="2">대출일자</th>
+					<td>
+						<input type="search" name="lendDt" id="lendDt" title="대출일자" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);fnLendDtSet()" onChange="fnLendDtSet();" style="width:100px" maxlength="10"/>
+						<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'lendDt', 'yyyy-mm-dd','','',fnLendDtSet)" />
+					</td>
+					<th>상환기한</th>
+					<td>
+						<input type="search" name="repayPreDt" id="repayPreDt" title="상한기한" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:100px" maxlength="10"/>
+						<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'repayPreDt', 'yyyy-mm-dd','','')" />		
+					</td>
+				</tr>
+				<tr>
+					<th colspan="2">대출금액</th>
+					<td>
+						<input type="search" name="lendAmt" id="lendAmt" title="대출금액" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);fnPayAmtCalc();" class="tar" />
+					</td>
+					<th>대체금액</th>
+					<td>
+						<input type="search" name="repLendAmt" id="repLendAmt" title="대체금액" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);fnPayAmtCalc();" class="tar"/>
+					</td>
+				</tr>
+				<tr>
+					<th colspan="2">지급대상금액(A)</th>
+					<td>
+						<input type="search" name="payAmt" id="payAmt" title="지금대상금액" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" readonly/>
+					</td>
+					<th>이자율</th>
+					<td>
+						<input type="search" name="interPer" id="interPer" title="이자율" style="width:60px"  maxlength="5" onblur="fnInterCalc()"/>&nbsp;%
+					</td>
+				</tr>
+				
+				<!-- 어음할인 -->
+				<th:block th:if="${#strings.equals(menuInfo.refVal, '13')}">
+					
+				<tr>
+					<th rowspan="4">공제 또는</br>환급금액</th>
+					<th>대출이자</th>
+					<td>
+						<input type="search" name="interAmt" id="interAmt" title="대출이자" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" readonly/>
+					</td>
+					<th>수수료</th>
+					<td>
+						<input type="search" name="commAmt" id="commAmt" title="수수료" style="width:120px"  maxlength="15" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" />
+					</td>
+				</tr>
+				<tr>
+					<th>공증료</th>
+					<td>
+						<input type="search" name="notarAmt" id="notarAmt" title="공증료" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" />
+					</td>
+					<th>국민주택채권매입비</th>
+					<td>
+						<input type="search" name="purcAmt" id="purcAmt" title="국민주택채권매입비" style="width:120px"  maxlength="15" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" />
+					</td>
+				</tr>
+				<tr>
+					<th>상계금액</th>
+					<td>
+						<input type="search" name="offsetAmt" id="offsetAmt" title="상계금액" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" />
+					</td>
+					<th>연체이자</th>
+					<td>
+						<input type="search" name="delayAmt" id="delayAmt" title="연체이자" style="width:120px"  maxlength="15" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" />
+					</td>
+				</tr>
+				<tr>
+					<th>환급이자</th>
+					<td>
+						<input type="search" name="retAmt" id="retAmt" title="환급이자" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" />
+					</td>
+					<th>소계(B)</th>
+					<td>
+						<input type="search" name="totAmt" id="totAmt" title="소계(B)" style="width:120px"  maxlength="15" readonly/>
+					</td>
+				</tr>
+				<tr>
+					<th colspan="2">차감지급액</th>
+					<td colspan="3">
+						<input type="search" name="payAmt" id="payAmt" title="차감지급액" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" readonly/>
+					</td>
+				</tr>
+				</th:block>
+				<!-- 어음할인 끝-->
+				
+				<th:block th:if="${#strings.equals(menuInfo.refVal, '14')}"> <!-- 매출채권담보부대출 -->
+				<tr>
+					<th colspan="2">대출이자(B)</th>
+					<td>
+						<input type="search" name="interAmt" id="interAmt" title="대출이자(B)" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" readonly/>
+					</td>
+					<th>차감지급액(A-B)</th>
+					<td>
+						<input type="search" name="payAmt" id="payAmt" title="차감지급액(A-B)" style="width:120px"  maxlength="15" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" class="tar" readonly/>
+					</td>
+				</tr>
+				</th:block>
+				<th:block th:if="${#strings.equals(menuInfo.refVal, '15')}"> <!-- 보험청구권담보부대출 -->
+				
+				</th:block>
+				<tr>
+					<th colspan="2">출금은행</th>
+					<td>
+						<select name="selBank" id="selBank" title="출금은행" style="width:160px" onchange="com.fnBankChange(this.value, 'out');">
+							<optoin value=""></option>
+						</select>
+						<input type="hidden" name="outBank" id="outBank" />
+					</td>
+					<th>출금계좌</th>
+					<td colspan="3">
+						<input type="search" name="outAcct" id="outAcct" style="width:200px" title="입금계좌" readonly="readonly" />
+					</td>
+				</tr>
+				<tr>
+					<th colspan="2">비고</th>
+					<td colspan="3">
+						<input type="search" name="remark" id="remark" title="비고" style="width:400px" maxlength="100" />
+					</td>
+				</tr>
+				<tr>
+					<th colspan="2">반환방법</th>
+					<td>
+						<select name="payWay" id="payWay" title="반환방법" style="width:120px" onchange=""></select>
+					</td>
+					<th>반환정보</th>
+					<td colspan="3">
+						<select name="payBanks" id="payBanks" title="반환은행" style="width:100%" onchange="com.fnMembAccChange(this.value)">
+							<option value="">선택</option>
+						</select>
+						<input type="hidden" id="payBank" name="payBank" style="width:100%" title="반환은행">
+					</td>
+					
+				</tr>
+				<tr>
+					<th colspan="2">반환예금주</th>
+					<td>
+						<input type="text" id="payNm" name="payNm" style="width:100%" title="반환예금주" readonly>
+					</td>
+					<th>반환계좌</th>
+					<td colspan="3">
+						<input type="text" id="payAcct" name="payAcct" style="width:100%" title="반환계좌" readonly>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<!-- 대출상품별 상세 추가 부분 -->
+		<div id="ele_concl" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">계약체결명세현황</h4>
+				</div>
+				<!-- 그리드 상단 부분 -->
+				<section class="area">
+					<div class="fr">
+						<button type="button" onclick="javascript:fnRowAdd(sheetConcl);" class="btn small style08">행추가</button>
+						<button type="button" onclick="javascript:com.fnIbsRowDel(sheetConcl);" class="btn small style08">행삭제</button>
+					</div>
+				</section>
+				<!-- 그리드 상단 부분 끝 -->
+			</section>
+			<div id="sheetDivConcl" style="width:100%;height:200px"></div>
+		</div>
+		<div id="ele_note" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">담보명세현황</h4>
+				</div>
+				<!-- 그리드 상단 부분 -->
+				<section class="area">
+					<div class="fr">
+						<button type="button" onclick="javascript:fnRowAdd(sheetNote);" class="btn small style08">행추가</button>
+						<button type="button" onclick="javascript:com.fnIbsRowDel(sheetNote);" class="btn small style08">행삭제</button>
+					</div>
+				</section>
+				<!-- 그리드 상단 부분 끝 -->
+			</section>
+			<div id="sheetDivNote" style="width:100%;height:200px"></div>
+		</div>
+		<div id="ele_claim" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">매출채권보험청구권현황</h4>
+				</div>
+				<!-- 그리드 상단 부분 -->
+				<section class="area">
+					<div class="fr">
+						<button type="button" onclick="javascript:fnRowAdd(sheetClaim);" class="btn small style08">행추가</button>
+						<button type="button" onclick="javascript:com.fnIbsRowDel(sheetClaim);" class="btn small style08">행삭제</button>
+					</div>
+				</section>
+				<!-- 그리드 상단 부분 끝 -->
+			</section>
+			<div id="sheetDivClaim" style="width:100%;height:200px"></div>
+		</div>
+		<div id="ele_bond" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">양도 매출채권 및 대출신청 명세</h4>
+				</div>
+				<!-- 그리드 상단 부분 -->
+				<section class="area">
+					<div class="fr">
+						<button type="button" onclick="javascript:fnRowAdd(sheetBond);" class="btn small style08">행추가</button>
+						<button type="button" onclick="javascript:com.fnIbsRowDel(sheetBond);" class="btn small style08">행삭제</button>
+					</div>
+				</section>
+				<!-- 그리드 상단 부분 끝 -->
+			</section>
+			<div id="sheetDivBond" style="width:100%;height:200px"></div>
+		</div>	
+	</body>
+</html>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.sys.repository.EmplMapper">
+
+	<!-- 직원 정보 조회 -->
+	<select id="selectEmplList" parameterType="Map" resultType="camelMap">
+		/* EmplMapper.selectEmplList */
+		SELECT
+			USER_ID
+			, USER_PW
+			, USER_NM
+			, DEPT_CD
+			, POS_CD
+			, BUSINESS
+			, USER_TEL
+			, F_GET_CRYPT_DEC(USER_CELL) USER_CELL
+			, F_GET_CRYPT_DEC(USER_EMAIL) USER_EMAIL
+			, USER_STAT
+			, WORK_BEG_DT
+			, WORK_END_DT
+			, REMARK
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, APPR_YN
+		  FROM CM_EMPLOYEE
+		<where>
+		<if test="sUserNm != null and sUserNm  != ''">
+		AND USER_NM LIKE '%' || #{sUserNm} || '%'
+		</if>
+		<if test="sUserStat != null and sUserStat  != ''">
+		AND USER_STAT = #{sUserStat}
+		</if>
+		<if test='sExamAt == "Y"'>
+		AND POS_CD IN ('30','40','90')
+		</if>
+		</where>
+		ORDER BY USER_STAT , POS_CD , DEPT_CD DESC
+	</select>
+
+	<!-- 직원 상세 조회 -->
+	<select id="selectEmpl" parameterType="Map" resultType="camelMap">
+		/* EmplMapper.selectEmpl*/
+		SELECT
+			USER_ID
+			, USER_PW
+			, USER_NM
+			, DEPT_CD
+			, F_GET_CD_NM('CM04', DEPT_CD) DEPT_NM
+			, POS_CD
+			, F_GET_CD_NM('CM05', POS_CD) POS_NM
+			, BUSINESS
+			, USER_TEL
+			, F_GET_CRYPT_DEC(USER_CELL) USER_CELL
+			, F_GET_CRYPT_DEC(USER_EMAIL) USER_EMAIL
+			, USER_STAT
+			, F_GET_CD_NM('CM06', USER_STAT) USER_STAT_NM
+			, WORK_BEG_DT
+			, WORK_END_DT
+			, REMARK
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, APPR_YN
+			, ALRM_YN
+		  FROM CM_EMPLOYEE
+		<where>
+		<if test="userId != null and userId != ''">
+		AND USER_ID = #{userId}
+		</if>
+		</where>
+	</select>
+
+	<!-- 직원 등록 처리 -->
+	<insert id="insertEmpl" parameterType="Map"  >
+		/* EmplMapper.insertEmpl */
+		INSERT INTO CM_EMPLOYEE (
+			USER_ID
+			, USER_PW
+			, USER_NM
+			, DEPT_CD
+			, POS_CD
+			, BUSINESS
+			, USER_TEL
+			, USER_CELL
+			, USER_EMAIL
+			, USER_STAT
+			, WORK_BEG_DT
+			, WORK_END_DT
+			, REMARK
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, APPR_YN
+		) VALUES (
+			#{userId}
+			, #{userPw}
+			, #{userNm}
+			, #{deptCd}
+			, #{posCd}
+			, #{business}
+			, #{userTel}
+			, F_GET_CRYPT_ENC(#{userCell})
+			, F_GET_CRYPT_ENC(#{userEmail})
+			, #{userStat}
+			, REPLACE(#{workBegDt}, '-', '')
+			, REPLACE(#{workEndDt}, '-', '')
+			, #{remark}
+			, SYSDATE
+			, #{regNm}
+			, SYSDATE
+			, #{regNm}
+			, #{apprYn}
+		)
+	</insert>
+
+	<!-- 직원 수정 처리 -->
+	<update id="updateEmpl" parameterType="Map"  >
+		/* EmplMapper.updateEmpl */
+		UPDATE CM_EMPLOYEE
+		SET
+			USER_PW = NVL(#{userPwEnc}, USER_PW)
+			, USER_NM = #{userNm}
+			, DEPT_CD = #{deptCd}
+			, POS_CD = #{posCd}
+			, BUSINESS = #{business}
+			, USER_TEL = #{userTel}
+			, USER_CELL = F_GET_CRYPT_ENC(#{userCell})
+			, USER_EMAIL = #{userEmail}
+			, USER_STAT = #{userStat}
+			, WORK_BEG_DT = REPLACE(#{workBegDt}, '-', '')
+			, WORK_END_DT = REPLACE(#{workEndDt}, '-', '')
+			, REMARK = #{remark}
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{regNm}
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<!-- 직원정보수정 - 마이페이지(개인정보수정-단건) -->
+	<update id="updateMyInfo" parameterType="Map"  >
+		/* EmplMapper.updateMyInfo */
+		UPDATE CM_EMPLOYEE
+		SET
+			USER_PW = NVL(#{userPwEnc}, USER_PW)
+			<if test="userTel != null and userTel  != ''">
+				, USER_TEL = #{userTel}
+			</if>
+			<if test="userCell != null and userCell  != ''">
+				, USER_CELL = F_GET_CRYPT_ENC(#{userCell})
+			</if>
+			<if test="userEmail != null and userEmail  != ''">
+				, USER_EMAIL = F_GET_CRYPT_ENC(#{userEmail})
+			</if>
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{regNm}
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<!-- 직원 삭제 처리 -->
+	<delete id="deleteEmpl" parameterType="Map"  >
+		/* EmplMapper.deleteEmpl */
+		DELETE FROM CM_EMPLOYEE
+		WHERE USER_ID = #{userId}
+	</delete>
+
+</mapper>

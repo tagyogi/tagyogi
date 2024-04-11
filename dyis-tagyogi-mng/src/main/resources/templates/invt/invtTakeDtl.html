@@ -1,0 +1,278 @@
+<!--
+	파일정보 : ivnt/invtTakeDtl.html
+	파일명 : invtTakeDtl
+	업무명 : 출자증권지분취득 상세
+	생성자 : 윤가영1
+	생성일 : 2023-07-19
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "20206"}
+
+			var todayString = /*[[${today}]]*/;
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//화면 처리
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				fnIbsInvtTrans(gridOptList[0]); //출자담보정보(공통부)
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+
+					fnSearch(); //조회 호출
+				};
+
+			});
+
+			//검색
+			var fnSearch = function(){
+				var investNo = /*[[${paramMap.investNo}]]*/;
+				var transSeq = /*[[${paramMap.transSeq}]]*/;
+				var transMembNo = /*[[${paramMap.transMembNo}]]*/;
+				var takeMembNo = /*[[${paramMap.takeMembNo}]]*/;
+			    var param = {investNo : investNo, transSeq : transSeq, transMembNo : transMembNo, takeMembNo : takeMembNo};
+
+				obj = {url:"/invtTran/selectInvtTakeDtl.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+
+			};
+
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+
+				//양도전좌수, 양도전금액 계산 => resData.invtTransData.transAmt : investCd 30(양도양수했던 좌수) + membData.investAmt (현재 조합원의 출자좌수, 즉 반환후의 좌수)
+				resData.membData.transBfAmt = com.addComma(Number(resData.invtTransData.transAmt)+Number(resData.membData.investAmt));
+				resData.membData.transBfNum = com.addComma(Number(resData.invtTransData.transNum)+Number(resData.membData.investNum));
+				resData.invtTransData.transAmt = com.addComma(resData.invtTransData.transAmt);
+				resData.membData.investAmt = com.addComma(resData.membData.investAmt);
+
+				//값세팅
+				com.fnSetKeyVal(resData.invtTransData);
+				com.fnSetKeyVal(resData.membData);
+
+				//시트값 설정
+				sheetInvtTrans.loadSearchData(resData.invtTransDataList);
+
+				//콤마추가 클래스들 세팅
+				//$.each($(".setCommaCls"), function(idx,item){
+				//	$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
+				//});
+
+			};
+
+			//수정
+			var fnUpt = function(){
+				param = {menuCd:"1020212", paramMap:{transMembNo:/*[[${paramMap.transMembNo}]]*/
+										, takeMembNo:/*[[${paramMap.takeMembNo}]]*/
+										, mainMembNm:/*[[${paramMap.mainMembNm}]]*/
+										, investNo:/*[[${paramMap.investNo}]]*/
+										, transSeq:/*[[${paramMap.transSeq}]]*/
+										, atthType:/*[[${menuInfo.atthType}]]*/
+										}
+				};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			};
+
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" />
+			<div class="contents flex">
+				<div class="layer-flex collapseArea mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+
+						<!--조합원정보-->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">조합원정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup> 
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>조합원명</th>
+										<td><span id="ele_membNo"></span>&nbsp;/&nbsp;<span id="ele_membNm"></span></td>
+										<th>대표자</th>
+										<td><span id="ele_ceoNm"></span></td>
+										<th>주장르</th>
+										<td><span id="ele_mainBussNm"></span></td>
+									</tr>
+									<tr>
+										<th>사업자번호</th>
+										<td><span id="ele_bizNo"></span></td>
+										<th>법인등록번호</th>
+										<td><span id="ele_lawNo"></span></td>
+										<th>소속단체</th>
+										<td><span id="ele_belong"></span></td>
+
+									</tr>
+									<tr>
+										<th>전화번호</th>
+										<td><span id="ele_telNo"></span></td>
+										<th>주소</th>
+										<td colspan="3"><span id="ele_addrFull"></span></td>
+									</tr>
+									<tr>
+										<th>취득전좌수</th>
+										<td><span id="ele_transBfNum"></span></td>
+										<th>취득전금액</th>
+										<td colspan="3"><span id="ele_transBfAmt"></span></td>
+									</tr>
+									<tr>
+										<th>출자좌수</th>
+										<td><span id="ele_investNum"></span></td>
+										<th>출자금액</th>
+										<td colspan="3"><span id="ele_investAmt"></span></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--조합원정보 : e-->
+
+						<!--지분취득설정정보 : s-->
+						<div class="wrapBox mortFormat">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">지분취득설정정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup> 
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+									<col style="width:90px;">
+									<col style="width:140px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>지분취득일자</th>
+										<td colspan="7">
+											<div id="ele_transDt" class="setCommaCls"></div>
+										</td>
+									</tr>
+									<tr>
+										<th>지분취득좌수</th>
+										<td>
+											<div id="ele_transNum" class="setCommaCls"></div>
+										</td>
+										<th>지분취득금액</th>
+										<td colspan="5">
+											<div id="ele_transAmt" class="setCommaCls"></div>
+										</td>
+									</tr>
+									<tr>
+										<th>지분취득사유</th>
+										<td colspan="7">
+											<div id="ele_takeTypeNm" class="setCommaCls"></div>
+											<div id="ele_remark" class="setCommaCls"></div>
+										</td>
+									</tr>
+									<tr>
+										<th>출금은행</th>
+										<td>
+											<div id="ele_outBankNm" class="setCommaCls"></div>
+										</td>
+										<th>출금계좌</th>
+										<td colspan="5">
+											<div id="ele_outAcct" class="setCommaCls"></div>
+										</td>
+									</tr>
+									<tr>
+										<th>반환방법</th>
+										<td>
+											<div id="ele_payWayNm" class="setCommaCls"></div>
+										</td>
+										<th>반환예금주</th>
+										<td colspan="5">
+											<div id="ele_payNm" class="setCommaCls"></div>
+										</td>
+									</tr>
+									<tr>
+										<th>반환은행</th>
+										<td>
+											<div id="ele_payBankNm" class="setCommaCls"></div>
+										</td>
+										<th>반환계좌</th>
+										<td colspan="5">
+											<div id="ele_payAcct" class="setCommaCls"></div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--지분취득설정정보 : e-->
+
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+
+					<div class="collapseBox fixable" style="width:49%">
+						<!--출자증권담보설정목록 : s-->
+						<th:block th:include="com/comInvtTrans :: type1('출자증권목록')"></th:block> <!-- 줄자증권목록 -->
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!--layer-flex-->
+				<!-- 처리 버튼 영역 -->
+				<div class="area mt50" style="width:100%">
+					<section class="area">
+						<div class="fc">
+							<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" >수정</button>
+							<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+						</div>
+					</section>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

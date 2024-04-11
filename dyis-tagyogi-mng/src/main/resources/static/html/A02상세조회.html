@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="Generator" content="EditPlus®">
+    <meta name="Keywords" content="한국콘텐츠공제조합">
+    <meta name="title" content="한국콘텐츠공제조합">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>한국콘텐츠공제조합</title>
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <!--<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">-->
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/jquery-ui-1.10.3.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            //lnb 화면확인용 스크립트
+            //대메뉴 클릭
+            $('.lnbArea .lnb dt').click(function() {
+                $(this).parents('.lnb').toggleClass('active');
+            });
+
+            //중메뉴 클릭시 
+            $('.lnbArea .lnb dd > a').click(function() {
+                var dep2 = $(this).parents('.lnb dd');
+
+                if ($(dep2).hasClass('has')) { //3depth있는 메뉴시
+                    $(dep2).toggleClass('active');
+                } else { //3depth 없는 메뉴시
+                    $('.lnbArea .lnb dd a').removeClass('active');
+                    $(this).toggleClass('active');
+                }
+            });
+
+            //3depth 클릭시
+            $('.lnbArea .lnb .dep3 a').click(function() {
+                $('.lnbArea .lnb dd a').removeClass('active');
+                $(this).toggleClass('active');
+            });
+
+            // 다이얼로그 샘플 팝업
+            $('#dialog').dialog({
+                autoOpen: true,
+                title: '팝업 타이틀',
+                modal: true,
+                width: '1100',
+                height: '400'
+            });
+
+        });
+
+        /*$("#dialog").dialog({
+            title: "",
+            classes: {
+                "ui-dialog": "bgGray"
+            },
+            resizable: true,
+            width: 650,
+            height: 700,
+            modal: true,
+            close: function(event, ui) {
+                dialogClose();
+            },
+            beforeClose: function(event, ui) {
+                $("#popFrm").attr("src", "")
+            }
+        }).focus();*/
+
+        function dialogClose() {
+            $("#dialog").dialog("close");
+            $("#dialog").dialog('destroy');
+        }
+    </script>
+    <script>
+        //datepicker 화면확인용 임시시크립트
+        $(function($) {
+            try {
+                $.datepicker.regional['ko'] = {
+                    closeText: '\ub2eb\uae30',
+                    prevText: '\uc774\uc804',
+                    nextText: '\ub2e4\uc74c',
+                    changeMonth: true, // 월을 바꿀수 있는 셀렉트 박스를 표시한다. 
+                    changeYear: true, // 년을 바꿀 수 있는 셀렉트 박스를 표시한다.
+                    yearRange: 'c-100:c+10', // 년도 선택 셀렉트박스를 현재 년도에서 이전, 이후로 얼마의 범위를 표시할것인가
+                    currentText: '\uc624\ub298',
+                    monthNames: ['1\uc6d4', '2\uc6d4', '3\uc6d4', '4\uc6d4', '5\uc6d4', '6\uc6d4', '7\uc6d4', '8\uc6d4', '9\uc6d4', '10\uc6d4', '11\uc6d4', '12\uc6d4'],
+                    monthNamesShort: ['1\uc6d4', '2\uc6d4', '3\uc6d4', '4\uc6d4', '5\uc6d4', '6\uc6d4', '7\uc6d4', '8\uc6d4', '9\uc6d4', '10\uc6d4', '11\uc6d4', '12\uc6d4'],
+                    dayNames: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    dayNamesShort: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    dayNamesMin: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    weekHeader: 'Wk',
+                    dateFormat: 'yy-mm-dd',
+                    firstDay: 0,
+                    showMonthAfterYear: true,
+                    yearSuffix: '\ub144',
+                    showOn: 'button',
+                    buttonImage: '../images/icon_calendar.png', //이미지 url
+                    buttonImageOnly: true
+                };
+                $.datepicker.setDefaults($.datepicker.regional['ko']);
+
+                $(".date").datepicker().css("margin-right", "2px").bind("focus", function() {
+                    $(this).select();
+                });
+                $(".ui-datepicker-trigger").css("cursor", "pointer");
+            } catch (e) {}
+        });
+    </script>
+</head>
+
+<body>
+        
+
+	<div class="contentsArea">
+		<div class="contents flex">
+			<!-- STAR 컨텐츠 영역 -->
+			<section class="area">
+				<div class="fl">
+					<h4 class="title">접수처리정보</h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:100px;">
+					<col style="">
+					<col style="width:100px;">
+					<col style="">
+					<col style="width:100px;">
+					<col style="">
+					<col style="width:100px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>신고번호</th>
+						<td>M2023-0012</td>
+						<th>진행상태</th>
+						<td>접수</td>
+						<th>신청구분</th>
+						<td>등록신청</td>
+						<th>처리기간</th>
+						<td>7일</td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>접수일자</th>
+						<td>2022.07.01</td>
+						<th>처리일자</th>
+						<td>-</td>
+						<th>등록번호</th>
+						<td colspan="3">-</td>
+					</tr><!-- //tr -->
+				</tbody>
+			</table><!-- //tbl -->
+			
+
+			<section class="area">
+				<div class="fl">
+					<h4 class="title">등록정보</h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:130px;">
+					<col style="width:100px;">
+					<col style="">
+					<col style="width:100px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th rowspan="3" class="tac">
+							<div class="profileImg">
+								<img src="" alt="이미지">
+							</div>
+							<button type="button" class="btn icoSearch inline mt5">검색</button>
+						</th>
+						<th>성명</th>
+						<td>
+							<input type="text" name="" style="width: 100px;">
+							<button type="button" class="btn icoSearch">검색</button>
+							<div class="fr">
+								<span class="text">영문 : </span><input type="text" name="" style="width: 120px;">
+							</div>
+						</td>
+						<th>주민등록번호</th>
+						<td>
+							<span class="text">800101-1******</span>
+							<button type="button" class="btn icoSearch">검색</button>
+						</td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>주소</th>
+						<td colspan="3">
+							<a href="javascript:;" class="btn style08 fl">주소검색</a>
+							<input type="text" name="" style="width: 70px;" class="readonly" readonly="readonly" />
+							<input type="text" name="" style="width: 220px;" class="readonly" readonly="readonly" />
+							<input type="text" name="" style="width: 220px;">
+						</td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>휴대전화번호</th>
+						<td>
+							<select name="" style="width: 60px;">
+								<option value="" selected="">02</option>
+								<option value="">063</option>
+							</select>
+							<span class="text">-</span>
+							<input type="text" name="" style="width: 50px;">
+							<span class="text">-</span>
+							<input type="text" name="" style="width: 60px;">
+						</td>
+						<th>이메일</th>
+						<td>
+							<input type="text" name="" style="width: 150px;">
+							<span class="text">@</span>
+							<input type="text" name="" style="width: 100px;">
+							<select name="" style="width: 80px;">
+								<option value="" selected="">naver</option>
+								<option value="">naver</option>
+							</select>
+						</td>
+					</tr><!-- //tr -->
+				</tbody>
+			</table><!-- //tbl -->
+
+			<table class="tbl">
+				<colgroup>
+					<col style="width:130px;">
+					<col style="width:100px;">
+					<col style="">
+					<col style="width:100px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>자격 사항</th>
+						<th>자격번호</th>
+						<td>
+							<input type="text" name="" style="width:150px">
+						</td>
+						<th>자격취득일자</th>
+						<td>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+						</td>
+					</tr><!-- //tr -->
+				</tbody>
+			</table><!-- //tbl -->
+
+			<table class="tbl">
+				<colgroup>
+					<col style="width:130px;">
+					<col style="width:100px;">
+					<col style="">
+					<col style="width:100px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th rowspan="4">근무처</th>
+						<th>근무처명</th>
+						<td>
+							<input type="text" name="" style="width: 120px;">
+							<button type="button" class="btn icoSearch">검색</button>
+						</td>
+						<th>근무처형태</th>
+						<td>
+							<label class="radio">
+								<input type="radio" name="" checked><span>전체</span>
+							</label><!-- //radio -->
+							<label class="radio">
+								<input type="radio" name=""><span>법인</span>
+							</label><!-- //radio -->
+						</td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>개설신고번호</th>
+						<td><input type="text" name="" style="width: 100%;" class="readonly" readonly="readonly" /></td>
+						<th>신고일자</th>
+						<td>
+							<div class="date-box" style="width: 120px;" >
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+						</td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>소재지</th>
+						<td colspan="3">
+							<input type="text" name="" style="width: 70px;" class="readonly" readonly="readonly" />
+							<input type="text" name="" style="width: 220px;" class="readonly" readonly="readonly" />
+							<input type="text" name="" style="width: 220px;" class="readonly" readonly="readonly" />
+						</td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>전화번호</th>
+						<td>
+							<input type="text" name="" style="width: 50px;" class="readonly" readonly="readonly" />
+							<span class="text">-</span>
+							<input type="text" name="" style="width: 50px;" class="readonly" readonly="readonly" />
+							<span class="text">-</span>
+							<input type="text" name="" style="width: 60px;" class="readonly" readonly="readonly" />
+						</td>
+						<th>이메일</th>
+						<td>
+							<input type="text" name="" style="width: 150px;" class="readonly" readonly="readonly" />
+							<span class="text">@</span>
+							<input type="text" name="" style="width: 100px;" class="readonly" readonly="readonly" />
+							
+						</td>
+					</tr><!-- //tr -->
+				</tbody>
+			</table><!-- //tbl -->
+
+			<table class="tbl tac">
+				<colgroup>
+					<col style="width:130px;">
+					<col style="width:100px;">
+					<col style="">
+					<col style="width:280px;">
+					<col style="">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th rowspan="4" class="tar">실무교육<br>이수현황<br>(해당자)</th>
+						<th>교육종류</th>
+						<th>교육과정명</th>
+						<th>교육기간</th>
+						<th>교육기관</th>
+						<th>교육시간</th>
+					</tr><!-- //tr -->
+					<tr>
+						<th>윤리</th>
+						<td><input type="text" name="" style="width: 100%" ></td>
+						<td>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+							<span class="text">~</span>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+						</td>
+						<td><input type="text" name="" style="width: 100%" ></td>
+						<td><input type="text" name="" style="width: 100%" ></td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>전문</th>
+						<td><input type="text" name="" style="width: 100%" ></td>
+						<td>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+							<span class="text">~</span>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+						</td>
+						<td><input type="text" name="" style="width: 100%" ></td>
+						<td><input type="text" name="" style="width: 100%" ></td>
+					</tr><!-- //tr -->
+					<tr>
+						<th>자기계발</th>
+						<td><input type="text" name="" style="width: 100%" ></td>
+						<td>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+							<span class="text">~</span>
+							<div class="date-box" style="width: 120px;">
+								<input type="text" name="" class="date">
+							</div><!-- //date-box -->
+						</td>
+						<td>-</td>
+						<td><input type="text" name="" style="width: 100%" ></td>
+					</tr><!-- //tr -->
+					<tr>
+						<th></th>
+						<th colspan="4">합계</th>
+						<td><input type="text" name="" style="width: 100%" class="readonly" readonly="readonly" /></td>
+					</tr><!-- //tr -->
+				</tbody>
+			</table><!-- //tbl -->
+
+			<table class="tbl">
+				<colgroup>
+					<col style="width:130px;">
+					<col style="width:100px;">
+					<col style="width:300px">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th rowspan="4" class="tar">첨부서류</th>
+						<th>제출서류</th>
+						<td>
+							
+						</td>
+					</tr><!-- //tr -->
+					<tr>
+						<td colspan="2">
+							건축사 자격증 사본
+						</td>
+						<td>
+							<input type="text" name="" style="width: 300px" >
+							<div class="inputFile_area">
+								<label class="inputFile_button" for="input-file">첨부파일</label>
+								<input type="file" id="input-file" style="display:none">
+							</div><!-- //inputFile_area -->
+						</td>
+					</tr><!-- //tr -->
+					<tr>
+						<td colspan="2">
+							건축사 실무교육 이수증명서(해당자에 한함)
+						</td>
+						<td>
+							<input type="text" name="" style="width: 300px" >
+							<div class="inputFile_area">
+								<label class="inputFile_button" for="input-file">첨부파일</label>
+								<input type="file" id="input-file" style="display:none">
+							</div><!-- //inputFile_area -->
+						</td>
+					</tr><!-- //tr -->
+					
+				</tbody>
+			</table><!-- //tbl -->
+
+			<section class="area">
+				<a href="javascript:;" class="btn style01">저장</a>
+				<a href="javascript:;" class="btn style02">저장</a>
+				<a href="javascript:;" class="btn style03">저장</a>
+				<a href="javascript:;" class="btn style04">저장</a>
+				<a href="javascript:;" class="btn style05">저장</a>
+				<a href="javascript:;" class="btn style06">저장</a>
+				<a href="javascript:;" class="btn style07">작성완료</a>
+				<a href="javascript:;" class="btn style08">작성완료</a>
+				<a href="javascript:;" class="btn style06">취소</a>
+			</section><!-- //area -->
+
+			<!-- END 컨텐츠 영역 -->
+		</div><!-- //contents -->
+
+	</div><!-- //contentsArea -->
+
+
+</body></html>

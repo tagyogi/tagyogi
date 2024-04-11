@@ -1,0 +1,64 @@
+<!--
+	파일정보 : comGuarContrDtl.html
+	파일명 : comGuarContrDtl
+	업무명 : 우측 조합원정보
+	생성자 : bsg
+	생성일 : 2023.04.03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+
+		    /*]]>*/
+		</script>
+		<div id="areaGuarContr">
+		<section class="area">
+			<div class="fl">
+				<h4 class="title fl">약정정보<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarContrDtl.html)</th:block></h4>
+			</div>
+			<div class="fr hide" id="areaGuarContr_hideBtn">
+				<button type="button" onclick="guarCom.fnHideArea(this, 'tbl_comGuarContrDtl');" class="btn small style08">숨김</button>
+			</div>
+
+		</section>
+		<table class="tbl" id="tbl_comGuarContrDtl">
+			<colgroup>
+				<col style="width:90px;">
+				<col style="width:140px;">
+				<col style="width:90px;">
+				<col style="width:140px;">
+				<col style="width:90px;">
+				<col style="width:140px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>신용도</th>
+					<td><span id="ele_grade"></span></td>
+					<th>약정구분</th>
+					<td><span id="ele_contrTypeNm"></span></td>
+					<th>약정기간</th>
+					<td><span id="ele_contrTermShotDt"></span></td>
+				</tr>
+				<tr>
+					<th>한도금액</th>
+					<td><span id="ele_limitAmt"></span></td>
+					<th>사용액</th>
+					<td><span id="ele_useAmt"></span></td>
+					<th>가능액</th>
+					<td><span id="ele_remainAmt"></span></td>
+				</tr>
+				<tr>
+					<th>츨자좌수</th>
+					<td><span id="ele_investNum"></span>&nbsp;좌</td>
+					<th>담보좌수</th>
+					<td><span id="ele_mortNum"></span>&nbsp;좌</td>
+					<th>약정좌수</th>
+					<td><span id="ele_contrNum"></span>&nbsp;좌</td>
+				</tr>
+			</tbody>
+		</table>
+		</div>
+	</body>
+</html>

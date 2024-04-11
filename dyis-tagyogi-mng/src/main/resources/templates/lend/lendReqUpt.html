@@ -1,0 +1,392 @@
+<!--
+	파일정보 : lend/lendReqUpt.html
+	파일명 : lendReq
+	업무명 : 대출신청 수정
+	생성자 : 김대성
+	생성일 : 2023-06-28
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/lendCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "CM01:MB04:GR01:GR21", gridNoList : "40308:40202:40203:40204:40205", accYn : "Y"}
+			
+			var today = /*[[${today}]]*/
+			var lendType = /*[[${paramMap.lendType}]]*/; //메뉴참조값 (융자상품)
+			var paramMap  = /*[[${paramMap}]]*/
+			var lendInfo = {}; //대출정보
+			
+			var lendInterCalc = false; //재계산필요여부
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//화면 처리
+				//$(".contrInfo").show(); //조합원정보 약정한도 정보 표출
+				com.fnCodeSelectBox("LD11", "interWay", 0, "10"); //이자산정방법
+				
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#myUpload"));
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheetInter", el: "sheetDivInter", options: gridOptList[0] }); //이자정보
+			    IBSheet.create({ id: "sheetHist", el: "sheetDivHist", options: gridOptList[1] }); //변경이력
+			    IBSheet.create({ id: "sheetRepay", el: "sheetDivRepay", options: gridOptList[2] }); //상환현황
+			    
+			    fnLendContrViewSet(lendType); //comLendReqContr.html
+				
+				//시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//넘어온 파라미터 설정 및 상세 정보 조회
+				//	console.log(paramMap);
+					$("#membNo").val(paramMap.membNo);
+					$("#lendNo").val(paramMap.lendNo);
+					//$("#atthType").val(paramMap.atthType);
+					
+					$("#contrNo").val(paramMap.contrNo);
+					$("#lendType").val(paramMap.lendType);
+					$("#lendNo").val(paramMap.lendNo);
+					$("#atthNo").val(paramMap.atthNo);
+					$("#atthType").val(paramMap.atthType);
+					
+					obj = {url:"/lend/selectLend.do", formId:"saveFrm", callBack:fnDtlCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxPost(obj);
+				};
+				
+			});
+			
+			//상세 조회 콜백 
+			var fnDtlCallBack = function(resData){
+				lendInfo = resData.lend; //대출정보
+				com.fnSetKeyVal(resData.memb); //조합원 설정
+				com.fnSetKeyVal(resData.contr); //약정정보 설정
+				//동적 융자상품정보설정
+				lendCom.fnSetLendLimitView("LD01", "tbl_lendLimit", resData.contr); 
+				
+				com.fnSetKeyVal(resData.lend); //대출정보
+				sheetInter.loadSearchData(resData.interList); //대출이자현황
+				sheetHist.loadSearchData(resData.histList); //대출변경이력
+				sheetRepay.loadSearchData(resData.repayList); //상환현황
+				
+				com.fnIbsUploadView($("#myUpload"), resData.fileList); 
+				//상품별 상세현황
+				if(lendType === "11"){
+					sheetConcl.loadSearchData(resData.conclList); //계약체결명세현황
+				}else if(lendType === "13"){
+					sheetNote.loadSearchData(resData.noteList); //어음담보명세현황
+				}else if(lendType === "14"){
+					sheetBond.loadSearchData(resData.bondList); //매출채권명세현황
+				}else if(lendType === "15"){
+					sheetBond.loadSearchData(resData.bondList); //매출채권명세현황
+					sheetClaim.loadSearchData(resData.claimList); //매출채권명세현황
+			    }
+				
+				//약정가능좌수 설정
+				var contrNum = resData.contr.contrNum;
+			    if(resData.contr.contrStat !== "10") contrNum = 0;
+			    $("#ele_contrRemainNum").text(resData.memb.mortNum - resData.memb.assignNum - resData.memb.contrUseNum + contrNum);
+				
+				com.fnIbsUploadViewOne(resData.fileList, "upt"); //첨부파일설정
+				
+				//조합계좌설정
+				com.fnSetBankAccList("selBank", 1, resData.lend.outBank+","+resData.lend.outAcct);
+				
+				//알림톡세팅
+				var setParam = {membNo: $("#membNo").val(), setTalk:"Y", setVal:resData.contr.talkNm}
+				com.fnSetPersList(setParam);	
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+				
+			}
+			
+			
+			//한도조회 콜백
+			var fnLendContrCallBack = function(resData){
+				//console.log(resData);
+					
+				com.fnSetKeyVal(resData.contr, "ele_contrArea"); //한도정보설정
+				
+				//alert(resData.contr.finalGrade);
+				$("#finalGrade").val(resData.contr.finalGrade); //신용도
+				
+				$("#ele_finalGrade").text(resData.grade); //신용도
+				$("#ele_limitAmt").text(resData.contr["limitAmt"+lendType]);	//한도금액
+				$("#ele_useAmt").text(resData.contr["useAmt"+lendType]);		//사용액
+				$("#ele_remainAmt").text(resData.contr["remainAmt"+lendType]);	//가능액
+			}
+			
+			//이자계산
+			var fnInterCalc = function(){
+				//alert($("#lendDt").val() +" /" + $("#repayPreDt").val() +" /" +  $("#lendAmt").val() +" /" + $("#interPer").val());
+				lendCom.fnInterCalc(sheetInter, sheetRepay);
+				lendInterCalc = false;
+			}
+			
+			//대출일자 입력
+			var fnLendDtSet = function(){
+				var lendDt = $("#lendDt").val();
+				if(lendDt.length === 10){
+					$("#repayPreDt").val(com.fnDateGet($("#lendDt").val(), 365)); //	
+					
+					//이자율 조회
+					var param = {appDt : $("#lendDt").val(), membNo: $("#membNo").val(), finalGrade : $("#finalGrade").val(), lendType : lendType }
+					obj = {url:"/membRateLend/selectLendRate.do", param:param, callBack:fnLendTypeSelCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+				}
+			}
+			
+			//대출상품 선택 콜백
+			var fnLendTypeSelCallBack = function(resData){
+				if(lendType === "11"){
+					$("#interPer").val(resData.data.conclusRate); //이율
+				}else if(lendType === "12"){
+					$("#interPer").val(resData.data.creditRate); //이율
+				}else if(lendType === "13"){
+					$("#interPer").val(resData.data.noteRate); //이율
+				}else if(lendType === "14"){
+					$("#interPer").val(resData.data.bondRate); //이율
+				}else if(lendType === "15"){
+					$("#interPer").val(resData.data.claimRate); //이율
+			    }
+			}
+			
+			//대출금액 입력
+			var fnPayAmtCalc = function(val){
+				var remainAmt = $("#remainAmt"+lendType).val();  //잔여액
+				
+				var lendAmt = com.rmComma($("#lendAmt").val()); //대출금액
+				var repLendAmt = com.rmComma($("#repLendAmt").val()); //대체금액
+				
+				if(lendAmt === "") lendAmt = 0;
+				if(repLendAmt === "") repLendAmt = 0;
+				
+				payAmt = lendAmt - repLendAmt;
+				
+				if(remainAmt < payAmt){
+					alert("대출금액이 한도금액보다 큽니다.");
+					$("#lendAmt").focus();
+					return;
+				}
+			
+				$("#payAmt").val(com.addComma(payAmt));
+				
+				lendInterCalc = true;	
+			}
+			
+			
+			//저장
+			var fnSave = function(){
+				
+				if(lendInterCalc){
+					alert("이자 재계산이 필요합니다. 이자계산을 진행하십시오.");
+					return;
+				}
+				
+				//필수체크
+				fnPayAmtCalc(); //한도금액 체크
+			
+				//필수체크
+				var valChks = ["membNo", "contrDt", "contrBegDt", "contrExpDt", "contrNum"
+							, "gradeNo", "lendType", "limitAmt", "lendDt", "repayPreDt"
+							, "lendAmt", "interPer", "histReason"];
+				if(com.fnValChk(valChks)){
+					//지급 금액 설정
+					if(confirm("저장 처리 하시겠습니까?")){
+						var param = $("#saveFrm").serializeObject();
+						param.inter = sheetInter.getSaveJson(2); //수정될경우마
+						
+						if(lendType === "11"){ //계약진행자금대출 LD_MAS_CONCL (계약체결현황)
+							param.conclus = sheetConcl.getSaveJson(0);
+						}else if(lendType === "13"){ //어음할인 LD_MAS_NOTE (담보명세)
+							param.note = sheetNote.getSaveJson(0);
+						}else if(lendType === "14"){ //양도 매출재춴 및 대출신청 명세 LD_MAS_BOND 
+							param.bond = sheetBond.getSaveJson(0);
+						}else if(lendType === "15"){ //매출채권보험청구권 명세 LD_MAS_CLAIM, LD_MAS_BOND
+							param.claim = sheetClaim.getSaveJson(0);
+							param.bond = sheetBond.getSaveJson(0);
+						}
+						
+						obj = {url:"/lend/updateLend.do", callBack:fnSaveCallBack, jParam:param, fileId:"myUpload", sessYn:"Y" };
+						com.fnAjaxMulti(obj);
+					}
+				}	
+				
+			};
+			
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				if(resData.resultCode === 0){
+					param = {menuCd:"1040207", paramMap:{
+														lendNo:$("#lendNo").val()
+														, lendType:$("#lendType").val()//상품종류(화면제어)
+														, atthType:$("#atthType").val()
+										}
+					};
+					parent.menuOpen(param);
+					
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);	
+				}
+			};
+			/*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<div class="collapseCtrl">
+					<button type="type" class="btn-collapse down"><span></span></button>
+<!--				<button type="type" class="btn-collapse close"><span></span></button>-->
+					<button type="type" class="reLoadFrm"></button>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="membNo" id="membNo" />
+			<input type="hidden" name="contrNo" id="contrNo" >
+			<input type="hidden" name="lendNo" id="lendNo" >
+			<input type="hidden" name="atthType" id="atthType" />
+			<input type="hidden" name="atthNo" id="atthNo" >
+			<input type="hidden" name="lendType" id="lendType" th:value="${paramMap.lendType}"/>
+			<input type="hidden" name="finalGrade" id="finalGrade" />
+			
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<!--조합원조회 ######################################################################## -->
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<!--조합원조회 ######################################################################## -->
+						<!--융자약정정보 ######################################################################## -->
+						<th:block th:include="lend/comLendContrDtl"></th:block> <!--융자약정정보 -->
+						<!--융자약정정보 ######################################################################## -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">융자상품정보</h4>
+							</div>
+						</section>
+						<table class="tbl" id="tbl_lendLimit"></table>
+						
+						<!--대출상품정보 ######################################################################## -->
+						<th:block th:include="lend/comLendReqContr"></th:block> <!--대출상품정보 -->
+						<!--대출상품정보 ######################################################################## -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">상환현황</h4>
+							</div>
+						</section>
+						<div id="sheetDivRepay" style="width:100%;height:200px"></div>
+						
+					</div>
+					
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">대출이자정보</h4>
+							</div>
+							<div class="fr">
+								<select name="interWay" id="interWay" title="이자산정방법" style="width:80px;" /></select>
+								<button type="button" onclick="javascript:fnInterCalc();" class="btn small style08">계산</button>
+							</div>
+						</section>
+						<div id="sheetDivInter" style="width:100%;height:320px"></div>
+						
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">심사정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:80px;">
+								<col style="width:140px;">
+								<col style="width:80px;">
+								<col style="width:140px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>처리상태</th>
+									<td><span id="ele_procStatNm"></span></td>
+									<th>심사일자</th>
+									<td><span id="ele_procDt"></span></td>
+									<th>심사자</th>
+									<td><span id="ele_procNm"></span></td>
+								</tr>
+								<tr>
+									<th>처리사유</th>
+									<td colspan="5">
+										<span id="ele_procReason"></span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						
+						<!--알림톡정보 : s-->
+						<div id="alarmBox" class="wrapBox mt10">
+							<th:block th:include="com/comAlarmTalk"></th:block> <!--알람톡정보 -->
+							<!--<th:block th:include="com/comAlarmTalk :: type('invtSeprt')"></th:block> -->
+						</div><!-- //wrapbox-->
+						<!--알림톡정보 : e-->
+						
+						<!-- 첨부파일 -->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+		                           <button type="button" onclick="javascript:com.fnIbsFileAdd($('#myUpload'));" class="btn small style08">추가</button>
+		                           <button type="button" onclick="javascript:com.fnIbsFileDel($('#myUpload'));" class="btn small style08">삭제</button>
+		                    	</div>
+							</section>
+							<div></div>
+							<div id="myUpload" style="height:150px;"></div>
+						</div>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">변경이력</h4>
+							</div>
+						</section>
+						<div id="sheetDivHist" style="width:100%;height:200px"></div>
+						<!-- 수정사유 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">수정사유</h4>
+							</div>
+							<div>
+								<textarea id="histReason" name="histReason" title="수정사유" cols="10" rows="3"></textarea>
+							</div>
+						</section>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

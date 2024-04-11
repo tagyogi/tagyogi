@@ -1,0 +1,8 @@
+rootProject.name = 'dyis'
+
+include 'dyis-tagyogi-user'
+include 'dyis-tagyogi-mng'
+include 'dyis-biz'
+include 'dyis-core'
+include 'dyis-dev' 
+ 

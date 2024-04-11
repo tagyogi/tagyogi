@@ -1,0 +1,29 @@
+.fadeInDown {-webkit-animation-name: fadeInDown; animation-name: fadeInDown; animation-duration: 3s; animation-fill-mode: forwards;}
+.fadeInDown:nth-child(2) {animation-delay: 0.5s;}
+
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        -webkit-transform: translate3d(0,-100%,0);
+        transform: translate3d(0,-100%,0)
+    }
+
+    20% {
+        opacity: 1;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0)
+    }
+
+    60% {
+        opacity: 1;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0)
+    }
+
+    to {
+        opacity: 0;
+        display: none;
+        -webkit-transform: translate3d(0,-100%,0);
+        transform: translate3d(0,-100%,0)
+    }
+}

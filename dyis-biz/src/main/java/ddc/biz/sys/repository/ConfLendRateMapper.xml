@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.sys.repository.ConfLendRateMapper"> 
+
+	<sql id="cols"> 
+		APP_DT 
+		, FINAL_GRADE 
+		, CONCLUS_RATE 
+		, CREDIT_RATE 
+		, NOTE_RATE 
+		, BOND_RATE 
+		, CLAIM_RATE 
+		, DELAY_RATE 
+		, MORT_DISC_RATE 
+		, REMARK 
+		, REG_DTM 
+		, REG_NM 
+		, MOD_DTM 
+		, MOD_NM   
+	</sql> 
+	
+	<!-- 대출이자율관리 정보 조회 --> 
+	<select id="selectConfLendRateList" parameterType="Map" resultType="camelMap"> 
+		/* ConfLendRateMapper.selectConfLendRateList */ 
+		SELECT 
+			<include refid="cols" /> 
+		  FROM CM_LEND_RATE 
+		<where> 
+		<if test="sAppStaDt != null and sAppStaDt  != ''"> 
+		AND APP_DT &gt;= REPLACE(#{sAppStaDt}, '-', '') 
+		</if> 
+		<if test="sAppEndDt != null and sAppEndDt  != ''"> 
+		AND APP_DT &lt;= REPLACE(#{sAppEndDt}, '-', '') 
+		</if> 
+		</where> 
+		ORDER BY APP_DT DESC, SUBSTR(FINAL_GRADE, 0, 1), LENGTH(FINAL_GRADE) DESC
+	</select> 
+
+	<!-- 대출이자율관리 상세 조회 --> 
+	<select id="selectConfLendRate" parameterType="Map" resultType="camelMap"> 
+		/* ConfLendRateMapper.selectConfLendRate*/ 
+		SELECT 
+			<include refid="cols" /> 
+		  FROM CM_LEND_RATE 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+		  AND FINAL_GRADE = #{finalGrade} 
+	</select> 
+
+	<!-- 대출이자율관리 등록 처리 --> 
+	<insert id="insertConfLendRate" parameterType="Map"  > 
+		/* ConfLendRateMapper.insertConfLendRate */ 
+		INSERT INTO CM_LEND_RATE ( 
+			<include refid="cols" />  
+		) VALUES ( 
+			REPLACE(#{appDt}, '-', '') 
+			, #{finalGrade} 
+			, #{conclusRate} 
+			, #{creditRate} 
+			, #{noteRate} 
+			, #{bondRate} 
+			, #{claimRate} 
+			, #{delayRate} 
+			, #{mortDiscRate} 
+			, #{remark} 
+			, SYSDATE 
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 대출이자율관리 수정 처리 --> 
+	<update id="updateConfLendRate" parameterType="Map"  > 
+		/* ConfLendRateMapper.updateConfLendRate */ 
+		UPDATE CM_LEND_RATE 
+		SET 
+			APP_DT = REPLACE(#{appDt}, '-', '') 
+			, FINAL_GRADE = #{finalGrade} 
+			, CONCLUS_RATE = #{conclusRate} 
+			, CREDIT_RATE = #{creditRate} 
+			, NOTE_RATE = #{noteRate} 
+			, BOND_RATE = #{bondRate} 
+			, CLAIM_RATE = #{claimRate} 
+			, DELAY_RATE = #{delayRate} 
+			, MORT_DISC_RATE = #{mortDiscRate} 
+			, REMARK = #{remark} 
+			, MOD_DTM = SYSDATE 
+			, MOD_NM = #{userNm} 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+		  AND FINAL_GRADE = #{finalGrade} 
+	</update> 
+
+	<!-- 대출이자율관리 삭제 처리 --> 
+	<delete id="deleteConfLendRate" parameterType="Map"  > 
+		/* ConfLendRateMapper.deleteConfLendRate */ 
+		DELETE FROM CM_LEND_RATE 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+		  AND FINAL_GRADE = #{finalGrade} 
+	</delete> 
+
+</mapper>

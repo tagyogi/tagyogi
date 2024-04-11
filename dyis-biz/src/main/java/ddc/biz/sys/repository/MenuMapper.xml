@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.sys.repository.MenuMapper">
+
+	<!-- 메뉴정보 컬럼들 정의-->
+    <sql id="cols">
+        MENU_CD
+		, PARENT_CD
+		, MENU_NM
+		, MENU_STEP
+		, MENU_SEQ
+		, USE_YN
+		, MENU_PAGE
+		, MENU_TYPE
+		, MENU_YN
+		, REF_VAL
+		, ATTH_TYPE
+		, SESS_YN
+		, WORK_CD
+		, WORK_GRID
+		, REG_DTM
+		, REG_NM
+		, MOD_DTM
+		, MOD_NM
+		, MOBILE_YN
+    </sql>
+  
+	<!-- 메뉴정보 목록을 조회 -->
+    <select id="selectMenuList" parameterType="Map" resultType="camelMap">
+    	/* MenuMapper.selectMenuList */
+    	SELECT 
+			<include refid="cols" />
+    		 , CASE WHEN MENU_STEP = 3 THEN (SELECT PARENT_CD FROM CM_MENU WHERE MENU_CD = A.PARENT_CD) ELSE PARENT_CD END TOP_MENU_CD 
+     		 , SUBSTR(REGEXP_REPLACE(SYS_CONNECT_BY_PATH(MENU_NM, ' > '), MENU_NM, ''), 4) MENU_PATH
+			 , CASE WHEN SUBSTR(MENU_CD, 0, 1) = '1' AND MENU_PAGE IS NOT NULL THEN '미리보기' ELSE '' END BTN_VIEW 
+			 , NVL((SELECT GRANT_YN FROM CM_GRANT WHERE USER_ID = #{userId} AND MENU_CD = A.MENU_CD), '0') AS GRANT_YN 
+			 , NVL(REF_VAL, MENU_CD) REF_MENU_CD
+			 , (SELECT COUNT(*) FROM CM_MENU WHERE MENU_STEP = '3' AND PARENT_CD = A.MENU_CD) DEPTH3_CNT
+		  FROM CM_MENU A
+		<where>
+		<if test="sMenuStep != null and sMenuStep != ''"> <!-- 메뉴단계 -->
+    	AND MENU_STEP = #{sMenuStep}
+    	</if> 
+    	<if test="sParentCd != null and sParentCd != ''"> <!-- 부모코드 -->
+    	AND PARENT_CD = #{sParentCd}
+    	</if> 
+    	<if test="sUseYn != null and sUseYn != ''"> <!-- 사용여부 -->
+    	AND NVL(USE_YN, 'Y') = #{sUseYn}
+    	</if>  
+    	<if test="sMenuNm != null and sMenuNm != ''"> <!-- 메뉴명  -->
+    	AND MENU_NM LIKE '%' || #{sMenuNm} || '%'
+    	</if>  
+    	<if test="sSysCd == '1'.toString()"> <!-- 관리자 -->
+    	AND SUBSTR(MENU_CD, 0, 1) IN (1, 9)
+    	</if>  
+    	<if test="sSysCd == '2'.toString()"> <!-- 홈페이지 -->
+    	AND SUBSTR(MENU_CD, 0, 1) IN (2)
+    	</if>  
+    	</where>
+		START WITH PARENT_CD IN (1, 2)
+        CONNECT BY PRIOR MENU_CD = PARENT_CD
+	    ORDER SIBLINGS BY SUBSTR(MENU_CD, 0, 1), MENU_SEQ 
+    </select>
+    
+    <!-- 메뉴정보 상세 조회 -->
+    <select id="selectMenu" parameterType="String" resultType="camelMap">
+    	/* MenuMapper.selectMenu */
+    	SELECT *
+    	  FROM 
+    	  (
+	    	SELECT 
+	    		<include refid="cols" />
+	    		 , CASE WHEN MENU_STEP = 3 THEN (SELECT PARENT_CD FROM CM_MENU WHERE MENU_CD = A.PARENT_CD) ELSE PARENT_CD END TOP_MENU_CD 
+     		 	 , SUBSTR(REGEXP_REPLACE(SYS_CONNECT_BY_PATH(MENU_NM, ' > '), MENU_NM, ''), 4) MENU_PATH
+     		 	 , (SELECT FAV_YN FROM CM_MENU_FAV WHERE USER_ID = #{userId} AND MENU_CD = A.MENU_CD) FAV_YN
+			  FROM CM_MENU A
+	    	START WITH PARENT_CD IN (1, 2)
+			CONNECT BY PRIOR MENU_CD = PARENT_CD
+	        ORDER SIBLINGS BY MENU_SEQ ASC
+           )
+         WHERE MENU_CD = #{menuCd}
+    </select>
+    
+	<!-- 메뉴정보를 등록-->
+    <insert id="insertMenu" parameterType="Map">
+		<selectKey resultType="java.lang.String" keyProperty="maxMenuCd" order="BEFORE">
+	    /* MenuMapper.insertMenu selectKey */
+	    SELECT #{parentCd}||TRIM(TO_CHAR(NVL(MAX(SUBSTR(MENU_CD, LENGTH(MENU_CD)-1)), 1)+1, '00'))
+		  FROM CM_MENU
+		 WHERE PARENT_CD = #{parentCd}
+	    </selectKey> 
+	    
+    	/* MenuMapper.insertMenu */
+    	INSERT INTO CM_MENU (
+            <include refid="cols" />
+        ) VALUES (
+        	#{maxMenuCd}
+           	, #{parentCd}
+           	, #{menuNm}
+           	, #{menuStep}
+           	, #{menuSeq}
+           	, #{useYn}
+           	, #{menuPage}
+           	, #{menuType}
+           	, #{menuYn}
+           	, #{refVal}
+           	, #{atthType}
+           	, #{sessYn}
+           	, #{workCd}
+           	, #{workGrid}
+           	, SYSDATE
+           	, #{userNm}
+           	, SYSDATE
+           	, #{userNm}
+           	, #{mobileYn}
+        )
+    </insert>
+
+	<!-- 메뉴정보를 수정 -->
+    <update id="updateMenu" parameterType="Map">
+    	/* MenuMapper.updateMenu */
+        UPDATE CM_MENU
+        SET
+       		PARENT_CD 		= #{parentCd}
+       		, MENU_NM 		= #{menuNm}
+       		, MENU_STEP 	= #{menuStep}
+       		, MENU_SEQ 		= #{menuSeq}
+       		, USE_YN 		= #{useYn}
+       		, MENU_PAGE 	= #{menuPage}
+            , MENU_TYPE 	= #{menuType}
+            , MENU_YN 		= #{menuYn}
+            , REF_VAL 		= #{refVal}
+            , ATTH_TYPE		= #{atthType}
+            , SESS_YN		= #{sessYn}
+            , WORK_CD		= #{workCd}
+            , WORK_GRID		= #{workGrid}
+            , MOD_NM 		= #{userNm}
+            , MOD_DTM 		= SYSDATE
+            , MOBILE_YN 	= #{mobileYn}
+        WHERE MENU_CD 		= #{menuCd}
+    </update>
+
+	<!-- 즐겨찾기 목록을 조회 -->
+    <select id="selectFavLst" parameterType="String" resultType="camelMap">
+    	/* MenuMapper.selectFavLst */
+    	SELECT A.USR_ID , A.MENU_CD, A.USE_YN
+    	     , B.TOP_MENU_CD, B.MENU_PATH
+    	     , B.PARENT_CD, B.MENU_STG
+    	     , B.MENU_NM, B.MENU_ABBR_NM
+    	     , B.MENU_PAGE_NM, B.SRT_ORD
+    	     , B.RMK
+		  FROM USR_CM_MENU A
+		  ,(
+		    SELECT A.*
+		         , CASE WHEN MENU_STEP = 3 THEN (SELECT PARENT_CD FROM CM_MENU WHERE MENU_CD = A.PARENT_CD) ELSE PARENT_CD END TOP_MENU_CD 
+		         , SUBSTR(REGEXP_REPLACE(SYS_CONNECT_BY_PATH(MENU_NM, ' > '), MENU_NM, ''), 4) MENU_PATH
+		      FROM CM_MENU A
+		    START WITH PARENT_CD = 1
+		    CONNECT BY PRIOR MENU_CD = PARENT_CD
+		    ORDER SIBLINGS BY MENU_SEQ ASC
+		  ) B
+		WHERE A.MENU_CD = B.MENU_CD
+		  AND A.USR_ID = #{userId}
+		  AND A.USE_YN = 1
+		  
+    </select>
+    
+    
+</mapper>

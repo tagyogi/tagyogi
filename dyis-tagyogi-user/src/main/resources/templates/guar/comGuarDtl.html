@@ -1,0 +1,263 @@
+<!--
+	파일정보 : comGuarReq.html
+	파일명 : comGuarReq
+	업무명 : 사이버보증 - 보증신청 정보(관리자 comGuarReqContr.hmtl + comGuarReqGuar.html)
+	생성자 : 권다슬
+	생성일 : 2023.08.30
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			$(document).ready(function(){
+
+			});
+
+			var fnGuarContrViewSet = function(resData){
+				//공통
+				guarCom.fnGuarIssueChg(resData.guar.guarIssueCd);				//전자공고 검색버튼
+				$("#txt_guarTypeNm").text(resData.guar.guarTypeNm);				//보증정보 타이블 추가
+
+				if(guarType === "11"){ //입찰
+					$("#txt_servNm").html("입찰건명");
+					$("#txt_contrAmt").html("입찰금액");
+
+					$("#contrAmt").attr("title", "입찰금액");
+
+				}else if(guarType === "13"){ //하자보수
+					$("#txt_releDt").text("검수완료일");
+
+				}else if(guarType === "14"){ //선금급
+					$("#txt_releDt").text("지급예정일");
+					$(".area_contrAmt > #txt_guarRate").text("선금금율");
+
+
+				}else if(guarType === "21"){ //채무
+					$("#txt_servNm").html("대출과목");
+					$("#txt_contrAmt").html("대출예정금액");
+					$("#txt_contrTermDt").html("대출기간");
+
+					$("#contrAmt").attr("title", "대출예정금액");
+					$("#contrBegDt").attr("title", "대출시작일");
+					$("#contrExpDt").attr("title", "대출종료일");
+
+				}else if(guarType === "32"){ //인허가
+					$("#txt_contrTermDt").html("인·허가기간");
+
+					$("#contrBegDt").attr("title", "인·허가시작일");
+					$("#contrExpDt").attr("title", "인·허가종료일");
+
+				}else if(guarType === "34"){ // 지급보증의지급
+					$("#txt_contrTermDt").html("지급보증기간");
+					$("#txt_contrAmt").html("지급보증금액");
+
+					$("#contrBegDt").attr("title", "지급보증시작일");
+					$("#contrExpDt").attr("title", "지급보증종료일");
+					$("#contrAmt").attr("title", "지급보증금액");
+				}
+
+				//최초가 아닌경우 추가보증정보 표시
+				if(resData.guar.befDocNo !== null){
+					//기재사항변경이 아니면
+					if(resData.guar.guarClassCd !== '60')	$("#ele_guarAddInfo").show();
+				}
+
+				//실제이행기일
+				//if(guarType === "12"){
+				//	$("#ele_realImpChk").show();
+				//	com.checkBoxCheckValue(resData.guar.g2bContCheck, "realImpChk");	//실제이행기일 체크
+				//}
+			}
+
+		    /*]]>*/
+		</script>
+		<article>
+        	<p class="title-dept1"><span id="txt_guarTypeNm"></span><span></span> 정보</p>
+			<div class="table-wrap info">
+	            <div class="table-scroll">
+	                <table summary="계약 정보">
+						<colgroup>
+							<col width="13%">
+	                        <col width="39%">
+	                        <col width="13%">
+	                        <col width="35%">
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>신청일자</th>
+								<td colspan="3"><span id="ele_reqDt"></span></td>
+							</tr>
+
+							<!-- 입찰보증 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType, '11')}">
+							<tr>
+								<th>입찰마감일</th>
+								<td colspan="3"><span id="ele_releDt"></span></td>
+							</tr>
+							</th:block>
+
+							<!-- 계약,하자,선급금, 이행지급, 성능이행, 인허가, 상품판매 체결일정보 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType,'12') || #strings.equals(paramMap.guarType,'13') || #strings.equals(paramMap.guarType,'14') || #strings.equals(paramMap.guarType,'15') || #strings.equals(paramMap.guarType,'31') || #strings.equals(paramMap.guarType,'32') || #strings.equals(paramMap.guarType,'33')}">
+							<tr>
+								<th>계약체결일</th>
+								<td><span id="ele_contrDt"></span></td>
+								<th id="txt_releDt">낙찰일자</th>
+								<td><span id="ele_releDt"></span></td>
+							</tr>
+							</th:block>
+
+							<!-- 지급보증의지급인 경우 지급보증종류 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType,'34')}">
+							<tr>
+								<th>지급보증종류</th>
+								<td><span id="ele_perfKind"></span></td>
+								<th id="txt_releDt">낙찰일자</th>
+								<td><span id="ele_releDt"></span></td>
+							</tr>
+							</th:block>
+
+							<!-- 계약,하자,선급금, 이행지급, 채무, 성능이행, 인허가, 상품판매, 지급보증기간 계약기간 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType,'12') || #strings.equals(paramMap.guarType,'13') || #strings.equals(paramMap.guarType,'14') || #strings.equals(paramMap.guarType,'15') || #strings.equals(paramMap.guarType,'21') || #strings.equals(paramMap.guarType,'31') || #strings.equals(paramMap.guarType,'32')  || #strings.equals(paramMap.guarType,'33')|| #strings.equals(paramMap.guarType,'34')}">
+							<tr>
+								<th id="txt_contrTermDt" >계약기간</th> <!-- 대출기간 -->
+								<td colspan="3"><span id="ele_contrBegDt"></span> ~ <span id="ele_contrExpDt"></span>&nbsp;(<span id="ele_contrDays"></span>일)</td>
+							</tr>
+							</th:block>
+
+							<!-- 하자보수보증 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType,'13')}">
+							<tr>
+								<th>하자담보기간</th>
+								<td colspan="3"><span id="ele_releBegDt"></span> ~ <span id="ele_releEndDt"></span>&nbsp;(<span id="ele_releDays"></span>일)</td>
+							</tr>
+							</th:block>
+
+							<!-- 인허가 제외 -->
+							<th:block th:if="${!#strings.equals(paramMap.guarType,'31')}">
+							<tr>
+								<th id="txt_contrAmt">계약금액</th> <!-- 입찰금액,선금급액 -->
+								<td><span id="ele_contrAmt"></span></td>
+								<th id="txt_guarRate">보증금율</th> <!--선금금율-->
+								<td><span id="ele_guarRate" class="fl"></span><span class="fl">&nbsp;%</span></td>
+							</tr>
+							</th:block>
+
+							<th:block th:if="${#strings.equals(paramMap.guarType,'14')}">
+							<tr>
+								<th>선금금액</th>
+								<td><span id="ele_repayAmt"></span></td>
+								<th id="txt_guarRate">약정이자액</th>
+								<td><span id="ele_contrInterAmt"></span>&nbsp;(약정이자율&nbsp;<span id="ele_contrInterRate"></span>&nbsp;%)</td>
+							</tr>
+							</th:block>
+
+							<!-- 인허가 장소 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType,'32')}">
+							<tr>
+								<th>인·허가장소</th>
+								<td colspan="3">
+									<input type="search" name="permPlace" id="permPlace" title="인·허가장소" maxlength="50" style="width:250px" value=""/>
+								</td>
+							</tr>
+							</th:block>
+
+							<!-- 대출상환방법 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType,'21')}">
+							<tr class="area_contr21" style="display:none">
+								<th>상환방법</th>
+								<td colspan="3"><span id="ele_debtWay" title="계약방식"></span></td>
+							</tr>
+							</th:block>
+
+							<tr>
+								<th id="txt_servNm">계약건명</th>
+								<td colspan="3"><span id="ele_servNm"></span></td>
+							</tr>
+							<tr>
+								<th>피공제기관</th>
+								<td><span id="ele_orderCdNm" ></span>&nbsp;/&nbsp;<span id="ele_orderNm"></span></td>
+								<th>사업자번호</th>
+								<td><span id="ele_orderBizNo"></span></td>
+							</tr>
+
+							<tr>
+								<th>보증기간</th>
+								<td><span id="ele_guarBegDt"></span><span>&nbsp;~&nbsp;</span><span id="ele_guarExpDt"></span>&nbsp;(<span id="ele_guarDays"></span>일)</td>
+								<th>보증기간가산</th>
+								<td colspan="3">
+									<span id="ele_guarAddCdNm"></span>
+									<!--<span id="ele_realImpChk" style="display:none">&nbsp;&nbsp;<input type="checkbox" name="realImpChk" value="Y" disabled="disabled" />&nbsp;실제이행기일</span>-->
+								</td>
+							</tr>
+							<tr>
+								<th>보증금액</th>
+								<td colspan="3"><span id="ele_guarAmt"></span></td>
+							</tr>
+							<tr>
+								<th>보증내용</th>
+								<td colspan="3"><span id="ele_guarCont"></span></td>
+							</tr>
+							<tr>
+								<th>특약</th>
+								<td colspan="3"><span id="ele_specContrsNm"></span></td>
+							</tr>
+
+							<th:block th:if="${#strings.equals(paramMap.guarType,'15') || #strings.equals(paramMap.guarType,'31')  || #strings.equals(paramMap.guarType,'32')  || #strings.equals(paramMap.guarType,'33') }">
+							<tr>
+								<th>기타</th>
+								<td colspan="3"><span id="ele_koccaYnNm"></span></td>
+							</tr>
+							</th:block>
+
+							<!-- 계약보증, 이행지급, 성능이행, 인허가 -->
+							<th:block th:if="${#strings.equals(paramMap.guarType,'12')  || #strings.equals(paramMap.guarType,'15')  || #strings.equals(paramMap.guarType,'31')  || #strings.equals(paramMap.guarType,'32') }">
+							<tr>
+								<th>계약방식</th>
+								<td colspan="3"><span id="ele_contrCdNm" title="계약방식"></span></td>
+							</tr>
+							</th:block>
+
+							<tr>
+								<th>적요</th>
+								<td colspan="3"><span id="ele_remark"></span></td>
+							</tr>
+	                    </tbody>
+					</table>
+				</div>
+			</div>
+		</article>
+
+		<article id="ele_guarAddInfo" style="display:none">
+			<p class="title-dept1"><span id="txt_dtl"></span>추가보증 정보</p>
+			<div class="table-wrap info">
+	            <div class="table-scroll">
+	                <table summary="추가보증 정보">
+						<colgroup>
+							<col width="13%">
+	                        <col width="39%">
+	                        <col width="13%">
+	                        <col width="35%">
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>변경분</br>표시구분</th>
+								<td colspan="3">
+									<!--<span id="ele_chgDispYnNm"></span>-->
+				                    <input type="checkbox" name="chgDispYn" value="Y" disabled/> 변경분 표시
+				                    <input type="checkbox" name="chgDispYn" value="N" disabled/> 전체표시
+								</td>
+							</tr>
+							<tr>
+								<th>변경보증기간</th>
+								<td><span id="ele_chgGuarBegDt"></span>&nbsp;~&nbsp;<span id="ele_chgGuarExpDt"></span>&nbsp;(<span id="ele_chgGuarDays"></span>일)</td>
+								<th>변경보증금액</th>
+								<td><span id="ele_chgGuarAmt"></span></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</article>
+	</body>
+</html>

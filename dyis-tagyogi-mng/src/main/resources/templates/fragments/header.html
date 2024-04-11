@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head th:fragment="main-head">
+	<meta charset="euc-kr">
+    <meta name="Keywords" content="한국콘텐츠공제조합">
+    <meta name="title" content="한국콘텐츠공제조합">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=euc-kr">
+	
+	<!--<meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://www.google.com">-->
+ 	<!--<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; ">-->
+	<!--<meta http-equiv="Content-Security-Policy" content="default-src 'self'">-->
+
+	<link rel="preload" href="/fonts/Noto-San/NotoKR/NotoKR-Regular/notokr-regular.woff2" as="font" crossorigin/>
+	<link rel="stylesheet" href="/css/font.css" />
+	<link rel="stylesheet" href="/css/common.css" />
+	<link rel="stylesheet" href="/css/style.css" />
+	<link rel="stylesheet" href="/css/jquery-ui.min.css" />
+	
+	<link rel="stylesheet" href="/ibsheet8/css/default/main.css" />
+	<link rel="stylesheet" href="/ibsheet8/css/compatible/light/main.css" />
+	<link rel="stylesheet" href="/ibsheet8/Main/compare.css" />
+	<link rel="stylesheet" href="/ibsheet8/Main/ibupload.css" />
+	<link rel="stylesheet" href="/ibsheet8/Main/jquery.contextMenu.min.css" />
+	
+	<script src="/ibsheet8/vendors/jquery-3.4.1.js"></script>
+	<script src="/ibsheet8/vendors/jquery-ui.min.js"></script>
+	
+	<script src="/ibsheet8/ibsheet.js"></script>
+	<script src="/ibsheet8/ibleaders.js"></script>
+	<script src="/ibsheet8/locale/ko.js"></script>
+
+	<script src="/ibsheet8/plugins/ibsheet-excel.js"></script>
+	<script src="/ibsheet8/plugins/ibsheet-dialog.js"></script>
+	<script src="/ibsheet8/plugins/ibsheet-common.js"></script>
+
+	<script src="/ibsheet8/ibupload.js"></script>
+	<script src="/ibsheet8/ibuploadinfo.js"></script>
+	<script src="/ibsheet8/jquery.contextMenu.min.js"></script>
+	
+	<!--
+	<script src="/js/jquery-1.10.2.min.js"></script>
+	<script src="/js/jquery-ui-1.10.3.js"></script>
+	<script src="/js/jquery.modal.js"></script>
+	-->
+	<script src="/js/common.js"></script>
+	
+	<script src="/js/sockjs.min.js" ></script>
+	<script src="/js/stomp.min.js" ></script>
+	
+	<script>
+		
+		//테마설정
+	    // Local Storage
+	    var cssKey = window.localStorage.getItem('mainTheme');
+		
+		if (cssKey === "" || cssKey === null || cssKey === undefined) window.localStorage.setItem('mainTheme', "theme1")
+	
+	    // 읽어온 키값을 사용하여 동적으로 CSS 파일로드
+	    if (cssKey !== "theme1") {
+	        var link = document.createElement('link');
+	        link.id = 'themeCss';
+	        link.rel = 'stylesheet';
+	        link.href = '/css/theme.css'; // CSS 파일 경로를 설정합니다.
+	        document.head.appendChild(link);
+	        //document.documentElement.style.setProperty('--color-theme-main', 'green  ');
+	    }else{
+			var getLinks = document.querySelector('#themeCss');
+			if(getLinks > 0) getLinks.remove();
+		}
+	    
+	    $(document).ready(function(){
+			if (cssKey === "theme1" || cssKey === "" || cssKey === undefined) $("#themeCss").remove();
+			$('body').addClass(cssKey);
+		});
+		
+	</script>
+	
+</head>
+</html>

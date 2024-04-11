@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+		<header th:fragment="main-header">
+            <h1>관리시스템</h1>
+            <div class="mainTabArea">
+				<!-- 메뉴 호출 하여 설정 -->
+                <ul></ul>
+            </div>
+            
+            <div class="rightArea">
+                
+                <div class="userInfo">
+                    <p><span>[[${session.userNm}]]</span></p>
+                    <a href="javascript:fnLogOut();" class="btn logout">로그아웃</a>
+                </div>
+            </div>
+        </header><!-- //header --> 
+</html>

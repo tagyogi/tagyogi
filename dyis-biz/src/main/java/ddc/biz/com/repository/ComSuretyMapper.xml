@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.com.repository.ComSuretyMapper"> 
+
+	<!-- 공통보증인 상세 조회(여부 조회) --> 
+	<select id="selectComSuretyChk" parameterType="Map" resultType="camelMap"> 
+		/* ComSuretyMapper.selectComSuretyChk*/ 
+		SELECT MAX(SURE_NO) SURE_NO
+		  FROM 
+		  (
+			SELECT SURE_NO
+			  FROM CM_SURETY_VIEW
+			 WHERE JUMIN_NO = REPLACE(#{refNo}, '-')
+			 UNION ALL
+			SELECT SURE_NO
+			  FROM CM_SURETY_VIEW
+			 WHERE LAW_NO = REPLACE(#{refNo}, '-')
+			 UNION ALL
+			SELECT SURE_NO
+			  FROM CM_SURETY_VIEW
+			 WHERE BIZ_NO = REPLACE(#{refNo}, '-')
+		 )
+	</select> 
+
+	<!-- 공통보증인 등록 처리 --> 
+	<insert id="insertComSurety" parameterType="Map"  > 
+		/* ComSuretyMapper.insertComSurety */ 
+		<selectKey resultType="java.lang.String" keyProperty="sureNo" order="BEFORE">
+		SELECT NVL(MAX(SURE_NO), 0) + 1 SURE_NO
+          FROM CM_SURETY
+        </selectKey>
+		INSERT INTO CM_SURETY ( 
+			SURE_NO 
+			, SURE_NM 
+			, JUMIN_NO 
+			, CEO_NM 
+			, LAW_NO 
+			, BIZ_NO 
+			, TEL_NO 
+			, FAX_NO 
+			, CELL_NO 
+			, ADDR_DIV 
+			, POST_NO 
+			, ADDR1 
+			, ADDR2 
+			, DORO_CD 
+			, DORO_NM 
+			, DORO_BUNHO 
+			, DORO_DONG 
+			, DORO_DTL 
+			, DORO_BD_NO 
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		) VALUES ( 
+			#{sureNo} 
+			, #{sureNm} 
+			, F_GET_CRYPT_ENC(REPLACE(#{juminNo}, '-'))
+			, #{ceoNm} 
+			, REPLACE(#{lawNo}, '-') 
+			, REPLACE(#{bizNo}, '-') 
+			, REPLACE(#{telNo}, '-') 
+			, REPLACE(#{faxNo}, '-') 
+			, F_GET_CRYPT_ENC(REPLACE(#{cellNo}, '-') )
+			, #{addrDiv} 
+			, F_GET_CRYPT_ENC(#{postNo}) 
+			, F_GET_CRYPT_ENC(#{addr1})
+			, F_GET_CRYPT_ENC(#{addr2})
+			, F_GET_CRYPT_ENC(#{doroCd})
+			, F_GET_CRYPT_ENC(#{doroNm})
+			, F_GET_CRYPT_ENC(#{doroBunho})
+			, F_GET_CRYPT_ENC(#{doroDong})
+			, F_GET_CRYPT_ENC(#{doroDtl})
+			, F_GET_CRYPT_ENC(#{doroBdNo})
+			, #{remark} 
+			, SYSDATE 
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 공통보증인 수정 처리 --> 
+	<update id="updateComSurety" parameterType="Map"  > 
+		/* ComSuretyMapper.updateComSurety */ 
+		UPDATE CM_SURETY 
+		SET 
+			SURE_NM 	= #{sureNm} 
+			, JUMIN_NO 	= F_GET_CRYPT_ENC(REPLACE(#{juminNo}, '-'))
+			, CEO_NM 	= #{ceoNm} 
+			, LAW_NO 	= REPLACE(#{lawNo}, '-') 
+			, BIZ_NO 	= REPLACE(#{bizNo}, '-') 
+			, TEL_NO 	= REPLACE(#{telNo}, '-') 
+			, FAX_NO 	= REPLACE(#{faxNo}, '-') 
+			, CELL_NO 	= F_GET_CRYPT_ENC(REPLACE(#{cellNo} , '-')) 
+			, ADDR_DIV 	= #{addrDiv} 
+			, POST_NO 	= F_GET_CRYPT_ENC(#{postNo}) 
+			, ADDR1 	= F_GET_CRYPT_ENC(#{addr1})
+			, ADDR2 	= F_GET_CRYPT_ENC(#{addr2}) 
+			, DORO_CD 	= F_GET_CRYPT_ENC(#{doroCd}) 
+			, DORO_NM 	= F_GET_CRYPT_ENC(#{doroNm}) 
+			, DORO_BUNHO 	= F_GET_CRYPT_ENC(#{doroBunho}) 
+			, DORO_DONG 	= F_GET_CRYPT_ENC(#{doroDong}) 
+			, DORO_DTL 		= F_GET_CRYPT_ENC(#{doroDtl}) 
+			, DORO_BD_NO 	= F_GET_CRYPT_ENC(#{doroBdNo}) 
+			, REMARK = #{remark} 
+			, REG_DTM = SYSDATE 
+			, REG_NM = #{userNm} 
+			, MOD_DTM = SYSDATE 
+			, MOD_NM = #{userNm} 
+		WHERE SURE_NO = #{sureNo}
+	</update> 
+
+	<!-- 공통보증인 삭제 처리 --> 
+	<delete id="deleteComSurety" parameterType="Map"  > 
+		/* ComSuretyMapper.deleteComSurety */ 
+		DELETE FROM CM_SURETY 
+		 WHERE SURE_NO = #{sureNo}
+	</delete> 
+
+</mapper>

@@ -1,0 +1,841 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : membUpt.html
+	파일명 : membUpt.html
+	업무명 : 조합원정보수정
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<style>
+		.active { background-color: #FAED7D !important; }
+	</style>
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/; //공통코드
+
+		var persList = [];	//저장용(담당자 정보)
+		var ceoList = [];	//저장용(대표자 정보)
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+
+			com.fnCodeSelectBox("MB07", "membDiv", 1, "");		//조합원구분
+			com.fnCodeSelectBox("MB08", "membStat", 1, "");		//조합원상태
+			com.fnCodeSelectBox("MB02", "mainBussCd", 1, "");	//주장르
+			com.fnCodeSelectBox("MB23", "postGetCd", 1, "");	//우편수령처
+			com.fnCodeCheckBox("MB02", "span_subBussCds", "subBussCds", false); //보조장르
+			com.fnCodeSelectBox("MB26", "sactCd", 0, "");		//제재여부
+			com.fnCodeSelectBox("CM02", "bankCd", 1, "");		//거래은행
+
+			//보조장르 클릭 이벤트(selectBox가 화면 그려지고 생성되어 document로 접근)
+			$(document).on("click", "input[name=subBussCds]", function(e){
+				//주장르, 보조장르 같을때
+				if($(this).val() === $("#mainBussCd").val()){
+					e.preventDefault();
+					alert("주장르와 보조장르는 중복입력될 수 없습니다.");
+	                return;
+				}
+				//기타 체크됬을때
+				if($(this).val() === "14")	$("#bussEtc").prop("disabled", !$(this).is(":checked"));
+			});
+
+			//주장르 클릭 이벤트??
+			$("#mainBussCd").on({
+				//클릭했을때 이벤트
+				click: function(){
+					bfClickVal = $(this).val();	//select 박스 클릭시 최초값 저장
+				},
+
+				//변경했을때 이벤트
+				change: function(){
+					var selectVal = $(this).val();
+					$("input[name=subBussCds]:checked").each(function(){
+						if(selectVal === $(this).val()){
+							$("#mainBussCd").val(bfClickVal);	//변경전 값으로 변경
+							alert("주장르와 보조장르는 중복입력될 수 없습니다.");
+			                return;
+						}
+					});
+				}
+			});
+
+			//정보변경 컨트롤
+			$("#uptBtn").click(function(){
+				$("#mod").val("U");
+				$("#canBtn").show();
+				$("#modInfo").find('input').prop("disabled", false);
+			});
+
+			$("#canBtn").click(function(){
+				$("#mod").val("V");
+				$("#canBtn, #yesTxt, #noTxt").hide();
+				$("#modInfo").find('input').val('');
+				$("#modInfo").find('input').prop("disabled", true);
+			});
+
+			//내용조회
+			var param = {};
+			obj = {url:"/memb/selectMemb.do", param:param, callBack:fnSerchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+
+		});
+
+		var fnSerchCallBack = function(resData){
+			//console.log(resData);
+
+			com.fnSetKeyVal(resData.memb);
+
+			//콤마추가 클래스들 세팅
+			$.each($(".setCommaCls"), function(idx,item){
+				$(item).text($(item).text() === "" ? "0":com.addComma($(item).text()));
+				$(item).val($(item).val() === "" ? "0":com.addComma($(item).val()));
+			});
+
+			//대표자정보
+			$.each(resData.ceoList, function(index, item) {
+				var html  = '<tr>';
+					html += '<td class="alignC">'+ item.ceoNm+ '</td>';
+					html += '<td class="alignC">';
+					if(item.majorYn == "Y"){
+						html += '<input type="checkbox" checked disabled/>';
+					}else{
+						html += '<input type="checkbox" disabled/>';
+					}
+					html += '</td>';
+					html += '<td class="alignC">'+ com.fnNvlChk(item.ceoTelNo)+'</td>';
+					html += '<td class="alignC">'+ com.fnNvlChk(item.email) +'</td>';
+					html += '<td class="alignL">'+ com.fnNvlChk(item.addrFullDoro) +'</td>';
+					html += '<td class="alignL"> 위임 : '+ com.fnNvlChk(item.charDt) +'</br>해임 : ' + com.fnNvlChk(item.discharDt) + '</td>';
+					html += '</tr>';
+				$("#ele_ceoList").append(html);
+			});
+
+			//담당자정보
+			$.each(resData.persList, function(index, item) {
+				fnPersMakeRow(item);	//담당자정보 한줄 추가
+			});
+
+			com.checkBoxCheckValue(resData.memb.subBussCds, "subBussCds");	//보조장르
+			//기타 관련
+			if($("input[name=subBussCds][value=14]").is(":checked"))	$("#bussEtc").prop("disabled", false);
+
+			//주소, 도로/지번
+			$("input[name=addrDiv][value="+resData.memb.addrDiv+"]").prop("checked", true);
+			$("input[name=bussAddrDiv][value="+resData.memb.bussAddrDiv+"]").prop("checked", true);
+
+			//이미 있는 아이디가(모바일용)있는지 체크
+			if(resData.memb.userId !== "" && resData.memb.userId !== null) $("#newId_area").remove();
+			else {
+				$("#newId_area").show();
+				$("#ele_userId").text("등록된 모바일용 아이디가 없습니다. 우측상단 '수정버튼'을 눌러 새아이디를 등록해주세요.");
+			}
+		}
+
+		//주소팝업
+		var addrTarget;
+		var fnAddrSerch = function(target) {
+			addrTarget = target;
+			com.fnAddrSerch('popup');
+		}
+
+		//주소 callBack
+		var fnAddrCallBack = function(resData) {
+			//01:본사, 02:사업장
+			if(addrTarget === "01"){
+				$("#postNo").val(resData.zipNo); //우편
+				$("#doroCd").val(resData.rnMgtSn); //도로코드
+				$("#doroNm").val(resData.roadAddrPart1); //도로명
+				$("#doroBunho").val(resData.doroBunho); //도로번지
+				$("#doroDong").val(resData.emdNm); //주소동
+				$("#doroBdNo").val(resData.doroBdNo); //주소번지
+
+				$("#addrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+				$("#addr1").val(resData.jibunAddr);
+
+			} else if(addrTagt === "02"){	//사업장
+				$("#bussPostNo").val(resData.zipNo); //우편
+				$("#bussDoroCd").val(resData.rnMgtSn); //도로코드
+				$("#bussDoroNm").val(resData.roadAddrPart1); //도로명
+				$("#bussDoroBunho").val(resData.doroBunho); //도로번지
+				$("#bussDoroDong").val(resData.emdNm); //주소동
+				$("#bussDoroBdNo").val(resData.doroBdNo); //주소번지
+
+				$("#bussAddrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")");//주소번지
+				$("#bussAddr1").val(resData.jibunAddr);
+			}
+		}
+
+		//저장처리
+		var fnSave = function(){
+
+			var valChks = ["membNm", "ceoNm", "bizNo", "joinDt", "membStat", "mainBussCd", "postNo", "telNo", "bussStartDt", "compEmail"];
+
+			//계정정보 확인
+			if(!fnChkInfo()) return false;
+
+
+			//조합원 구분이 법인이면 법인번호 필수로 추가
+			if($("#membDiv").val() === "C")	valChks.push(...["lawNo"]);
+
+			if(com.fnValChk(valChks)){
+				var lawNo = $("#lawNo").val().replace(/-/g, ""); //법인번호
+				var bizNo = $("#bizNo").val().replace(/-/g, ""); //사업자번호
+				$("#lawNo").val(lawNo);
+				$("#bizNo").val(bizNo);
+
+				if(confirm("저장 처리 하시겠습니까?")){
+					//그리드 저장방식으로 값 변환
+					var persData = {data: persList};	//담당자
+					var ceoData = {data: ceoList};		//대표자
+
+					var param ={
+						memb: $("#saveFrm").serializeObject()
+						, membCeo: ceoData
+						, membPerson: persData
+					};
+					obj = {url:"/memb/updateMemb.do", jParam:param, fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxMulti(obj);
+				}
+			}
+		}
+
+		//저장콜백
+		var fnSaveCallBack = function() {
+			fnPage("20602");
+		}
+
+		//계정정보저장
+		var chkNewId = false;
+		var fnChkInfo = function(){
+
+			//공백제거
+			$.each($("#modInfo").find('input'), function(idx, item){
+				var getval = $(item).val().replace(/\s/g, "");
+				$(item).val(getval);
+			});
+
+			//수정모드
+			if($("#mod").val() === "U" ){
+
+				//첫등록시
+				if($("#userId").val() === ""){
+					if($("#newUserId").val() === ""){
+						alert("새아이디 입력해주세요");
+						return false;
+					}
+
+					//새아이디가 입력된경우 중복확인 체크 여부 확인
+					if($("#newUserId").val() !== "" && chkNewId !== true){
+						alert("새아이디 중복확인을 진행해주세요");
+						return false;
+					}
+				}
+
+				if($("#newPw").val() === "") {
+					alert('비밀번호를 입력해주세요');
+					return false;
+				}
+
+			}
+
+			//비밀번호가 공백이아니라면, 새비밀번호 확인과 같은지 확인필요
+			if($("#newPw").val() !== ""){
+				var pw1 = $("#newPw").val();
+				var pw2 = $("#newPwChk").val();
+
+				if(pw1.length < 8) {
+					alert('비밀번호는 최소 8자리여야합니다');
+					$("#newPw").focus();
+					return false;
+				}
+
+				let regPass = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,25}$/;
+				 if(!regPass.test(pw1)){
+					 alert('영문, 숫자, 특수기호 조합으로 8~20자리로 입력해주세요');
+					 return false;
+				 }
+
+				if(pw1 !== pw2) {
+					alert('비밀번호가 불일치 합니다.');
+					$("#newPwChk").val('');
+					$("#newPwChk").focus();
+					return false;
+				}
+
+			}
+
+			return true;
+
+		}
+
+		//새비밀번호 확인 체크
+		var fnChkPw = function(){
+			var pw1 = $("#newPw").val();
+			var pw2 = $("#newPwChk").val();
+
+			if(pw1 === "" && pw2 === ""){
+				$("#noTxt, #yesTxt").hide();
+				return;
+			}
+
+			if(pw1 !== pw2){
+				$("#noTxt").show();
+				$("#yesTxt").hide();
+			}else{
+				$("#yesTxt").show();
+				$("#noTxt").hide();
+			}
+		}
+
+		//중복체크한 id를 바꾸면 다시 false처리
+		var fnCngNewId = function(obj){
+			chkNewId = false;
+		}
+
+		//바뀔id 중복체크
+		var fnChkDupl = function(){
+
+			//새아이디가 입력된경우 중복확인 체크 여부 확인
+			if($("#newUserId").val() === ""){
+				alert("새아이디를 입력해주세요");
+				return false;
+			}else{ //공백제거
+				var getval = $("#newUserId").val().replace(/\s/g, "");
+				$("#newUserId").val(getval);
+			}
+
+			obj = {url:"/memb/selectMembUserId.do", formId:"saveFrm", callBack:fnChkDuplCallBack, msgYn:"N", sessYn:"N", loadYn:"Y"};
+			com.fnAjaxPost(obj);
+
+		}
+
+		//바뀔id 중복체크 콜백
+		var fnChkDuplCallBack = function(resData){
+			//console.log(resData);
+			if(resData.data === null || resData.data.length <= 0){
+				alert("사용가능한 아이디입니다.");
+				chkNewId = true;
+			}else {
+				alert("이미사용중인 아이디입니다.");
+				$("#newUserId").val("");
+				$("#newUserId").focus();
+				chkNewId = false;
+			}
+
+		}
+
+		//대표자 정보 추가,수정,삭제 이벤트 -- 보류
+		var fnCeoEvent = function(type){
+			if(type == "INS"){
+				//대표자 추가 팝업
+				com.dialpopupOpen("대표자 추가", "/index/popPageCall.do?menuPage=com/insCeoPop", "900", "800"); //menuCd=1070729
+			}else if(type == "UPT"){
+				//수정 팝업
+			}else if(type == "DEL"){
+
+			}
+		}
+
+
+		//담당자 정보 추가,수정,삭제 이벤트
+		var fnPersEvent = function(type){
+			if(type == "INS"){
+				//담당자 추가 팝업
+				$("#persSeq, #persNum").val("");	//수정 방지
+				com.dialpopupOpen("담당자 정보", "/index/popPageCall.do?menuCd=1070730", "900", "550");	// 	menuCd=1070730, menuPage=com/insPersPop
+			}else if(type == "UPT"){
+				//선택된 담당자 찾기
+				$("#ele_persList").find('tr').each(function(){
+					if($(this).hasClass("active")){
+						$("#persSeq").val($(this).data('key'));
+						$("#persNum").val($(this).data('num'));
+					}
+				});
+
+				//선택 체크
+				if($("#persNum").val() === ""){	//저장안된 row
+					if($("#persSeq").val() === "") {
+						alert("선택된 담당자가 없습니다.")
+						return;
+					}
+				}
+
+				com.dialpopupOpen("담당자 정보", "/index/popPageCall.do?menuCd=1070730", "900", "550");	// 	menuCd=1070730, menuPage=com/insPersPop
+
+			}else if(type == "DEL"){
+
+			}
+		}
+
+		//당당자 팝업 콜백
+		var fnPersPopCallBack = function(resData, newUptYn = "N"){
+
+			resData.membNo = $("#membNo").val();
+			if(newUptYn === "N"){	//일반 추가, 등록이면, 기존데이터 수정이면
+				persList.push(resData);	//저장용 데이터 추가
+
+				//기존데이터 수정이면 화면수정
+				var key = Number($("#persSeq").val());
+				if(key !== 0){
+					$("#ele_persList").find('tr').each(function(){
+						if(Number($(this).data('key')) === key)	{
+							$(this).remove();
+						}
+					});
+				}
+			}else{	//신규등록인데 수정했으면
+				//저장할 데이터 수정
+				var num = Number($("#persNum").val());
+				persList[num-1] = resData;
+
+				//화면수정
+				$("#ele_persList").find('tr').each(function(){
+					if(Number($(this).data('num')) === num)	{
+						$(this).remove();
+					}
+				});
+			}
+
+			fnPersMakeRow(resData, "Y");	//입력 데이터 신규 row 생성
+			$("#ele_persList").find('tr').removeClass("active");	//전체 리스트 선택 취소
+			$("#persSeq, #persNum").val("");
+		}
+
+		//담당자 한출 추가
+		var fnPersMakeRow = function(data, newYn = "N"){
+			//console.log(data);
+
+			var persSeq = data.persSeq;
+			var num = "";
+			if(newYn === "Y"){	//신규 등록이면
+				persSeq = "";
+				num = persList.length;
+			}
+
+			//담당자 한줄 추가
+			var html  = '<tr data-key="'+persSeq+'" data-num="'+num+'">';
+				html += '<td class="alignC">'+ com.fnNvlChk(data.persNm) + '</td>'; //담당자명
+				html += '<td class="alignC">'+ com.fnNvlChk(data.persPos) + '</td>'; //직위
+				html += '<td class="alignC">'+ com.fnNvlChk(data.persStatNm) + '</td>'; //상태
+				html += '<td class="alignC">'+ com.fnNvlChk(data.deptNm) +'</td>'; //부서명
+				html += '<td class="alignC">'+ com.fnNvlChk(data.persTelNo) + '</td>'; //전화번호
+				html += '<td class="alignC">'+ com.fnNvlChk(data.persFaxNo) +'</td>'; //팩스번호
+				html += '<td class="alignC">'+ com.fnNvlChk(data.persEmail) +'</td>'; //이메일
+				html += '</tr>';
+			$("#ele_persList").append(html);
+
+			//담당자리스트 클릭 이벤트
+			$("#ele_persList").find('tr > td').on("click", function(){
+				$("#ele_persList").find('tr').removeClass("active");	//전체 리스트 선택 취소
+				$(this).closest('tr').addClass("active");	//리스트 선택
+			})
+		}
+
+
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="saveFrm" id="saveFrm" onSubmit="return false;">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" id="gubun" name="gubun" value="H" />
+						<input type="hidden" id="mod" name="mod" value="" />
+						<input type="hidden" id="persSeq" name="persSeq" value="" />	<!-- 담당자 팝업에서 사용 -->
+						<input type="hidden" id="persNum" name="persNum" value="" />	<!-- 담당자 팝업에서 사용 -->
+
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article>
+                                    <p class="title-dept1">조합원정보</p>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll">
+                                            <table>
+                                                <caption>조합원정보</caption>
+                                                <colgroup>
+                                                    <col width="8%">
+                                                    <col width="8%">
+                                                    <col width="20%">
+                                                    <col width="11%">
+                                                    <col width="20%">
+                                                    <col width="11%">
+                                                    <col width="*">
+                                                </colgroup>
+                                                <tbody>
+													<tr>
+                                                        <th colspan="2"><span style="color: red">*</span>조합원명</th>
+                                                        <td colspan="3">
+															<input type="text" name="membNo" id="membNo" value="" readonly="readonly" style="width: 40px;" title="조합원번호"/>
+															<input type="text" name="membNm" id="membNm" size="20" value="" style="width: 70%; max-width:200px;" maxlength="40" title="조합원명"/>
+														</td>
+                                                        <th><span style="color: red">*</span>주대표자</th>
+                                                        <td>
+															<input type="text" id="ceoNm" name="ceoNm" value="" maxlength="20" size="8" />
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2"><span style="color: red">*</span>사업자번호</th>
+                                                        <td>
+															 <input type="text" name="bizNo" id="bizNo" onkeyup="com.makeBizNo(this);" maxlength="12" title="사업자번호"/>
+                                                        </td>
+                                                        <th>법인번호</th>
+                                                        <td>
+															<input type="text" id="lawNo" name="lawNo" title="법인번호" maxlength="14"/>
+                                                        </td>
+                                                        <th>조합구분</th>
+                                                        <td>
+															<select name="membDiv" id="membDiv" style="width:100px" title="조합구분">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+														<th colspan="2"><span style="color: red">*</span>가입일자</th>
+                                                        <td>
+															<input type="text" name="joinDt" id="joinDt" value="" title="가입일자" style="width:120px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+															<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'joinDt', 'yyyy-mm-dd')" />
+														</td>
+                                                        <th><span style="color: red">*</span>조합원상태</th>
+                                                        <td>
+															<select name="membStat" id="membStat" style="width:100px" title="조합원상태">
+														</td>
+                                                        <th><span style="color: red">*</span>주장르</th>
+                                                        <td>
+															<select name="mainBussCd" id="mainBussCd" style="width:150px" title="주장르"></select>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th rowspan="2">사무소<br>(본사)</th>
+                                                        <th><span style="color: red">*</span>주소</th>
+                                                        <td colspan="5">
+															<!--<input type="hidden" name="addrDiv" value="DR" />-->
+															<input type="hidden" name="doroCd" id="doroCd" title="" />
+															<input type="hidden" name="doroNm" id="doroNm" title="" />
+															<input type="hidden" name="doroBunho" id="doroBunho" title="" />
+															<input type="hidden" name="doroDong" id="doroDong" title="" />
+															<input type="hidden" name="doroBdNo" id="doroBdNo" title="" />
+
+															<!--<input type="text" name="postNo" id="postNo" title="우편번호" style="width:80px" readonly/>
+															<button type="button" class="address-btn3" onclick="fnAddrSerch('01')"></button>
+															<input type="text" name="addrFullDoro" id="addrFullDoro" title="도로주소" style="width:320px;" readonly/>
+															<input type="text" name="doroDtl" id="doroDtl" title="도로상세" style="width:130px;" />-->
+
+															<ul>
+																<li>
+																	<label for="dr"><input type="radio" name="addrDiv" id="dr" value="DR" class="input1"><span>도로</span></label>
+																	<input type="text" name="postNo" id="postNo" title="우편번호" style="width:80px" readonly/>
+																	<button type="button" class="address-btn3" onclick="fnAddrSerch('01')"></button>
+																	<input type="text" name="addrFullDoro" id="addrFullDoro" title="도로주소" style="width:320px;" readonly/>
+																	<input type="text" name="doroDtl" id="doroDtl" title="도로상세" style="width:130px;" maxlength="50" />
+																</li>
+																<li class="mt3">
+																	<label for="jb"><input type="radio" name="addrDiv" id="jb" value="JB" class="input1"><span>지번</span></label>
+																	<input type="text" name="addr1" id="addr1" title="지번주소" style="width:446px;" readonly/>
+																	<input type="text" name="addr2" id="addr2" title="도로상세" style="width:130px;" maxlength="50" />
+																</li>
+															</ul>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th><span style="color: red">*</span>전화번호</th>
+                                                        <td>
+															<input type="text" name="telNo" id="telNo" size="14" maxlength="14" value="" title="전화번호" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+                                                        </td>
+                                                        <th>팩스번호</th>
+                                                        <td>
+															<input type="text" name="faxNo" id="faxNo" size="14" maxlength="14" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+														</td>
+                                                        <th>홈페이지</th>
+                                                        <td>
+															<input type="text" name="homepage" id="homepage" size="25" maxlength="50" value="" style="width:190px"/>
+														</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th rowspan="2">사업장<br>(공장,지점)</th>
+                                                        <th>주소</th>
+                                                        <td colspan="5">
+															<!--<input type="hidden" name="bussAddrDiv" value="DR" />-->
+															<input type="hidden" name="bussDoroCd" id="bussDoroCd" title="" />
+															<input type="hidden" name="bussDoroNm" id="bussDoroNm" title="" />
+															<input type="hidden" name="bussDoroBunho" id="bussDoroBunho" title="" />
+															<input type="hidden" name="bussDoroDong" id="bussDoroDong" title="" />
+															<input type="hidden" name="bussDoroBdNo" id="bussDoroBdNo" title="" />
+
+															<!--<input type="text" name="bussPostNo" id="bussPostNo" title="우편번호" style="width:80px" readonly/>
+															<button type="button" class="address-btn3" onclick="fnAddrSerch('02')"></button>
+															<input type="text" name="bussAddrFullDoro" id="bussAddrFullDoro" title="도로주소" style="width:320px;" readonly/>
+															<input type="text" name="bussDoroDtl" id="bussDoroDtl" title="도로상세" style="width:130px;" />-->
+
+															<ul>
+																<li>
+																	<label for="dr"><input type="radio" name="bussAddrDiv" id="dr" value="DR" class="input1"><span>도로</span></label>
+																	<input type="text" name="bussPostNo" id="bussPostNo" title="우편번호" style="width:80px" readonly/>
+																	<button type="button" class="address-btn3" onclick="fnAddrSerch('02')"></button>
+																	<input type="text" name="bussAddrFullDoro" id="bussAddrFullDoro" title="도로주소" style="width:320px;" readonly/>
+																	<input type="text" name="bussDoroDtl" id="bussDoroDtl" title="도로상세" style="width:130px;" maxlength="50" />
+																</li>
+																<li class="mt3">
+																	<label for="jb"><input type="radio" name="bussAddrDiv" id="dr" value="JB" class="input1"><span>지번</span></label>
+																	<input type="text" name="bussAddr1" id="bussAddr1" title="지번주소" style="width:446px;" readonly/>
+																	<input type="text" name="bussAddr2" id="bussAddr2" title="지번상세" style="width:130px;" maxlength="50" />
+																</li>
+															</ul>
+														</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>전화번호</th>
+                                                        <td>
+															<input type="text" name="bussTelNo" id="bussTelNo" size="14" maxlength="15" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+														</td>
+                                                        <th>팩스번호</th>
+                                                        <td>
+															<input type="text" name="bussFaxNo" id="bussFaxNo" size="14" maxlength="15" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+                                                        </td>
+                                                        <th>홈페이지</th>
+                                                        <td>
+															<input type="text" name="bussHomepage" id="bussHomepage" size="25" maxlength="50" value="" style="width:190px"/>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                    	<th colspan="2"><span style="color: red">*</span>사업개시일</th>
+                                                        <td>
+															<input type="text" name="bussStartDt" id="bussStartDt" value="" title="사업게시일" style="width:120px" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+															<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'bussStartDt', 'yyyy-mm-dd')" />
+														</td>
+                                                        <th>업태</th>
+                                                        <td>
+															<input type="text" id="bussCond" name="bussCond" value="" maxlength="50" />
+                                                        </td>
+                                                        <th>주생산품</th>
+                                                        <td>
+															<span id="ele_mainProd"></span>
+															<input type="text" id="mainProd" name="mainProd" value="" maxlength="50" />
+														</td>
+
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2">종업원수</th>
+                                                        <td>
+															<input type="text" name="empCnt" id="empCnt" size="5" maxlength="5" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%;"/> 명
+                                                        </td>
+                                                        <th>자산총액</th>
+                                                        <td>
+															<input type="text" name="assetAmt" class="setCommaCls" id="assetAmt" size="17" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%;"/> 원
+														</td>
+                                                        <th>자본금총액</th>
+                                                        <td>
+															<input type="text" name="capiAmt" class="setCommaCls" id="capiAmt" size="17" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%; max-width: 200px;"/> 원
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2">년매출액</th>
+                                                        <td>
+															<input type="text" name="yearSaleAmt" class="setCommaCls" id="yearSaleAmt" size="17" maxlength="15 "onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:80%;"/> 원
+                                                        </td>
+                                                        <th>우편수령처</th>
+                                                        <td>
+															<select name="postGetCd" id="postGetCd" style="width:140px" title="우편수령처"></select>
+                                                        </td>
+                                                        <th><span style="color: red">*</span>회사이메일</th>
+                                                        <td>
+															<input type="text" name="compEmail" id="compEmail" size="28" maxlength="30" value=""  title="회사이메일" style="max-width:200px;"/>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2">보조장르</th>
+                                                        <td colspan="5">
+															<span id="span_subBussCds"></span>
+															(<input type='text' name='bussEtc' id='bussEtc' size='50' maxlength='100' value="" style="width:200px; float:none;" disabled/>)
+														</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2">탈퇴일자</th>
+                                                        <td colspan="5">
+															<input type="text" name="leaveDt" id="leaveDt" value="" title="탈퇴일자" style="width:120px" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+															<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'leaveDt', 'yyyy-mm-dd')" />
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2">제재여부</th>
+                                                        <td>
+															<select name="sactCd" id="sactCd" style="width:100px" title="제재여부"></select>
+                                                        </td>
+                                                        <th>제재일자</th>
+                                                        <td>
+															<input type="text" name="sactDt" id="sactDt" value="" title="제재일자" style="width:120px" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+															<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sactDt', 'yyyy-mm-dd')" />
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2">거래은행</th>
+                                                        <td>
+															<select name="bankCd" id="bankCd" style="width:140px" title="거래은행"></select>
+															<button type="button" id="bankHistBtn" onclick="javascript:fnBankHistPop();" class="btn small style08" style="display: none;">변경이력</button>
+														</td>
+                                                        <th>계좌번호</th>
+                                                        <td>
+															<input type="text" name="acctNo" id="acctNo" size="15" maxlength="30" value=""/>
+                                                        </td>
+                                                        <th>예금주</th>
+                                                        <td>
+															<input type="text" name="depoNm" id="depoNm" size="8" maxlength="50" value="" style="max-width: 200px;"/>
+														</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2">소속 협회/단체</th>
+                                                        <td>
+															<input type="text" id="belong" name="belong" value="" maxlength="50" />
+														</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <article>
+									<div class="" style="display:flex; justify-content: space-between; align-items: flex-end;">
+	                                    <p class="title-dept1">계정정보<span style="font-size: 11px;">(모바일기기에서 로그인시 사용될 계정)</span></p>
+	                                    <div class="mb5">
+											<button type="button" onclick="javascript:"  id="uptBtn" class="sub-btn small btn-color">수정</button>
+											<button type="button" onclick="javascript:"  id="canBtn" class="sub-btn small btn-color red" style="display:none;">취소</button>
+										</div>
+									</div>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll">
+                                            <table id="modInfo">
+                                                <caption>계정정보</caption>
+                                                <colgroup>
+                                                    <col width="10%">
+                                                    <col width="40%">
+                                                    <col width="10%">
+                                                    <col width="40%">
+                                                </colgroup>
+                                                <tbody>
+													<tr id="id_area">
+                                                        <th>기존 아이디</th>
+                                                        <td colspan="3">
+															<span id="ele_userId"></span>
+															<input type="hidden" name="userId" id="userId"/>
+														</td>
+                                                    </tr>
+													<tr id="newId_area" style="display: none;">
+														<th>새아이디</th>
+														<td>
+															<input type="text" name="newUserId" id="newUserId" value="" maxlength="15" style="width: 200px;" title="아이디" onchange="fnCngNewId(this);" disabled/>
+															<button type="button" class="sub-btn small btn-color blue" onclick="fnChkDupl();">중복확인</button>
+														</td>
+                                                    </tr>
+                                                    <tr>
+														<th>새비밀번호</th>
+														<td >
+															<input type="password" name="newPw" id="newPw" title="새비밀번호" style="width:200px" maxlength="20" onblur="fnChkPw();" autocomplete="off" disabled />
+															<span id="tremTxt" style="display: none; font-size: 11px; color: #ff6600;">(비밀번호는 최소 8자리여하며 영문, 숫자, 특수기호 조합으로 8~20자리로 입력해주세요)</span>
+														</td>
+														<th>새비밀번호 확인</th>
+														<td>
+															<input type="password" name="newPwChk" id="newPwChk" title="새비밀번호확인" style="width:200px" onkeyup="fnChkPw();" maxlength="20" autocomplete="off" disabled/>
+															<span id="noTxt" style="display: none; font-size: 11px; color: #ff6600;">(비밀번호 불일치)</span>
+															<span id="yesTxt" style="display: none; font-size: 11px; color: green;">(비밀번호 일치)</span>
+														</td>
+													</tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+
+                                <article>
+									<div class="" style="display:flex; justify-content: space-between; align-items: flex-end;">
+	                                    <p class="title-dept1">대표자정보</p>
+	                                    <!--<div class="mb5">
+											<button type="button" onclick="javascript:fnCeoEvent('INS');"  id="btn_ceoIns" class="sub-btn small btn-color">추가</button>
+											<button type="button" onclick="javascript:fnCeoEvent('UPT');"  id="btn_ceoUpt" class="sub-btn small btn-color green">수정</button>
+											<button type="button" onclick="javascript:fnCeoEvent('DEL');"  id="btn_ceoDel" class="sub-btn small btn-color orange">삭제</button>
+										</div>-->
+									</div>
+                                    <div class="table-wrap">
+                                        <div class="table-scroll v2">
+                                            <table>
+                                                <caption>대표자정보</caption>
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th width="8%" scope="col">대표자명</th>
+                                                        <th width="7%" scope="col">주대표</th>
+                                                        <th width="11%" scope="col">연락처</th>
+                                                        <th width="20%" scope="col">이메일</th>
+                                                        <th width="33%" scope="col">주소</th>
+                                                        <th width="*%" scope="col">위임일자 / 해임일자</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ele_ceoList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+
+                                <article>
+									<div class="" style="display:flex; justify-content: space-between; align-items: flex-end;">
+	                                    <p class="title-dept1">담당자정보</p>
+	                                    <div class="mb5">
+											<button type="button" onclick="javascript:fnPersEvent('INS');"  id="btn_persIns" class="sub-btn small btn-color green">추가</button>
+											<button type="button" onclick="javascript:fnPersEvent('UPT');"  id="btn_persUpt" class="sub-btn small btn-color ">수정</button>
+											<!--<button type="button" onclick="javascript:fnPersEvent('DEL');"  id="btn_persDel" class="sub-btn small btn-color orange">삭제</button>-->
+										</div>
+									</div>
+                                    <!--<p class="title-dept1">담당자정보</p>-->
+                                    <div class="table-wrap">
+                                        <div class="table-scroll v2">
+                                            <table>
+                                                <caption>담당자정보</caption>
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th width="8%" scope="col">담당자명</th>
+                                                        <th width="10%" scope="col">직위</th>
+                                                        <th width="7%" scope="col">상태</th>
+                                                        <th width="20%" scope="col">부서명</th>
+                                                        <th width="14%" scope="col">전화번호</th>
+                                                        <th width="14%" scope="col">팩스번호</th>
+                                                        <th width="*" scope="col">이메일</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ele_persList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+
+                                <div class="btn-wrap flex-box jc-end gap-10 m-col onlyPc">
+                                    <button type="button" class="sub-btn2 btn-color" onclick="fnSave();">저장</button>
+                                    <button type="button" class="sub-btn2 btn-white" onclick="javascript:fnPage('20602');">취소</button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

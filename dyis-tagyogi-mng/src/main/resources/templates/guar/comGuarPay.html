@@ -1,0 +1,420 @@
+<!--
+	파일정보 : comGuarPay.html
+	파일명 : comGuarPay
+	업무명 : 보증료 납입 상세, 미수처리 입력 영역
+	생성자 : 권다슬
+	생성일 : 2023.07.25
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+				var guarInfo = "";
+				//comGuarPay.html 사용시 필수 공통코드: [GR23, CM01, CM02]
+				//디폴트 : 상세, 수정(입력) 영역 둘다 숨겨두었음(각 화면에서 보여주기 처리 필요 - showGuarPayArea() )
+
+				$(document).ready(function(){
+
+					//selectBox
+					com.fnCodeSelectBox("GR23", "payYn", 1, ""); 	//보증료납부여부(납부,미수)
+					com.fnCodeSelectBox("GR27", "payPartType", 1, ""); 	//보증료납부여부(완납,부분납)
+					com.fnSetBankAccList("selBank", 1);				//조합계좌설정
+					com.fnCodeSelectBox("CM01", "payWay", 1, ""); 	//납부방법
+					com.fnCodeSelectBox("CM02", "retSelBank", 1, ""); 	//환불계좌
+
+					com.fnCodeSelectBox("CM01", "retWay", 1, "", "1"); 	//환불방법
+
+				});
+
+				//빈칸 입력(변경등록에서 사용중 - guarChgIns.html)
+				var initPayReSet = function(){
+					$("#payYn, #payPreDt, #payDt, #payNm, #payBank, #payAcct, #payWay, #payCommAmt").val("");
+				}
+
+				//환불계좌 변경 이벤트
+				var fnRetBankChange = function(bankCdVal){
+					$("#payBank").val(bankCdVal);
+				}
+
+				//보증납부구간 숨김 처리
+				var showGuarPayArea = function(show){
+					if(show === "dtl"){
+						$("#ele_guarPayArea").show(); //납입정보
+						$("#ele_guarNoPayArea").hide(); //미수납입정보
+					}else if(show === "mod"){
+
+						//환불건 처리
+						if(guarInfo.procStat === "30" && guarInfo.repayYn === "Y"){ //심사완료
+							$("#ele_guarRepayArea").show(); //환불보증료
+							var commAmt = $("#commAmt").val();
+							commAmt = commAmt.replace("-", "");
+
+							$("#ele_repayCommAmt").text($("#commAmt").val());
+							$("#retCommAmt").val(commAmt);
+							$("#retDt").val(/*[[${today}]]*/);
+
+							var resData = {data:membAccList, paramMap:{paramId:"retBanks"}};
+							com.fnSetMembAccListCallBack(resData);
+
+						}else{
+							//심사완료인경우
+							if(guarInfo.procStat === "30"){
+								$("#ele_guarPayArea").hide(); //납입정보
+								$("#ele_guarNoPayArea").show(); //미수납입정보
+							}
+						}
+					}else{	//테스트용
+						$("#ele_guarPayArea").show(); //납입정보
+						$("#ele_guarNoPayArea").show(); //미수납입정보
+					}
+				}
+
+				//입금상태 변경 이벤트(최초)
+				var fnPayYnChg = function(){
+					if($("#payPreDt").val() === "" && $("#payYn").val() === "H")
+			        $("#payPreDt").val(/*[[${today}]]*/);
+
+				    //if($("#payYn").val() === "H") 	$("#payBtn").text("미수처리");
+				    //else 							$("#payBtn").text("납입처리");
+				}
+
+				//입금상태 변경 이벤트(부분납, 완납)
+				var fnPayStatTypChg = function(val){
+
+					if(val === "txt"){
+						var remainCommAmt = Number(com.rmComma($("#remainCommAmt").val())); //보증료
+						var payAmt  = Number(com.rmComma($("#payAmt").val())); //납입입력값
+
+						if(remainCommAmt === payAmt){ //완납일경우
+							$("#payPartType").val('A');
+						}else{ //부분납인경우
+							$("#payPartType").val('P');
+						}
+					}else {
+						if($("#payPartType").val() === "A"){
+							$("#payAmt").val($("#remainCommAmt").val());
+						}else($("#payAmt").val(''));
+					}
+
+			        $("#payDt").val(/*[[${today}]]*/);
+
+				    //if($("#payYn").val() === "H") 	$("#payBtn").text("미수처리");
+				    //else 							$("#payBtn").text("납입처리");
+				}
+
+				//계좌이체로 선택시 은행 디폴트값
+				var fnSetBankCd = function(sel){
+					var val = $(sel).val();
+					if(val === "40" ){
+						$("#selBank option:eq(1)").prop("selected", true);
+						$("#selBank").trigger('change');
+					}
+
+				}
+				
+				//부분납 초기화
+				var fnPayPartInit = function(){
+					if(guarInfo.closeDt != null){
+						alert("이미 완납되어 회계마감 처리되었습니다.");
+						return;
+					}
+					if(confirm("미수분납을 초기화 할 경우 최초 미수 상태로 전환됩니다\n초기화 처리 하시겠습니까?")){
+						//rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+						param = {guarNo:$("#ele_guarNo").text()};
+						obj = {url:"/guarPay/updateGuarPayPartInit.do", param:param, callBack:fnPayPartInitCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxDef(obj);
+					}
+				}
+				
+				//부분납 초기화 콜백
+				var fnPayPartInitCallBack = function(){
+					$(".reLoadFrm").click();
+				}
+				
+				//부분납 수정
+				var fnPayPartSave = function(){
+					
+					if(confirm("수정 처리 하시겠습니까?")){
+						//rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+						var param = {guarNo:$("#ele_guarNo").text()};
+						param.payHist = sheetGuarPayHist.getSaveJson(); //미수납입정보(수정건)
+						
+						//obj = {url:"/guarPay/insertLendInterProc.do", callBack:fnSaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+						//com.fnAjaxMulti(obj);
+						
+						obj = {url:"/guarPay/updateGuarPayPartSave.do", param:param, callBack:fnPayPartSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxDef(obj);
+					}
+				}
+				
+				//부분납 수정 콜백
+				var fnPayPartSaveCallBack = function(){
+					$(".reLoadFrm").click();
+				}
+				
+
+		    /*]]>*/
+		</script>
+
+		<!-- 보증납부정보 구간 -->
+		<div id="ele_guarPayArea" style="display:none">
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title">보증료 납입<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarPay.html)</th:block></h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th id="txt_payAmtSum">납입금액</th>
+						<td><span id="ele_payAmtSum"></span></td>
+						<th id="txt_payDtTxtDtl">입금일자</th>
+						<td><span id="ele_payDt"></span></td>
+						<th id="txt_payTxtDtl">입금상태</th>
+						<td><span id="ele_payYnNm"></span>(<span id="ele_payWayNm"></span>)</td>
+					</tr>
+					<tr>
+						<th id="txt_payAcctTxtDtl">입금정보</th>
+						<td colspan="5"><span id="ele_payInfo"></span></td>
+					</tr>
+					<tr>
+						<th>비고</th>
+						<td colspan="5"><span id="ele_payRmk"></span></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<!-- 보증납부정보 구간 끝 -->
+		<!-- 미수보증료 납부 처리 구간  -->
+		<div id="ele_guarNoPayArea" style="display:none">
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title">보증료 납입처리<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarPay.html)</th:block></h4>
+				</div>
+				<div class="fr">
+					<button type="button" id="payBtn" 		   onclick="fnGuarPayProc();" class="btn small style03" style="display:none;">납입/미수처리</button>
+					<button type="button" id="btn_partPayProc" onclick="fnGuarPartPayProc();" class="btn small style03"  style="display:none;">납입처리</button>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th id="txt_commTxt">보증료</th>
+						<td>
+							<input type="text" name="commAmt" id="commAmt" readonly="readonly" onChange="com.makeComma(this)" style="width:125px" class="tar"/>
+						</td>
+						<th>잔액</th>
+						<td>
+							<input type="text" name="remainCommAmt" id="remainCommAmt" title="잔액"  style="width:125px" onchange="com.makeComma(this)" readonly="readonly" class="tar"/>
+						</td>
+						<th id="txt_payAmt">납입금액</th>
+						<td>
+							<input type="search" name="payAmt" id="payAmt" title="납입할금액" maxlength="15" style="width:130px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);fnPayStatTypChg('txt');" class="tar"/>
+						</td>
+
+					</tr>
+					<tr>
+						<th id="txt_commDtTxt">청구일자</th>
+						<td>
+							<input type="search" name="payPreDt" id="payPreDt" title="청구일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+							<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'payPreDt', 'yyyy-mm-dd')" />
+						</td>
+						<th id="txt_payDtTxt">입금일자</th>
+						<td>
+							<input type="search" name="payDt" id="payDt" title="입금일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+							<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'payDt', 'yyyy-mm-dd')" />
+						</td>
+						<th id="txt_payTxt">입금상태</th>
+						<td>
+							<select name="payYn" id="payYn" style="display: none; width:130px" onchange="fnPayYnChg();"></select>
+							<select name="payPartType" id="payPartType" style="display: none; width:130px" onchange="fnPayStatTypChg();"></select>
+						</td>
+					</tr>
+					<tr>
+						<th id="txt_payWayTxt">입금방법</th>
+						<td>
+							<select name="payWay" id="payWay" title="입금방법" style="width:125px" onchange="fnSetBankCd(this);">
+						</td>
+						<th id="txt_payBankTxt">입금은행</th>
+						<td>
+							<select name="selBank" id="selBank" title="입금은행" style="width:125px" onchange="com.fnBankChange(this.value);">
+								<optoin value=""></option>
+							</select>
+							<select name="retSelBank" id="retSelBank" title="입금은행" style="display:none; width:125px" onchange="fnRetBankChange(this.value);">
+								<optoin value=""></option>
+							</select>
+							<input type="hidden" name="payBank" id="payBank" />
+						</td>
+						<th id="txt_payAcctTxt">입금계좌</th>
+						<td>
+							<input name="payAcct" type="text" id="payAcct" style="width:130px" title="입금계좌" readonly="readonly" />
+						</td>
+
+					</tr>
+					<tr>
+						<th id="txt_payNmTxt">입금자</th>
+						<td colspan="5">
+							<input type="search" name="payNm" id="payNm" title="입금자" style="width:355px"  maxlength="20" />
+						</td>
+					</tr>
+					<tr>
+						<th>비고</th>
+						<td colspan="5"><input type="search" name="payRmk" id="payRmk" style="min-width:280px;" title="비고" maxlength="100" /></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<!-- 미수보증료 납부 처리 구간 끝 -->
+		<!-- 환불보증료 처리 구간  -->
+		<div id="ele_guarRepayArea" style="display:none">
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title">보증료 환불처리<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarPay.html)</th:block></h4>
+				</div>
+				<div class="fr">
+					<button type="button" id="btn_partPayProc" onclick="fnGuarRepayProc();" class="btn small style03">환불처리</button>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th id="txt_commTxt">보증료</th>
+						<td><span id="ele_repayCommAmt"></span></td>
+						<th id="txt_payAmt">환불금액<span class="reqMark">*</span></th>
+						<td>
+							<input type="search" name="retCommAmt" id="retCommAmt" title="환불금액" maxlength="15" style="width:130px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);fnPayStatTypChg('txt');" class="tar" />
+						</td>
+
+					</tr>
+					<tr>
+						<th id="txt_commDtTxt">환불일자<span class="reqMark">*</span></th>
+						<td>
+							<input type="search" name="retDt" id="retDt" title="환불일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+							<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'retDt', 'yyyy-mm-dd')" />
+						</td>
+						<th id="txt_payDtTxt">환불방법<span class="reqMark">*</span></th>
+						<td>
+							<select name="retWay" id="retWay" style="width:130px" ></select>
+						</td>
+						<th id="txt_payTxt">환불상태<span class="reqMark">*</span></th>
+						<td>
+							<select name="retYn" id="retYn" style="width:130px" >
+								<option value="">선택</option>
+								<option value="Y">환불</option>
+								<option value="N">미환불</option>
+							</select>
+						</td>
+					</tr>
+
+					<tr>
+						<th>환불정보<span class="reqMark">*</span></th>
+						<td colspan="5">
+							<select name="retBanks" id="retBanks" title="환불정보" style="width:100%" onchange="com.fnMembAccChange(this.value, 'ret')">
+								<option value="">선택</option>
+							</select>
+							<input type="hidden" id="retBank" name="retBank" style="width:100%" title="반환은행">
+						</td>
+					</tr>
+					<tr>
+						<th>환불예금주</th>
+						<td>
+							<input type="text" id="retNm" name="retNm" style="width:100%" title="환불예금주" readonly>
+						</td>
+						<th>환불계좌</th>
+						<td colspan="4">
+							<input type="text" id="retAcct" name="retAcct" style="width:100%" title="환불계좌" readonly>
+						</td>
+					</tr>
+					<tr>
+						<th>비고</th>
+						<td colspan="5"><input type="search" name="retRmk" id="retRmk" style="min-width:280px;" title="비고" maxlength="100" /></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<!-- 환불보증료 처리 구간 끝 -->
+
+		<div id="ele_guarNoPayAreaGrid" style="display:none">
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title">보증료 납부 이력</h4>
+				</div>
+				<div class="fr">
+					<button type="button" id="btn_partPayProc" onclick="fnPayPartSave();" class="btn small style07">수정</button>
+					<button type="button" id="btn_partPayProc" onclick="fnPayPartInit();" class="btn small style07">초기화</button>
+				</div>
+				<div id="sheetGuarPayHistDiv" style="width:100%; height:200px;"></div>
+			</section>
+		</div>
+
+		<!-- 보증료 환불정보 구간  -->
+		<div id="ele_guarRetArea" style="display:none">
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title">보증료 환불<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarPay.html)</th:block></h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>환불수수료</th>
+						<td><span id="ele_retCommAmt"></span></td>
+						<th>재산출보증료</th>
+						<td><span id="ele_modCommAmt"></span></td>
+						<th>환불상태</th>
+						<td><span id="ele_retYnNm"></span></td>
+					</tr>
+					<tr>
+						<th>환불일자</th>
+						<td><span id="ele_retDt"></span></td>
+						<th>환불방법</th>
+						<td><span id="ele_retWayNm"></span></td>
+						<th>입금자</th>
+						<td><span id="ele_retNm"></span></td>
+					</tr>
+					<tr>
+						<th>환불은행</th>
+						<td><span id="ele_retBankNm"></span></td>
+						<th>환불계좌</th>
+						<td colspan="3"><span id="ele_retAcct"></span></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<!-- 보증료 환불정보리 구간 끝 -->
+
+	</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+<head th:fragment="main-head">
+	<meta charset="euc-kr">
+    <meta name="Keywords" content="한국콘텐츠공제조합">
+    <meta name="title" content="한국콘텐츠공제조합">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=euc-kr">
+
+    <meta name="_csrf" th:content="${_csrf?.token}">
+	<meta name="_csrf_header" th:content="${_csrf?.headerName}">
+
+	<title>한국콘텐츠공제조합</title>
+    <link rel="stylesheet" th:href="@{/css/reset.css}">
+    <link rel="stylesheet" th:href="@{/css/font.css}">
+    <link rel="stylesheet" th:href="@{/css/content.css}">
+    <link rel="stylesheet" th:href="@{/css/jquery-ui.min.css}" />
+	<link rel="stylesheet" th:href="@{/css/swiper.css}">
+
+	<link rel="stylesheet" th:href="@{/ibsheet8/Main/compare.css}" />
+	<link rel="stylesheet" th:href="@{/ibsheet8/Main/ibupload.css}" />
+	<link rel="stylesheet" th:href="@{/ibsheet8/Main/jquery.contextMenu.min.css}" />
+
+	<link rel="stylesheet" th:href="@{/CC_WSTD_home/unisignweb/rsrc/css/certcommon.css?v=1}" />
+
+	<script th:src="@{/CC_WSTD_home/install/ObjectInstall.js}"></script>
+	<script th:src="@{/CC_WSTD_home/unisignweb/js/unisignwebclient.js?v=1}"></script>
+	<script th:src="@{/CC_WSTD_home/unisignweb/framework/json2.js}"></script>
+	<script th:src="@{/CC_WSTD_home/UniSignWeb_Multi_Init_Nim.js?v=1}"></script>
+
+    <script th:src="@{/js/swiper.js}"></script>
+    <!--
+    <script th:src="@{/js/jquery-1.10.2.min.js}"></script>
+    -->
+
+	<!--<script th:src="@{/js/jquery-3.3.1.min.js}"></script>
+	<script th:src="@{/js/jquery-ui-1.10.3.js}"></script>
+	<script th:src="@{/js/jquery.modal.js}"></script>
+	<script th:src="@{/ibsheet8/ibleaders.js}"></script>-->
+
+	<!--위 제이쿼리 버전문제로 대체 -->
+	<script src="/ibsheet8/vendors/jquery-3.4.1.js"></script>
+	<script src="/ibsheet8/vendors/jquery.ellipsis.js"></script>
+	<script src="/ibsheet8/vendors/jquery-ui.min.js"></script>
+	<script th:src="@{/ibsheet8/ibleaders.js}"></script>
+
+	<!--
+	<script th:src="@{/ibsheet8/ibsheet.js}"></script>
+	<script th:src="@{/ibsheet8/locale/ko.js}"></script>
+
+	<script th:src="@{/ibsheet8/plugins/ibsheet-excel.js}"></script>
+	<script th:src="@{/ibsheet8/plugins/ibsheet-dialog.js}"></script>
+	<script th:src="@{/ibsheet8/plugins/ibsheet-common.js}"></script>
+	-->
+	<script th:src="@{/ibsheet8/ibupload.js}"></script>
+	<script th:src="@{/ibsheet8/ibuploadinfo.js}"></script>
+	<script th:src="@{/ibsheet8/jquery.contextMenu.min.js}"></script>
+	<script th:src="@{/js/exceljs.min.js}"></script>
+
+	<script th:src="@{/js/oz.js}"></script>
+	<script th:src="@{/js/ozws.js}"></script>
+
+	<script th:src="@{/js/main.js}"></script>
+	<script th:src="@{/js/common.js}"></script>
+	<script th:src="@{/js/calendar.js}"></script>
+
+	<script type="text/javascript"  src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ecd19a5284fd99b5911db302c7a0b7af&libraries=services,clusterer,drawing"></script>
+
+
+</head>
+</html>

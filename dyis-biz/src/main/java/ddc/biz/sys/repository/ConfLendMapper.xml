@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.sys.repository.ConfLendMapper"> 
+
+	<sql id="cols"> 
+		APP_DT 
+		, FINAL_GRADE 
+		, CONCLUS_RATE 
+		, CREDIT_RATE 
+		, NOTE_RATE 
+		, BOND_RATE 
+		, CLAIM_RATE 
+		, REMARK 
+		, REG_DTM 
+		, REG_NM 
+		, MOD_DTM 
+		, MOD_NM  
+	</sql> 
+	
+	<!-- 대출상품배수 정보 조회 --> 
+	<select id="selectConfLendList" parameterType="Map" resultType="camelMap"> 
+		/* ConfLendMapper.selectConfLendList */ 
+		SELECT 
+			<include refid="cols" /> 
+		  FROM CM_LEND_LIMIT 
+		<where> 
+		<if test="sAppStaDt != null and sAppStaDt  != ''"> 
+		AND APP_DT &gt;= REPLACE(#{sAppStaDt}, '-', '') 
+		</if> 
+		<if test="sAppEndDt != null and sAppEndDt  != ''"> 
+		AND APP_DT &lt;= REPLACE(#{sAppEndDt}, '-', '') 
+		</if> 
+		</where> 
+		ORDER BY APP_DT DESC, SUBSTR(FINAL_GRADE, 0, 1), LENGTH(FINAL_GRADE) DESC
+	</select> 
+
+	<!-- 대출상품배수 상세 조회 --> 
+	<select id="selectConfLend" parameterType="Map" resultType="camelMap"> 
+		/* ConfLendMapper.selectConfLend*/ 
+		SELECT 
+			<include refid="cols" /> 
+		  FROM CM_LEND_LIMIT 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+		   AND FINAL_GRADE = #{finalGrade} 
+	</select> 
+
+	<!-- 대출상품배수관리 상세 조회(최종) --> 
+	<select id="selectConfLendMaxAppDt" parameterType="Map" resultType="camelMap"> 
+		/* ConfLendMapper.selectConfLendMaxAppDt*/ 
+		SELECT 
+			<include refid="cols" />  
+		  FROM CM_LEND_LIMIT 
+		 WHERE FINAL_GRADE = #{finalGrade}
+		   AND APP_DT = (
+		 				SELECT MAX(APP_DT)
+		 				  FROM CM_LEND_LIMIT
+		 			     WHERE FINAL_GRADE = #{finalGrade}
+		 			       AND APP_DT &lt; REPLACE(NVL(#{appDt}, TO_CHAR(SYSDATE, 'YYYYMMDD')), '-')
+		 			   )
+	</select> 
+
+	<!-- 대출상품배수 등록 처리 --> 
+	<insert id="insertConfLend" parameterType="Map"  > 
+		/* ConfLendMapper.insertConfLend */ 
+		INSERT INTO CM_LEND_LIMIT ( 
+			<include refid="cols" />  
+		) VALUES ( 
+			REPLACE(#{appDt}, '-', '') 
+			, #{finalGrade} 
+			, #{conclusRate} 
+			, #{creditRate} 
+			, #{noteRate} 
+			, #{bondRate} 
+			, #{claimRate} 
+			, #{remark} 
+			, SYSDATE 
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 대출상품배수 수정 처리 --> 
+	<update id="updateConfLend" parameterType="Map"  > 
+		/* ConfLendMapper.updateConfLend */ 
+		UPDATE CM_LEND_LIMIT 
+		SET 
+			APP_DT = REPLACE(#{appDt}, '-', '') 
+			, FINAL_GRADE = #{finalGrade} 
+			, CONCLUS_RATE = #{conclusRate} 
+			, CREDIT_RATE = #{creditRate} 
+			, NOTE_RATE = #{noteRate} 
+			, BOND_RATE = #{bondRate} 
+			, CLAIM_RATE = #{claimRate} 
+			, REMARK = #{remark} 
+			, MOD_DTM = SYSDATE 
+			, MOD_NM = #{userNm} 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+		  AND FINAL_GRADE = #{finalGrade} 
+	</update> 
+
+	<!-- 대출상품배수 삭제 처리 --> 
+	<delete id="deleteConfLend" parameterType="Map"  > 
+		/* ConfLendMapper.deleteConfLend */ 
+		DELETE FROM CM_LEND_LIMIT 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '') 
+		  AND FINAL_GRADE = #{finalGrade} 
+	</delete> 
+
+</mapper>

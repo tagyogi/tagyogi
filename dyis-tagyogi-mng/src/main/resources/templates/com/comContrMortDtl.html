@@ -1,0 +1,245 @@
+<!--
+	파일정보 : com/comMortDtl.html
+	파일명 : comMortDtl
+	업무명 : 담보상세정보 팝업
+	생성자 : BSG
+	생성일 : 2023.06.08
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = {}; //공통코드
+			
+			//초기화 조회 콜백
+			var fnInitCallBack = function(resData){
+				//화면 처리
+				
+				console.log(resData);
+				//수정시 선택 담보 정보 호출
+				com.fnSetKeyVal(resData.memb);
+				com.fnSetKeyVal(resData.contr);
+				
+				
+				com.fnSetKeyVal(resData.mort, "mort");
+				
+				var sureCd = resData.mort.sureCd;
+				
+				
+				if(sureCd === "10"){ //대표자
+					$("#ele_juminNo").val(resData.mort.juminNo);
+				}else if(sureCd === "20"){ //개인
+					$("#ele_juminNo").val(resData.mort.juminNo);
+				}else if(sureCd === "30"){ //법인
+					$("#titl_jumin").text("법인번호");
+					$("#ele_juminNo").val(resData.mort.lawNo);
+					
+					$("#titl_telNm").text("팩스번호");
+				}else if(sureCd === "40"){ //조합원
+					$("#titl_jumin").text("조합원번호");
+					$("#ele_juminNo").val(resData.mort.membNo);
+					
+					$("#titl_telNm").text("팩스번호");
+				}
+				
+				//cls_mortType10
+				if(resData.mort.mortCase === "10"){
+					$(".cls_mortType10").show();
+				}else{
+					$(".cls_mortType20").show();
+				}
+				
+			};
+			
+			
+			$(document).ready(function(){
+				//화면 초기화 처리 호출 ()
+				var membNo = parent.$("#membNo").val();
+				var contrNo = parent.$("#contrNo").val(); 
+				var mortType = parent.$("#mortType").val();
+				var mortSeq = parent.$("#mortSeq").val();
+				
+				var initParam = {membNo : membNo, contrNo : contrNo, mortType : mortType, mortSeq : mortSeq}
+				obj = {url:"/contrMort/selectContrMort.do", param:initParam, callBack:fnInitCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj); 
+			});
+			
+		    /*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->	
+			<section class="area">
+				<div class="fl">
+					<h4 class="title fl mt10">약정정보</h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="width:140px;">
+					<col style="width:80px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>신용도</th>
+						<td><span id="ele_grade"></span></td>
+						<th>약정구분</th>
+						<td><span id="ele_contrTypeNm"></span></td>
+						<th>약정기간</th>
+						<td><span id="ele_contrTermShotDt"></span></td>
+					</tr>
+					<tr>
+						<th>츨자좌수</th> 
+						<td><span id="ele_investNum"></span>&nbsp;좌</td>
+						<th>담보좌수</th>
+						<td><span id="ele_mortNum"></span>&nbsp;좌</td>
+						<th>약정좌수</th>
+						<td><span id="ele_contrNum"></span>&nbsp;좌</td>
+					</tr>
+				</tbody>
+			</table>
+			<div id="mort">
+				<section class="area mt10">
+					<div class="fl">
+						<h4 class="title">소유자정보(담보제공자)</h4>
+					</div>
+				</section>
+				<table class="tbl">
+					<colgroup>
+						<col style="width:80px;">
+						<col style="width:140px;">
+						<col style="width:80px;">
+						<col style="width:140px;">
+						<col style="width:80px;">
+						<col style="">
+					</colgroup>
+					<tbody>
+						<tr>
+							<th>소유자구분</th>
+							<td colspan="5"><span id="ele_sureCdNm"></span></td>
+						</tr>
+						<tr>
+							<th id="titl_jumin">주민등록번호</th>
+							<td colspan="3"><span id="ele_juminNo"></span></td>
+							<th>소유자명</th>
+							<td colspan="3"><span id="ele_sureNm"></span></td>
+						</tr>
+						<tr class="cls_sureType" style="display:none">
+							<th>대표자</th>
+							<td colspan="3"><span id="ele_ceoNm"></span></td>
+							<th>법인등록번호</th>
+							<td colspan="3"><span id="ele_lawNo"></span></td>
+						</tr>
+						<tr>
+							<th>전화번호</th>
+							<td colspan="3"><span id="ele_telNo"></span></td>
+							<th id="titl_telNm">휴대폰</th>
+							<td colspan="3"></td>
+						</tr>
+						<tr>
+							<th>주소</th>
+							<td colspan="5"><span id="ele_addrFull"></span></td>
+						</tr>
+						<tr>
+							<th>관계</th>
+							<td colspan="3"><span id="ele_mortRelation"></span></td>
+							<th>담보여부</th>
+							<td colspan="3"><span id="ele_mortYnNm"></span></td>
+						</tr>
+						<tr>
+							<th>설정일자</th>
+							<td colspan="3"><span id="ele_mortDt"></span></td>
+							<th>해제일자</th>
+							<td colspan="3"><span id="ele_mortCanDt"></span></td>
+						</tr>
+						<tr>
+							<th>해제사유</th>
+							<td colspan="5"><span id="ele_canResnNm"></span></td>
+						</tr>
+					</tbody>
+				</table>
+				<div id="ele_mort">
+					<section class="area mt10">
+						<div class="fl">
+							<h4 class="title">담보설정</h4>
+						</div>
+					</section>
+					<table class="tbl">
+						<colgroup>
+							<col style="width:80px;">
+							<col style="width:140px;">
+							<col style="width:80px;">
+							<col style="width:140px;">
+							<col style="">
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>담보구분</th>
+								<td colspan="5">
+									<span id="ele_mortCaseNm"></span>
+								</td>
+							</tr>
+							<tr class="cls_mortType10" >
+								<th>주소</th>
+								<td colspan="5">
+									<span id="ele_mortAddrFull"></span>
+								</td>
+							</tr>
+							
+							<!--부동산정보-->
+							<tr class="cls_mortType10" style="display:none">
+								<th>부동산종류</th>
+								<td colspan="3"><span id="ele_mortNm"></span></td>
+								<th>부동산면적</th>
+								<td colspan="3">건평㎡ :<span id="ele_mortArea"></span>&nbsp;대지㎡ ::<span id="ele_mortSite"></span></td>
+							</tr>
+							<tr class="cls_mortType10" style="display:none">
+								<th>근저당설정액</th>
+								<td colspan="3"><span id="ele_mortCollAmt"></span></td>
+								<th>임차보증금</th>
+								<td colspan="3"><span id="ele_mortSecuAmt"></span></td>
+							</tr>
+							<tr class="cls_mortType10" style="display:none">
+								<th>감정일자</th>
+								<td colspan="3"><span id="ele_mortPriceDt"></span></td>
+								<th>감정가격</th>
+								<td colspan="3"><span id="ele_mortPriceAmt"></span></td>
+							</tr>
+							
+							<!--부동산정보 끝-->
+							<!--예금정보-->
+							<tr class="cls_mortType20" style="display:none">
+								<th>예금은행</th>
+								<td colspan="3"><span id="ele_depBankNm"></span></td>
+								<th>지점명</th>
+								<td colspan="3"><span id="ele_depBranch"></span></td>
+							</tr>
+							<tr class="cls_mortType20" style="display:none">
+								<th>계좌번호</th>
+								<td colspan="3"><span id="ele_depAcct"></span></td>
+								<th>예금주</th>
+								<td colspan="3"><span id="ele_depNm"></span></td>
+							</tr>
+							<tr class="cls_mortType20" style="display:none">
+								<th>예금액</th>
+								<td colspan="3"><span id="ele_depAmt"></span></td>
+								<th>예금만기일</th>
+								<td colspan="3"><span id="ele_depExpDt"></span></td>
+							</tr>
+							<tr>
+								<th>비고</th>
+								<td colspan="5"><span id="ele_remark"></span></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

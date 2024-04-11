@@ -1,0 +1,227 @@
+<!--
+	파일정보 : membAcc/membAccIns.html
+	파일명 : membAcc
+	업무명 : 조합원계좌 상세
+	생성자 : 김상민1
+	생성일 : 2023-05-03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB34:CM02", gridNoList : ""}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//동적 첨부파일 (다건)
+				//com.fnIbsUpload($("#docFile"));
+
+				fnSearch();
+			});
+
+
+			//검색
+			var fnSearch = function(){
+			    //화면 처리 (조합원 정보 조회)
+				var selectParam = { reqSeq : /*[[${paramMap.reqSeq}]]*/, membNo : /*[[${paramMap.membNo}]]*/, atthType: /*[[${menuInfo.atthType}]]*/ };
+				obj = {url:"/membAcc/selectMembAcc.do", param:selectParam, callBack:fnSelectCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//조합원 정보 조회 콜백
+			var fnSelectCallBack = function(resData){
+				//console.log(resData);
+
+				//기본 데이터
+				com.fnSetKeyVal(resData.memb);
+				com.fnSetKeyVal(resData.data);
+
+				//체크박스 데이터
+				com.checkBoxCheckValue(resData.data.chgBankCdYn, "chgBankCdYn");	//은행 변경구분
+				com.checkBoxCheckValue(resData.data.chgAcctNoYn, "chgAcctNoYn");	//계좌번호 변경구분
+				com.checkBoxCheckValue(resData.data.chgDepoNmYn, "chgDepoNmYn");	//예금주 변경구분
+
+				//첨부파일
+				com.fnIbsUploadView($("#docFile"), resData.fileList);
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+				
+			};
+
+			//수정
+			var fnUpt = function(){
+
+				if($("#procStat").val() === "20" || $("#procStat").val() === "30"){
+					alert("처리불가/완료 건은 수정이 불가능합니다.");
+					return;
+				}
+
+				param = {menuCd:"1010119", paramMap:{membNo: $("#membNo").val()
+										, reqSeq: $("#reqSeq").val()
+										, atthType:/*[[${menuInfo.atthType}]]*/
+										}
+				};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			};
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="membNo" id="membNo" value=""/>
+    		<input type="hidden" name="reqSeq" id="reqSeq" value=""/>
+    		<input type="hidden" name="procStat" id="procStat" value=""/>
+    		<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>	<!-- 메뉴관리 > 관련첨부코드 -->
+			<input type="hidden" name="atthNo" id="atthNo"/>
+
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<!--조합원조회 -->
+						<th:block th:include="com/comMemb"></th:block>
+
+						<!-- 신청정보 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">신청계좌정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:70px;">
+								<col style="width:50px;">
+								<col style="width:200px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>은행</th>
+									<th>계좌번호</th>
+									<th>예금주</th>
+								</tr>
+									<td><div id="ele_bankNm"></div></td>
+									<td><div id="ele_acctNo"></div></td>
+									<td><div id="ele_depoNm"></div></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">신청정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>신청일자</th>
+										<td><div id="ele_reqDt"></div></td>
+										<th>신청자</th>
+										<td><div id="ele_regNm"></div></td>
+									</tr>
+									<tr>
+										<th>전자서명</th>
+										<td colspan="3"><div id=""></div></td>
+									</tr>
+								</tbody>
+							</table>
+
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">승인정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>처리상태</th>
+										<td><div id="ele_procStatNm"></div></td>
+										<th>처리일자</th>
+										<td><div id="ele_contrApprDt"></div></td>
+										<th>처리자</th>
+										<td><div id="ele_contrApprNm"></div></td>
+									</tr>
+									<tr>
+										<th>처리사유</th>
+										<td colspan="5"><div id="ele_procReason" style="min-height: 65px;" maxlength="50" ></div></td>
+									</tr>
+								</tbody>
+							</table>
+
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnDtlFileUpload('docFile', $('#atthType').val(), $('#atthNo').val(), $('#membNo').val());" class="btn small style07">파일저장</button>
+			                        <button type="button" onclick="javascript:com.fnIbsFileDownAll($('#docFile'));" class="btn small style08">전체다운</button>
+			                    </div>
+							</section>
+							<div id="docFile" style="height:140px;"></div>
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!-- 처리 버튼 영역 -->
+				<div class="area mt50" style="width:100%">
+					<section class="area">
+						<div class="fc">
+							<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" >수정</button>
+							<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+						</div>
+					</section>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

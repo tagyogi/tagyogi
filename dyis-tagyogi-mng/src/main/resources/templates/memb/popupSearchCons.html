@@ -1,0 +1,128 @@
+<!--
+	파일정보 : memb/popupSearchCons.html
+	파일명 : popupSearchCons
+	업무명 : 상담조합원검색 팝업
+	생성자 : BSG
+	생성일 : 2023.04.05
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB02", gridNoList : "10206"}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				//부모창 검색 정보 추출
+				$("#sCompNm").val(parent.$("#compNm").val());
+
+				//검색조건(공통 selectBox 생성)
+				com.fnCodeSelectBox("MB02", "sMainBussCd", 2, "");
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick" , function(obj) { //더블클릭
+					if(obj.kind === "Filter") return;
+					fnSelect();
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/membCons/selectMembConsList.do", param); //param, sheetId 생략 가능
+			}
+
+			//선택 버튼 이벤트
+			var fnSelect = function(){
+				var selectRow = sheet.getFocusedRow();
+				if(validateUtil.isNull(selectRow)){
+					alert("선택된 행이 없습니다.");
+					return;
+				}
+
+				if(confirm("선택한 업체의 수정페이지로 이동하시겠습니까?\n현재 입력중이던 등록페이지는 종료됩니다.")) {
+                	parent.fnUpt(selectRow.counsNo);	//수정페이지
+                	com.dialpopupClose();
+                }
+			}
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<section class="searchArea">
+				<div class="row">
+					<dl>
+						<dt>업체명</dt>
+						<dd style="width:160px;">
+							<input type="text" name="sCompNm" id="sCompNm" maxlength="25" style="width:150px;"/>
+						</dd>
+					</dl>
+					<dl>
+						<dt>대표자</dt>
+						<dd style="width:130px;">
+							<input type="text" name="sCeoNm" id="sCeoNm" maxlength="20" style="width:120px;"/>
+						</dd>
+					</dl>
+					<dl>
+						<dt>장르</dt>
+						<dd>
+							<select name="sMainBussCd" id="sMainBussCd" style="width:120px" title="장르"></select>
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="row">
+					<dl>
+						<dt>사업자번호</dt>
+						<dd style="width:160px;">
+							<input type="text" name="sBizNo" id="sBizNo" style="width:150px;" maxlength="12"/>
+						</dd>
+					</dl>
+					<dl>
+						<dt>법인번호</dt>
+						<dd style="width:130px;">
+							<input type="text" name="sLawNo" id="sLawNo" style="width:150px;" maxlength="14"/>
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="searchBtn">
+					<button type="button" onclick="fnSearch();" class="btn search">조회</button>
+				</div>
+			</section>
+			</form>
+			<div class="mt10">
+		    	<div id="sheetDiv" style="width:100%;height:280px"></div>
+			</div>
+		</div><!-- //contentsArea -->
+		<div class="layer-flex mt20">
+			<!-- 처리 버튼 영역 -->
+			<div class="" style="width:100%">
+				<section class="area">
+					<div class="fc">
+						<button type="button" onclick="javascript:fnSelect();" class="btn style08">선택</button>
+						<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style08">닫기</button>
+					</div>
+				</section>
+			</div>
+			<!-- 처리 버튼 영역 끝-->
+		</div>
+	</body>
+</html>

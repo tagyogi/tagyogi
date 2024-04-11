@@ -1,0 +1,267 @@
+<!--
+	파일정보 : invtSpltMergList.html
+	파일명 : invtSpltMerg현황
+	업무명 : 출자증권분할병합 현황 현황 조회, 등록, 수정
+	생성자 : 박재만
+	생성일 : 2023-07-27
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			var rowData = {}; //선택된 행
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				$("#sInvtSpltMergStaDt").val(com.fnDateGet(/*[[${today}]]*/, -730)); //
+
+				com.fnCodeSelectBox("IV05", "sSepmerCd", 2, ""); //선택
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+			    //저장후 이벤트
+			    sheet.bind("onAfterSave" , function(obj) {
+					resData = JSON.parse(obj.response.response);
+					alert(resData.resultMsg);
+			        if (resData.resultCode === 0) {
+					    //fnSearchDtl(); //조회 호출
+			        }
+				});
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter" || obj.kind === "Header") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					$("#serchFrm #investNo").val(rowData.investNo);
+					$("#serchFrm #sepmerSeq").val(rowData.sepmerSeq);
+					$("#serchFrm #membNo").val(rowData.membNo);
+
+					$("#serchFrm #sepmerCd").val(rowData.sepmerCd);
+					$("#serchFrm #befBillNo").val(rowData.befBillNo);
+					$("#serchFrm #aftBillNo").val(rowData.aftBillNo);
+
+					//상세화면 호출 - 조합원명원클릭시
+<!--					if(obj.col === "membNm"){-->
+<!--						fnView("V");-->
+<!--					}; -->
+				});
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+					fnView("V");
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/invtSpltMerg/selectInvtSpltMergList.do", param); //param, sheetId 생략 가능
+			};
+
+			//상세 화면 호출
+			var fnView = function(type){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				//if(type === "TAKE") menuCd = "1020218"; //증권분할등록
+				//if(type === "SEL")  menuCd = "1020214"; //증권병합등록
+
+				if(type === "V" || type === "U") {
+					if(com.fnIsEmpty(rowData)) {
+						alert('목록이 선택되지 않았습니다.');
+						return false;
+					}
+				}
+
+				// 출자증권 분할 혹은 병합 수정
+				if(type === "U"){
+					if(rowData.sepmerCd === "S" ){
+						menuCd = "1020220" //수정 (분할)
+					}else{
+						menuCd = "1020221" //수정 (병합)
+					};
+				}
+
+				// 출자증권 분할 혹은 병합 상세
+				if(type === "V"){
+					if(rowData.sepmerCd === "S" ){
+						menuCd = "1020216"; //상세 (출자증권 분할정보 상세)
+					}else{
+						menuCd = "1020217"; //상세 (출자증권 병합정보 상세)
+					};
+				}
+
+				param = {menuCd:menuCd,
+						 paramMap:{
+							investNo: rowData.investNo,
+							sepmerSeq: rowData.sepmerSeq,
+							membNo: rowData.membNo,
+							sepmerCd: rowData.sepmerCd,
+							befBillNo: rowData.befBillNo,
+							aftBillNo: rowData.aftBillNo,
+						}
+					};
+				parent.menuOpen(param);
+			};
+
+			//등록 화면 호출
+			var fnIns = function(type){
+				var menuCd = "";
+				if(type === "seprt") menuCd = "1020218";
+				if(type === "merge") menuCd = "1020219";
+				menuNm = /*[[${menuInfo.menuNm}]]*/;
+				param = {menuCd:menuCd, title:menuNm+"등록", paramMap:{menuNm:menuNm, atthType:/*[[${menuInfo.atthType}]]*/}};
+				parent.menuOpen(param);
+			};
+
+			//삭제처리
+			var fnDeleteInvtSpltMerg = function(){
+
+				if(rowData.investNo === "" || rowData.investNo === undefined){
+					alert("목록이 선택되지 않았습니다.");
+					return false;
+				}
+
+				//안전한 테스트를위해 35동양만 삭제 (임시)
+				/*if(rowData.ownMembNo !== "35") {
+					alert('개발단계중 :  35번 동양정보서비스 기준으로 테스트중입니다, 35번으로 테스트해주세요');
+					return false;
+				}*/
+				var confirmMn = rowData.membNm;
+				if(confirm(confirmMn + "에 대한 삭제 처리를 하시겠습니까?")){
+					var url = "";
+					if(rowData.sepmerCd === "S" ) url = "/invtSpltMerg/deleteinvtSplt.do";
+					if(rowData.sepmerCd === "M" ) url = "/invtSpltMerg/deleteinvtMerg.do";
+
+					obj = {url:url, param:{investNo: rowData.investNo, befBillNo:rowData.befBillNo, aftBillNo:rowData.aftBillNo}, callBack:fnDeleteInvtSpltMergCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+
+					com.fnAjaxDef(obj);
+				}
+
+			}
+
+			//삭제콜백
+			var fnDeleteInvtSpltMergCallBack = function(){
+				fnSearch();
+			}
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				$("#sInvtSpltMergStaDt").val(com.fnDateGet(/*[[${today}]]*/, -730)); //
+				fnSearch();
+			};
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+			</div><!-- //contentsTop -->
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="investNo"  id="investNo" value=""/>
+				<input type="hidden" name="sepmerSeq" id="sepmerSeq" value=""/>
+				<input type="hidden" name="membNo"    id="membNo" value=""/>
+				<input type="hidden" name="sepmerCd"  id="sepmerCd" value=""/>
+				<input type="hidden" name="befBillNo" id="befBillNo" value=""/>
+				<input type="hidden" name="aftBillNo" id="aftBillNo" value=""/>
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>변경일자</dt>
+							<dd style="width:260px;">
+								<input type="text" name="sInvtSpltMergStaDt" id="sInvtSpltMergStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sInvtSpltMergStaDt','sInvtSpltMergEndDt','F');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sInvtSpltMergStaDt', 'yyyy-mm-dd','sInvtSpltMergEndDt', 1)" />
+								<input type="text" name="sInvtSpltMergEndDt" id="sInvtSpltMergEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sInvtSpltMergStaDt','sInvtSpltMergEndDt','T');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sInvtSpltMergEndDt', 'yyyy-mm-dd','sInvtSpltMergStaDt', 2)" />
+							</dd>
+							<dt>변경구분</dt>
+							<dd style="width:80px;">
+								<select name="sSepmerCd" id="sSepmerCd" style="width:80px;"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnIns('seprt');" class="btn style08">분할입력</button>
+								<button type="button" onclick="javascript:fnIns('merge');" class="btn style08">병합입력</button>
+								<button type="button" onclick="javascript:fnView('U');" class="btn style08">수정</button>
+								<button type="button" onclick="javascript:fnView('V');" class="btn style08">상세</button>
+								<!--<button type="button" onclick="javascript:fnDeleteInvtSpltMerg();"  class="btn style08" >삭제</button>-->
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

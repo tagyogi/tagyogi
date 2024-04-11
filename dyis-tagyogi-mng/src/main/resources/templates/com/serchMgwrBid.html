@@ -1,0 +1,280 @@
+<!--
+	파일정보 : serchG2bBid.html
+	파일명 : serchG2bBid
+	업무명 : G2B계약검색
+	생성자 : 권다슬
+	생성일 : 2023-07-13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			$(document).ready(function(){
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#docFile"));
+
+				$("#guarType").val(parent.$("#guarType").val());
+				$("#publicNo").val(parent.$("#publicNo").val());
+				//$("#membNo").val(parent.$("#sMembNo").val());
+
+				obj = {url:"/guarElectReq/serchMgwrReq.do", formId:"serchFrm", callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxPost(obj);
+
+			});
+
+			//조회 콜백
+			var fnSearchCallBack = function(resData){
+				//com.fnSetKeyVal(resData.data);
+				console.log(resData);
+
+				if(resData.resultCode == "9"){
+					alert(resData.resultMsg);
+					return;
+				}
+
+				if(resData.data.resultCd == "9"){
+					alert("조달청 조회 정보가 없습니다.");
+					return;
+				}
+
+				var data = resData.data;
+
+				//입찰공고
+				$("#ele_notiNo").text(data.notiNo); 		//입찰공고번호
+				$("#ele_notiSeq").text(data.notiSeq);	 	//입찰차수
+				$("#ele_servNm").text(data.servNm); 		//입찰건명
+				$("#ele_notiDt").text(com.fnDateFormat(data.notiDt)); 		//공고일자
+				$("#ele_notiTm").text(com.fnTimeFormat(data.notiTm)); 		//공고시간
+				$("#ele_bidStaDt").text(com.fnDateFormat(data.bidStaDt)); 	//입찰시작일자
+				$("#ele_bidStaTm").text(com.fnTimeFormat(data.bidStaTm)); 	//입찰시작시간
+				$("#ele_bidEndDt").text(com.fnDateFormat(data.bidEndDt)); 	//입찰마감일자
+				$("#ele_bidEndTm").text(com.fnTimeFormat(data.bidEndTm)); 	//입찰마감시간
+				$("#ele_bidOpenDt").text(com.fnDateFormat(data.bidOpenDt)); //개찰일자
+				$("#ele_bidOpenTm").text(com.fnTimeFormat(data.bidOpenTm)); //개찰시간
+				$("#ele_bidOpenPlac").text(data.bidOpenPlac); 				//개찰장소
+				$("#ele_demOrgNm").text(data.demOrgNm); 					//발주기관명
+				$("#ele_demOrgBizNo").text(com.makeBizNoVal(data.demOrgBizNo)); 	//사업자등록번호
+				$("#ele_demCrdtNm").text(data.demCrdtNm);	//채권자명
+
+				//입찰정보
+				if(data.bidMeanCd === "01") $("#ele_bidMeanCd").text("전자입찰"); //입찰방식
+				if(data.bidMeanCd === "02") $("#ele_bidMeanCd").text("수기(일반)입찰"); //입찰방식
+
+				$("#ele_succMean").text(data.succMean); //낙찰방법
+
+				if(data.contrMeanCd === "01") $("#ele_contrMeanCd").text("일반경쟁"); //계약방법
+				if(data.contrMeanCd === "02") $("#ele_contrMeanCd").text("제한경쟁"); //계약방법
+				if(data.contrMeanCd === "03") $("#ele_contrMeanCd").text("실적경쟁"); //계약방법
+
+				$("#ele_budgAmt").text(com.addComma(data.budgAmt)); //공사예정금액
+				$("#ele_EstiAmt").text(com.addComma(data.estiAmt)); //추정가격
+				$("#ele_baseAmt").text(com.addComma(data.baseAmt)); //기초금액
+				$("#ele_suplAmt").text(com.addComma(data.suplAmt)); //도급자관급금액
+				$("#ele_govAmt").text(com.addComma(data.govAmt)); 	//관급자관급금액
+				$("#ele_VatAmt").text(com.addComma(data.vatAmt)); 	//부가세
+				$("#ele_etcAmt").text(com.addComma(data.etcAmt)); 	//기타금액
+				$("#ele_bidPartFeeAmt").text(com.addComma(data.bidPartFeeAmt)); //입찰참가수수료
+				$("#ele_rebidYn").text(data.rebidYn); 				//재입찰허용여부
+				$("#ele_otherEmpNm").text(data.otherEmpNm); 		//담당자명
+				$("#ele_otherTelNo").text(data.otherTelNo); 		//담당자전화번호
+
+				//url a태그
+				if(data.urlLink)	$("#ele_linkURLArea").html('<a href="https://'+data.urlLink+'" target="_blank">'+ data.urlLink +'</a>');	//링크URL
+				if(data.urlNoti)	$("#ele_notiURLArea").html('<a href="https://'+data.urlNoti+'" target="_blank">'+ data.urlNoti +'</a>');	//공고URL
+
+				//첨부파일
+				if(resData?.fileList) {	//파일정보 있으면(guarElectReq에만 있음)
+					//$("#atthNo").val(data.atthNo);
+					com.fnIbsUploadView($("#docFile"), resData.fileList);
+				}
+			}
+
+			//적용
+			function fnElectApply() {
+			    //전자보증정보 설정
+
+			    //계약정보설정
+			    parent.$("#servNm").val($("#ele_servNm").text());
+			    parent.$("#orderNm").val($("#ele_demOrgNm").text());
+			    parent.$("#orderBizNo").val($("#ele_demOrgBizNo").text()); //사업자등록번호
+				parent.$("#releDt").val($("#ele_bidEndDt").text());      //입찰마감일자
+
+			    parent.guarCom.fnSetReleDt(); //입찰마감일자 세팅후 보증기간
+
+			    com.dialpopupClose();;
+			}
+		    /*]]>*/
+		</script>
+
+		<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="guarType" id="guarType" />
+			<input type="hidden" name="reqType" id="reqType"  value="intdnt"/>
+			<input type="hidden" name="publicNo" id="publicNo" value=""/>
+			<input type="hidden" name="membNo" id="membNo" value=""/>
+
+			<!-- 첨부파일 관련 -->
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+			<input type="hidden" name="atthNo" id="atthNo"/>
+		</form>
+
+		<!-- 입찰정보 -->
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">입찰공고</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:100px;">
+				<col style="width:200px;">
+				<col style="width:100px;">
+				<col style="width:200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>입찰공고번호</th>
+					<td><span id="ele_notiNo"></span></td>
+					<th>입찰차수</th>
+					<td><span id="ele_notiSeq"></span></td>
+				</tr>
+				<tr>
+	                <th>입찰건명</th>
+	                <td colspan="3"><span id="ele_servNm"></span></td>
+	            </tr>
+	            <tr>
+	                <th>공고일자</th>
+	                <td><span id="ele_notiDt"></span></td>
+	                <th>공고시간</th>
+	                <td><span id="ele_notiTm"></span></td>
+	            </tr>
+	            <tr>
+	                <th>입찰시작일자</th>
+	                <td><span id="ele_bidStaDt"></span></td>
+	                <th>입찰시작시간</th>
+	                <td><span id="ele_bidStaTm"></span></td>
+	            </tr>
+	            <tr>
+	                <th>입찰마감일자</th>
+	                <td><span id="ele_bidEndDt"></span></td>
+	                <th>입찰마감시간</th>
+	                <td><span id="ele_bidEndTm"></span></td>
+	            </tr>
+	            <tr>
+	                <th>개찰일자</th>
+	                <td><span id="ele_bidOpenDt"></span></td>
+	                <th>개찰시간</th>
+	                <td><span id="ele_bidOpenTm"></span></td>
+	            </tr>
+	            <tr>
+	                <th>개찰장소</th>
+	                <td colspan="3"><span id="ele_bidOpenPlac"></span></td>
+	            </tr>
+	            <tr>
+	                <th>발주기관명</th>
+	                <td><span id="ele_demOrgNm"></span></td>
+	                <th>사업자등록번호</th>
+	                <td><span id="ele_demOrgBizNo"></span></td>
+	            </tr>
+	            <tr>
+	                <th>채권자명</th>
+	                <td colspan="3"><span id="ele_demCrdtNm"></span></td>
+	            </tr>
+
+			</tbody>
+		</table>
+
+		<!-- 공고정보 -->
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">입찰정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:100px;">
+				<col style="width:200px;">
+				<col style="width:100px;">
+				<col style="width:200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+	                <th>입찰방식</th>
+	                <td><span id="ele_bidMeanCd"></span></td>
+	                <th>낙찰방법</th>
+	                <td><span id="ele_succMean"></span></td>
+	            </tr>
+	            <tr>
+	                <th>계약방법</th>
+	                <td colspan="3"><span id="ele_contrMeanCd"></span></td>
+	            </tr>
+	            <tr>
+	                <th>공사예정금액</th>
+	                <td><span id="ele_budgAmt"></span></td>
+	                <th>추정가격</th>
+	                <td><span id="ele_EstiAmt"></span></td>
+	            </tr>
+	            <tr>
+	                <th>기초금액</th>
+	                <td><span id="ele_baseAmt"></span></td>
+	                <th>도급자관급금액</th>
+	                <td><span id="ele_suplAmt"></span></td>
+	            </tr>
+	            <tr>
+	                <th>관급자관급금액</th>
+	                <td><span id="ele_govAmt"></span></td>
+	                <th>부가세</th>
+	                <td><span id="ele_vatAmt"></span></td>
+	            </tr>
+	            <tr>
+	                <th>기타금액</th>
+	                <td colspan="3"><span id="ele_etcAmt"></span></td>
+	            </tr>
+	            <tr>
+	                <th>링크URL</th>
+	                <td><span id="ele_linkURLArea"></span></td>
+	                <th>공고URL</th>
+	                <td><span id="ele_notiURLArea"></span></td>
+	            </tr>
+	            <tr>
+	                <th>입찰참가수수료</th>
+	                <td><span id="ele_bidPartFeeAmt"></span></td>
+	                <th>재입찰허용여부</th>
+	                <td><span id="ele_rebidYn"></span></td>
+	            </tr>
+	            <tr>
+	                <th>담당자명</th>
+	                <td><span id="ele_otherEmpNm"></span></td>
+	                <th>담당자전화번호</th>
+	                <td><span id="ele_otherTelNo"></span></td>
+	            </tr>
+			</tbody>
+		</table>
+
+		<section class="area mt10">
+			<div class="fl">
+				<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+			</div>
+			<div class="fr">
+				<!--<button type="button" onclick="javascript:com.fnDtlFileUpload('docFile', $('#atthType').val(), $('#atthNo').val(), '');" class="btn small style07">파일저장</button>-->
+	        	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#docFile'));" class="btn small style08">전체다운</button>
+	    	</div>
+		</section>
+		<div id="docFile" style="height:140px;"></div>
+
+		<!--하단 버튼 영역-->
+		<div class="layer-flex mt20">
+			<!-- 처리 버튼 영역 -->
+			<div class="" style="width:100%">
+				<section class="area">
+					<div class="fc">
+						<button type="button" onclick="javascript:fnElectApply();" class="btn style03">적용</button>
+						<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style08">취소</button>
+					</div>
+				</section>
+			</div>
+		</div>
+
+	</body>
+</html>

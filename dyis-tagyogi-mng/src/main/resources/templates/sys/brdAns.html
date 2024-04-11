@@ -1,0 +1,239 @@
+<!--
+   파일정보 : brd/brdDtl.html
+   파일명 : brdDtl
+   업무명 : 게시판상세
+   생성자 : BSG
+   생성일 : 2023.04.06
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+   <body>
+	  <script th:src="@{/ckeditor/build/ckeditor.js}"></script>
+      <script th:inline="javascript">
+         /*<![CDATA[*/ 
+         
+         //초기화 조회 콜백
+         var htmlData = "";
+         var fnInitCallBack = function(resData){
+            console.log(resData);
+            
+            //동적 첨부파일 (다건)
+            com.fnIbsUploadView($("#myUpload"), resData.fileList); 
+            
+            com.fnSetKeyVal(resData.data);
+            if(resData.answer != null && resData.answer != ''){
+            	$("#ans_brdCont, #editor").html(resData.answer.brdCont);
+            	$("#ansSeq").val(resData.answer.brdSeq);
+            }
+            //에디터 호출
+			com.fnCkeditorSet("#editor");
+            
+            //미리보기세팅
+            $("#ele_preView").html(resData.answer.brdCont);
+            
+         };
+        
+         //수정페이지호출
+         var fnUpt = function(){
+            $("div[name^='detail']").addClass("hide");
+            $("div[name='update']").removeClass("hide");
+            $("#ele_brdCont_wrap").css("display","none");
+         }
+         
+         //저장
+		var fnSave = function(){
+			//필수체크
+			var valChks = ["brdSubj"];
+			
+			if(com.fnValChk(valChks)){
+				if(confirm("저장 처리 하시겠습니까?")){
+					
+					//파일 업로드 처리(파일이 없어도 첨부파일 번호 추출을 위해 호출)
+					/*--
+					if($("#atthType").val() === ""){
+						fnIbsFileUploadCallBack();
+					}else{
+						com.fnIbsFileUpload($("#myUpload"), $("#atthType").val(), $("#atthNo").val());
+					}
+					--*/
+					var url ="";
+					
+					if($("#ansSeq").val() != null && $("#ansSeq").val() != ''){
+						url = '/brd/updateAns.do';
+					}else{
+						alert(1);
+						url = '/brd/insertAns.do';
+					}
+					
+					$("#ansCont").val(editor.getData());
+					obj = {url:url, formId:"serchFrm", fileId:"myUpload", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxMulti(obj);
+										
+				}
+			}
+		};
+		
+		//첨부파일 처리 콜백
+		var fnIbsFileUploadCallBack = function(atthNo){
+			//$("#brdCont").val(editor.getData()); //게사판내용삽입
+			//obj = {url:"/brd/updateBrd.do", formId:"saveFrm", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+			//com.fnAjaxMulti(obj);
+		};
+		
+		//저장 콜백
+		var fnSaveCallBack = function(data){
+			var menuCd = "";
+				menuCd = 1070224;//brdAns
+			
+			//상세화면 호출 
+			menuNm = /*[[${paramMap.menuNm}+'수정']]*/;
+			param = {menuCd:menuCd, title:menuNm
+					, paramMap:{menuNm:menuNm
+								, brdNo:$("#brdNo").val()
+								, brdSeq:$("#brdSeq").val()
+								, atthType:$("#atthType").val()
+								, atthNo:$("#atthNo").val()
+								, imgAtthNo:$("#imgAtthNo").val()
+								} 
+			};
+			parent.menuOpen(param);
+			
+			//현재창 닫기
+			parent.closeMenu(window.name);
+		};
+                  
+         //화면 초기화(게시판정보 조회)
+         $(document).ready(function(){
+            obj = {url:"/brd/selectBrd.do", formId:"serchFrm", callBack:fnInitCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+            com.fnAjaxPost(obj);
+         });
+         
+          //미리보기
+         var fnPreView  = function(){
+            $("#preView").css("display","block");
+            $("#ele_brdCont_wrap").css("display","none");
+         };
+         //소스보기
+         var fnCodeView = function(){
+            $("#preView").css("display","none");
+            $("#ele_brdCont_wrap").css("display","block");
+         };
+          
+          /*]]>*/
+          
+      </script>
+      
+      <!-- 콘텐츠 시작 -->
+      <div class="contentsArea">
+         <div class="contentsTop">
+            <div th:insert="~{/fragments/subTitle}"></div>
+         </div><!-- //contentsTop -->
+         <form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+         <input type="hidden" name="brdNo" id="brdNo" th:value="${paramMap.brdNo}"/>
+         <input type="hidden" name="brdSeq" id="brdSeq" th:value="${paramMap.brdSeq}"/>
+         <input type="hidden" name="ansCont" id="ansCont" value=""/>
+         <input type="hidden" name="ansSeq" id="ansSeq" value=""/>
+         <input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+         <input type="hidden" name="atthNo" id="atthNo" value=""/>
+         <input type="hidden" name="imgAtthNo" id="imgAtthNo"/>
+         <div class="contents flex">
+            <div class="layer-flex">
+               <!-- 그리드 좌측 부분 -->
+               <div class="" style="width:100%">
+                  <table class="tbl">
+                     <colgroup>
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                     </colgroup>
+                     <tbody>
+                        <tr>
+                           <th>제목</th>
+                           <td colspan="5">
+                              <div id="ele_brdSubj"></div>
+                           </td>
+                        </tr>
+                        <tr>
+                           <th>게시여부</th>
+                           <td>
+                              <div id="ele_viewYn" name="detail"></div>
+                              <div name="update" class="hide">
+                              	<input type="radio" name="viewYn" id="viewY" value="Y" checked> Y
+                              	<input type="radio" name="viewYn" id="viewN" value="N" > N
+                              </div>
+                           </td>
+                           <th>공지여부</th>
+                           <td>
+                              <div id="ele_notiYn" name="detail"></div>
+                              <div name="update" class="hide">
+                              	<input type="radio" name="notiYn" id="notiY" value="Y"> Y
+								<input type="radio" name="notiYn" id="notiN" value="N" checked> N
+                              </div>
+                           </td>
+                           <th>상단공지여부</th>
+                           <td>
+                              <div id="ele_topYn" name="detail"></div>
+                              <div name="update" class="hide">
+                              	<input type="radio" name="topYn" id="topY" value="Y"> Y
+								<input type="radio" name="topYn" id="topN" value="N" checked> N
+                              </div>
+                           </td>
+                        </tr>
+                        <tr>
+                           <th>질문내용</th>
+                           <td colspan="5">
+                              <div id="ele_brdCont"></div>
+                           </td>
+                        </tr>
+                     </tbody>
+                  </table>
+                  <div name="detail">
+	                  <button type="button" onclick="fnCodeView();return false;"class="btn small style08 mt10 mb10">소스보기</button>
+	                  <button type="button" onclick="fnPreView();return false;"class="btn small style08 mt10 mb10">화면 미리보기</button>
+	                  <div style="font-size: 12px; margin-top; 2px;"> (외부 style코드는 미리보기에 반영되지 않습니다.)</div>
+                  </div>
+                  <div id="ele_brdCont_wrap" style="width:100%;min-height:300px;overflow:auto;border:1px solid #cfd6db;padding:20px;box-sizing:border-box;">
+                     <div id="ans_brdCont"></div>
+                  </div>
+                  <div id="preView" style="display: none; width:100%;min-height:300px;overflow:auto;border:1px solid #cfd6db;padding:20px;box-sizing:border-box;">
+					  <div id="ele_preView"></div>
+                  </div>
+                  <div class="ckEdirorWrap hide" name="update" style="width:100%;min-height:280px;overflow:auto">
+					  <div id="editor" name="editor"></div>
+				  </div>
+                  <!--
+                  <div id="ele_atthArea">
+                     <section class="area mt10">
+                        <div class="fl">
+                           <h4 class="title">첨부파일</h4>
+                        </div>
+                        <div class="fr">
+                           <button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUpload'));" class="btn small style08">전체다운</button>
+                           <button type="button" onclick="javascript:com.fnIbsFileAdd($('#myUpload'));" class="btn small style08">추가</button>
+                           <button type="button" onclick="javascript:com.fnIbsFileDel($('#myUpload'));" class="btn small style08">삭제</button>
+                        </div>
+                     </section>
+                     <div id="myUpload" style="height:140px;"></div>
+                  </div>
+                  -->
+                  <!-- 처리 버튼 영역 -->
+                  <section class="area mt10">
+                     <div name="detail" class="fc">
+                        <button type="button" onclick="javascript:fnUpt();" class="btn style07">수정</button>
+                     </div>
+                     <div name="update" class="fc hide">
+						 <button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+					 </div>
+                  </section>
+               </div>   
+               <!-- END 컨텐츠 영역 -->
+            </div>
+         </div><!-- //contents -->
+         </form>
+          
+      </div><!-- //contentsArea -->
+   </body>
+</html>

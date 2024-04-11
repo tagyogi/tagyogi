@@ -1,0 +1,354 @@
+<!--
+	파일정보 : membAccMngList.html
+	파일명 : 조합원계좌관리(다건)
+	업무명 : 조합원계좌관리
+	생성자 : 윤가영
+	생성일 : 2023.10.23
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//INPUT 설정
+				//com.fnCodeSelectBox("CM16", "sWorkCd", 2, "" ); //업무구분
+				//com.fnCodeSelectBox("CM16", "workType", 1, "" ); //업무구분
+				com.fnCodeSelectBox("CM02", "bankCd", 2, "");	//은행
+				com.fnCodeSelectBox("SY02", "useYn", 1, "Y" ); //사용여부
+
+				com.fnIbsUploadOne($("#myUpload"), 1, "gif,jpg,jpeg,png,bmp,GIF,JPG,JPEG,PNG,BMP,pdf,PDF");
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheet 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					fnSearchFile(rowData.atthNo, $("#atthType").val());//첨부파일 조회
+
+					for(var elem in rowData){
+						$("#"+elem).val(rowData[elem]);
+						$("#"+elem).not('[type=hidden]').prop("disabled", true); //hidden 으로 꼭 넘어가야하는 데이터들은 스킵
+					}
+
+					fnBtnDis(false, false, true, true);
+					$("#atthNo").val(rowData.atthNo); //해당 파일번호 세팅
+
+				});
+
+				//버튼 초기
+				$("#saveFrm button").prop("disabled", true);
+				$("#btnIns").attr("disabled", false);
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/membAcc/selectMembAccMngList.do", param); //param, sheetId 생략 가능
+			};
+
+			//첨부파일 현황 조회
+			var fnSearchFile = function(atthNo, atthType){
+				 var param = {atthNo : atthNo, atthType: atthType};
+				obj = {url:"/doc/selectDocFileList.do", param:param, callBack:fnSearchFileCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+			
+			//첨부파일 현황 조회 콜백
+			var fnSearchFileCallBack = function(resData){
+				
+				//재세팅전 초기화
+				var setObj = new Object();
+				setObj.files = null;
+				$("#myUpload").IBUpload(setObj);
+				
+				if(resData.fileList != null && resData.fileList != ''){
+					com.fnIbsUploadView($("#myUpload"), resData.fileList);
+				}else{
+					$("#myUpload").IBUpload("reset");
+				}
+			}
+
+			//조합원검색
+			var fnMembSearchPop = function (type){
+				serchType = "";
+				serchType = type;
+				com.fnMembInfo();
+			};
+
+			var fnMembInfoSet = function(resData){
+				if(serchType === "serch"){
+					$("#sMembNo").val(resData.membNo);
+					$("#sMembNm").val(resData.membNm);
+					fnSearch();
+				}else{
+					//기본 데이터
+					//com.fnSetKeyVal(resData);
+					$("#membNo").val(resData.membNo);
+					$("#membNm").val(resData.membNm);
+					$("#sMembNo").val('');
+					$("#sMembNm").val('');
+				}
+
+			};
+
+			//신규버튼
+			var fnIns = function(){
+
+				$("#saveFrm")[0].reset();
+				$("#saveFrm #membNo, #btn_membSerch").prop("disabled", false);
+				$("#saveFrm #membNm").prop("disabled", false);
+				$("#saveFrm #bankCd").prop("disabled", false);
+				$("#saveFrm #acctNo").prop("disabled", false);
+				$("#saveFrm #acctNo").prop("readonly", false);
+				$("#saveFrm #acctNm").prop("disabled", false);
+				$("#saveFrm #useYn").prop("disabled", false);
+				$("#saveFrm #remark").prop("disabled", false);
+
+				//버튼활성화
+				fnBtnDis(true, true, false, false);
+
+				//$("#myUpload").html("");//첨부파일 초기화
+				$("#newYn").val("Y");
+				$("#myUpload").IBUpload("reset");
+				
+				$("#atthNo").val(""); //파일번호 초기화
+				//com.fnIbsUploadOne($("#myUpload"));
+			};
+
+			//수정버튼
+			var fnUpt = function(){
+				$("#newYn").val("");
+				$("#saveFrm #membNo").prop("disabled", false);
+				$("#saveFrm #acctNo").prop("disabled", false);
+				$("#saveFrm #acctNm").prop("disabled", false);
+				//$("#saveFrm #bankCd").prop("disabled", false);
+				$("#saveFrm #useYn").prop("disabled", false);
+				$("#saveFrm #remark").prop("disabled", false);
+				//$("#myUpload").html("");//첨부파일 초기화
+				//버튼활성화
+				fnBtnDis(true, true, false, false);
+
+			};
+
+			//취소버튼
+			var fnCan = function(){
+				//선택 row 또는 키 값이 있을경우, 비활성화 후 정보 세팅
+				$("#saveFrm")[0].reset();
+				$("#saveFrm #bankCd").prop("disabled", true);
+				$("#saveFrm #acctNo").prop("disabled", true);
+				$("#saveFrm #acctNm").prop("disabled", true);
+				$("#saveFrm #useYn").prop("disabled", true);
+				$("#saveFrm #remark").prop("disabled", true);
+				//$("#myUpload").html("");//첨부파일 초기화
+				//com.fnIbsUploadOne($("#myUpload"));
+
+				//버튼활성화
+				fnBtnDis(false, true, true, true);
+
+			 	$("#atthNo").val("");
+			 	$("#myUpload").IBUpload("reset");
+			};
+
+			//버튼 활성화처리
+			var fnBtnDis = function(bolIns, bolUpt, bolCan, bolSave){
+			 	$("#btnIns").attr("disabled", bolIns);
+			 	$("#btnUpt").attr("disabled", bolUpt);
+			 	$("#btnCan").attr("disabled", bolCan);
+			 	$("#btnSave").attr("disabled", bolSave);
+			}
+
+
+			//저장버튼
+			var fnSave = function(){
+
+				//필수체크
+				var valChks = ["membNo", "bankCd", "acctNo", "acctNm"];
+
+				if(com.fnValChk(valChks)){
+					//파일여부
+					var fileList = $("#myUpload").IBUpload('fileList');
+					//첨부파일 우선 필수 풀어줌 - 협의필요 
+					/*if(fileList.length === 0){
+						alert("파일을 첨부하십시오.");
+						return;
+						
+					}*/
+
+					//신규, 수정 확인
+					var newYn = $("#newYn").val();
+					var msg = "저장";
+					var url = "/membAcc/insertMembAccMng.do";
+
+					if(newYn !== "Y"){
+						msg = "수정";
+						url = "/membAcc/updateMembAccMng.do";
+					}
+
+					if(confirm(msg + " 하시겠습니까?")){
+						obj = {url:url, formId:"saveFrm", fileId:"myUpload", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				$("#saveFrm")[0].reset();
+
+				//버튼활성화
+				//fnBtnDis(false, true, true, true);
+				fnCan();
+
+				//파일 삭제
+				$("#myUpload").IBUpload("selectAll");
+				$("#myUpload").IBUpload("delete");
+
+				fnSearch();
+			}
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<div class="collapseCtrl">
+					<button type="type" class="btn-collapse down"><span></span></button>
+<!--					<button type="type" class="btn-collapse close"><span></span></button>-->
+					<button type="type" class="reLoadFrm"></button>
+				</div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:250px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeypress="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:150px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+
+				<div class="layer-flex mt20 collapseArea">
+					<!-- 내용 좌측 부분 -->
+					<div class="collapseBox" style="width:65%">
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 내용 좌측 부분 끝 -->
+					<!-- 내용 우측 부분 -->
+					<div class="collapseBox fixable" style="width:33%">
+						<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+						<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+						<input type="hidden" name="atthNo" id="atthNo" value=""/>
+						<input type="hidden" name="newYn" id="newYn" value=""/>
+						<input type="hidden" name="file" id="file" value=""/>
+
+						<!-- 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button id="btnIns" onclick="javascript:fnIns();" class="btn style08">신규</button>
+								<button id="btnUpt" onclick="javascript:fnUpt();" class="btn style08">수정</button>
+								<button id="btnCan" onclick="javascript:fnCan();" class="btn style08">취소</button>
+								<button id="btnSave" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+						<!-- 상단 부분 끝 -->
+						<table class="tbl mt10" >
+							<colgroup>
+								<col style="width:100px;">
+								<col style="">
+								<col style="width:100px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th><span class="reqMark">*</span>조합원명</th>
+									<td class="tal" colspan="4">
+										<input type="search" name="membNo" id="membNo" title="조합원번호" style="width:50px;" readonly >
+										<input type="search" name="membNm" id="membNm" title="조합원명" style="width:150px;"   readonly >
+										<button type="button" class="btn icoSearch" onclick="fnMembSearchPop()" id="btn_membSerch"  disabled>검색</button>
+										<span id="btnTxt" style="font-size: 10px; display: none;">돋보기버튼을 눌러 조합원을 선택해주세요</span>
+									</td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>은행</th>
+									<td colspan="3">
+										<select name="bankCd" id="bankCd" style="width:120px" title="은행" disabled></select>
+									</td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>계좌번호</th>
+									<td colspan="3">
+										<input type="search" name="acctNo" id="acctNo" title="계좌번호" style="width:200px;" readonly disabled>
+									</td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>예금주</th>
+									<td colspan="3">
+										<input type="search" name="acctNm" id="acctNm" title="예금주" style="width:200px;" disabled>
+									</td>
+								</tr>
+								<tr>
+									<th>사용여부</th>
+									<td colspan="3">
+										<select name="useYn" id="useYn" style="width:100px;" title="사용여부" disabled></select>
+									</td>
+								</tr>
+								<tr>
+									<th>비고</th>
+									<td colspan="3">
+										<input type="search" name="remark" id="remark" title="비고" style="width:200px;" disabled>
+									</td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>첨부파일</th>
+									<td colspan="3">
+										<div id="myUpload"></div>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						</form>
+					</div>
+					<!-- 내용 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+		<iframe id="downfrm" style="display:none;" title="오즈설치용"></iframe> <!-- 오즈설치용 -->
+	</body>
+</html>

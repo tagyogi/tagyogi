@@ -1,0 +1,198 @@
+<!--
+	파일정보 : sys/popIns.html
+	파일명 : popIns
+	업무명 : 팝업등록
+	생성자 : 윤가영
+	생성일 : 2023.11.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:src="@{/ckeditor/build/ckeditor.js}"></script>
+		<script th:inline="javascript">
+			/*<![CDATA[*/ 
+			//화면 초기화(게시판정보 조회)
+			$(document).ready(function(){
+				
+				$("#ele_atthArea").css("display", "block");
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#myUpload")); 
+				
+				//에디터 호출
+				com.fnCkeditorSet("#editor");
+				
+				//디폴트값 세팅
+				//$("#posTop, #posLeft, #widSize, #hegSize").val('10');
+				
+				//달력 디폴트
+				$("#begDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //
+				$("#expDt").val(com.fnDateGet(/*[[${today}]]*/, 30)); //
+			});
+			
+			//저장
+			var fnSave = function(){
+				
+				//필수체크
+				var valChks = ["subj","useYn","begDt","expDt"];
+				
+				if(com.fnValChk(valChks)){
+					if(confirm("저장 처리 하시겠습니까?")){
+						
+						$("#cont").val(editor.getData()); //게사판내용삽입
+						
+						//첨부파일 첨부한 순서 코드따오기 (물리적저장순서 맞춰야해서 필수)
+						com.fnGetModCds("myUpload");
+				
+						obj = {url:"/pop/insertPop.do", formId:"saveFrm", fileId:"myUpload", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+						
+						//파일 업로드 처리(파일이 없어도 첨부파일 번호 추출을 위해 호출)
+						//com.fnIbsFileUpload($("#myUpload"), $("#atthType").val(), $("#atthNo").val());
+					}
+				}
+			};
+			
+			//첨부파일 처리 콜백
+			var fnIbsFileUploadCallBack = function(atthNo){
+				$("#atthNo").val(atthNo);
+				
+				$("#cont").val(editor.getData()); //게사판내용삽입
+				
+				obj = {url:"/pop/insertPop.do", formId:"saveFrm", fileId:"myUpload", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxMulti(obj);
+			};
+			
+			//저장 콜백
+			var fnSaveCallBack = function(data){
+				
+				//상세화면 호출 
+				menuNm = /*[[${paramMap.menuNm}+'상세']]*/;
+				param = {menuCd:1070223, title:menuNm
+						, paramMap:{menuNm:menuNm
+									, seq:data.paramMap.seq
+									, atthType:/*[[${menuInfo.atthType}]]*/
+									, atthNo:$("#atthNo").val()
+									, imgAtthNo:$("#imgAtthNo").val()
+									} 
+				};
+				parent.menuOpen(param);
+				
+				//현재창 닫기
+				parent.closeMenu(window.name);
+			};
+			
+			
+		    /*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+			<input type="hidden" name="imgAtthNo" id="imgAtthNo" />
+			<input type="hidden" name="atthNo" id="atthNo"/>
+			<input type="hidden" name="cont" id="cont" />
+			<input type="hidden" name="modFileCds" id="modFileCds" />
+			<div class="contents flex">
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<table class="tbl">
+							<colgroup>
+								<col style="width:10%;">
+								<col style="width:25%;">
+								<col style="width:10%;">
+								<col style="width:25%;">
+								<col style="width:10%;">
+								<col style="width:25%;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th><span class="reqMark">*</span>제목</th>
+									<td colspan="5">
+										<input type="search" name="subj" id="subj" title="제목" style="width:100%;" maxlength="50">
+									</td>
+								</tr>
+								<tr>
+									<th><span class="reqMark">*</span>사용여부</th>
+									<td>
+										<input type="radio" name="useYn" id="useY" value="Y" checked> <span>Y</span>
+										<input type="radio" name="useYn" id="useN" value="N" > <span>N</span>
+									</td>
+									<th><span class="reqMark">*</span>게시일자</th>
+									<td>
+										<input type="search" name="begDt" id="begDt" title="게시일자" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this)" style="width:110px" autocomplete="off" maxlength="10"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'begDt', 'yyyy-mm-dd')" />
+									</td>
+									<th><span class="reqMark">*</span>마감일자</th>
+									<td>
+										<input type="search" name="expDt" id="expDt" title="마감일자" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this)" style="width:110px" autocomplete="off" maxlength="10"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'expDt', 'yyyy-mm-dd')" />
+									</td>
+								</tr> 
+								<tr>
+									<th>가로사이즈</th>
+									<td>
+										<input type="search" name="widSize" id="widSize" title="가로사이즈" onkeyup="com.fnOnlyNum(this);"  style="width:110px" autocomplete="off" maxlength="5"/> 
+										<span>px</span><span style="font-size: 11px;"> (미입력시 디폴트값 적용 : 300px)</span>
+									</td>
+									<th>세로사이즈</th>
+									<td>
+										<input type="search" name="hegSize" id="hegSize" title="세로사이즈" onkeyup="com.fnOnlyNum(this);"  style="width:110px" autocomplete="off" maxlength="5"/>
+										<span>px</span><span style="font-size: 11px;"> (미입력시 디폴트값 적용 : 400px)</span>
+									</td>
+									<th>스크롤사용여부</th>
+									<td>
+										<input type="radio" name="scrollYn" id="" value="Y" checked> <span>Y</span>
+										<input type="radio" name="scrollYn" id="" value="N" > <span>N</span>
+									</td>
+								</tr> 
+								<tr>
+									<th>상단위치</th>
+									<td>
+										<input type="search" name="posTop" id="posTop" title="상단위치" onkeyup="com.fnOnlyNum(this);"  style="width:110px" autocomplete="off" maxlength="5"/>
+										<span>px</span><span style="font-size: 11px;"> (미입력시 디폴트값 적용 : 100px)</span>
+									</td>
+									<th>좌측위치</th>
+									<td colspan="3">
+										<input type="search" name="posLeft" id="posLeft" title="좌측위치" onkeyup="com.fnOnlyNum(this);"  style="width:110px" autocomplete="off" maxlength="5"/>
+										<span>px</span><span style="font-size: 11px;"> (미입력시 디폴트값 적용 : 100px)</span> 
+									</td>
+								</tr> 
+							</tbody>
+						</table>
+						<div class="ckEdirorWrap" style="width:100%;min-height:280px;overflow:auto">
+							<div id="editor" name="editor"></div>
+						</div>
+						<div id="ele_atthArea" style="display:none">
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">첨부파일</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnIbsFileAdd($('#myUpload'));" class="btn small style08">추가</button>
+									<button type="button" onclick="javascript:com.fnIbsFileDel($('#myUpload'));" class="btn small style08">삭제</button>
+								</div>
+							</section>
+							<div id="myUpload" style="height:140px;"></div>
+						</div>
+						<!-- 처리 버튼 영역 -->
+						<section class="area mt50">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>	
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

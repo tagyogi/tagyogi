@@ -1,0 +1,99 @@
+<!--
+	파일정보 : lend/comLendContrDtl.html
+	파일명 : comLendContrDtl
+	업무명 : 융자약정정보
+	생성자 : 김대성
+	생성일 : 2023-06-29
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			//화면 초기화 처리 호출 (입금방법, 자산구분, 보증종류, 보증약정서식종류 )(샘플현황)
+			$(document).ready(function(){
+				
+			});
+			
+			/*]]>*/
+		</script>
+		<!--융자약정정보 -->
+		<section class="area mt5">
+			<div class="fl">
+				<h4 class="title">약정정보</h4>
+			</div>
+		</section>
+		<div id="ele_contrArea">
+			<table class="tbl">
+				<colgroup>
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+					<col style="width:90px;">
+					<col style="width:140px;">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>약정구분</th>
+						<td>
+							<span id="ele_contrTypeNm"></span>
+						</td>
+						<th>약정번호</th>
+						<td>
+							<span id="ele_contrNo"></span>
+						</td>
+						<th>약정상태</th>
+						<td>
+							<span id="ele_contrStatNm"></span>
+						</td>
+					</tr>
+					<tr>
+						<th>약정일자</th>
+						<td>
+							<span id="ele_contrDt"></span>
+						</td>
+						<th>약정기간</th>
+						<td colspan="3">
+							<span id="ele_contrBegDt"></span>&nbsp;~&nbsp;<span id="ele_contrExpDt"></span>
+						</td>
+					</tr>
+					<tr>
+						<th>담보좌수</th>
+						<td><span id="ele_mortNum"></span></td>
+						<th>예수좌수</th>
+						<td><span id="ele_deptNum"></span></td>
+						<th>총좌수</th>
+						<td><span id="ele_totNum"></span></td>
+					</tr>
+					<tr>
+						<th>배정좌수</th>
+						<td><span id="ele_assignNum"></span></td>
+						<th>사용좌수</th>
+						<td><span id="ele_contrUseNum"></span></td>
+						<th>가능좌수</th>
+						<td><span id="ele_remainNum"></span></td>
+					</tr>
+					<tr>
+						<th>약정좌수</th>
+						<td>
+							<span id="ele_contrNum"></span>
+						</td>
+						<th>신용도</th>
+						<td colspan="3">
+							<span id="ele_grade"></span>
+						</td>
+					</tr>
+					<tr>
+						<th>비고</th>
+						<td colspan="5">
+							<span id="ele_remark"></span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			
+		</div>
+	</body>
+</html>

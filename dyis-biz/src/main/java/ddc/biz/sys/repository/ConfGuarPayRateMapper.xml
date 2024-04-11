@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.sys.repository.ConfGuarPayRateMapper"> 
+
+	<!-- 선급금약정이자율 정보 조회 --> 
+	<select id="selectConfGuarPayRateList" parameterType="Map" resultType="camelMap"> 
+		/* ConfGuarPayRateMapper.selectConfGuarPayRateList */ 
+		SELECT 
+			APP_DT 
+			, PAY_RATE 
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		  FROM CM_GUAR_PAY_RATE 
+		  ORDER BY APP_DT DESC
+	</select> 
+	
+	<!-- 선급금약정이자율 상세 조회 (최종) --> 
+	<select id="selectConfGuarPayRateMaxAppDt" parameterType="Map" resultType="camelMap"> 
+		/* ConfGuarPayRateMapper.selectConfGuarPayRateMaxAppDt */ 
+		SELECT 
+			APP_DT 
+			, TO_CHAR(PAY_RATE, '9.99') PAY_RATE
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		  FROM CM_GUAR_PAY_RATE 
+		 WHERE APP_DT  = (
+		 				SELECT MAX(APP_DT)
+		 				  FROM CM_GUAR_PAY_RATE
+		 			     WHERE APP_DT &lt;= REPLACE(NVL(#{appDt}, TO_CHAR(SYSDATE, 'YYYYMMDD')), '-')
+		 			   )
+	</select> 
+	
+	<!-- 선급금약정이자율 등록 처리 --> 
+	<insert id="insertConfGuarPayRate" parameterType="Map"  > 
+		/* ConfGuarPayRateMapper.insertConfGuarPayRate */ 
+		INSERT INTO CM_GUAR_PAY_RATE ( 
+			APP_DT 
+			, PAY_RATE 
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		) VALUES ( 
+			REPLACE(#{appDt}, '-', '') 
+			, #{payRate} 
+			, #{remark} 
+			, SYSDATE 
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 선급금약정이자율 수정 처리 --> 
+	<update id="updateConfGuarPayRate" parameterType="Map"  > 
+		/* ConfGuarPayRateMapper.updateConfGuarPayRate */ 
+		UPDATE CM_GUAR_PAY_RATE 
+		SET 
+			PAY_RATE = #{payRate} 
+			, REMARK = #{remark} 
+			, MOD_DTM = SYSDATE 
+			, MOD_NM = #{userNm}
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '')
+	</update> 
+
+	<!-- 선급금약정이자율 삭제 처리 --> 
+	<delete id="deleteConfGuarPayRate" parameterType="Map"  > 
+		/* ConfGuarPayRateMapper.deleteConfGuarPayRate */ 
+		DELETE FROM CM_GUAR_PAY_RATE 
+		WHERE APP_DT = REPLACE(#{appDt}, '-', '')
+	</delete> 
+
+</mapper>

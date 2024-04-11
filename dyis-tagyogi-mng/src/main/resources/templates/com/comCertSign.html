@@ -1,0 +1,48 @@
+<!--
+	파일정보 : comCertSign.html
+	파일명 : comCertSign
+	업무명 : 전사서명 확인
+	생성자 : 변성균
+	생성일 : 2023-07-05
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				$("#orgData").val(parent.signOrgData);
+				//param = {signData:parent.signData};
+				//obj = {url:"/com/certSignDataVeri.do", param:param, callBack:fnCertCallBack, msgYn:"N", loadYn:"N", sessYn:"Y"};
+				//com.fnAjaxDef(obj);
+			})
+				
+			var fnCertCallBack = function(resData){
+				//console.log(resData);
+				///$("#orgData").val(resData.signOrgDataUtf);
+			}
+		    /*]]>*/
+		</script>
+		<section class="areaTop">
+			<div class="fl">
+				<h4 class="title">전자서명정보</h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:80px;">
+				<col style="">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>서명원문</th>
+					<td>
+						<textarea name="orgData" id="orgData" rows="16" cols="100"></textarea>
+					</td>
+				</tr>	
+			</tbody>
+		</table>
+	</body>
+</html>

@@ -1,0 +1,746 @@
+<!--
+	파일정보 : acciWranProgList.html
+	파일명 : acciWranProg현황
+	업무명 : acciWranProg현황 조회
+	생성자 : 최진호
+	생성일 : 2023-04-18
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:src="@{/js/xlsx.full.min.js}"></script>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			var serchType = ""; //조합원검색 구분
+			//var initParam = {codeList : "CRET:MB08", gridNoList : "50301:50305"}
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//초기화
+				
+				//코드값 처리 
+				com.fnCodeSelectBox("CRET", "sMembCretop", 0, "", "1"); //조기경보 (현황그리드 조회용)
+				com.fnCodeSelectBox("MB08", "sMembStat", 0, ""); //조합원상태
+				com.fnCodeSelectBox("CRET", "sMembCretopIns", 0, "", "1"); //조기경보등록용 
+				
+				//selectbox 커스텀
+				var opCus1 = "<option value='0'>관심이상</option>";
+				$("#sMembCretop").prepend(opCus1);
+				$("#sMembCretop > option[value='0']").attr("selected", "selected");
+				
+				var opCus2 = "<option value='Y'>정상+업무정지</option>";
+				$("#sMembStat").prepend(opCus2);
+				$("#sMembStat > option[value='Y']").attr("selected", "selected");
+				
+				//개별등록쪽 select op 세팅
+				var opCus3 = "<option value='Y'>정상</option>";
+				$("#sMembCretopIns").prepend(opCus3);
+				$("#sMembCretopIns > option[value='Y']").attr("selected", "selected");
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				let mctpCss = {
+					"1": "<div class='mctpCss' style='background-color: #319A02;'>"+com.fnInputText("CRET", "1")+"</div>"	//관심
+					, "2": "<div class='mctpCss' style='background-color: #CCCCCC;'>"+com.fnInputText("CRET", "2")+"</div>"	//관찰1
+					, "3": "<div class='mctpCss' style='background-color: #A9A3A7;'>"+com.fnInputText("CRET", "3")+"</div>"	//관찰2
+					, "4": "<div class='mctpCss' style='background-color: #F8A66E;'>"+com.fnInputText("CRET", "4")+"</div>"	//관찰3
+					, "5": "<div class='mctpCss' style='background-color: #901821;'>"+com.fnInputText("CRET", "5")+"</div>"	//부도
+					, "6": "<div class='mctpCss' style='background-color: #C4212A;'>"+com.fnInputText("CRET", "6")+"</div>"	//폐업
+					, "7": "<div class='mctpCss' style='background-color: #D77A3F;'>"+com.fnInputText("CRET", "7")+"</div>" //휴업
+					
+					, "8": "<div class='mctpCss' style='background-color: #319A02;'>"+com.fnInputText("CRET", "8")+"</div>" //유보 (WATCH)
+					, "9": "<div class='mctpCss' style='background-color: #CCCCCC;'>"+com.fnInputText("CRET", "9")+"</div>" //관찰 (WATCH)
+					, "10": "<div class='mctpCss' style='background-color: #A9A3A7;'>"+com.fnInputText("CRET", "10")+"</div>" //주의 (WATCH)
+					, "11": "<div class='mctpCss' style='background-color: #F8A66E;'>"+com.fnInputText("CRET", "11")+"</div>" //경보 (WATCH)
+					, "12": "<div class='mctpCss' style='background-color: #901821;'>"+com.fnInputText("CRET", "12")+"</div>" //위험 (WATCH)
+					, "13": "<div class='mctpCss' style='background-color: #C4212A;'>"+com.fnInputText("CRET", "13")+"</div>" //회수의문 (WATCH)
+					, "14": "<div class='mctpCss' style='background-color: #D77A3F;'>"+com.fnInputText("CRET", "14")+"</div>" //휴폐업 (WATCH)
+				};
+				
+				//조기경보 html태그 설정
+				$.each(gridOptList[0].Cols, function(idx, item){
+					if(item.Name === "membCretop"){
+						//공통코드는 13개지만 asis 이미지 기준 7개만 있음(데이터도 그외는 없음)
+						item.Format = mctpCss
+					}
+				});
+				
+				//조기경보 이력 태그 설정
+				$.each(gridOptList[1].Cols, function(idx, item){
+					if(item.Name === "membCretop"){
+						//공통코드는 13개지만 asis 이미지 기준 7개만 있음(데이터도 그외는 없음)
+						item.Format = mctpCss
+					}
+				});
+				
+				
+				$.each(gridOptList[4].Cols, function(idx, item){
+					if(item.Name === "chk"){ //
+						item.TrueValue = "Y";
+						item.FalseValue = "N";
+					}
+				});
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetHist", el: "sheetDivHist", options: gridOptList[1] });
+			    IBSheet.create({ id: "sheetNice", el: "sheetDivNice", options: gridOptList[2] }); //나이스제출용 엑셀 추출 그리드
+			    IBSheet.create({ id: "sheetMemb", el: "sheetDivMemb", options: gridOptList[3] }); //전체조합원 리스트
+			    IBSheet.create({ id: "sheetUpload", el: "sheetDivUpload", options: gridOptList[4] }); //업로드후 변경건 그리드
+			    
+			    gridOptList[5] = gridOptList[4];
+			    $.each(gridOptList[4].Cols, function(idx, item){
+					if(item.Name === "divNm" || item.Name === "chk" || item.Name === "bizNo" ){ //
+						item.Visible = "0"      
+					}
+					if(item.Name === "curSt" || item.Name === "preSt"){
+						//공통코드는 13개지만 asis 이미지 기준 7개만 있음(데이터도 그외는 없음)
+						item.Format = mctpCss
+					}
+				});
+				
+			    IBSheet.create({ id: "sheetLast", el: "sheetDivLast", options: gridOptList[5] }); //변경이력
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+			   
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					
+					//$("#serchFrm #depositNo").val(rowData.depositNo);
+					$("#serchFrm #histMembNo").val(rowData.membNo);
+					
+					/*개별등록폼*/
+					com.fnSetKeyVal(rowData); //정보세팅
+					$("#sMembCretopIns").val(rowData.membCretop);
+					$("#sMemo").val(rowData.memo);
+					$("#ele_joinDt").text(com.fnDateGet(rowData.joinDt, 0));
+					$("#ele_leaveDt").text(com.fnDateGet(rowData.leaveDt, 0));
+					fnProcView(); //그리드 클릭시 조합원 내용상세를 개별등록폼에 뿌려줘야함으로 수정불가로 (상세모드)변환
+					
+					if(String(rowData.membNo) !== ""){
+						fnSearchDtl(); //조회 호출	
+					};	
+					
+				});
+				
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭 
+					if(obj.kind === "Filter") return;
+					fnView("V");
+				});
+				
+			});
+			
+			//현황 조회
+			var fnSearch = function(){
+				
+				obj = {url:"/acciWran/selectAcciWranProgList.do", formId:"serchFrm", callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxPost(obj);
+				
+			};
+			
+			var fnSearchCallBack = function(resData){
+				
+				sheet.loadSearchData(resData.data); //현황
+				sheetLast.loadSearchData(resData.lastList); //현황
+				
+				//통계
+				let totCnt = 0;
+				resData.totalList.forEach((item, idx) => {
+					totCnt += item.cretopCnt;	
+					$("#ele_cretop"+item.membCretop).text(item.cretopCnt);
+			  	});
+			  	
+			  	$("#ele_total").text(totCnt);
+			  	$("#ele_lastDt").text(resData.lastDt.lastDt);
+				//초기 이력조회
+				//fnSearchDtl();
+			}
+			
+			//변경이력 조회
+			var fnSearchDtl = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/acciWran/selectAcciWranProgHistList.do", param, sheetHist); //param, sheetId 생략 가능
+			};
+			
+			
+			//화면 호출
+			var fnView = function(type){
+				var selectRow = sheet.getFocusedRow();
+				if(type === "V") menuCd = "1010111";
+
+				if(validateUtil.isNull(selectRow)) {
+					alert("조회 대상을 선택하십시오.");
+					return;
+				}
+
+				param = { menuCd:menuCd, paramMap:{membNo: selectRow?.membNo} };
+				parent.menuOpen(param);
+			};
+			
+			//버튼 화면 처리
+			var procType = "";
+			var fnProcView = function (type){
+				procType = type;
+				
+				/*인풋컨트롤*/
+				if(type !== "I") {
+					disYn = true;
+					$("#membNo").attr("readonly", true);
+					$("#membNm").attr("readonly", true);
+				}else{
+					disYn = false;
+					$("#membNo").attr("readonly", false);
+					$("#membNm").attr("readonly", false);
+				}
+				
+				if(type === "I" || type === "C"){ // 입력 버튼  입력폼 활성화
+					$("#saveFrm")[0].reset();
+					$("div[id^='ele_']").each((idx,item) => $(item).text(""));
+					
+				}else if(type === "U"){ //입력 폼 활성화
+					if($("#membNo").val() === ""){
+						alert('수정할 조합원을 선택해주세요');
+						return;
+					} else disYn = false;
+				}
+					
+				$("#sMemo").attr("readonly", disYn);
+				$("#sMembCretopIns").prop("disabled", disYn);
+				$("#btn_membSerch").prop("disabled", disYn);
+				
+				/*버튼컨트롤*/
+				$("#insBtn, #uptBtn").prop("disabled", false);
+				//$("#uptBtn").prop("disabled", false);
+				if(type === "I") $("#uptBtn").prop("disabled", true);
+				if(type === "U") $("#insBtn").prop("disabled", true);
+				
+			};
+			
+			//조합원검색
+			var fnMembSearchPop = function (type){
+				serchType = "";
+				serchType = type;
+				com.fnMembInfo();
+			};
+			
+			var fnMembInfoSet = function(rowData){
+				if(serchType === "serch"){
+					$("#sMembNo").val(rowData.membNo);
+					$("#sMembNm").val(rowData.membNm);
+					
+					fnSearch();	
+					
+				}else{
+					//기본 데이터
+					com.fnSetKeyVal(rowData);
+					if(rowData.membCretop === "" || rowData.membCretop === null) rowData.membCretop = 'Y'; //null이면 정상
+					$("#sMembCretopIns").val(rowData.membCretop);
+					$("#sMemo").val(rowData.memo);
+					$("#sMembNo").val('');
+					$("#sMembNm").val('');
+				} 
+					
+			};
+			
+			//개별등록저장
+			var fnSaveSeper = function(){
+				var valChks = ["membNo", "sMembCretopIns"];
+				if(com.fnValChk(valChks)){
+					if(confirm("조기경보 정보를 저장하시겠습니까?")){
+						obj = {url:"/acciWran/updateAcciWran.do", formId:"saveFrm", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxPost(obj);
+					}
+				}
+			}
+			
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				fnSearch();
+				$("#saveFrm")[0].reset();
+				$("div[id^='ele_']").each((idx,item) => $(item).text(""));
+			};
+			
+			
+			//일괄등록저장
+			var fnSaveMulti = function(){
+							
+				var rows = sheetUpload.getDataRows(); 
+				if(!rows.length > 0){
+					alert("저장할내용이 없습니다.");
+					return;
+				}else {
+					for(var i=0; i< rows.length; i++){
+						sheetUpload.setValue(rows[i], "chk", "Y");
+					}
+				}
+				
+				if(confirm("조기경보 정보를 일괄저장하시겠습니까?")){
+					var param = $("#saveFrm").serializeObject();
+					param.uploadData = sheetUpload.getSaveJson();
+					obj = {url:"/acciWran/updateAcciWranMulti.do", jParam:param, callBack:fnSaveMultiCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxMulti(obj);
+				}
+			}
+			//일괄등록저장 콜백
+			var fnSaveMultiCallBack = function(){
+				//재조회
+				sheetUpload.removeAll(); 
+				sheetMemb.removeAll(); 
+				sheetNice.removeAll();
+				
+				fnSearchDtl(); //초기 이력조회
+				$("#saveFrm")[0].reset(); //등록폼 초기화
+				   
+			}
+			
+			//엑셀 업로드 후 조회
+			var fnUploadList = function(){
+				if($("#excelFileInput").val() === ""){
+					alert('업로드할 파일이 없습니다. 파일을 첨부해주세요');
+					return;					
+				}
+				//대상 조회 한다
+				com.fnIbsSearch("/acciWran/selectNiceExcelList.do", {}, sheetMemb, fnUploadListCallBack); //param, sheetId 생략 가능
+			}
+			
+			//엑셀 업로드 후 조회 콜백
+			var fnUploadListCallBack = function(){
+				var objArr = [];
+				
+				//업로드 대상 초기화
+				sheetUpload.removeAll();//중복되지않게 초기화 
+				
+				//jsonData
+				parent.$("#ele_loading").css("display","none"); //로딩바
+				
+				//조합원 리스트
+				var rows = sheetMemb.getDataRows(); 
+				for(var i=0; i<rows.length; i++){
+					var bizNo      = sheetMemb.getValue(rows[i], "bizNo"); 
+					var cretop     = sheetMemb.getValue(rows[i], "membCretop");
+					var cretopNm   = sheetMemb.getValue(rows[i], "membCretopNm");
+					var membNo     = sheetMemb.getValue(rows[i], "membNo");
+					 
+					for(var j=0; j< outputArray.length; j++){
+						var obj = outputArray[j];
+						var objBiz = obj.bizNo;
+						var objCurSt = obj.curSt;
+						
+						if(bizNo == objBiz && cretopNm != objCurSt) { //단순 값비교를 위해 타입비교패스 (nice에서 받아오는값 비교)
+							obj.preSt = cretop;
+							obj.membNo = membNo;
+							objArr.push(obj);
+						}
+					}
+					
+				}
+				
+				var DATA = {"data":objArr};
+				
+				//기존 데이터 밑에 데이터를 append
+				sheetUpload.loadSearchData(DATA);
+				
+			}
+			
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/); 
+			};
+			
+			//엑셀 다운로드
+			var fnExcelDtl = function(){
+				com.fnExcelToJs(sheetHist, gridOptList[1].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/); 
+			};
+			
+			//엑셀 다운로드(최종)
+			var fnExcelLast = function(){
+				com.fnExcelToJs(sheetLast, gridOptList[5].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/); 
+			};
+			
+			//엑셀 다운로드(nice제출용)
+			var fnExcelNice = function(){
+				sheetNice.removeAll();
+				com.fnIbsSearch("/acciWran/selectNiceExcelList.do", {}, sheetNice, fnExcelNiceCallBack); //param, sheetId 생략 가능
+			};
+			
+			//엑셀 다운로드(nice제출용) 콜백
+			var fnExcelNiceCallBack = function(){
+				parent.$("#ele_loading").css("display","none"); //로딩바
+				var rows = sheetNice.getDataRows(); 
+				if(rows.length === 0 || rows.length < 0){
+					alert('추출할 내용이 없습니다.');
+					return;					
+				}
+				com.fnExcelToJs(sheetNice, gridOptList[2].Cols, /*[[${menuInfo.menuNm + "_나이스제출용" + today}]]*/);
+			}
+			
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				$("#sInvtEndDt").val(com.fnDateGet(/*[[${today}]]*/,0)); //
+				fnSearch();
+			};
+			
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+
+				fnSearch();
+			};
+			
+		    /*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="button" class="btn-collapse down"><span></span></button>
+						<button type="button" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+	
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="histMembNo" id="histMembNo" value=""/>
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:250px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:150px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>조기경보</dt>
+							<dd style="width:120px;">
+								<select name="sMembCretop" id="sMembCretop" style="width:120px;"></select>
+							</dd>
+							<dt>조합원상태</dt>
+							<dd style="width:150px;">
+								<select name="sMembStat" id="sMembStat" style="width:140px;"></select>
+							</dd>
+						</dl>
+                    </div>
+					<div class="searchBtn">
+						<button onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				
+				<div class="statSummary v3">
+					<ul>
+						<li>
+							<strong>총건수 : </strong>
+							<span id="ele_total">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>정상 : </strong>
+							<span id="ele_cretop0">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>유보 : </strong>
+							<span id="ele_cretop8">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>관찰 : </strong>
+							<span id="ele_cretop9">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>경보 : </strong>
+							<span id="ele_cretop11">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>주의 : </strong>
+							<span id="ele_cretop10">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>위험 : </strong>
+							<span id="ele_cretop12">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>회수의문 : </strong>
+							<span id="ele_cretop13">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>휴폐업 : </strong>
+							<span id="ele_cretop14">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>부도 : </strong>
+							<span id="ele_cretop15">0</span><em>건</em>
+						</li>
+						<li>
+							<strong>산출유보 : </strong>
+							<span id="ele_cretop16">0</span><em>건</em>
+						</li>
+					</ul>
+				</div>
+				
+				<div class="layer-flex collapseArea mt20">
+					<div class="collapseBox" style="width:61%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnView('V');" class="btn style08">상세</button>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04">엑셀</button>
+								<button type="button" onclick="javascript:fnExcelNice();" class="btn style05">NICE제출용 엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:300px"></div>
+						</div>
+						
+						
+						<!-- 그리드 상단 부분 -->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">변경이력</h4>
+							</div>
+							<div class="fr">
+								<button type="button" onclick="javascript:fnExcelDtl();" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<div class="mt10">
+					    	<div id="sheetDivHist" style="width:100%;height:150px"></div>
+						</div>
+						
+						
+						<!-- 그리드 상단 부분 -->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">최종 변경 이력  [업데이트 일자 : <span id = "ele_lastDt"></span>]</h4>
+							</div>
+							<div class="fr">
+								<button type="button" onclick="javascript:fnExcelDtl();" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<div class="mt10">
+					    	<div id="sheetDivLast" style="width:100%;height:240px"></div>
+						</div>
+						
+						<!-- 그리드 상단 부분 끝 -->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">
+									담당자 : 심지훈 매니저 ( sjh@nice.co.kr ), 참조 : 권기백 매니저 ( wisekibaek@groupmail.nice.co.kr)
+								</h4>
+							</div>
+						</section>
+						<!--제출용 엑셀 그리드 시작-->
+						<div class="mt10" style="display:none">
+					    	<div id="sheetDivNice" style="width:100%;height:150px"></div>
+						</div>
+						<!--제출용 엑셀 그리드 끝-->
+					</div>
+					
+					<div class="collapseBox fixable" style="width:38%">
+						<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false" >
+						<input type="hidden" name="membStat" id="membStat" value=""/>
+						<!--개별등록-->
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">개별등록</h4>
+							</div>
+							<div class="fr">
+								<button type="button" id="insBtn" onclick="javascript:fnProcView('I');" class="btn small style08">등록</button>
+								<button type="button" id="uptBtn" onclick="javascript:fnProcView('U');" class="btn small style08">수정</button>
+								<button type="button" onclick="javascript:fnProcView('C');" class="btn small style08">취소</button>
+								<button type="button" onclick="javascript:fnSaveSeper();" class="btn small style03">저장</button>
+							</div>
+						</section>
+						<section class="area">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:80px;">
+									<col style="width:150px;">
+									<col style="width:80px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th><span class="reqMark">*</span>조합원명</th>
+										<td class="tal" colspan="4">
+											<input type="search" name="membNo" id="membNo" title="조합원번호" style="width:50px;" readonly >
+											<input type="search" name="membNm" id="membNm" title="조합원명" style="width:150px;"   readonly >
+											<button type="button" class="btn icoSearch" onclick="fnMembSearchPop()" id="btn_membSerch"  disabled>검색</button>
+											<span id="btnTxt" style="font-size: 10px; display: none;">돋보기버튼을 눌러 조합원을 선택해주세요</span>
+										</td>
+									</tr>
+									<tr>
+										<th colspan="2">사업자번호</th>
+										<td><div id="ele_bizNo" class="tal" title="사업자번호"></div></td>
+										<th>법인번호</th>
+										<td><div id="ele_lawNo" class="tal"></div></td>
+									</tr>
+									<tr>
+										<th colspan="2"><span class="reqMark">*</span>조기경보</th>
+										<td><select name="sMembCretopIns" id="sMembCretopIns" style="width:120px" title="조기경보" disabled></select></td>
+										<th>메모</th>
+										<td ><input type="text" name="sMemo" id="sMemo" style="width:100" readonly/></td>
+									</tr>
+									<tr>
+										<th colspan="2">조합원상태</th>
+										<td><div id="ele_membStatNm" class="tal"></div></td>
+										<th>조합원구분</th>
+										<td><div id="ele_membDivNm" class="tal"></div></td>
+									</tr>
+	
+									<tr>
+										<th rowspan="3">주사무소<br>(본사)</th>
+										<th>주소</th>
+										<td colspan="3">
+											<div id="ele_addrFull" class="tal"></div>
+										</td>
+									</tr>
+									<tr>
+										<th>전화번호</th>
+										<td><div id="ele_telNo" class="tal"></div></td>
+										<th>팩스번호</th>
+										<td><div id="ele_faxNo" class="tal"></div></td>
+									</tr>
+									<tr>
+										<th>홈페이지</th>
+										<td colspan="3"><div id="ele_homepage" class="tal"></div></td>
+									</tr>
+	
+									<tr>
+										<th colspan="2">가입일자</th>
+										<td><div id="ele_joinDt" class="tal"></div></td>
+										<th>탈퇴일자</th>
+										<td><div id="ele_leaveDt" class="tal"></div></td>
+									</tr>
+									<tr>
+										<th colspan="2">주장르</th>
+										<td colspan="3"><div id="ele_mainBussNm" class="tal"></div></td>
+									</tr>
+									<tr>
+										<th colspan="2">비고</th>
+										<td colspan="3"><div id="ele_membRemark" class="tal"></div></td>
+									</tr>
+								</tbody>
+							</table>
+						</section>
+						
+						<!--일괄등록-->
+						<section class="area mt15">
+							<div class="fl">
+								<h4 class="title">일괄등록</h4>
+							</div>
+							<div class="fr">
+								<button type="button" onclick="javascript:fnSaveMulti();" class="btn small style03">저장</button>
+							</div>
+						</section>
+                        <section class="area">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:80px;">
+									<col style="width:150px;">
+									<col style="width:80px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th><span class="reqMark">*</span>첨부파일</th>
+										<td class="tal" colspan="4">
+											<input type="file" id="excelFileInput" class="exceptFileInput" accept=".xlsx" />
+  											<button type="button" onclick="javascript:fnUploadList();" id="btnUpload" class="btn small style08" disabled>조회</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							
+							<!--업로드후, 변경건 추출 그리드영역 시작-->
+							<div class="fl">
+								<h4 class="title">업로드 결과 목록</h4>
+							</div>
+							<div class="mt10">
+						    	<div id="sheetDivUpload" style="width:100%;height:200px"></div>
+							</div>
+							<!--업로드후, 변경건 추출 그리드영역 끝-->
+						
+							<!--업로드후 조합원 리스트와 비교를 위한 조합원 목록 그리드영역 시작-->
+							<div class="mt10" >
+						    	<div id="sheetDivMemb" style="width:100%;height:200px"></div>
+							</div>
+							<!--업로드후 조합원 리스트와 비교를 위한 조합원 목록 그리드영역 끝-->
+						
+							<!--엑셀파일 읽기 -->
+							<script>
+								const jsonData = [];
+								let outputArray = [];
+							    document.getElementById('excelFileInput').addEventListener('change', function (event) {
+							      //등록하려는 엑셀파일이 바뀌는경우 그리드 초기화
+							      sheetUpload.removeAll(); 
+							      sheetMemb.removeAll(); 
+							      
+							      const file = event.target.files[0];
+							      const reader = new FileReader();
+							      
+							      reader.onload = function (e) {
+							        const data = new Uint8Array(e.target.result);
+							        const workbook = XLSX.read(data, { type: 'array' });
+							        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+							        const range = XLSX.utils.decode_range(worksheet['!ref']);
+							        
+							        for (let row = 7; row <= range.e.r; row++) { // Start from the 8th row
+							          const rowData = [];
+							          for (let col = range.s.c; col <= range.e.c; col++) {
+							            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+							            const cell = worksheet[cellAddress];
+							            rowData.push(cell ? cell.v : ''); // Get the cell value or use an empty string
+							          }
+							          jsonData.push(rowData);
+							        }
+							        
+							        //document.getElementById('output').textContent = JSON.stringify(jsonData, null, 2);
+							        //console.log(JSON.stringify(jsonData, null, 2));
+							        //console.log("============================");
+							        //console.log(jsonData);
+							        
+							        
+							        /*필요한컬럼만 뽑아서 정리*/
+							        outputArray = jsonData.map(item => {
+										const [no,membNm,bizNo,divNm,divchg,curSt,curdt,preSt,predt,mngNo] = item;
+										  return {bizNo,membNm,divNm,curSt,preSt};
+									});
+							        
+							        //console.log(outputArray);
+							        
+							      };
+							      
+							      reader.readAsArrayBuffer(file);
+							      
+							      //엑셀조회버튼 활성화
+							      $("#btnUpload").prop("disabled", false);
+							      
+							      
+							    });
+						</script>
+						</section>
+                        </form>
+					</div>
+				</div>
+				
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

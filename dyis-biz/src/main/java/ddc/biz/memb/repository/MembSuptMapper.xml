@@ -1,0 +1,1333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.memb.repository.MembSuptMapper">
+
+	<!-- 조합공헌도 정보 조회 -->
+	<select id="selectContriButeList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectContriButeList */
+		SELECT
+			M.MEMB_NO
+            , M.MEMB_NM
+            , M.CEO_NM
+            , TRUNC((TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD')) - TO_DATE(M.BUSS_START_DT)) / 365, 1) || '년' || ' (' || substr(BUSS_START_DT,1,4) || '-' || substr(BUSS_START_DT,5,2) || '-' || substr(BUSS_START_DT,7,2) || ')' JOIN_TERM
+            , M.BUSS_START_DT
+            , ceo_nm || '(' || (SELECT (CASE WHEN SUBSTR(JUMIN_NO, 7, 1) = '1' OR SUBSTR(JUMIN_NO, 7, 1) = '2'
+                                            THEN '19'
+                                            WHEN SUBSTR(JUMIN_NO, 7, 1) = '3' OR SUBSTR(JUMIN_NO, 7, 1) = '4'
+                                            THEN '20'
+                                        END) || SUBSTR(JUMIN_NO, 1, 2) || '-' || SUBSTR(JUMIN_NO, 3,2) || '-' || substr(JUMIN_NO, 5,2) || ')'
+                                 FROM MB_CEO_VIEW
+                                WHERE CEO_NM = (CASE WHEN INSTR(M.CEO_NM, ',') = 0
+                                                     THEN M.CEO_NM
+                                                     ELSE SUBSTR(M.CEO_NM, 1,  INSTR(M.CEO_NM, ',') - 1)
+                                                 END)
+                                  AND ROWNUM = 1) CEO_BDT
+            , M.MAIN_BUSS_CD
+            , F_GET_CD_NM('MB02', M.MAIN_BUSS_CD) MAIN_BUSS_NM
+            , M.JOIN_DT
+            , NVL(D.FINAL_GRADE, D.OUT_GRADE) FINAL_GRADE
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit == 'mw'">
+            , ROUND(D.FIN_VAL04 / 1000000) ASSSETS_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit != 'mw'">
+            , D.FIN_VAL04 ASSSETS_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit == 'mw'">
+            , ROUND(D.FIN_VAL08 / 1000000) CAPITAL_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit != 'mw'">
+            , D.FIN_VAL08 CAPITAL_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit == 'mw'">
+            , ROUND(D.FIN_VAL10 / 1000000) SALE_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit != 'mw'">
+            , D.FIN_VAL10 SALE_AMT
+            </if>
+            , NVL(I.INVEST_NUM, 0) INVEST_NUM
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit == 'mw'">
+            , ROUND(NVL(G.GUAR_AMT, 0) / 1000000) GUAR_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit != 'mw'">
+            , NVL(G.GUAR_AMT, 0) GUAR_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit == 'mw'">
+            , ROUND((NVL(G.COMM_AMT, 0) - NVL(C.CAN_AMT, 0)) / 1000000) COMM_AMT
+            </if>
+            <if test="sAmtUnit != null and sAmtUnit != '' and sAmtUnit != 'mw'">
+            , NVL(G.COMM_AMT, 0) - NVL(C.CAN_AMT, 0) COMM_AMT
+            </if>
+            , NVL(M.EMP_CNT, 0) || '명' EMP_CNT
+            , NVL(I.MORT_NUM, 0) MORT_NUM
+            , NVL(A.BILL_NUM, 0) BILL_NUM
+            , F_GET_CD_NM('MB08', (CASE WHEN M.LEAVE_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '') THEN M.MEMB_STAT
+                                       WHEN M.MEMB_STAT = '80' THEN '80'
+                                       ELSE '10' END )) MEMB_STAT_NM
+		  FROM MB_MASTER M
+               , (SELECT MEMB_NO
+                         , OUT_GRADE
+                         , VALUE_GRADE
+                         , FINAL_GRADE
+                         , FIN_VAL04
+                         , FIN_VAL08
+                         , FIN_VAL10
+                    FROM MB_GRADE_IN
+                   WHERE GRADE_NO IN (SELECT MAX(GRADE_NO)
+                                        FROM MB_GRADE_IN
+                                       WHERE GRADE_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                                       GROUP BY MEMB_NO )
+                 ) D
+               , (SELECT MEMB_NO
+                         , SUM(INVEST_NUM) INVEST_NUM
+                         , SUM(MORT_NUM) MORT_NUM
+                    FROM (SELECT I.MEMB_NO
+                                 , SUM(I.INVEST_NUM) + (CASE WHEN I.MEMB_NO = 11 AND REPLACE(#{sContriButeEndDt}, '-', '') &lt; '20140106' THEN 8
+                                                             WHEN I.MEMB_NO = 183 AND REPLACE(#{sContriButeEndDt}, '-', '') &lt; '20140123' THEN 1
+                                                             ELSE 0
+                                                         END) INVEST_NUM
+                                 , MAX(B.MORT_NUM) MORT_NUM
+                            FROM IV_MASTER I
+                                 , ( SELECT MEMB_NO
+                                            , SUM(BILL_NUM) MORT_NUM
+                                       FROM IV_BILL
+                                      WHERE MORT_YN = 'Y'
+                                      GROUP BY MEMB_NO
+                                   ) B
+                           WHERE B.MEMB_NO(+) = I.MEMB_NO
+                             AND I.INVEST_CD IN ('10', '11')
+                             AND I.INVEST_NUM &gt; 0
+                             AND I.INVEST_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                           GROUP BY I.MEMB_NO
+                           UNION ALL
+                          SELECT TRANS_MEMB_NO MEMB_NO
+                                 , SUM(TRANS_NUM) * -1 INVEST_NUM
+                                 , 0
+                            FROM IV_TRANS
+                           WHERE 1=1
+                             AND TRANS_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                           GROUP BY TRANS_MEMB_NO
+                           UNION ALL
+                          SELECT TAKE_MEMB_NO MEMB_NO
+                                 , SUM(TRANS_NUM) INVEST_NUM
+                                 , 0
+                            FROM IV_TRANS
+                           WHERE 1=1
+                             AND TRANS_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                           GROUP BY TAKE_MEMB_NO
+                         )
+                   GROUP BY MEMB_NO
+                 ) I
+               , (SELECT A.ASS_MEMB_NO
+                       , SUM(B.BILL_NUM * (CASE WHEN A.ASS_MEMB_NM IS NULL THEN -1 ELSE 1 END)) BILL_NUM
+                   FROM IV_ASSIGN A
+                        , IV_BILL B
+                  WHERE A.BILL_NO = B.BILL_NO
+                    AND A.ASSIGN_DT &lt;= REPLACE( '20160727', '-', '')
+                  GROUP BY A.ASS_MEMB_NO
+                 ) A
+               , (SELECT SUM(NVL((CASE WHEN G.GUAR_CLASS_CD IN ('20', '30', '60') THEN 0
+                                     WHEN G.GUAR_CLASS_CD IN ('40', '50', '24', '34', '25', '35') THEN G.GUAR_AMT - G.BEF_GUAR_AMT
+                                     ELSE G.GUAR_AMT
+                                END) , 0)) GUAR_AMT
+                       , MEMB_NO
+                       , SUM(COMM_AMT) COMM_AMT
+                  FROM GR_MASTER G
+                 WHERE G.PROC_STAT IN ('80', '90', '42')
+                   AND G.GUAR_STAT != '10'
+                   AND G.GUAR_STAT != '31'
+                   <if test="sContriButeStaDt != null and sContriButeStaDt  != ''">
+                   AND G.GUAR_PUB_DT &gt;= REPLACE(#{sContriButeStaDt}, '-', '')
+                   </if>
+                   <if test="sContriButeEndDt != null and sContriButeEndDt  != ''">
+                   AND G.GUAR_PUB_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                   </if>
+                 GROUP BY G.MEMB_NO
+                 ) G
+               , (SELECT MEMB_NO
+                       , NVL(SUM(RET_COMM_AMT),0) CAN_AMT
+                   FROM GR_MASTER
+                  WHERE RET_YN = 'Y'
+                    AND PAY_YN IN ('Y', 'H')
+                    <if test="sContriButeStaDt != null and sContriButeStaDt  != ''">
+                    AND RET_DT &gt;= REPLACE(#{sContriButeStaDt}, '-', '')
+                    </if>
+                    <if test="sContriButeEndDt != null and sContriButeEndDt  != ''">
+                    AND RET_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                    </if>
+                    AND GUAR_STAT != '31'
+                  GROUP BY MEMB_NO
+                 ) C
+               , (SELECT SUM(NVL((CASE WHEN G.GUAR_CLASS_CD IN ('20', '30', '60') THEN 0
+                                      WHEN A.ACC_NO IS NOT NULL THEN 0
+                                      WHEN G.GUAR_CLASS_CD IN ('40', '50', '24', '34', '25', '35') THEN G.GUAR_AMT - G.BEF_GUAR_AMT
+                                      ELSE G.GUAR_AMT
+                                 END) , 0)) GUAR_AMT
+                         , G.MEMB_NO
+                    FROM   GR_MASTER G
+                         , AC_GR_ACCIDENT A
+                   WHERE  A.ACC_GUAR_NO(+) = G.GUAR_NO
+                     AND (A.ACC_DT(+) &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                     AND A.ACC_STAT_CD(+) != '31')
+                     AND G.PROC_STAT IN ('80', '90', '42' )
+                     AND G.GUAR_STAT != '10'
+                     AND G.GUAR_STAT != '31'
+                     <if test="sContriButeStaDt != null and sContriButeStaDt  != ''">
+                     AND G.GUAR_PUB_DT &gt;= REPLACE(#{sContriButeStaDt}, '-', '')
+                     </if>
+                     <if test="sContriButeEndDt != null and sContriButeEndDt  != ''">
+                     AND G.GUAR_PUB_DT &lt;= REPLACE(#{sContriButeEndDt}, '-', '')
+                     </if>
+                     AND (G.GUAR_CAN_DT IS NULL OR G.GUAR_CAN_DT &gt;= REPLACE(#{sContriButeEndDt}, '-', ''))
+                   GROUP BY G.MEMB_NO
+                 ) U
+         WHERE M.MEMB_NO != 0
+           AND A.ASS_MEMB_NO(+) = M.MEMB_NO
+           AND D.MEMB_NO(+) = M.MEMB_NO
+           AND I.MEMB_NO(+) = M.MEMB_NO
+           AND G.MEMB_NO(+) = M.MEMB_NO
+           AND U.MEMB_NO(+) = M.MEMB_NO
+           AND C.MEMB_NO(+) = M.MEMB_NO
+<!--           <isNotEmpty property="p_memb_no">-->
+<!--           AND M.MEMB_NO = ##-->
+<!--           </isNotEmpty>-->
+           <if test="sMembNm !=null and sMembNm != ''">
+           AND M.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+           </if>
+         ORDER BY M.MEMB_NO
+	</select>
+
+	<!-- (조합원)지역별 현황 정보 조회 -->
+	<select id="selectMembAreaList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembAreaList */
+		SELECT
+			NVL(F_GET_CD_NM('MB02', MAIN_BUSS_CD), '합계') MAIN_BUSS_NM
+		    , SU_CNT
+		    , KK_CNT
+		    , DJ_CNT
+		    , CN_CNT
+		    , DG_CNT
+		    , KB_CNT
+		    , PS_CNT
+		    , KN_CNT
+		    , KJ_CNT
+		    , JN_CNT
+		    , JB_CNT
+		    , ETC_CNT
+		    , TOT_CNT
+		  FROM (
+		        SELECT
+		        	MAIN_BUSS_CD
+		            , SUM(SU) SU_CNT
+		            , SUM(KK) KK_CNT
+		            , SUM(DJ) DJ_CNT
+		            , SUM(CN) CN_CNT
+		            , SUM(DG) DG_CNT
+		            , SUM(KB) KB_CNT
+		            , SUM(PS) PS_CNT
+		            , SUM(KN) KN_CNT
+		            , SUM(KJ) KJ_CNT
+		            , SUM(JN) JN_CNT
+		            , SUM(JB) JB_CNT
+		            , SUM(ETC) ETC_CNT
+		            , SUM(TOT) TOT_CNT
+		         FROM (
+		               SELECT
+		               	   MAIN_BUSS_CD
+		                   , (CASE WHEN AREA &lt;= 9 THEN 1 ELSE 0 END) SU
+		                   , (CASE WHEN AREA &gt;= 11 AND AREA &lt;= 18 THEN 1 ELSE 0 END) KK
+		                   , (CASE WHEN AREA &gt;= 34 AND AREA &lt;= 35 THEN 1 ELSE 0 END) DJ
+		                   , (CASE WHEN AREA &gt;= 31 AND AREA &lt;= 33 THEN 1 ELSE 0 END) CN
+		                   , (CASE WHEN AREA &gt;= 41 AND AREA &lt;= 43 THEN 1 ELSE 0 END) DG
+		                   , (CASE WHEN AREA &gt;= 36 AND AREA &lt;= 40 THEN 1 ELSE 0 END) KB
+		                   , (CASE WHEN AREA &gt;= 46 AND AREA &lt;= 49 THEN 1 ELSE 0 END) PS
+		                   , (CASE WHEN AREA &gt;= 50 AND AREA &lt;= 53 THEN 1 ELSE 0 END) KN
+		                   , (CASE WHEN AREA &gt;= 61 AND AREA &lt;= 62 THEN 1 ELSE 0 END) KJ
+		                   , (CASE WHEN AREA &gt;= 57 AND AREA &lt;= 59 THEN 1 ELSE 0 END) JN
+		                   , (CASE WHEN AREA &gt;= 54 AND AREA &lt;= 56 THEN 1 ELSE 0 END) JB
+		                   , (CASE WHEN AREA = 10 OR (AREA &gt;= 19 AND AREA &lt;= 30)
+		                                          OR (AREA &gt;= 44 AND AREA &lt;= 45)
+		                                          OR (AREA &gt;= 60)
+		                           THEN 1 ELSE 0 END) ETC
+		                   , 1 TOT
+		                FROM (
+		                      SELECT
+		                      	  MAIN_BUSS_CD
+		                          , TO_NUMBER(SUBSTR(POST_NO, 1, 2)) AREA
+		                        FROM MB_MASTER M
+		                           , (
+						               SELECT
+						               	   MEMB_NO
+						                   , (CASE WHEN INVEST_NUM > 0 THEN 1 ELSE 0 END) MEMB_CNT
+						                   , INVEST_NUM
+						                FROM (
+						                       SELECT
+						                       	   MEMB_NO
+						                           , SUM(INVEST_NUM) INVEST_NUM
+						                         FROM (
+						                                SELECT
+						                                    MEMB_NO
+						                                    , SUM(INVEST_NUM) + (CASE WHEN MEMB_NO = 11 AND REPLACE(#{sToDate}, '-', '') &lt; '20140106'
+						                                                              THEN 8
+						                                                              WHEN MEMB_NO = 183 AND REPLACE(#{sToDate}, '-', '') &lt; '20140123'
+						                                                              THEN 1
+						                                                              ELSE 0
+						                                                         END) INVEST_NUM
+						                                  FROM IV_MASTER
+						                                 WHERE INVEST_CD IN ('10','11')
+						                                   AND INVEST_NUM &gt; 0
+						                                   <if test="sToDate != null and sToDate  != ''">
+						                                   AND INVEST_DT &lt;= REPLACE(#{sToDate}, '-', '')
+						                                   </if>
+						                                 GROUP BY MEMB_NO
+						                                 UNION ALL
+						                                SELECT TRANS_MEMB_NO MEMB_NO
+						                                       , SUM(TRANS_NUM) * -1 INVEST_NUM
+						                                  FROM IV_TRANS
+						                                 WHERE 1=1
+						                                   <if test="sToDate != null and sToDate  != ''">
+						                                   AND TRANS_DT &lt;= REPLACE(#{sToDate}, '-', '')
+						                                   </if>
+						                                 GROUP BY TRANS_MEMB_NO
+						                                 UNION ALL
+						                                SELECT TAKE_MEMB_NO MEMB_NO
+						                                       , SUM(TRANS_NUM) INVEST_NUM
+						                                  FROM IV_TRANS
+						                                 WHERE 1=1
+						                                   <if test="sToDate != null and sToDate  != ''">
+						                                   AND TRANS_DT &lt;= REPLACE(#{sToDate}, '-', '')
+						                                   </if>
+						                                 GROUP BY TAKE_MEMB_NO
+						                              )
+						                        GROUP BY MEMB_NO
+						                     )
+						             ) B
+		                       WHERE M.MEMB_NO = B.MEMB_NO
+		                         AND B.INVEST_NUM &gt; 0
+		                         AND (LEAVE_DT IS NULL OR LEAVE_DT &gt;= REPLACE(#{sToDate}, '-', ''))
+		                         /* AND MAIN_BUSS_CD != '15' */
+		                         AND M.MEMB_NO != 0
+		                     )
+		               )
+		         GROUP BY MAIN_BUSS_CD
+		         )
+		 ORDER BY MAIN_BUSS_CD
+	</select>
+
+	<!-- (조합원)업력별 현황 정보 조회 -->
+	<select id="selectMembBussList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembBussList */
+		SELECT
+			NVL(F_GET_CD_NM('MB02', MAIN_BUSS_CD), '합계') MAIN_BUSS_NM
+		   , U1_CNT
+		   , U2_CNT
+		   , U3_CNT
+		   , U4_CNT
+		   , U5_CNT
+		   , U7_CNT
+		   , U10_CNT
+		   , U15_CNT
+		   , O15_CNT
+		   , NONE_CNT
+		   , TOT_CNT
+		 FROM (
+		        SELECT
+		        	MAIN_BUSS_CD
+		            , SUM(U1) U1_CNT
+		            , SUM(U2) U2_CNT
+		            , SUM(U3) U3_CNT
+		            , SUM(U4) U4_CNT
+		            , SUM(U5) U5_CNT
+		            , SUM(U7) U7_CNT
+		            , SUM(U10) U10_CNT
+		            , SUM(U15) U15_CNT
+		            , SUM(O15) O15_CNT
+		            , SUM(NONE) NONE_CNT
+		            , SUM(TOT) TOT_CNT
+		          FROM (
+		                SELECT
+		                	MAIN_BUSS_CD
+		                    , (CASE WHEN JOIN_TERM &lt;= 365 THEN 1 ELSE 0 END) U1
+		                    , (CASE WHEN JOIN_TERM > 365 AND JOIN_TERM &lt;= (365 * 2) THEN 1 ELSE 0 END) U2
+		                    , (CASE WHEN JOIN_TERM > (365 * 2) AND JOIN_TERM &lt;= (365 * 3) THEN 1 ELSE 0 END) U3
+		                    , (CASE WHEN JOIN_TERM > (365 * 3) AND JOIN_TERM &lt;= (365 * 4) THEN 1 ELSE 0 END) U4
+		                    , (CASE WHEN JOIN_TERM > (365 * 4) AND JOIN_TERM &lt;= (365 * 5) THEN 1 ELSE 0 END) U5
+		                    , (CASE WHEN JOIN_TERM > (365 * 5) AND JOIN_TERM &lt;= (365 * 7) THEN 1 ELSE 0 END) U7
+		                    , (CASE WHEN JOIN_TERM > (365 * 7) AND JOIN_TERM &lt;= (365 * 10) THEN 1 ELSE 0 END) U10
+		                    , (CASE WHEN JOIN_TERM > (365 * 10) AND JOIN_TERM &lt;= (365 * 15) THEN 1 ELSE 0 END) U15
+		                    , (CASE WHEN JOIN_TERM > (365 * 15) THEN 1 ELSE 0 END) O15
+		                    , (CASE WHEN JOIN_TERM IS NULL THEN 1 ELSE 0 END) NONE
+		                    , 1 TOT
+		                  FROM (
+		                        SELECT M.MAIN_BUSS_CD
+		                               , TO_DATE(REPLACE(#{sToDate}, '-', '')) - TO_DATE(M.BUSS_START_DT) JOIN_TERM
+		                          FROM MB_MASTER M
+		                             , (
+						                 SELECT MEMB_NO
+						                       , (CASE WHEN INVEST_NUM > 0 THEN 1 ELSE 0 END) MEMB_CNT
+						                       , INVEST_NUM
+						                  FROM (
+						                         SELECT MEMB_NO
+						                                , SUM(INVEST_NUM) INVEST_NUM
+						                           FROM (
+						                                  SELECT MEMB_NO
+						                                         , SUM(INVEST_NUM) + (CASE WHEN MEMB_NO = 11 AND REPLACE(#{sToDate}, '-', '') &lt; '20140106'
+						                                                                 THEN 8
+						                                                                 WHEN MEMB_NO = 183 AND REPLACE(#{sToDate}, '-', '') &lt; '20140123'
+						                                                                 THEN 1
+						                                                                 ELSE 0
+						                                                              END) INVEST_NUM
+						                                    FROM IV_MASTER
+						                                   WHERE INVEST_CD IN ('10','11')
+						                                     AND INVEST_NUM &gt; 0
+						                                     <if test="sToDate != null and sToDate  != ''">
+						                                     AND INVEST_DT &lt;= REPLACE(#{sToDate}, '-', '')
+						                                     </if>
+						                                   GROUP BY MEMB_NO
+						                                   UNION ALL
+						                                  SELECT TRANS_MEMB_NO MEMB_NO
+						                                         , SUM(TRANS_NUM) * -1 INVEST_NUM
+						                                    FROM IV_TRANS
+						                                   WHERE 1=1
+						                                     <if test="sToDate != null and sToDate  != ''">
+						                                     AND TRANS_DT &lt;= REPLACE(#{sToDate}, '-', '')
+						                                     </if>
+						                                   GROUP BY TRANS_MEMB_NO
+						                                   UNION ALL
+						                                  SELECT TAKE_MEMB_NO MEMB_NO
+						                                         , SUM(TRANS_NUM) INVEST_NUM
+						                                    FROM IV_TRANS
+						                                   WHERE 1=1
+						                                     <if test="sToDate != null and sToDate  != ''">
+						                                     AND TRANS_DT &lt;= REPLACE(#{sToDate}, '-', '')
+						                                     </if>
+						                                   GROUP BY TAKE_MEMB_NO
+						                                )
+						                          GROUP BY MEMB_NO
+						                       )
+						               ) B
+						         WHERE B.MEMB_NO = M.MEMB_NO
+		                           AND (M.LEAVE_DT IS NULL OR M.LEAVE_DT &gt;= REPLACE(#{sToDate}, '-', ''))
+		                           AND B.INVEST_NUM &gt; 0
+		                           /* AND M.MAIN_BUSS_CD != '15' */
+		                           AND M.MEMB_NO != 0
+		                       )
+		               )
+		         GROUP BY MAIN_BUSS_CD
+		        )
+		 ORDER BY MAIN_BUSS_CD
+	</select>
+
+	<!-- (조합원)등급별 현황 정보 조회 -->
+	<select id="selectMembGradeList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembGradeList */
+		SELECT
+			NVL(F_GET_CD_NM('MB02', MAIN_BUSS_CD), '합계') MAIN_BUSS_NM
+			, AAA_CNT
+		    , AAA_NUM
+		    , AAA_AMT
+		    , AA_CNT
+		    , AA_NUM
+		    , AA_AMT
+		    , A_CNT
+		    , A_NUM
+		    , A_AMT
+		    , BBB_CNT
+		    , BBB_NUM
+		    , BBB_AMT
+		    , BB_CNT
+		    , BB_NUM
+		    , BB_AMT
+		    , B_CNT
+		    , B_NUM
+		    , B_AMT
+		    , CCC_CNT
+		    , CCC_NUM
+		    , CCC_AMT
+		    , CC_CNT
+		    , CC_NUM
+		    , CC_AMT
+		    , C_CNT
+		    , C_NUM
+		    , C_AMT
+		    , NONE_CNT
+		    , NONE_NUM
+		    , NONE_AMT
+		    , NVL(TOT_CNT, 0) TOT_CNT
+		    , NVL(TOT_NUM, 0) TOT_NUM
+		    , NVL(TOT_AMT, 0) TOT_AMT
+		  FROM (
+		        SELECT MAIN_BUSS_CD
+		               , SUM(AAA) AAA_CNT
+		               , SUM(AAA_NUM) AAA_NUM
+		               , SUM(AAA_AMT) AAA_AMT
+		               , SUM(AA) AA_CNT
+		               , SUM(AA_NUM) AA_NUM
+		               , SUM(AA_AMT) AA_AMT
+		               , SUM(A) A_CNT
+		               , SUM(A_NUM) A_NUM
+		               , SUM(A_AMT) A_AMT
+		               , SUM(BBB) BBB_CNT
+		               , SUM(BBB_NUM) BBB_NUM
+		               , SUM(BBB_AMT) BBB_AMT
+		               , SUM(BB) BB_CNT
+		               , SUM(BB_NUM) BB_NUM
+		               , SUM(BB_AMT) BB_AMT
+		               , SUM(B) B_CNT
+		               , SUM(B_NUM) B_NUM
+		               , SUM(B_AMT) B_AMT
+		               , SUM(CCC) CCC_CNT
+		               , SUM(CCC_NUM) CCC_NUM
+		               , SUM(CCC_AMT) CCC_AMT
+		               , SUM(CC) CC_CNT
+		               , SUM(CC_NUM) CC_NUM
+		               , SUM(CC_AMT) CC_AMT
+		               , SUM(C) C_CNT
+		               , SUM(C_NUM) C_NUM
+		               , SUM(C_AMT) C_AMT
+		               , SUM(NONE) NONE_CNT
+		               , SUM(NONE_NUM) NONE_NUM
+		               , SUM(NONE_AMT) NONE_AMT
+		               , SUM(TOT) TOT_CNT
+		               , SUM(TOT_NUM) TOT_NUM
+		               , SUM(TOT_AMT) TOT_AMT
+		          FROM (
+		                SELECT MAIN_BUSS_CD
+		                       , (CASE WHEN GRADE = 'AAA' THEN 1 ELSE 0 END) AAA
+		                       , (CASE WHEN GRADE = 'AAA' THEN GUAR_CNT ELSE 0 END) AAA_NUM
+		                       , (CASE WHEN GRADE = 'AAA' THEN GUAR_AMT ELSE 0 END) AAA_AMT
+		                       , (CASE WHEN GRADE = 'AA' THEN 1 ELSE 0 END) AA
+		                       , (CASE WHEN GRADE = 'AA' THEN GUAR_CNT ELSE 0 END) AA_NUM
+		                       , (CASE WHEN GRADE = 'AA' THEN GUAR_AMT ELSE 0 END) AA_AMT
+		                       , (CASE WHEN GRADE = 'A' THEN 1 ELSE 0 END) A
+		                       , (CASE WHEN GRADE = 'A' THEN GUAR_CNT ELSE 0 END) A_NUM
+		                       , (CASE WHEN GRADE = 'A' THEN GUAR_AMT ELSE 0 END) A_AMT
+		                       , (CASE WHEN GRADE = 'BBB' THEN 1 ELSE 0 END) BBB
+		                       , (CASE WHEN GRADE = 'BBB' THEN GUAR_CNT ELSE 0 END) BBB_NUM
+		                       , (CASE WHEN GRADE = 'BBB' THEN GUAR_AMT ELSE 0 END) BBB_AMT
+		                       , (CASE WHEN GRADE = 'BB' THEN 1 ELSE 0 END) BB
+		                       , (CASE WHEN GRADE = 'BB' THEN GUAR_CNT ELSE 0 END) BB_NUM
+		                       , (CASE WHEN GRADE = 'BB' THEN GUAR_AMT ELSE 0 END) BB_AMT
+		                       , (CASE WHEN GRADE = 'B' THEN 1 ELSE 0 END) B
+		                       , (CASE WHEN GRADE = 'B' THEN GUAR_CNT ELSE 0 END) B_NUM
+		                       , (CASE WHEN GRADE = 'B' THEN GUAR_AMT ELSE 0 END) B_AMT
+		                       , (CASE WHEN GRADE = 'CCC' THEN 1 ELSE 0 END) CCC
+		                       , (CASE WHEN GRADE = 'CCC' THEN GUAR_CNT ELSE 0 END) CCC_NUM
+		                       , (CASE WHEN GRADE = 'CCC' THEN GUAR_AMT ELSE 0 END) CCC_AMT
+		                       , (CASE WHEN GRADE = 'CC' THEN 1 ELSE 0 END) CC
+		                       , (CASE WHEN GRADE = 'CC' THEN GUAR_CNT ELSE 0 END) CC_NUM
+		                       , (CASE WHEN GRADE = 'CC' THEN GUAR_AMT ELSE 0 END) CC_AMT
+		                       , (CASE WHEN GRADE = 'C' THEN 1 ELSE 0 END) C
+		                       , (CASE WHEN GRADE = 'C' THEN GUAR_CNT ELSE 0 END) C_NUM
+		                       , (CASE WHEN GRADE = 'C' THEN GUAR_AMT ELSE 0 END) C_AMT
+		                       , (CASE WHEN GRADE IS NULL THEN MEMB_CNT ELSE 0 END) NONE
+		                       , (CASE WHEN GRADE IS NULL THEN GUAR_CNT ELSE 0 END) NONE_NUM
+		                       , (CASE WHEN GRADE IS NULL THEN GUAR_AMT ELSE 0 END) NONE_AMT
+		                       , MEMB_CNT TOT
+		                       , GUAR_CNT TOT_NUM
+		                       , GUAR_AMT TOT_AMT
+		                  FROM (
+		                        SELECT MAIN_BUSS_CD
+		                               , (SELECT NVL(OUT_GRADE, FINAL_GRADE)
+		                                  FROM MB_GRADE_IN
+		                                 WHERE GRADE_NO = (
+		                                                   SELECT MAX(GRADE_NO)
+		                                                     FROM MB_GRADE_IN
+		                                                    WHERE MEMB_NO = M.MEMB_NO
+		                                                      AND GRADE_DT &lt;= REPLACE(#{sMembGradeEndDt}, '-', '')
+		                                                  )
+		                               ) GRADE
+		                               , G.GUAR_CNT
+		                               , G.GUAR_AMT
+		                               , B.MEMB_CNT
+		                          FROM MB_MASTER M
+		                               , (
+						                   SELECT MEMB_NO
+						                         , (CASE WHEN INVEST_NUM > 0 THEN 1 ELSE 0 END) MEMB_CNT
+						                         , INVEST_NUM
+						                    FROM (
+						                           SELECT MEMB_NO
+						                                  , SUM(INVEST_NUM) INVEST_NUM
+						                             FROM (
+						                                    SELECT MEMB_NO
+						                                           , SUM(INVEST_NUM) + (CASE WHEN MEMB_NO = 11 AND REPLACE(#{sMembGradeEndDt}, '-', '') &lt; '20140106'
+						                                                                    THEN 8
+						                                                                    WHEN MEMB_NO = 183 AND REPLACE(#{sMembGradeEndDt}, '-', '') &lt; '20140123'
+						                                                                    THEN 1
+						                                                                    ELSE 0
+						                                                                 END) INVEST_NUM
+						                                      FROM IV_MASTER
+						                                     WHERE INVEST_CD IN ('10','11')
+						                                       AND INVEST_NUM &gt; 0
+															   <if test="sMembGradeStaDt != null and sMembGradeStaDt  != ''">
+                                                               AND INVEST_DT &gt;= REPLACE(#{sMembGradeStaDt}, '-', '')
+                                                               </if>
+						                                       <if test="sMembGradeEndDt != null and sMembGradeEndDt  != ''">
+						                                       AND INVEST_DT &lt;= REPLACE(#{sMembGradeEndDt}, '-', '')
+						                                       </if>
+						                                     GROUP BY MEMB_NO
+						                                     UNION ALL
+						                                    SELECT TRANS_MEMB_NO MEMB_NO
+						                                           , SUM(TRANS_NUM) * -1 INVEST_NUM
+						                                      FROM IV_TRANS
+						                                     WHERE 1=1
+						                                       <if test="sMembGradeStaDt != null and sMembGradeStaDt  != ''">
+						                                       AND TRANS_DT &gt;= REPLACE(#{sMembGradeStaDt}, '-', '')
+						                                       </if>
+						                                       <if test="sMembGradeEndDt != null and sMembGradeEndDt  != ''">
+						                                       AND TRANS_DT &lt;= REPLACE(#{sMembGradeEndDt}, '-', '')
+						                                       </if>
+						                                     GROUP BY TRANS_MEMB_NO
+						                                     UNION ALL
+						                                    SELECT TAKE_MEMB_NO MEMB_NO
+						                                           , SUM(TRANS_NUM) INVEST_NUM
+						                                      FROM IV_TRANS
+						                                     WHERE 1=1
+						                                       <if test="sMembGradeStaDt != null and sMembGradeStaDt  != ''">
+						                                       AND TRANS_DT &gt;= REPLACE(#{sMembGradeStaDt}, '-', '')
+						                                       </if>
+						                                       <if test="sMembGradeEndDt != null and sMembGradeEndDt  != ''">
+						                                       AND TRANS_DT &lt;= REPLACE(#{sMembGradeEndDt}, '-', '')
+						                                       </if>
+						                                     GROUP BY TAKE_MEMB_NO
+						                                  )
+						                            GROUP BY MEMB_NO
+						                         )
+						                 ) B
+						               , (SELECT SUM(NVL((CASE WHEN G.GUAR_CLASS_CD IN ('20','30','60')
+				                                           THEN 0
+				                                           WHEN G.GUAR_CLASS_CD IN ('40','50','24','34','25','35')
+				                                           THEN G.GUAR_AMT - G.BEF_GUAR_AMT
+				                                           ELSE G.GUAR_AMT
+				                                       END)
+				                                     , 0)) GUAR_AMT
+				                                 , COUNT(*) GUAR_CNT
+				                                 , MEMB_NO
+				                            FROM GR_MASTER G
+				                           WHERE G.PROC_STAT IN ('80','90','42')
+		                                     AND G.GUAR_STAT != '10'
+		                                     <if test='sGuarCanclChk == null || sGuarCanclChk == ""'>
+		                                     AND G.GUAR_STAT != '31'
+		                                     </if>
+											 <if test="sOrderNm !=null and sOrderNm != ''">
+		                                     AND G.ORDER_NM LIKE '%' || #{sOrderNm} || '%'
+		                                     </if>
+		                                     AND G.GUAR_PUB_DT &gt;= REPLACE(#{sMembGradeStaDt}, '-', '')
+		                                     AND G.GUAR_PUB_DT &lt;= REPLACE(#{sMembGradeEndDt}, '-', '')
+		                                   GROUP BY G.MEMB_NO
+				                         ) G
+						         WHERE G.MEMB_NO(+) = M.MEMB_NO
+						           AND B.MEMB_NO(+) = M.MEMB_NO
+		                           AND (M.LEAVE_DT IS NULL OR M.LEAVE_DT &gt;= REPLACE(#{sMembGradeEndDt}, '-', ''))
+		                           /* AND B.INVEST_NUM &gt; 0
+		                           AND MAIN_BUSS_CD != '15' */
+		                           AND M.MEMB_NO != 0
+		                       )
+		               )
+		         GROUP BY MAIN_BUSS_CD
+		         ) M
+		 ORDER BY M.MAIN_BUSS_CD
+	</select>
+
+	<!-- (보증)연도/장르별 수수료 현황 정보 조회 -->
+	<select id="selectMembGuarList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembGuarList */
+		SELECT *
+			FROM (
+				  SELECT
+				  	 F_GET_CD_NM('MB02', MAIN_BUSS_CD) MAIN_BUSS_NM
+				       , A.*
+				    FROM
+				    (
+				    	SELECT SUM(NVL(COMM_AMT, 0)) COMM_AMT
+				    	     , GUAR_YEAR, MAIN_BUSS_CD
+		                FROM
+		                (
+		                  SELECT SUM(COMM_AMT) COMM_AMT
+		                       , SUBSTR(GUAR_PUB_DT, 0, 4) GUAR_YEAR
+		                       , MAIN_BUSS_CD
+		                    FROM GR_MASTER A
+		                       , MB_MASTER B
+		                   WHERE A.MEMB_NO = B.MEMB_NO
+		                     AND GUAR_STAT != '31'
+		                     AND SUBSTR(GUAR_PUB_DT, 0, 6) &lt;= #{sYear}||#{sMonth}
+		                   GROUP BY GUAR_PUB_DT, MAIN_BUSS_CD
+		                  UNION ALL
+		                  SELECT SUM(A.RET_COMM_AMT*-1) COMM_AMT
+		                       , SUBSTR(A.RET_DT, 0, 4) GUAR_YEAR
+		                       , MAIN_BUSS_CD
+		                    FROM GR_MASTER A
+		                       , MB_MASTER B
+		                   WHERE A.MEMB_NO = B.MEMB_NO
+		                     AND GUAR_STAT != '31'
+		                     AND RET_YN = 'Y'
+		                     AND PAY_YN IN ('Y', 'H')
+		                     AND SUBSTR(A.RET_DT, 0, 6) &lt;= #{sYear}||#{sMonth}
+		                   GROUP BY A.RET_DT, MAIN_BUSS_CD
+		                  UNION ALL
+		                   SELECT SUM(A.RET_COMM_AMT*-1) COMM_AMT
+		                        , SUBSTR(A.RET_DT, 0, 4) GUAR_YEAR
+		                        , '14' MAIN_BUSS_CD
+		                    FROM GR_PART_CANCEL A
+		                       , GR_MASTER B
+		                       , MB_MASTER C
+		                   WHERE A.GUAR_NO = B.GUAR_NO
+		                     AND B.MEMB_NO = C.MEMB_NO
+		                     AND A.RET_YN = 'Y'
+		                     AND SUBSTR(A.RET_DT, 0, 6) &lt;= #{sYear}||#{sMonth}
+		                   GROUP BY A.RET_DT
+		                )
+		               GROUP BY GUAR_YEAR, MAIN_BUSS_CD
+				    )
+		 		    PIVOT (SUM(COMM_AMT) FOR GUAR_YEAR IN(
+				    <if test="yearList != null and yearList  != ''">
+			      		<foreach collection="yearList" item="item" separator="," index="index">
+			           		${item.guarYear}
+			      	 	</foreach>
+		    	    </if>
+	    		   		)
+	         	    )A
+				 )
+		 ORDER BY MAIN_BUSS_CD
+	</select>
+
+	<!-- 보증 발급 년도 목록  -->
+    <select id="selectGuarYearList" parameterType="Map" resultType="camelMap">
+        /* MembSuptMapper.selectGuarYearList */
+        SELECT DISTINCT TO_CHAR(GUAR_YEAR) GUAR_YEAR
+          FROM GR_MASTER
+         WHERE GUAR_PUB_DT &gt;= '2014'
+         ORDER BY GUAR_YEAR
+
+    </select>
+
+    <!-- (보증)연도/상품별 수수료 현황 정보 조회 -->
+	<select id="selectMembPrsrList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembPrsrList */
+		SELECT *
+			FROM (
+					SELECT
+						 F_GET_CD_NM('GR01', GUAR_TYPE) GUAR_TYPE_NM
+					     , A.*
+					  FROM
+					  (
+					   	SELECT SUM(NVL(COMM_AMT, 0)) COMM_AMT
+					   	     , GUAR_YEAR, GUAR_TYPE
+			              FROM
+			              (
+			                SELECT SUM(COMM_AMT) COMM_AMT
+			                     , SUBSTR(GUAR_PUB_DT, 0, 4) GUAR_YEAR
+			                     , GUAR_TYPE
+			                  FROM GR_MASTER
+			                 WHERE GUAR_STAT != '31'
+			                   AND SUBSTR(GUAR_PUB_DT, 0, 6)  &lt;= #{sYear}||#{sMonth}
+			                 GROUP BY GUAR_PUB_DT, GUAR_TYPE
+			                UNION ALL
+			                SELECT SUM(RET_COMM_AMT*-1) COMM_AMT
+			                     , SUBSTR(RET_DT, 0, 4) GUAR_YEAR
+			                     , GUAR_TYPE
+			                  FROM GR_MASTER
+			                 WHERE GUAR_STAT != '31'
+			                   AND RET_YN = 'Y'
+			                   AND PAY_YN IN ('Y', 'H')
+			                   AND SUBSTR(RET_DT, 0, 6)  &lt;= #{sYear}||#{sMonth}
+			                 GROUP BY RET_DT, GUAR_TYPE
+			                UNION ALL
+			                 SELECT SUM(RET_COMM_AMT*-1) COMM_AMT
+			                      , SUBSTR(RET_DT, 0, 4) GUAR_YEAR
+			                      , '14' GUAR_TYPE
+			                  FROM GR_PART_CANCEL
+			                 WHERE RET_YN = 'Y'
+			                   AND SUBSTR(RET_DT, 0, 6)  &lt;= #{sYear}||#{sMonth}
+			                 GROUP BY RET_DT
+			              )
+			             GROUP BY GUAR_YEAR, GUAR_TYPE
+					  )
+					  PIVOT (SUM(COMM_AMT) FOR GUAR_YEAR IN (
+			          <if test="yearList != null and yearList  != ''">
+			  		  	<foreach collection="yearList" item="item" separator="," index="index">
+			       	  		${item.guarYear}
+			      	   	</foreach>
+				      </if>
+			          		)
+      				  ) A
+  			     )
+		 ORDER BY GUAR_TYPE
+	</select>
+
+	<!-- (조합원)매출액별 현황 정보 조회 -->
+	<select id="selectMembSaleList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembSaleList */
+		SELECT
+			MAIN_BUSS_CD
+			, NVL(F_GET_CD_NM('MB02', MAIN_BUSS_CD), '합계') MAIN_BUSS_NM
+		    , U1_CNT
+		    , U1_NUM
+		    , U1_AMT
+		    , U5_CNT
+		    , U5_NUM
+		    , U5_AMT
+		    , U10_CNT
+		    , U10_NUM
+		    , U10_AMT
+		    , U20_CNT
+		    , U20_NUM
+		    , U20_AMT
+		    , U30_CNT
+		    , U30_NUM
+		    , U30_AMT
+		    , U50_CNT
+		    , U50_NUM
+		    , U50_AMT
+		    , U100_CNT
+		    , U100_NUM
+		    , U100_AMT
+		    , U200_CNT
+		    , U200_NUM
+		    , U200_AMT
+		    , U300_CNT
+		    , U300_NUM
+		    , U300_AMT
+		    , U500_CNT
+		    , U500_NUM
+		    , U500_AMT
+		    , U1000_CNT
+		    , U1000_NUM
+		    , U1000_AMT
+		    , O1000_CNT
+		    , O1000_NUM
+		    , O1000_AMT
+		    , NONE_CNT
+		    , NONE_NUM
+		    , NONE_AMT
+		    , NVL(TOT_CNT, 0) TOT_CNT
+		    , NVL(TOT_NUM, 0) TOT_NUM
+		    , NVL(TOT_AMT, 0) TOT_AMT
+		  FROM (
+		        SELECT MAIN_BUSS_CD
+		               , SUM(U1) U1_CNT
+		               , SUM(U1_NUM) U1_NUM
+		               , SUM(U1_AMT) U1_AMT
+		               , SUM(U5) U5_CNT
+		               , SUM(U5_NUM) U5_NUM
+		               , SUM(U5_AMT) U5_AMT
+		               , SUM(U10) U10_CNT
+		               , SUM(U10_NUM) U10_NUM
+		               , SUM(U10_AMT) U10_AMT
+		               , SUM(U20) U20_CNT
+		               , SUM(U20_NUM) U20_NUM
+		               , SUM(U20_AMT) U20_AMT
+		               , SUM(U30) U30_CNT
+		               , SUM(U30_NUM) U30_NUM
+		               , SUM(U30_AMT) U30_AMT
+		               , SUM(U50) U50_CNT
+		               , SUM(U50_NUM) U50_NUM
+		               , SUM(U50_AMT) U50_AMT
+		               , SUM(U100) U100_CNT
+		               , SUM(U100_NUM) U100_NUM
+		               , SUM(U100_AMT) U100_AMT
+		               , SUM(U200) U200_CNT
+		               , SUM(U200_NUM) U200_NUM
+		               , SUM(U200_AMT) U200_AMT
+		               , SUM(U300) U300_CNT
+		               , SUM(U300_NUM) U300_NUM
+		               , SUM(U300_AMT) U300_AMT
+		               , SUM(U500) U500_CNT
+		               , SUM(U500_NUM) U500_NUM
+		               , SUM(U500_AMT) U500_AMT
+		               , SUM(U1000) U1000_CNT
+		               , SUM(U1000_NUM) U1000_NUM
+		               , SUM(U1000_AMT) U1000_AMT
+		               , SUM(O1000) O1000_CNT
+		               , SUM(O1000_NUM) O1000_NUM
+		               , SUM(O1000_AMT) O1000_AMT
+		               , SUM(NONE) NONE_CNT
+		               , SUM(NONE_NUM) NONE_NUM
+		               , SUM(NONE_AMT) NONE_AMT
+		               , SUM(TOT) TOT_CNT
+		               , SUM(TOT_NUM) TOT_NUM
+		               , SUM(TOT_AMT) TOT_AMT
+		          FROM (
+		                SELECT MAIN_BUSS_CD
+		                       , (CASE WHEN SALE_AMT &lt; 100000000 THEN 1 ELSE 0 END) U1
+		                       , (CASE WHEN SALE_AMT &lt; 100000000 THEN GUAR_CNT ELSE 0 END) U1_NUM
+		                       , (CASE WHEN SALE_AMT &lt; 100000000 THEN GUAR_AMT ELSE 0 END) U1_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 100000000   AND SALE_AMT &lt; 500000000 THEN 1 ELSE 0 END) U5
+		                       , (CASE WHEN SALE_AMT &gt;= 100000000   AND SALE_AMT &lt; 500000000 THEN GUAR_CNT ELSE 0 END) U5_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 100000000   AND SALE_AMT &lt; 500000000 THEN GUAR_AMT ELSE 0 END) U5_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 500000000   AND SALE_AMT &lt; 1000000000 THEN 1 ELSE 0 END) U10
+		                       , (CASE WHEN SALE_AMT &gt;= 500000000   AND SALE_AMT &lt; 1000000000 THEN GUAR_CNT ELSE 0 END) U10_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 500000000   AND SALE_AMT &lt; 1000000000 THEN GUAR_AMT ELSE 0 END) U10_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 1000000000  AND SALE_AMT &lt; 2000000000 THEN 1 ELSE 0 END) U20
+		                       , (CASE WHEN SALE_AMT &gt;= 1000000000  AND SALE_AMT &lt; 2000000000 THEN GUAR_CNT ELSE 0 END) U20_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 1000000000  AND SALE_AMT &lt; 2000000000 THEN GUAR_AMT ELSE 0 END) U20_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 2000000000  AND SALE_AMT &lt; 3000000000 THEN 1 ELSE 0 END) U30
+		                       , (CASE WHEN SALE_AMT &gt;= 2000000000  AND SALE_AMT &lt; 3000000000 THEN GUAR_CNT ELSE 0 END) U30_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 2000000000  AND SALE_AMT &lt; 3000000000 THEN GUAR_AMT ELSE 0 END) U30_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 3000000000  AND SALE_AMT &lt; 5000000000 THEN 1 ELSE 0 END) U50
+		                       , (CASE WHEN SALE_AMT &gt;= 3000000000  AND SALE_AMT &lt; 5000000000 THEN GUAR_CNT ELSE 0 END) U50_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 3000000000  AND SALE_AMT &lt; 5000000000 THEN GUAR_AMT ELSE 0 END) U50_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 5000000000  AND SALE_AMT &lt; 10000000000 THEN 1 ELSE 0 END) U100
+		                       , (CASE WHEN SALE_AMT &gt;= 5000000000  AND SALE_AMT &lt; 10000000000 THEN GUAR_CNT ELSE 0 END) U100_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 5000000000  AND SALE_AMT &lt; 10000000000 THEN GUAR_AMT ELSE 0 END) U100_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 10000000000 AND SALE_AMT &lt; 20000000000 THEN 1 ELSE 0 END) U200
+		                       , (CASE WHEN SALE_AMT &gt;= 10000000000 AND SALE_AMT &lt; 20000000000 THEN GUAR_CNT ELSE 0 END) U200_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 10000000000 AND SALE_AMT &lt; 20000000000 THEN GUAR_AMT ELSE 0 END) U200_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 20000000000 AND SALE_AMT &lt; 30000000000 THEN 1 ELSE 0 END) U300
+		                       , (CASE WHEN SALE_AMT &gt;= 20000000000 AND SALE_AMT &lt; 30000000000 THEN GUAR_CNT ELSE 0 END) U300_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 20000000000 AND SALE_AMT &lt; 30000000000 THEN GUAR_AMT ELSE 0 END) U300_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 30000000000 AND SALE_AMT &lt; 50000000000 THEN 1 ELSE 0 END) U500
+		                       , (CASE WHEN SALE_AMT &gt;= 30000000000 AND SALE_AMT &lt; 50000000000 THEN GUAR_CNT ELSE 0 END) U500_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 30000000000 AND SALE_AMT &lt; 50000000000 THEN GUAR_AMT ELSE 0 END) U500_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 50000000000 AND SALE_AMT &lt; 100000000000 THEN 1 ELSE 0 END) U1000
+		                       , (CASE WHEN SALE_AMT &gt;= 50000000000 AND SALE_AMT &lt; 100000000000 THEN GUAR_CNT ELSE 0 END) U1000_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 50000000000 AND SALE_AMT &lt; 100000000000 THEN GUAR_AMT ELSE 0 END) U1000_AMT
+		                       , (CASE WHEN SALE_AMT &gt;= 100000000000 THEN 1 ELSE 0 END) O1000
+		                       , (CASE WHEN SALE_AMT &gt;= 100000000000 THEN GUAR_CNT ELSE 0 END) O1000_NUM
+		                       , (CASE WHEN SALE_AMT &gt;= 100000000000 THEN GUAR_AMT ELSE 0 END) O1000_AMT
+		                       , (CASE WHEN SALE_AMT IS NULL THEN MEMB_CNT ELSE 0 END) NONE
+		                       , (CASE WHEN SALE_AMT IS NULL THEN GUAR_CNT ELSE 0 END) NONE_NUM
+		                       , (CASE WHEN SALE_AMT IS NULL THEN GUAR_AMT ELSE 0 END) NONE_AMT
+		                       , MEMB_CNT TOT
+		                       , GUAR_CNT TOT_NUM
+		                       , GUAR_AMT TOT_AMT
+		                  FROM (
+		                        SELECT MAIN_BUSS_CD
+		                               , (SELECT FIN_VAL10
+		                                  FROM MB_GRADE_IN
+		                                 WHERE GRADE_NO = (
+		                                                   SELECT MAX(GRADE_NO)
+		                                                     FROM MB_GRADE_IN
+		                                                    WHERE MEMB_NO = M.MEMB_NO
+		                                                      AND GRADE_DT &lt;= REPLACE(#{sMembSaleEndDt}, '-', '')
+		                                                  )
+		                               ) SALE_AMT
+		                               , G.GUAR_CNT
+		                               , G.GUAR_AMT
+		                               , B.MEMB_CNT
+		                          FROM MB_MASTER M
+		                               , (
+						                   SELECT MEMB_NO
+						                         , (CASE WHEN INVEST_NUM > 0 THEN 1 ELSE 0 END) MEMB_CNT
+						                         , INVEST_NUM
+						                    FROM (
+						                           SELECT MEMB_NO
+						                                  , SUM(INVEST_NUM) INVEST_NUM
+						                             FROM (
+						                                    SELECT MEMB_NO
+						                                           , SUM(INVEST_NUM) + (CASE WHEN MEMB_NO = 11 AND REPLACE(#{sMembSaleEndDt}, '-', '') &lt; '20140106'
+						                                                                     THEN 8
+						                                                                     WHEN MEMB_NO = 183 AND REPLACE(#{sMembSaleEndDt}, '-', '') &lt; '20140123'
+						                                                                     THEN 1
+						                                                                     ELSE 0
+						                                                                  END) INVEST_NUM
+						                                      FROM IV_MASTER
+						                                     WHERE INVEST_CD IN ('10','11')
+						                                       AND INVEST_NUM &gt; 0
+						                                       <if test="sMembSaleStaDt != null and sMembSaleStaDt  != ''">
+                                                               AND INVEST_DT &gt;= REPLACE(#{sMembSaleStaDt}, '-', '')
+                                                               </if>
+						                                       <if test="sMembSaleEndDt != null and sMembSaleEndDt  != ''">
+						                                       AND INVEST_DT &lt;= REPLACE(#{sMembSaleEndDt}, '-', '')
+						                                       </if>
+						                                     GROUP BY MEMB_NO
+						                                     UNION ALL
+						                                    SELECT TRANS_MEMB_NO MEMB_NO
+						                                           , SUM(TRANS_NUM) * -1 INVEST_NUM
+						                                      FROM IV_TRANS
+						                                     WHERE 1=1
+						                                       <if test="sMembSaleStaDt != null and sMembSaleStaDt  != ''">
+						                                       AND TRANS_DT &gt;= REPLACE(#{sMembSaleStaDt}, '-', '')
+						                                       </if>
+						                                       <if test="sMembSaleEndDt != null and sMembSaleEndDt  != ''">
+						                                       AND TRANS_DT &lt;= REPLACE(#{sMembSaleEndDt}, '-', '')
+						                                       </if>
+						                                     GROUP BY TRANS_MEMB_NO
+						                                     UNION ALL
+						                                    SELECT TAKE_MEMB_NO MEMB_NO
+						                                           , SUM(TRANS_NUM) INVEST_NUM
+						                                      FROM IV_TRANS
+						                                     WHERE 1=1
+						                                       <if test="sMembSaleStaDt != null and sMembSaleStaDt  != ''">
+						                                       AND TRANS_DT &gt;= REPLACE(#{sMembSaleStaDt}, '-', '')
+						                                       </if>
+						                                       <if test="sMembSaleEndDt != null and sMembSaleEndDt  != ''">
+						                                       AND TRANS_DT &lt;= REPLACE(#{sMembSaleEndDt}, '-', '')
+						                                       </if>
+						                                     GROUP BY TAKE_MEMB_NO
+						                                  )
+						                            GROUP BY MEMB_NO
+						                         )
+						                 ) B
+						                 , (SELECT SUM(NVL((CASE WHEN G.GUAR_CLASS_CD IN ('20','30','60')
+				                                             THEN 0
+				                                             WHEN G.GUAR_CLASS_CD IN ('40','50','24','34','25','35')
+				                                             THEN G.GUAR_AMT - G.BEF_GUAR_AMT
+				                                             ELSE G.GUAR_AMT
+				                                         END)
+				                                       , 0)) GUAR_AMT
+				                                   , COUNT(*) GUAR_CNT
+				                                   , MEMB_NO
+				                              FROM GR_MASTER G
+				                             WHERE G.PROC_STAT IN ('80','90','42')
+		                                       AND G.GUAR_STAT != '10'
+		                                       <if test='sGuarCanclChk == null || sGuarCanclChk == ""'>
+		                                       AND G.GUAR_STAT != '31'
+		                                       </if>
+		                                       <if test="sOrderNm !=null and sOrderNm != ''">
+		                                       AND G.ORDER_NM LIKE '%' || #{sOrderNm} || '%'
+		                                       </if>
+		                                       AND G.GUAR_PUB_DT &gt;= REPLACE(#{sMembSaleStaDt}, '-', '')
+		                                       AND G.GUAR_PUB_DT &lt;= REPLACE(#{sMembSaleEndDt}, '-', '')
+		                                     GROUP BY G.MEMB_NO
+				                           ) G
+		                         WHERE G.MEMB_NO(+) = M.MEMB_NO
+						           AND B.MEMB_NO(+) = M.MEMB_NO
+		                           AND (LEAVE_DT IS NULL OR LEAVE_DT &gt;= REPLACE(#{sMembSaleEndDt}, '-', ''))
+		                           /* AND B.INVEST_NUM &gt; 0
+		                           AND MAIN_BUSS_CD != '15' */
+		                           AND M.MEMB_NO != 0
+		                       )
+		               )
+		         GROUP BY MAIN_BUSS_CD
+		         )
+		 ORDER BY MAIN_BUSS_CD
+	</select>
+
+	<!-- (조합원)매출액별 현황 상세 조회 -->
+	<select id="selectMembSale" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembSale*/
+		SELECT * FROM (
+
+		SELECT
+			M.MEMB_NO
+			, M.MEMB_NM
+            , M.CEO_NM
+            , F_GET_PATTERN(M.LAW_NO, 'CRP') AS LAW_NO
+            , F_GET_PATTERN(M.BIZ_NO, 'BIZ') AS BIZ_NO
+            , M.TEL_NO
+            ,  (SELECT FIN_VAL10
+                  FROM MB_GRADE_IN
+                 WHERE GRADE_NO = (
+                                   SELECT MAX(GRADE_NO)
+                                     FROM MB_GRADE_IN
+                                    WHERE MEMB_NO = M.MEMB_NO
+                                      AND GRADE_DT &lt;= REPLACE(#{sMembSaleEndDt}, '-', '')
+                                  )
+               ) SALE_AMT
+		  FROM MB_MASTER M
+		WHERE (LEAVE_DT IS NULL OR LEAVE_DT &gt;= REPLACE(#{sMembSaleEndDt}, '-', ''))
+           AND M.MAIN_BUSS_CD = #{mainBussCd}
+           AND M.MEMB_NO != 0
+
+        ) WHERE 1=1
+			<if test="saleType != null and saleType != '' and saleType == 'u1'">
+		    AND SALE_AMT &lt; 100000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u5'">
+		    AND SALE_AMT &gt;= 100000000   AND SALE_AMT &lt; 500000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u10'">
+		    AND SALE_AMT &gt;= 500000000   AND SALE_AMT &lt; 1000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u20'">
+		    AND SALE_AMT &gt;= 1000000000  AND SALE_AMT &lt; 2000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u30'">
+		    AND SALE_AMT &gt;= 2000000000  AND SALE_AMT &lt; 3000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u50'">
+		    AND SALE_AMT &gt;= 3000000000  AND SALE_AMT &lt; 5000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u100'">
+		    AND SALE_AMT &gt;= 5000000000  AND SALE_AMT &lt; 10000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u200'">
+		    AND SALE_AMT &gt;= 10000000000 AND SALE_AMT &lt; 20000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u300'">
+		    AND SALE_AMT &gt;= 20000000000 AND SALE_AMT &lt; 30000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u500'">
+		    AND SALE_AMT &gt;= 30000000000 AND SALE_AMT &lt; 50000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'u1000'">
+		    AND SALE_AMT &gt;= 50000000000 AND SALE_AMT &lt; 100000000000
+		    </if>
+		    <if test="saleType != null and saleType != '' and saleType == 'o1000'">
+		    AND SALE_AMT &gt;= 100000000000
+            </if>
+            <if test="saleType != null and saleType != '' and saleType == 'none'">
+            AND SALE_AMT IS NULL
+            </if>
+          ORDER BY MEMB_NO
+	</select>
+
+	<!-- (조합원)조건별 현황 정보 조회 -->
+	<select id="selectMembTypeList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembTypeList */
+		SELECT
+			M.MEMB_NO
+			, M.MEMB_NM
+			, M.CEO_NM
+			, F_GET_PATTERN(M.LAW_NO, 'CRP') AS LAW_NO
+			, F_GET_PATTERN(M.BIZ_NO, 'BIZ') AS BIZ_NO
+			, F_GET_PATTERN(M.JOIN_DT, 'DT') AS JOIN_DT
+			, F_GET_INVEST_NUM(M.MEMB_NO) AS INVEST_NUM
+			, M.MEMB_STAT
+			, D.FIN_VAL10 SALE_AMT
+			, NVL(D.FIN_VAL13, 0) BF_SALE_AMT
+            , NVL(U.GUAR_AMT, 0) USEFUL_AMT
+            , NVL(H.HAN_AMT, 0) HAN_AMT
+		    , U.GUAR_DAYS
+		  FROM MB_MASTER M
+		     , (SELECT MEMB_NO
+                         , OUT_GRADE
+                         , VALUE_GRADE
+                         , FINAL_GRADE
+                         , FIN_VAL08
+                         , FIN_VAL10
+                         , FIN_VAL04
+                         , FIN_VAL11
+                         , FIN_VAL13
+                    FROM MB_GRADE_IN
+                   WHERE GRADE_NO IN (SELECT MAX(GRADE_NO)
+                                        FROM MB_GRADE_IN
+                                       WHERE GRADE_DT &lt;= REPLACE(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), '-', '')
+                                       GROUP BY MEMB_NO )
+               ) D
+             , (SELECT SUM(NVL((CASE WHEN A.ACC_NO IS NOT NULL THEN 0
+                                       ELSE 1
+                                  END) , 0)) GUAR_CNT
+                         , SUM(NVL((CASE WHEN G.GUAR_CLASS_CD IN ('20', '30', '60') THEN 0
+                                         WHEN A.ACC_NO IS NOT NULL THEN 0
+                                         WHEN G.GUAR_CLASS_CD IN ('40', '50', '24', '34', '25', '35') THEN G.GUAR_AMT - G.BEF_GUAR_AMT
+                                         ELSE G.GUAR_AMT
+                                    END) , 0)) GUAR_AMT
+                         , SUM(NVL((CASE WHEN A.ACC_NO IS NOT NULL THEN 0
+                                         ELSE COMM_AMT
+                                    END) , 0)) COMM_AMT
+                         , G.MEMB_NO
+                         , SUM(NVL(G.GUAR_DAYS, 0)) GUAR_DAYS
+                    FROM GR_MASTER G
+                         , AC_GR_ACCIDENT A
+                   WHERE  A.ACC_GUAR_NO(+) = G.GUAR_NO
+                     AND (A.ACC_DT(+) &lt;= REPLACE(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), '-', '')
+                     AND A.ACC_STAT_CD(+) != '31')
+                     AND G.PROC_STAT IN ('80', '90', '42' )
+                     AND G.GUAR_STAT != '10'
+                     AND G.GUAR_STAT != '31'
+                     AND G.GUAR_PUB_DT &lt;= REPLACE(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), '-', '')
+<!--                     <if test="sGuarMembTotStaDt != null and sGuarMembTotStaDt  != ''">-->
+<!--                     AND G.GUAR_PUB_DT &gt;= REPLACE(#{sGuarMembTotStaDt}, '-', '')-->
+<!--                     </if>-->
+<!--                     <if test="sGuarMembTotEndDt != null and sGuarMembTotEndDt  != ''">-->
+<!--                     AND G.GUAR_PUB_DT &lt;= REPLACE(#{sGuarMembTotEndDt}, '-', '')-->
+<!--                     </if>-->
+                     AND (G.GUAR_CAN_DT IS NULL OR G.GUAR_CAN_DT &gt;= REPLACE(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), '-', ''))
+                   GROUP BY G.MEMB_NO
+                 ) U
+             , (SELECT E.MEMB_NO
+                     , E.MEMB_NM
+                     , (SELECT (CASE
+		                          WHEN INSTR(C.GUAR_TYPES,
+		                          '11') &gt; 0 THEN NVL(C.LIMIT_AMT_11,
+		                          0)
+		                          ELSE 0
+		                      END) +                (CASE
+		                          WHEN INSTR(C.GUAR_TYPES,
+		                          '12') &gt; 0 THEN NVL(C.LIMIT_AMT_12,
+		                          0)
+		                          ELSE 0
+		                      END) +                (CASE
+		                          WHEN INSTR(C.GUAR_TYPES,
+		                          '13') &gt; 0 THEN NVL(C.LIMIT_AMT_13,
+		                          0)
+		                          ELSE 0
+		                      END) +                (CASE
+		                          WHEN INSTR(C.GUAR_TYPES,
+		                          '14') &gt; 0 THEN NVL(C.LIMIT_AMT_14,
+		                          0)
+		                          ELSE 0
+		                      END) +                (CASE
+		                          WHEN INSTR(C.GUAR_TYPES,
+		                          '15') &gt; 0 THEN NVL(C.LIMIT_AMT_15,
+		                          0)
+		                          ELSE 0
+		                      END) +                (CASE
+		                          WHEN INSTR(C.GUAR_TYPES,
+		                          '21') &gt; 0 THEN NVL(C.LIMIT_AMT_21,
+		                          0)
+		                          ELSE 0
+		                      END) SUM_LIMIT_AMT FROM GR_CONTRACT C
+		                      WHERE CONTR_NO = (SELECT MAX(CONTR_NO) FROM GR_CONTRACT WHERE MEMB_NO=E.MEMB_NO AND CONTR_STAT='10')
+		                ) HAN_AMT
+                  FROM MB_MASTER E
+               ) H
+		WHERE M.MEMB_NO != 0
+          AND D.MEMB_NO(+) = M.MEMB_NO
+          AND U.MEMB_NO(+) = M.MEMB_NO
+          AND H.MEMB_NO(+) = M.MEMB_NO
+          <if test='sGuarAmtChk  != null and sGuarAmtChk != ""'>
+		  AND D.FIN_VAL10 * 0.7 &lt;= NVL(U.GUAR_AMT, 0)
+		  </if>
+		  <if test='sGuarDayChk  != null and sGuarDayChk != ""'>
+		  AND U.GUAR_DAYS &gt; 365
+		  </if>
+		  <if test='sGuarHanAmtChk  != null and sGuarHanAmtChk != ""'>
+		  AND NVL(D.FIN_VAL13, 0) &lt;= NVL(H.HAN_AMT, 0)
+		  </if>
+		ORDER BY M.MEMB_NO DESC
+	</select>
+
+	<!-- 업무거래 현황 정보 조회 -->
+	<select id="selectMembWorkList" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembWorkList */
+		SELECT *
+          FROM (
+				SELECT M.MEMB_NO
+				       , M.MEMB_NM
+				       , M.CEO_NM
+				       , F_GET_INVEST_NUM(M.MEMB_NO) INVEST_NUM
+				       , F_GET_MORT_NUM(M.MEMB_NO) MORT_NUM
+				       , F_GET_ASS_GET_NUM(M.MEMB_NO) ASS_GET_NUM
+				       , F_GET_ASS_SET_NUM(M.MEMB_NO) ASS_SET_NUM
+				       , NVL((SELECT SUM(CONTR_NUM) FROM GR_CONTRACT WHERE CONTR_STAT = '10' AND MEMB_NO = M.MEMB_NO),0) GUAR_CONTR_NUM
+				       , NVL((SELECT SUM(DEPT_NUM) FROM GR_CONTRACT WHERE CONTR_STAT = '10' AND MEMB_NO = M.MEMB_NO),0) GUAR_DEPT_NUM
+				       , NVL((SELECT COUNT(*) FROM GR_CONTRACT WHERE CONTR_STAT = '10' AND MEMB_NO = M.MEMB_NO),0) CONTR_CNT
+				       , NVL((SELECT COUNT(*) FROM GR_MASTER WHERE GUAR_STAT = '90' AND MEMB_NO = M.MEMB_NO),0) GUAR_CNT
+				       , GREATEST( (SELECT MAX(CONTR_DT) MAX_GUAR_DT FROM GR_CONTRACT WHERE MEMB_NO = M.MEMB_NO),
+				                 (SELECT MAX(REQ_DT) MAX_GUAR_DT FROM GR_MASTER WHERE MEMB_NO = M.MEMB_NO)
+				               ) MAX_GUAR_DT
+				       , NVL((SELECT SUM(CONTR_NUM) FROM LD_CONTRACT WHERE CONTR_STAT = '10' AND MEMB_NO = M.MEMB_NO),0) LEND_CONTR_NUM
+				       , NVL((SELECT SUM(DEPT_NUM) FROM LD_CONTRACT WHERE CONTR_STAT = '10' AND MEMB_NO = M.MEMB_NO),0) LEND_DEPT_NUM
+				       , NVL((SELECT COUNT(*) FROM LD_CONTRACT WHERE CONTR_STAT = '10' AND MEMB_NO = M.MEMB_NO),0) AGREE_CNT
+				       , NVL((SELECT COUNT(*) FROM LD_MASTER WHERE LEND_STAT IN ('10', '80') AND MEMB_NO = M.MEMB_NO),0) LEND_CNT
+				       , GREATEST( (SELECT MAX(CONTR_DT) MAX_GUAR_DT FROM LD_CONTRACT WHERE MEMB_NO = M.MEMB_NO),
+				                 (SELECT MAX(LEND_DT) MAX_GUAR_DT FROM LD_MASTER WHERE MEMB_NO = M.MEMB_NO)
+				               ) MAX_LEND_DT
+				       , NVL((SELECT SUM(DECODE(PAY_TYPE, 'P', PAY_AMT, PAY_AMT * -1)) FROM IV_DEP_PAY WHERE DEL_YN = 'N' AND MEMB_NO = M.MEMB_NO), 0) DEP_AMT
+                  FROM MB_MASTER M
+                 <where>
+					<if test="sMembStat != null and sMembStat  != ''">
+						AND M.MEMB_STAT = #{sMembStat}
+					</if>
+				   	<if test="sCeoNm != null and sCeoNm  != ''">
+				   		AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+				   	</if>
+				   	<if test="sMembNo != null and sMembNo  != ''">
+				   		AND M.MEMB_NO = #{sMembNo}
+				   	</if>
+				   	<if test="sMembNm != null and sMembNm  != ''">
+				   		AND M.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+				   	</if>
+				   	<if test="sBizNo != null and sBizNo != ''"> 		<!-- 사업자등록번호 -->
+					    AND REPLACE(M.BIZ_NO, '-', '') LIKE '%' || REPLACE(#{sBizNo}, '-', '') || '%'
+					</if>
+					<if test="sLawNo != null and sLawNo != ''"> 		<!-- 법인등록번호 -->
+					    AND REPLACE(M.LAW_NO, '-', '') LIKE '%' || REPLACE(#{sLawNo}, '-', '') || '%'
+					</if>
+					<if test="sMainBussCd != null and sMainBussCd != ''"> <!-- 주장르 -->
+					    AND M.MAIN_BUSS_CD = #{sMainBussCd}
+					</if>
+					<if test="sMembCretop != null and sMembCretop != ''"> <!-- 조기경보 -->
+					    AND M.MEMB_CRETOP = #{sMembCretop}
+					</if>
+                   		AND M.MEMB_NO &lt;&gt; 0
+                 </where>
+               )
+         <where>
+           <if test="sGuarStaDt != null and sGuarStaDt  != ''">
+           AND MAX_GUAR_DT &gt;= REPLACE(#{sGuarStaDt}, '-', '')
+           </if>
+           <if test="sGuarEndDt != null and sGuarEndDt  != ''">
+           AND MAX_GUAR_DT &lt;= REPLACE(#{sGuarEndDt}, '-', '')
+           </if>
+           <if test="sLendStaDt != null and sLendStaDt  != ''">
+           AND MAX_LEND_DT &gt;= REPLACE(#{sLendStaDt}, '-', '')
+           </if>
+           <if test="sLendEndDt != null and sLendEndDt  != ''">
+           AND MAX_LEND_DT &lt;= REPLACE(#{sLendEndDt}, '-', '')
+           </if>
+         </where>
+         ORDER BY MEMB_NO DESC
+	</select>
+
+	<!-- 업무거래 상세 조회 -->
+	<select id="selectMembWork" parameterType="Map" resultType="camelMap">
+		/* MembSuptMapper.selectMembWork */
+		SELECT A.MEMB_NO
+		     , (CASE WHEN B.GUAR_RATE_CNT > 0 THEN '조정' ELSE '기본' END) GUAR_RATE_YN	<!-- 보증요율 -->
+		     , (CASE WHEN C.LEND_RATE_CNT > 0 THEN '조정' ELSE '기본' END) LEND_RATE_YN	<!-- 대출요율 -->
+		     , (CASE WHEN D.GUAR_CONTR_STAT IS NULL THEN '없음'
+		             ELSE F_GET_CD_NM('CM07',D.GUAR_CONTR_STAT ) END) GUAR_CONTR_STAT_NM	<!-- 보증약정상태 -->
+		     , (CASE WHEN E.LEND_CONTR_STAT IS NULL THEN '없음'
+		             ELSE F_GET_CD_NM('CM07',E.LEND_CONTR_STAT ) END) LEND_CONTR_STAT_NM	<!-- 대출약정상태 -->
+		     , F.FINAL_GRADE	<!-- 신용평가등급 -->
+		     , F_GET_PATTERN(F.GRADE_DT, 'DT') GRADE_DT	<!-- 신용평가일 -->
+		     <!--, (CASE WHEN F.FINAL_GRADE IS NULL THEN ''
+		             ELSE F.FINAL_GRADE || '(평가일: ' || F_GET_PATTERN(F.GRADE_DT, 'DT5') || ')' END) FINAL_GRADE_NM-->
+		     , (NVL(G.DEPOSIT_AMT,0) - NVL(G.REFUND_AMT,0) ) DEPOSIT_AMT	<!-- 예수금 -->
+		     , (CASE WHEN H.GUAR_SURETY_CNT > 0 THEN '유' ELSE '무' END) GUAR_SURETY_YN	<!-- 보증 보증인유무 -->
+		     , (CASE WHEN H.GUAR_MORT_CNT > 0 THEN '유' ELSE '무' END) GUAR_MORT_YN		<!-- 보증 담보유무 -->
+		     , (CASE WHEN I.LEND_SURETY_CNT > 0 THEN '유' ELSE '무' END) LEND_SURETY_YN	<!-- 대출 보증인유무 -->
+		     , (CASE WHEN I.LEND_MORT_CNT > 0 THEN '유' ELSE '무' END) LEND_MORT_YN		<!-- 대출 담보유무 -->
+
+		  FROM MB_MASTER A
+		     , (SELECT MEMB_NO, COUNT(APP_DT) GUAR_RATE_CNT FROM GR_MEMB_RATE GROUP BY MEMB_NO) B		<!-- 보증요율 -->
+		     , (SELECT MEMB_NO, COUNT(APP_DT) LEND_RATE_CNT FROM LD_MEMB_RATE GROUP BY MEMB_NO) C		<!-- 대출요율 -->
+		     , (SELECT MEMB_NO, MIN(CONTR_STAT) GUAR_CONTR_STAT FROM GR_CONTRACT GROUP BY MEMB_NO) D	<!-- 보증약정 -->
+		     , (SELECT MEMB_NO, MIN(CONTR_STAT) LEND_CONTR_STAT FROM LD_CONTRACT GROUP BY MEMB_NO) E	<!-- 대출약정 -->
+		     , (	<!-- 신용등급 -->
+		     	SELECT MEMB_NO
+		     		 , FINAL_GRADE
+		     		 , GRADE_DT
+		          FROM MB_GRADE_IN FF
+		         WHERE GRADE_DT = (SELECT MAX(GRADE_DT)
+		                             FROM MB_GRADE_IN
+		                            WHERE MEMB_NO = FF.MEMB_NO
+		                         GROUP BY MEMB_NO)
+             ) F
+		     , (	<!-- 예수금 -->
+		     	SELECT MEMB_NO
+					 , SUM(CASE WHEN PAY_TYPE = 'P' THEN PAY_AMT ELSE 0 END) AS DEPOSIT_AMT
+					 , SUM(CASE WHEN PAY_TYPE = 'R' THEN PAY_AMT ELSE 0 END) AS REFUND_AMT
+		          FROM IV_DEP_PAY
+		         WHERE DEL_YN != 'Y'
+		      GROUP BY MEMB_NO
+		      ORDER BY MEMB_NO
+		     ) G
+		     , (	<!-- 보증 담보,보증인 -->
+		     	SELECT A.MEMB_NO, COUNT(B.CONTR_NO) GUAR_SURETY_CNT, COUNT(C.CONTR_NO) GUAR_MORT_CNT
+		          FROM GR_CONTRACT A
+		             , GR_SURETY B
+		             , GR_MORT C
+		         WHERE A.CONTR_NO = B.CONTR_NO(+)
+		           AND A.CONTR_NO = C.CONTR_NO(+)
+		           AND A.CONTR_STAT = '10'
+		      GROUP BY A.MEMB_NO
+		     ) H
+		     , (	<!-- 대출 담보,보증인 -->
+		     	SELECT A.MEMB_NO, COUNT(A.CONTR_NO) LEND_SURETY_CNT, COUNT(C.CONTR_NO) LEND_MORT_CNT
+		          FROM LD_CONTRACT A
+		             , LD_SURETY B
+		             , LD_MORT C
+		         WHERE A.CONTR_NO = B.CONTR_NO(+)
+		           AND A.CONTR_NO = C.CONTR_NO(+)
+		           AND A.CONTR_STAT = '10'
+		      GROUP BY A.MEMB_NO
+		     ) I
+
+		 WHERE A.MEMB_NO = B.MEMB_NO(+)
+		   AND A.MEMB_NO = C.MEMB_NO(+)
+		   AND A.MEMB_NO = D.MEMB_NO(+)
+		   AND A.MEMB_NO = E.MEMB_NO(+)
+		   AND A.MEMB_NO = F.MEMB_NO(+)
+		   AND A.MEMB_NO = G.MEMB_NO(+)
+		   AND A.MEMB_NO = H.MEMB_NO(+)
+		   AND A.MEMB_NO = I.MEMB_NO(+)
+		   AND A.MEMB_NO = #{membNo}
+	</select>
+
+
+</mapper>

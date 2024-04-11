@@ -1,0 +1,400 @@
+<!--
+	시스템구분 : 홈페이지 
+	파일정보 : login.html
+	파일명 : login.html
+	업무명 : 홈페이지 로그인 
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<script th:src="@{/markany/js/MaXHRControl.js}"></script>
+	<script th:src="@{/js/ozws.js}"></script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		
+		//필수 설치파일 리스트
+		var installItems =  null;
+		installItems = {cert:"N", mark:"N", oz: "N"};
+		
+		//필수설치파일 조회시 오버레이
+		$("#infoOverlay").show();
+		
+		//로그인시 필요한 설치파일 설치여부 확인
+		//인증서 설치 여부 확인
+		var checker = UniCRSInstall({
+			options: {
+				callerName: 'checker' // 선언 변수명과 반드시 동일 해야 함!
+			},
+			success: function(){
+				installItems.cert = "Y";
+				alert('전자인증확인');
+				maBrokerInit( maEPS_InstallCheck, 'getVersion', false );
+				
+			},
+			fail: function(code, msg, detailmsg){
+				installItems.cert = "N";
+				maBrokerInit( maEPS_InstallCheck, 'getVersion', false );
+			},
+			progress: function(msg){
+			}
+			
+		});
+		
+		//설치체크파일정보		[version			, CSIDL		, exeName						, addPath				];
+		var checkFileInfo_1 = 	[ "25038"		, 0x0026	, "TWFFUFNCcm9rZXIuZXhl"	, "c0f3ryzZBcTnc1jNceBfFXI=" ];
+		//var checkFileInfo_2 = 	[ "2505"			, 0x0029	, "0veef5ygDSRZ4RMLoCROIGxs"	, "" ];
+		//var chkFileArray = new Array(checkFileInfo_1, checkFileInfo_2);
+		var chkFileArray = new Array(checkFileInfo_1);
+		
+		var programComment_1 = [ "MaEPSBroker"	, "XP, Vista, 7, 8, 8.1, 10"	, "설치체크 프로그램입니다. 해당 프로그램이 미설치 시 아래의 프로그램에 대한 설치체크를 진행 할 수 없습니다."			, "./install/Setup_NoaXOZ.exe"];
+		//var programComment_2 = [ "ePageSafer"	, "XP, Vista, 7, 8, 8.1, 10"	, "출력물 위변조방지를 위한 프로그램 입니다."	, "./bin/Setup_NoaXOZ.exe" ];
+		//var programCommentArray = new Array(programComment_1, programComment_2);
+		var programCommentArray = new Array(programComment_1);
+		
+		//마크애니 설치 확인
+		function maEPS_InstallCheck() {
+			alert('마크애니확인시작');
+			debugger;
+			MDBG("", "start");
+			if (typeof (maResJsonData) != 'string') {	
+				var chkYn = 0;
+				for (var chkFile_i = 0; chkFile_i < maResJsonData.length; chkFile_i++) {
+					 var installFlag = maResJsonData[chkFile_i].installFlag;
+					if (installFlag == false) {
+						installItems.mark = "N";
+					}
+					else{
+						installItems.mark = "Y";
+						chkYn++;	
+					}
+				}
+				
+				//마크애니 체크 완료 후 오즈 확인
+				if(chkYn != 0){
+					//OZCall();
+ 				}
+				
+			} else {
+				MDBG("", maResJsonData);
+			}
+			
+			OZCall();
+		
+		}
+		
+		//오즈 부분
+		var OZUtil = start_OZUtil;
+		var namespace = "kocfcExeViewer";
+		var OZViewerID = "OZViewer";
+		var OZInstallChk = false;
+		OZUtil.CloseEXEViewer(OZViewerID);
+		OZCall = function()
+		{   
+			var	protocolversion = 2008;
+			var ztParam = new Object();
+		    ztParam.InstallBase = "<PROGRAMS>/Forcs";
+		    ztParam.InstallNamespace = namespace;
+		    ztParam.DownloadServer = "http://www.kocfc.or.kr/oz80/ozexeviewer/ozrviewer";
+		    ztParam.DownloadPort = 80;
+		    ztParam.DownloadInstruction = "ozrviewer.idf";
+			OZUtil.installViewer(protocolversion, ztParam, installOZWebLauncher, createOZViewer);
+		}
+		
+		
+		//오즈 안깔려있을때
+		installOZWebLauncher = function()
+		{
+			if(OZInstallChk == false){
+				installItems.oz = "N";
+				
+				OZInstallChk = true;
+    			//setTimeout(function(){ OZCall(); }, 2000);		
+				//document.getElementById('downfrm').src = '/oz80/OnLine_Install_Dialog_UI_SSL.exe';
+				
+				//설치파일 설치여부 확인 리스트 호출
+				//fnChkInstallItems(installItems);
+				
+			}else{ //1차 설치 중일 경우
+				//setTimeout(function(){ OZCall(); }, 2000);
+			} 
+			
+		}
+		
+		//오즈깔려있을때
+		createOZViewer = function()
+		{
+			installItems.oz = "Y";
+			
+			//설치파일 설치여부 확인 리스트 호출
+			fnChkInstallItems(installItems);
+			
+		}
+		
+		//미설치건 여부 확인
+		var fnChkInstallItems = function(list){
+			var shouldExit = false;
+    
+		    $.each(list, function(key, value) {
+		        if (value === "N") {
+		            shouldExit = true;
+		            return false; // 반복문 종료
+		        }
+		    });
+		
+		    if (shouldExit) { //설치안된게있다면
+				fnPage('20607',list);
+				return; // 함수 종료
+			}else {
+				$("#infoOverlay").hide();	
+			}
+		    
+		}
+		
+		/***************************************************/
+		
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+			
+			
+			//법인, 개인 구분
+			$(".corpType").on("click", function(){
+				if($(this).val() === "P"){
+					$("#ele_certArea").css("display", "");
+				}else{
+					$("#ele_certArea").css("display", "none");
+					$("#ele_juminNo").css("display", "none");
+					$("#ele_bizNo").css("display", "");
+				}
+			});
+			
+			//사업자용, 개인용
+			$(".certType").on("click", function(){
+				if($(this).val() === "P"){
+					$("#ele_bizNo").css("display", "none");
+					$("#ele_juminNo").css("display", "");
+					
+				}else{
+					$("#ele_juminNo").css("display", "none");
+					$("#ele_bizNo").css("display", "");
+				}
+			});
+		});
+		
+		//테스트 로그인fnCertSign
+		var fnLoginTest = function(){
+			//테스트 로그인
+			param = {membNo: $("#membNo").val(), mod: "adminTest" }; // mod : adminTest 운뎡데이터 입력테스트를 위한 임시 파라미터
+			obj = {url:"/login/loginProc.do", param:param, callBack:fnLoginCallBack, msgYn:"N", loadYn:"Y"};  
+			com.fnAjaxDef(obj);
+			
+		} 
+		
+		//인증서 로그인
+		var certType;
+		var fnCertSign = function(type){
+			certType = type;
+			var obj = {plan : $("#certPlainText").val(), loginYn:"Y"}
+			com.fnCertSign(obj);
+		}
+		
+		var fnCertSingCallBack = function(resData){
+			//console.log(resData);
+			//document.getElementById('userR').value=resultObject.RValue;  // R 값 
+			
+			//R값 생성 완료 후
+			if(certType === "REG"){ //등로
+			    param = {membNo: resData.membNo };
+				obj = {url:"/login/insertMembCert.do", param:param, callBack:fnLoginCallBack, msgYn:"N", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}else{
+				param = {membNo: resData.membNo };
+				obj = {url:"/login/loginProc.do", param:param, callBack:fnLoginCallBack, msgYn:"N", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+		}
+			
+			
+		//로그인 처리(모바일)
+	    var fnMobileLogin = function(){
+			if($("#t-id").val() === ""){
+				alert("아이디를 입력 하십시오.");
+				$("#t-id").focus();
+				return;
+			}   
+			if($("#t-passWord").val() === ""){
+				alert("비밀번호를 입력 하십시오.");
+				$("#t-passWord").focus();
+				return;
+			}
+			
+			param = {userId: $("#t-id").val(), userPw : $("#t-passWord").val(), mod : "mobile"};
+			obj = {url:"/login/loginProc.do", param:param, callBack:fnLoginCallBack, msgYn:"N", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+		}
+			
+		//로그인 처리 콜백 
+	    function fnLoginCallBack(resData){
+			if(resData.resultCode === 0){
+				$("#btnLogout, #btnMypage, #btnLogout-m, #m-name, #btnMypage-m").removeClass("hide");
+				$("#btnLogin, #btnLogin-m").addClass("hide");
+				
+				alert("로그인 되었습니다.");
+				window.location.reload();
+				//fnPage('20602');
+				return;
+			}else{
+				alert(resData.resultMsg);
+			}
+		}
+		
+		/*]]>*/
+	</script>
+		<div id="infoOverlay" style="display:none;background-color: rgba(0,0,0,0.5); width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 20;">
+			<span style=" display: FLEX; width: 100%; height: 100%; justify-content: center; align-items: center; font-size: 18px; color: #fff; text-align: center;">잠시만 기다려주세요 <br>필수 설치파일 설치유무 확인중....</span>
+		</div>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+                        
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="saveFrm" id="saveFrm" onSubmit="return false;">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="certPlainText" id="certPlainText" value="kocfc1234567890kocfc"/>
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <div class="flex-box border pd40 mb20 m-col t-pd30">
+                                    <ul class="ident-icon">
+                                        <li></li>
+                                    </ul>
+                                    <ul>
+                                        <li class="mb20"><span class="ko-bold font-28">조합원 로그인</span></li>
+                                        <li class="ko-medium">먼저 등록/미등록 공인인증서 구분을 선택하신 후 입력하세요.</li>
+                                        <li class="annotation">입력하신 정보는 조합원님의 동의없이 공개되지 않으며 개인정보보호정책에 의해 보호를 받습니다.</li>
+                                    </ul>
+                                </div>
+                                <div class="flex-box gap-20 m-col dot-list pc-flex">
+                                    <ul
+                                        class="border pd40 w-50 flex-box fd-col gap-10 m-w-100 al-center jc-between">
+                                        <li class="dot-dept1 font-28 mb20 w-100 mt0">
+                                            <span class="color-up">공인인증서</span> 등록 조합원
+                                        </li>
+                                        <li class="w-100">
+                                            <button class="sub-btn2 btn-color w-100 login" onclick="fnCertSign();">공인인증로그인</button>
+                                        </li>
+                                        <!--
+                                        <li class="flex-box gap-10 al-center w-100 jc-center">
+                                            <span class="w-30 white-no">인증서 선택방법 :</span>
+                                            <div>
+                                                <label for="auto" class="mr10"><input type="radio" name="login" id="auto" checked>자동</label>
+                                                <label for="notAuto"><input type="radio" id="notAuto" name="login">수동</label>
+                                            </div>
+                                        </li>
+                                        -->
+                                        <li class="annotation">※ 은행에서 발급한 공인인증서나 범용공인인증서만 사용 가능합니다.</li>
+                                    </ul>
+                                    <ul
+                                        class="border pd40 w-50 flex-box fd-col gap-10 m-w-100 al-center jc-between">
+                                        <li class="dot-dept1 font-28 mb20 w-100 mt0">
+                                            <span class="color-up">공인인증서</span> 미등록 조합원
+                                        </li>
+                                        <li class="flex-box gap-10 al-center w-100">
+                                            <span class="w-30">구&nbsp;&nbsp;&nbsp;&nbsp;분 :</span>
+                                            <div class="w-80">
+                                                <label for="corp" class="mr10"><input type="radio" name="login2" id="corp" checked>법인</label>
+                                                <label for="sole"><input type="radio" name="login2" id="sole">개인사업자</label>
+                                            </div>
+                                        </li>
+                                        <li class="flex-box gap-10 al-center m-col">
+                                            <span class="white-no m-w-100">사업자등록번호 :</span>
+                                            <div class="flex-box gap-5 al-center w-80">
+                                                <input type="text" class="w-100">-
+                                                <input type="text" class="w-100">-
+                                                <input type="text" class="w-100">
+                                            </div>
+                                        </li>
+                                        <li class="w-100"><button type="button" class="sub-btn2 btn-color w-100 login mt10" onclick="fnCertSign('REG');">공인인증서등록</button></li>
+                                    </ul>
+                                </div>
+                                <div class="flex-box gap-20 m-col dot-list t-block">
+                                    <ul class="border pd40 w-50 flex-box fd-col gap-20 w-100 al-center jc-between t-pd30">
+                                        <li class="dot-dept1 font-28 mb20 w-100 mt0">
+                                            <span class="color-up">회원</span> 로그인
+                                        </li>
+                                        <li class="w-100 flex-box gap-10 m-col">
+                                            <div class="w-100">
+                                                <label for="t-id"><input type="text" id="t-id" name="t-id" class="w-100 mb10" placeholder="아이디"></label>
+                                                <label for="t-passWord"><input type="password" id="t-passWord" name="t-passWord" class="w-100" placeholder="비밀번호" autocomplete="off"></label>
+                                            </div>
+                                            <button type="button" class="sub-btn2 btn-color login" onclick="fnMobileLogin();">로그인</button>
+
+                                        </li>
+                                    </ul>
+                                </div>
+                                <article>
+                                    <p class="title-dept1">로그인 안내</p>
+                                    <p class="txt-dept1">처음 사이버보증을 이용하시고자 하시는 조합원은 공인인증서를 등록 후 로그인하시기 바랍니다.</p>
+                                    <p class="dot-dept1-blue mb10">사용가능한 공인인증서 안내</p>
+                                    <div class="table-wrap info dept-table center">
+                                        <div class="table-scroll">
+                                            <table>
+                                                <caption>
+                                                    공지사항(ETRI) 게시판 목록
+                                                </caption>
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">업무구분</th>
+                                                        <th scope="col">고객</th>
+                                                        <th scope="col">용도구분</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>공인인증 로그인</td>
+                                                        <td>개인, 법인 사업자</td>
+                                                        <td>범용, 일반(뱅킹용) 사용가능</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>발급 및 변경신청 전자서명</td>
+                                                        <td>개인, 법인 사업자</td>
+                                                        <td>범용만 사용가능</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>공제금청구</td>
+                                                        <td>피공제자</td>
+                                                        <td>범용만 사용가능</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

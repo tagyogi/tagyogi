@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-definition>
+	<service>home</service>
+	<active>dev</active>
+    <domain>http://175.125.91.224/</domain>
+    <domainHome>http://175.125.91.224/</domainHome>
+    
+    <file>
+       	<path>/home/kocfc/upload</path>
+       	<imgPath>/home/kocfc/upload/IMG</imgPath>
+   	</file>
+   	
+   	<g2b>
+		<id>z105822157200</id>   
+       	<path>/home/kocfc/stdcli/</path>
+   	</g2b>
+   	
+   	<bankPay>
+		<url>https://pgtest.bankpay.or.kr:7743/StartBankPay.do</url>      
+		<appNo>12001347</appNo>    
+       	<orgNm>한국콘텐츠공제조합</orgNm>
+       	<recvAcnt>000123456789</recvAcnt> 
+   	</bankPay>
+   	
+   	<iniPay>
+		<mid>INIpayTest</mid>    
+       	<signKey>SU5JTElURV9UUklQTEVERVNfS0VZU1RS</signKey>
+   	</iniPay>
+   	
+    <database>
+        <oralce>oralce</oralce>
+    </database>
+	 
+</application-definition>

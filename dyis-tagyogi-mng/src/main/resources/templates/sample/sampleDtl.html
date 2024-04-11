@@ -1,0 +1,292 @@
+<!--
+	파일정보 : sample/sampleIns.html
+	파일명 : sample
+	업무명 : jobContent 상세
+	생성자 : DEV
+	생성일 : 1900.01.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//화면 처리
+				
+				//동적 첨부파일 생성(동적)
+				com.fnFileSet("GR21", "myUpload"); 
+					
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheetInvt", el: "sheetDivInvt", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetSure", el: "sheetDivSure", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetMort", el: "sheetDivMort", options: gridOptList[1] });
+			    IBSheet.create({ id: "sheetRele", el: "sheetDivRele", options: gridOptList[2] });
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					//fnSearch(); //조회 호출
+				};
+			    
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					alert(rowData.id); 
+				});
+			});
+			
+			
+			var fnAtthNo = function(){
+				var param = {};
+				obj = {url:"/com/selectAtthNo.do", param:param, callBack:fnAtthNoCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj); 
+				
+			}
+			var fnAtthNoCallBack = function(resData){
+				console.log(resData.maxNo);
+				alert(resData.maxNo);
+			}
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="btn-collapse close"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">style01 [저장/등록]</button>
+						<button type="button" onclick="" class="btn style02">style02 [출력]</button>
+						<button type="button" onclick="" class="btn style03">style03 [수정/처리/해제/닫기]</button>
+						<button type="button" onclick="" class="btn style04">style04 [엑셀]</button>
+						<button type="button" onclick="" class="btn style07">style07 [결제]</button>
+						<button type="button" onclick="" class="btn style08">style08 [기타]</button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">출자담보정보</h4>
+							</div>
+						</section>
+						<div id="sheetDivInvt" style="width:100%;height:150px"></div>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">약정정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:80px;">
+								<col style="width:100px;">
+								<col style="width:80px;">
+								<col style="width:100px;">
+								<col style="width:80px;">
+								<col style="width:100px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>약정구분</th>
+									<td colspan="3"></td>
+									<th>약정상태</th>
+									<td colspan="3"></td>
+								</tr>
+								<tr>
+									<th>약정일자</th>
+									<td colspan="3"></td>
+									<th>약정기간</th>
+									<td colspan="3"></td>
+								</tr>
+								<tr>
+									<th>담보좌수</th>
+									<td></td>
+									<th>배정좌수</th>
+									<td></td>
+									<th>약정사용좌수</th>
+									<td></td>
+									<th>약정가능좌수</th>
+									<td></td>
+								</tr>
+								<tr>
+									<th>약정좌수</th>
+									<td colspan="3"></td>
+									<th>신용도</th>
+									<td colspan="3"></td>
+								</tr>
+								<tr>
+									<th>비고</th>
+									<td colspan="7"></td>
+								</tr>
+							</tbody>
+						</table>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">보증상품정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:160px;">
+								<col style="width:70px;">
+								<col style="width:70px;">
+								<col style="width:60px;">
+								<col style="width:120px;">
+								<col style="width:60px;">
+								<col style="width:100px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th style="text-align:left">
+										<label><input type="checkbox"><span class="ml5">이행입찰</span></label>
+									</th>
+									<th>한도배수</th>
+									<td><input type="search" name="limit" style="width:40px">배</td>
+									<th>한도액</th>
+									<td><input type="search" name="limit2" style="width:100px"></td>
+									<th>사용액</th>
+									<td>1,000,000,000</td>
+								</tr>
+								<tr>
+									<th style="text-align:left">
+										<label><input type="checkbox"><span class="ml5">이행계약(인허가)</span></label>
+									</th>
+									<th>한도배수</th>
+									<td><input type="search" name="limit" style="width:40px">배</td>
+									<th>한도액</th>
+									<td><input type="search" name="limit2" style="width:100px"></td>
+									<th>사용액</th>
+									<td>1,000,000,000</td>
+								</tr>
+								<tr>
+									<th style="text-align:left">
+										<label><input type="checkbox"><span class="ml5">이행계약(인허가)</span></label>
+									</th>
+									<th>한도배수</th>
+									<td><input type="search" name="limit" style="width:40px">배</td>
+									<th>한도액</th>
+									<td><input type="search" name="limit2" style="width:100px"></td>
+									<th>사용액</th>
+									<td>1,000,000,000</td>
+								</tr>
+								<tr>
+									<th style="text-align:left">
+										<label><input type="checkbox"><span class="ml5">이행선금급</span></label>
+									</th>
+									<th>한도배수</th>
+									<td><input type="search" name="limit" style="width:40px">배</td>
+									<th>한도액</th>
+									<td><input type="search" name="limit2" style="width:100px"></td>
+									<th>사용액</th>
+									<td>1,000,000,000</td>
+								</tr>
+								<tr>
+									<th style="text-align:left">
+										<label><input type="checkbox"><span class="ml5">이행지급 (상품,지급의지급)</span></label>
+									</th>
+									<th>한도배수</th>
+									<td><input type="search" name="limit" style="width:40px">배</td>
+									<th>한도액</th>
+									<td><input type="search" name="limit2" style="width:100px"></td>
+									<th>사용액</th>
+									<td>1,000,000,000</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="fixScroll collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">보증인정보</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:;" class="btn small style08">추가</button>
+								</div>
+							</section>
+							<div id="sheetDivSure" style="width:100%;height:150px"></div>
+						</div>	
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">담보정보</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:;" class="btn small style08">추가</button>
+								</div>
+							</section>
+							<div id="sheetDivMort" style="width:100%;height:150px"></div>
+						</div>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">관련조합원정보</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:;" class="btn small style08">추가</button>
+								</div>
+							</section>
+							<div id="sheetDivRele" style="width:100%;height:150px"></div>
+						</div>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">첨부파일</h4>
+								</div>
+							</section>
+							<table class="tbl" id="myUpload"></table>
+						</div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex mt20">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+						
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,266 @@
+<div>
+    <div class="tabBasicWrap">
+        <button onclick="javascript:onpenInnerTab(this);" class="tab-txt"
+            title="현재선택된 메뉴명">상품종류</button>
+        <ul class="tabBasic flex-box" data-tabgroup="first-tab-group">
+            <li class=""><a href="#tab1" class="active">상품종류</a></li>
+            <li><a href="#tab2">계약진행</a></li>
+            <li><a href="#tab3">신용운영</a></li>
+            <li><a href="#tab4">어음할인</a></li>
+            <li><a href="#tab5">매출채권</a></li>
+            <li><a href="#tab6">매출채권보험 청구권담보부</a></li>
+        </ul>
+    </div>
+    <div id="first-tab-group">
+        <div id="tab1">
+            <p class="title-dept1 m-mb0">융자상품종류</p>
+            <article class="table-wrap">
+                <div class="table-scroll">
+                    <table class="w-500">
+                        <caption>융자상품종류별이용시기</caption>
+                        <colgroup>
+                            <col style="width: 30%;">
+                            <col style="width: 70%;">
+                        </colgroup>
+                        <thead>
+                            <tr class="back-gray">
+                                <th scope="col">종류</th>
+                                <th scope="col">이용시기</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="txt-center">계약진행</td>
+                                <td>조합원이 계약을 체결한 후 진행자금이 필요할 때</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">신용운영 </td>
+                                <td>운영자금이 필요할 때</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">어음할인</td>
+                                <td>조합원이 계약으로 수령한 어음을 할인하고자 할 때</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">매출채권 </td>
+                                <td>조합원이 계약으로 매출채권을 조합에 양도할 때</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">매출채권보험 청구권담보부</td>
+                                <td>일석조 매출채권보험증서를 제출할 때</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+            <p class="title-dept1 m-mb0">내용</p>
+            <article class="table-wrap">
+                <div class="table-scroll">
+                    <table>
+                        <caption>융자상품종류별내용</caption>
+                        <colgroup>
+                            <col style="width: 10%;">
+                        </colgroup>
+                        <thead>
+                            <tr class="back-gray">
+                                <th scope="col">종류</th>
+                                <th scope="col">계약진행</th>
+                                <th scope="col">신용운영</th>
+                                <th scope="col">어음할인</th>
+                                <th scope="col">매출채권</th>
+                                <th scope="col">매출채권보험 청구권담보부</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="txt-center">시기</td>
+                                <td>계약후 받을 금액이 있거나 구매자금이 필요한 경우</td>
+                                <td>운영자금이 필요한 경우</td>
+                                <td>어음을 할인받고자 할 때</td>
+                                <td>받을 채권을 양도하는 경우</td>
+                                <td>일석e조 매출채권보험증서를 제출하는 경우</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">기간</td>
+                                <td class="txt-center">계약서상 예상지급일 또는 계약종료일 + 90일 이내</td>
+                                <td class="txt-center">1년 이내</td>
+                                <td class="txt-center">어음만기일</td>
+                                <td class="txt-center">양도승낙서상 지급(예정)일</td>
+                                <td class="txt-center">보험증서의 계약만기일</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">이자방법</td>
+                                <td class="txt-center">매월 후취</td>
+                                <td class="txt-center">매월 후취</td>
+                                <td class="txt-center" colspan="2">대여기간 전액선취</td>
+                                <td class="txt-center">매월 후취</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">구비서류(1) </td>
+                                <td>
+                                    <span class="dot">계약서 사본 (세금계산서)</span>
+                                </td>
+                                <td>
+                                    <span class="dot">영업활동 및 자금수지현황표</span>
+                                </td>
+                                <td>
+                                    <span class="dot">계약서 사본 세금계산서 실물어음</span>
+                                </td>
+                                <td>
+                                    <span class="dot">계약서 사본 세금계산서 승낙확인서</span>
+                                </td>
+                                <td>
+                                    <span class="dot">일석e조보험증서</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">한도계산</td>
+                                <td colspan="4">출자금 × 평가배수 ※ 어음할인과 매출채권은 발주자(외감법인 이상)
+                                    평가를 반영</td>
+                            </tr>
+                            <tr>
+                                <td class="txt-center">제한대상</td>
+                                <td colspan="4">외부 신용등급 D등급 외부감사의견 부적정, 의견거절 최근 3년 연속
+                                    부(負)의 영업현금흐름 차입금이 매출액의 100%이상 차입금이자가 매출액의 10%이상
+                                    채무불이행(국세, 국민연금, 건강보험) 부도사실(신용관리대상) 대표자신용 9~10등급</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+        <div id="tab2">
+            <p class="title-dept1">계약진행</p>
+            <ul>
+                <li class="dot-dept1">상품설명</li>
+                <li class="txt-dept2">각종 계약을 체결한 후 진행자금이 필요할 때 이용하는 상품입니다.</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이용시기</li>
+                <li class="txt-dept2">구매자금이 필요하여 구비서류를 제출</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">대출기간
+                </li>
+                <li class="txt-dept2">계약서상 예상지급일 또는 계약종료일 + 90일 이내</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이자방법</li>
+                <li class="txt-dept2">매월 후취</li>
+            </ul>
+            <ul class="dot-list">
+                <li class="dot-dept1">구비서류</li>
+                <li class="txt-dept2">계약서, 세금계산서 등 필요하다고 인정하는 서류</li>
+                <li class="border-wrap">
+                    <img src="../images/변경2.gif" alt="변경예정">
+                    <p style="color:red;">이미지 변경예정</p>
+                </li>
+            </ul>
+        </div>
+        <div id="tab3">
+            <p class="title-dept1">신용운영</p>
+            <ul>
+                <li class="dot-dept1">상품설명</li>
+                <li class="txt-dept2">원재료 구입, 제품구입 및 인건비 등 기업경영을 위해 필요한 운영자금이 필요할 때 이용하는
+                    상품입니다.</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이용시기</li>
+                <li class="txt-dept2">운영자금이 필요한 경우</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">대출기간
+                </li>
+                <li class="txt-dept2">1년 이내</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이자방법</li>
+                <li class="txt-dept2">매월 후취</li>
+            </ul>
+            <ul class="dot-list">
+                <li class="dot-dept1">구비서류</li>
+                <li class="txt-dept2">재무제표, 납세증명원(국세 및 부가세) 등 필요하다고 인정하는 서류</li>
+                <li class="border-wrap">
+                    <img src="../images/변경3.gif" alt="변경예정">
+                    <p style="color:red;">이미지 변경예정</p>
+                </li>
+            </ul>
+        </div>
+        <div id="tab4">
+            <p class="title-dept1">어음할인</p>
+            <ul>
+                <li class="dot-dept1">상품설명</li>
+                <li class="txt-dept2">각종 계약으로 수령한 어음을 할인하고자 할 때 이용하는 상품입니다.</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이용시기</li>
+                <li class="txt-dept2">어음을 할인받고자 할 때</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">대출기간
+                </li>
+                <li class="txt-dept2">어음만기일</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이자방법</li>
+                <li class="txt-dept2">대여기간 전액 선취</li>
+            </ul>
+            <ul class="dot-list">
+                <li class="dot-dept1">구비서류</li>
+                <li class="txt-dept2">계약서, 세금계산서, 실물어음 등 필요하다고 인정하는 서류</li>
+            </ul>
+        </div>
+        <div id="tab5">
+            <p class="title-dept1">매출채권</p>
+            <ul>
+                <li class="dot-dept1">상품설명</li>
+                <li class="txt-dept2">상거래에서 발생한 매출채권을 조합에 양도하고 필요한 자금을 신청 하는 상품입니다.</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이용시기</li>
+                <li class="txt-dept2">받을 채권을 양도하는 경우</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">대출기간
+                </li>
+                <li class="txt-dept2">양도승낙서상 지급(예정)일</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이자방법</li>
+                <li class="txt-dept2">대여기간 전액 선취</li>
+            </ul>
+            <ul class="dot-list">
+                <li class="dot-dept1">구비서류</li>
+                <li class="txt-dept2">계약서, 세금계산서, 양도승낙확인서 등 필요하다고 인정하는 서류</li>
+            </ul>
+        </div>
+        <div id="tab6">
+            <p class="title-dept1">매출채권보험 청구권담보부</p>
+            <ul>
+                <li class="dot-dept1">상품설명</li>
+                <li class="txt-dept2">신용보증기금의 일석e조 매출채권보험증서를 담보로 이루어지는 대출 상품입니다.</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이용시기</li>
+                <li class="txt-dept2">일석e조 매출채권보험증서를 담보로 제출하는 경우</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">대출기간
+                </li>
+                <li class="txt-dept2">보험증서의 계약만기일</li>
+            </ul>
+            <ul>
+                <li class="dot-dept1">이자방법</li>
+                <li class="txt-dept2">매월 후취</li>
+            </ul>
+            <ul class="dot-list">
+                <li class="dot-dept1">구비서류</li>
+                <li class="txt-dept2">일석e조 보험증서 등 필요하다고 인정하는 서류</li>
+                <li class="border-wrap">
+                    <img src="../images/변경4.gif" alt="변경예정">
+                    <p style="color:red;">이미지 변경예정</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

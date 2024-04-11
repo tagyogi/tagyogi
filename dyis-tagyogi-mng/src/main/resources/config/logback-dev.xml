@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	
+	<property name="LOGS_PATH" value="/home/kocfc/logs"/>
+	<appender name="ROLLINGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOGS_PATH}/admin.log</file>
+		<filter class="ddc.core.filter.LogBackFilter"/>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOGS_PATH}/admin/%d{yyyyMM}/admin_%d{yyyyMMdd}_%i.log</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+			    <maxFileSize>100MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder>
+			<charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+    
+    <logger name="org.springframework" level="ERROR">
+        <appender-ref ref="ROLLINGFILE"/>
+    </logger>
+
+    <logger name="org.springframework.web" level="ERROR">
+        <appender-ref ref="ROLLINGFILE"/>
+    </logger>
+
+    <logger name="org.springframework.jdbc.core.JdbcTemplate" level="ERROR">
+        <appender-ref ref="ROLLINGFILE"/>
+    </logger>
+
+    <logger name="org.springframework.jdbc.core.StatementCreatorUtils" level="ERROR">
+        <appender-ref ref="ROLLINGFILE"/>
+    </logger>
+    
+    <logger name="_.s.w.s.HandlerMapping.Mappings" level="OFF">
+        <appender-ref ref="ROLLINGFILE"/>
+    </logger>
+    
+	<logger name="jdbc.sqlonly" level="INFO">
+        <appender-ref ref="ROLLINGFILE"/>
+    </logger>
+    
+    <logger name="jdbc.resultsettable" level="INFO">
+        <appender-ref ref="ROLLINGFILE"/>
+    </logger>
+    
+    <root level="INFO">
+        <appender-ref ref="ROLLINGFILE" />
+    </root>
+    
+</configuration>

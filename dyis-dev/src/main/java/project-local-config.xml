@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-definition>
+	<active>local</active>
+    <dbType>oracle</dbType>
+    <domain>http://localhost:9999/</domain>
+
+    <devUser>
+        <mac>8C-B0-E9-21-13-E2</mac> <!-- bsg -->
+        <mac>8C-B0-E9-21-13-E3</mac> <!-- bsg -->
+        <mac>00-FF-E6-E0-32-2A</mac> <!-- bsg -->
+        <mac>00-FF-FC-20-4B-F0</mac> <!-- cjh VPN -->
+        <mac>84-47-09-0F-06-1A</mac> <!-- cjh1 -->
+        <mac>8C-B0-E9-21-1D-AB</mac> <!-- ksm -->
+		<mac>00-FF-A4-E0-4F-C6</mac> <!-- ksm vpn -->
+		<mac>14-C9-13-12-68-48</mac> <!-- kim  -->
+		<mac>00-FF-0F-45-35-B8</mac> <!-- kim vpn -->
+		<mac>8C-B0-E9-22-30-DA</mac> <!-- ygy -->
+		<mac>00-FF-66-A2-D4-D9</mac> <!-- ygy vpn -->
+		<mac>00-FF-E9-5B-4C-02</mac> <!-- kds vpn -->
+        
+        <id>bsg</id> <!-- bsg -->
+        <id>bsg</id> <!-- bsg -->
+        <id>bsg</id> <!-- bsg -->
+        <id>cjh</id> <!-- cjh VPN -->
+        <id>cjh1</id> <!-- cjh1 -->
+        <id>ksm</id>
+        <id>ksm1</id>
+        <id>kim</id> <!-- kim -->
+        <id>kim1</id><!-- kim vpn -->
+        <id>ygy</id> <!-- ygy -->
+		<id>ygy1</id> <!-- gyg1 VPN-->
+        <id>kds</id><!-- kds vpn -->
+
+        <name>변성균</name> <!-- bsg -->
+        <name>변성균</name> <!-- bsg -->
+        <name>변성균</name> <!-- bsg -->
+        <name>최진호</name> <!-- cjh VPN -->
+        <name>최진호1</name> <!-- cjh1 -->
+        <name>김상민</name>  <!-- ksm -->
+		<name>김상민1</name> <!-- ksm vpn -->
+		<name>김대성</name> <!-- kim -->
+		<name>김대성1</name> <!-- kim vpn -->
+		<name>윤가영</name>  <!-- ygy -->
+		<name>윤가영1</name> <!-- ygy vpn -->
+		<name>권다슬</name> <!-- kds vpn -->
+
+    </devUser>
+
+    <devInit>
+		<oracle>
+			<devDbMas>
+				<table>
+					CREATE TABLE DEV_DB_MAS
+					(
+					  TBL_SN   NUMBER(10)                           NOT NULL/
+					  TBL_NM   VARCHAR2(4000 BYTE)                  NOT NULL/
+					  TBL_CMT  VARCHAR2(1000 BYTE)/
+					  USE_AT   CHAR(1 BYTE)
+					)
+				</table>
+				<index>
+					CREATE UNIQUE INDEX IDX_DEV_DB_MAS_PK ON DEV_DB_MAS(TBL_SN)
+				</index>
+				<pk>
+					ALTER TABLE DEV_DB_MAS ADD (
+					  CONSTRAINT IDX_DEV_DB_MAS_PK
+					  PRIMARY KEY
+					  (TBL_SN)
+					  USING INDEX IDX_DEV_DB_MAS_PK
+					  ENABLE VALIDATE)
+				</pk>
+
+			</devDbMas>
+			<devDbDtl>
+				<table>
+					CREATE TABLE DEV_DB_DTL
+					(
+					  TBL_SN    NUMBER(10)                          NOT NULL/
+					  COL_SN    NUMBER(10)                          NOT NULL/
+					  COL_NM    VARCHAR2(50 BYTE)/
+					  COL_CMT   VARCHAR2(1000 BYTE)/
+					  COL_TYPE  VARCHAR2(1000 BYTE)/
+					  COL_LEN   NUMBER(10)/
+					  COL_PRE   NUMBER(5)/
+					  PK_AT     CHAR(1 BYTE)                        DEFAULT '0'/
+					  NULL_AT   CHAR(1 BYTE)                        DEFAULT '0'/
+					  DEF_VAL   VARCHAR2(4000 BYTE)/
+					  RMK       VARCHAR2(4000 BYTE)
+					)
+				</table>
+				<index>
+					CREATE UNIQUE INDEX IDX_DEV_DB_DTL_PK ON DEV_DB_DTL(TBL_SN/ COL_SN)
+				</index>
+				<pk>
+					ALTER TABLE DEV_DB_DTL ADD (
+					  CONSTRAINT IDX_DEV_DB_DTL_PK
+					  PRIMARY KEY
+					  (TBL_SN/ COL_SN)
+					  USING INDEX IDX_DEV_DB_DTL_PK
+					  ENABLE VALIDATE)
+				</pk>
+
+			</devDbDtl>
+		</oracle>
+	</devInit>
+
+
+</application-definition>

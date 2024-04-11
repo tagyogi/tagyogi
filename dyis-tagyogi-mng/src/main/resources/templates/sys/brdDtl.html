@@ -1,0 +1,158 @@
+<!--
+   파일정보 : brd/brdDtl.html
+   파일명 : brdDtl
+   업무명 : 게시판상세
+   생성자 : BSG
+   생성일 : 2023.04.06
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+   <body>
+      <script th:inline="javascript">
+         /*<![CDATA[*/ 
+         
+         //초기화 조회 콜백
+         var htmlData = "";
+         
+         //화면 초기화(게시판정보 조회)
+         $(document).ready(function(){
+            obj = {url:"/brd/selectBrd.do", formId:"serchFrm", callBack:fnInitCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+            com.fnAjaxPost(obj);
+            
+         });
+         
+         var fnInitCallBack = function(resData){
+            console.log(resData);
+            
+            //동적 첨부파일 (다건)
+            if(resData.brdMas.atthYn === "Y"){
+				$("#ele_atthArea").show();
+				com.fnIbsUploadView($("#myUpload"), resData.fileList); 
+            }
+            
+            com.fnSetKeyVal(resData.data);
+            
+            //미리보기세팅
+            $("#ele_preView").html(resData.data.brdCont);
+            
+         };
+        
+         //수정페이지호출
+         var fnUpt = function(){
+            menuNm = /*[[${paramMap.menuNm}]]*/;
+            param = {menuCd:1070217, title:menuNm+"수정"
+                  , paramMap:{menuNm:menuNm
+                           , brdNo:$("#brdNo").val()
+                           , brdSeq:$("#brdSeq").val()
+                           , atthType:$("#atthType").val()
+                           } 
+            };
+            parent.menuOpen(param);
+            parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);	
+         }
+                  
+         
+         
+          //미리보기
+         var fnPreView  = function(){
+            $("#preView").css("display","block");
+            $("#ele_brdCont_wrap").css("display","none");
+         };
+         //소스보기
+         var fnCodeView = function(){
+            $("#preView").css("display","none");
+            $("#ele_brdCont_wrap").css("display","block");
+         };
+          
+          
+          /*]]>*/
+          
+      </script>
+      
+      <!-- 콘텐츠 시작 -->
+      <div class="contentsArea">
+         <div class="contentsTop">
+            <div th:insert="~{/fragments/subTitle}"></div>
+         </div><!-- //contentsTop -->
+         <form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+         <input type="hidden" name="brdNo" id="brdNo" th:value="${paramMap.brdNo}"/>
+         <input type="hidden" name="brdSeq" id="brdSeq" th:value="${paramMap.brdSeq}"/>
+         <input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+         <input type="hidden" name="atthNo" id="atthNo" value=""/>
+         <input type="hidden" name="imgAtthNo" id="imgAtthNo"/>
+         <div class="contents flex">
+            <div class="layer-flex">
+               <!-- 그리드 좌측 부분 -->
+               <div class="" style="width:100%">
+                  <table class="tbl">
+                     <colgroup>
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                        <col style="width:10%;">
+                        <col style="width:25%;">
+                     </colgroup>
+                     <tbody>
+                        <tr>
+                           <th>제목</th>
+                           <td colspan="5">
+                              <div id="ele_brdSubj"></div>
+                           </td>
+                        </tr>
+                        <tr>
+                           <th>게시여부</th>
+                           <td>
+                              <div id="ele_viewYn"></div>
+                           </td>
+                           <th>공지여부</th>
+                           <td>
+                              <div id="ele_notiYn"></div>
+                           </td>
+                           <th>상단공지여부</th>
+                           <td>
+                              <div id="ele_topYn"></div>
+                           </td>
+                        </tr>
+                     </tbody>
+                  </table>
+                  
+                  <button type="button" onclick="fnCodeView();return false;"class="btn small style08 mt10 mb10">소스보기</button>
+                  <button type="button" onclick="fnPreView();return false;"class="btn small style08 mt10 mb10">화면 미리보기</button>
+                  <div style="font-size: 12px; margin-top; 2px;"> (외부 style코드는 미리보기에 반영되지 않습니다.)</div>
+                  
+                  <div id="ele_brdCont_wrap" style="width:100%;min-height:400px;overflow:auto;border:1px solid #cfd6db;padding:20px;box-sizing:border-box;">
+                     <div id="ele_brdCont"></div>
+                  </div>
+                   <div id="preView" style="display: none; width:100%;min-height:400px;overflow:auto;border:1px solid #cfd6db;padding:20px;box-sizing:border-box;">
+					   <div id="ele_preView"></div>
+                  </div>
+                  
+                  <div id="ele_atthArea" style="display:none">
+                     <section class="area mt10">
+                        <div class="fl">
+                           <h4 class="title">첨부파일</h4>
+                        </div>
+                        <div class="fr">
+                           <button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUpload'));" class="btn small style08">전체다운</button>
+                           <button type="button" onclick="javascript:com.fnIbsFileAdd($('#myUpload'));" class="btn small style08">추가</button>
+                           <button type="button" onclick="javascript:com.fnIbsFileDel($('#myUpload'));" class="btn small style08">삭제</button>
+                        </div>
+                     </section>
+                     <div id="myUpload" style="height:140px;"></div>
+                  </div>
+                  <!-- 처리 버튼 영역 -->
+                  <section class="area mt50">
+                     <div class="fc">
+                        <button type="button" onclick="javascript:fnUpt();" class="btn style07">수정</button>
+                     </div>
+                  </section>
+               </div>   
+               <!-- END 컨텐츠 영역 -->
+            </div>
+         </div><!-- //contents -->
+         </form>
+          
+      </div><!-- //contentsArea -->
+   </body>
+</html>

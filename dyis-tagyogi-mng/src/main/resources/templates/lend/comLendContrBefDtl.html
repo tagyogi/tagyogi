@@ -1,0 +1,153 @@
+<!--
+	파일정보 : lend/comLendDtl.html
+	파일명 : comLendDtl
+	업무명 : 대출갱신 원대출정보
+	생성자 : 김대성
+	생성일 : 2023-06-29
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			//화면 초기화 처리 호출 (입금방법, 자산구분, 보증종류, 보증약정서식종류 )(샘플현황)
+			$(document).ready(function(){
+				
+			});
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		<!--상세 정보, 이자정보 -->
+		<!-- 콘텐츠 시작 -->
+		<section class="area mt5">
+			<div class="fl">
+				<h4 class="title">원 약정정보</h4>
+			</div>
+		</section>
+		<div id="befArea">
+			<table class="tbl">
+				<colgroup>
+					<col style="width:100px;">
+					<col style="width:140px;">
+					<col style="width:100px;">
+					<col style="width:140px;">
+					<col style="width:100px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>약정구분</th>
+						<td>
+							<font color="blue"><span id="bef_contrTypeNm"></span></font>
+						</td>
+						<th>약정번호</th>
+						<td>
+							<span id="bef_contrNo"></span>
+						</td>
+						<th>약정상태</th>
+						<td>
+							<span id="bef_contrStatNm"></span>
+						</td>
+					</tr>
+					<tr>
+						<th>약정일자</th>
+						<td>
+							<font color="red"><span id="bef_contrDt"></span></font>
+						</td>
+						<th>약정기간</th>
+						<td colspan="3">
+							<font color="red"><span id="bef_contrBegDt"></span>&nbsp;~&nbsp;<span id="bef_contrExpDt"></span></font>
+						</td>
+					</tr>
+					<tr>
+						<th>담보좌수</th>
+						<td><span id="bef_mortNum"></span></td>
+						<th>예수좌수</th>
+						<td><span id="bef_deptNum"></span></td>
+						<th>총좌수</th>
+						<td><span id="bef_totNum"></span></td>
+					</tr>
+					<tr>
+						<th>배정좌수</th>
+						<td><span id="bef_assignNum"></span></td>
+						<th>사용좌수</th>
+						<td><span id="bef_contrUseNum"></span></td>
+						<th>가능좌수</th>
+						<td><span id="bef_remainNum"></span></td>
+					</tr>
+					<tr>
+						<th>약정좌수</th>
+						<td>
+							<font color="red"><span id="bef_contrNum"></span></font>
+						</td>
+						<th>신용도</th>
+						<td colspan="3">
+							<font color="red"><span id="bef_grade"></span></font>
+						</td>
+					</tr>
+					<tr>
+						<th>비고</th>
+						<td colspan="5">
+							<span id="bef_remark"></span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<section class="area mt10">
+				<div class="fl">
+					<h4 class="title">원 심사정보</h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:100px;">
+					<col style="width:140px;">
+					<col style="width:100px;">
+					<col style="width:140px;">
+					<col style="width:100px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th>처리상태</th>
+						<td>
+							<span id="bef_procStatNm"></span>
+						</td>
+						<th>심사일자</th>
+						<td>
+							<span id="bef_apprDtm"></span>
+						</td>
+						<th>심사자</th>
+						<td>
+							<span id="bef_apprNm"></span>
+						</td>
+					</tr>
+					<tr>
+						<th>승인여부</th>
+						<td>
+							<span id="bef_examYn"></span>
+						</td>
+						<th>승인일자</th>
+						<td>
+							<span id="bef_examDtm"></span>
+						</td>
+						<th>승인자</th>
+						<td>
+							<span id="bef_examNm"></span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<section class="area mt5">
+			<div class="fl">
+				<h4 class="title">대출정보</h4>
+			</div>
+		</section>
+		<div id="sheetDivLend" style="width:100%;height:120px"></div>
+	</body>
+</html>

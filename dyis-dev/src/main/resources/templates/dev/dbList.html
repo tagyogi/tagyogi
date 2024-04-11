@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/basicLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			$(document).ready(function(){
+				//화면 초기화 부분
+				//버튼기능 처리
+				
+				//초기생성(개발dbmas 최초생성)
+				$("#btn_init").click(function(){
+					var param = {};
+					com.fnAjaxDef("/dev/devDbInit.do", param, fnGridSearch);
+				});
+				
+				//행추가
+				$("#btn_rowAdd").click(function(){
+					var rowData = {status:"C"};
+					comGrid.rowAdd($("#jqGrid"), rowData);
+				});
+				 
+				//상세행추가
+				$("#btn_rowAdd_dtl").click(function(){
+					//그룹정보 
+					if($("#tblSn").val() == ""){
+						alert("테이블을 선택하십시오.");
+						return;
+					}
+					
+					var rowData = {status:"C"};
+					comGrid.rowAdd($("#jqGridDtl"), rowData);
+				});
+				
+				//조회
+				$("#btn_search").click(function(){
+					fnGridSearch();
+				});
+				
+				//그룹 추가행 삭제
+				$("#btn_rowDel").click(function(){
+					var rowId = $("#jqGrid").getGridParam("selrow");
+					comGrid.rowAddDel($("#jqGrid"), rowId);
+				});
+				
+				//상세 추가행 삭제
+				$("#btn_rowDel_dtl").click(function(){
+					var rowId = $("#jqGridDtl").getGridParam("selrow");
+					comGrid.rowAddDel($("#jqGridDtl"), rowId);
+				});
+				
+				//데이터 export
+				$("#btn_exp").click(function(){
+					
+					if($("#jqGrid").getGridParam("selrow") == null){
+						alert("선택된 행이 없습니다.");
+						return;
+					}
+					
+					var rowData = $("#jqGrid").jqGrid("getRowData", $("#jqGrid").getGridParam("selrow"));
+					$("#tblNm").val(rowData.tblNm);
+					
+					var xmlHttp = new XMLHttpRequest();       // XMLHttpRequest 객체를 생성함.
+					xmlHttp.open("POST", "/dev/exportTblExcel.do", true);
+					xmlHttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+					xmlHttp.responseType = "blob";
+					
+					xmlHttp.onload = function() { // onreadystatechange 이벤트 핸들러를 작성함.
+						$("#div_loading").css({"display":"none"}); //로딩바
+					    // 서버상에 문서가 존재하고 요청한 데이터의 처리가 완료되어 응답할 준비가 완료되었을 때
+						if(this.status == 200 && this.readyState == this.DONE) {
+					    	var disposition = xmlHttp.getResponseHeader('Content-Disposition');
+					    	if (disposition && disposition.indexOf('attachment') !== -1) {
+				                var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+				                var matches = filenameRegex.exec(disposition);
+				                if (matches !== null && matches[1])
+				                    filename = decodeURI( matches[1].replace(/['"]/g, '') );
+				            }
+				             
+				            var blob = this.response;
+				            if(window.navigator.msSaveOrOpenBlob) {
+				                window.navigator.msSaveBlob(blob, filename);
+				            }
+				            else{
+				                var downloadLink = window.document.createElement('a');
+				                var contentTypeHeader = xmlHttp.getResponseHeader("Content-Type");
+				                downloadLink.href = window.URL.createObjectURL(new Blob([blob], { type: contentTypeHeader }));
+				                downloadLink.download = filename;
+				                document.body.appendChild(downloadLink);
+				                downloadLink.click();
+				                document.body.removeChild(downloadLink);
+				                
+				            }
+				            // 요청한 데이터를 문자열로 반환함.
+					    }
+			
+					};
+					
+					xmlHttp.send(JSON.stringify($("#frm").serializeObject()));
+					$("#div_loading").css({"display":"block"}); //로딩바
+					
+				});
+				
+				//데이터 import
+				$("#btn_imp").click(function(){
+					if($("#jqGrid").getGridParam("selrow") == null){
+						alert("선택된 행이 없습니다.");
+						return;
+					}
+					
+					var rowData = $("#jqGrid").jqGrid("getRowData", $("#jqGrid").getGridParam("selrow"));
+					$("#tblNm").val(rowData.tblNm);
+					
+					if(confirm("업로드 처리 하시겠습니까?")){
+						$('#file').click();	
+					}
+					
+				});
+				
+				//파일업로드 처리
+				$("#file").change(function(){
+					if(!fnExcelExtChk("file")){
+			    		return false;
+			    	}
+					
+					$("#div_loading").css({"display":"block"}); //로딩바
+					
+					//파일첨부 저장 처리
+					var param = new FormData($("#frm")[0]);
+					 
+					//console.log(formData);
+					//수정처리
+					$.ajax({
+						url : "/dev/importTblExcel.do"
+						, data : param
+						, contentType : false
+						, processData : false
+						, type : "post"
+					    , success : function(resData){
+					    	$("#div_loading").css({"display":"none"}); //로딩바
+					    	
+					    	if(resData.resultCode == 0){
+					    		alert("업로드 완료 되었습니다.");
+					    		$("#btn_search").trigger("click");
+					    	}else{
+					    		alert("업로드 중 오류가 발생하였습니다.");
+					    	}
+					    	$("#file").val("");
+					    }
+						, error : function(e){
+							$("#div_loading").css({"display":"none"}); //로딩바
+							alert("파일 업로드 중 에러가 발생했습니다."); //에러가 발생했습니다.
+							$("#file").val("");
+						}
+					});
+				});
+				
+				// 그리드 이벤트 ##############################################################################################
+				//그리드 생성
+				var colModel = [
+					{ label: '상태', name: 'status', hidden:true },
+					{ label: 'seq', name: 'seq', width: 40, align:'center', key: true },
+					{ label: '관리번호', name: 'tblSn', hidden:true },
+			        { label: '테이블명', name: 'tblNm', width: 100, align:'center', editable:true, editrules:{required:true} },
+			        { label: '테이블설명', name: 'tblCmt', width: 120, align:'center', editable:true, editrules:{required:true} },
+			        { label: '생성여부', name: 'tblAt', width: 40, align:'center', formatter:'select'
+			        	, editoptions:{value:"0:미생성;1:생성"} 
+			        },
+			        { label: '버튼처리', name: 'btn', width: 140, align:'center', formatter: fnGridBtn },
+			        { label: '백업테이블여부', name: 'tblBakAt', hidden:true },
+			        { label: '사용여부', name: 'useAt', hidden:true }
+			    ]
+				//그리드 생성
+				comGrid.createDef($("#jqGrid"), colModel); 
+				
+				//더블클릭
+				$("#jqGrid").bind("jqGridDblClickRow", function (obj, iRow, iCol, e) {
+					comGrid.rowEdit($("#jqGrid"), iRow, ["tblSn"]); //에이터 활성화
+				});
+				
+				//클릭
+				$("#jqGrid").bind("jqGridCellSelect	", function (obj, iRow, iCol, e) {
+					//선택시 
+					if(iCol == 3){
+						var rowData = $("#jqGrid").jqGrid("getRowData", iRow);
+						
+						if(rowData.status == "R" || rowData.status == "" ){
+							$("#tblSn").val(rowData.tblSn);
+							fnGridDtlSearch();	
+					    }	
+					}
+				});
+				
+				
+				//그룹저장
+				$("#btn_save").click(function(){
+					$("#jqGrid").jqGrid('restoreRow',lastSelection); //에디터 비활성화
+					
+					//데이터 추출 gird, 추출대상(all, chg))
+					rowDatas = comGrid.rowData($("#jqGrid"), "chg");
+					if(rowDatas.length == 0){
+						alert("대상 데이터가 없습니다.");
+						return;
+					}
+					
+					//증복 확인 
+					if(!comGrid.rowDataOver($("#jqGrid"), ["tblNm"])) return;
+					
+					if(confirm("변경내역을 저장하시겠습니까?")){
+						var param = {data : rowDatas};
+						com.fnAjaxDef("/dev/saveDevDbMasProc.do", param, fnSaveCallBack);
+					}
+				});
+				
+				
+				
+				// 상세 그리드 이벤트 ##############################################################################################
+				//그리드 생성
+				var colModel = [
+					{ label: '상태', name: 'status', hidden:true },
+					{ label: 'seq', name: 'seq', key: true, hidden:true },
+					{ label: '관리번호', name: 'colSn', hidden:true },
+			        { label: '컬럼명', name: 'colNm', width: 120, align:'center', editable:true, editrules:{required:true} },
+			        { label: '컬럼설명', name: 'colCmt', width: 120, align:'center', editable:true, editrules:{required:true}  },
+			        { label: '컬럼유형', name: 'colType', width: 100, align:'center', editable:true, edittype:'select'  , formatter:'select'
+			        	, editoptions:{value:"VARCHAR2:VARCHAR2;NUMBER:NUMBER;DATE:DATE;CHAR:CHAR;CLOB:CLOB;INTEGER:INTEGER"
+			        		/*
+			        		, dataEvents:[
+			        			{type:'change', fn:function(e){ 
+			        				fnRecoTerm(this)
+			        				}
+			        			}
+			        		]
+			        		*/
+			        	} 
+			        },
+			        { label: '컬럼길이', name: 'colLen', width: 80, align:'center', editable:true },
+			        { label: '소수점', name: 'colPre', width: 80, align:'center', editable:true },
+			        { label: 'PK 여부', name: 'pkAt', width: 80, align:'center', formatter:'checkbox', editable:true, edittype:'checkbox', editoptions: { value:"1:0" } },
+			        { label: 'Not Null', name: 'nullAt', width: 80, align:'center', formatter:'checkbox', editable:true, edittype:'checkbox', editoptions: { value:"1:0" } },
+			        { label: '기본값', name: 'defVal', width: 80, align:'center', editable:true },
+			        { label: '비고', name: 'rmk', width: 120, align:'center', editable:true }
+			    ];
+				
+				//그리드 생성
+				comGrid.createDef($("#jqGridDtl"), colModel); 
+				
+				//더블클릭
+				$("#jqGridDtl").bind("jqGridDblClickRow", function (obj, iRow, iCol, e) {
+					comGrid.rowEdit($("#jqGridDtl"), iRow, ["colSn"]); //에이터 활성화
+				});
+				
+				
+				//그룹저장
+				$("#btn_save_dtl").click(function(){
+					$("#jqGridDtl").jqGrid('restoreRow',lastSelection); //에디터 비활성화
+					
+					//증복 확인 
+					if(!comGrid.rowDataOver($("#jqGridDtl"), ["colNm"])) return;
+					
+					//데이터 추출 gird, 추출대상(all, chg))
+					rowDatas = comGrid.rowData($("#jqGridDtl"), "all"); //삭제후 다시 등록
+					if(rowDatas.length == 0){
+						alert("대상 데이터가 없습니다.");
+						return;
+					}
+					
+					if(confirm("변경내역을 저장하시겠습니까?")){
+						var param = {data : rowDatas, tblSn:$("#tblSn").val()};
+						com.fnAjaxDef("/dev/saveDevDbDtlProc.do", param, fnSaveDtlCallBack);
+					}
+				});
+				
+				//최초 조회
+				fnGridSearch();
+				
+		    });
+		    /*]]>*/
+		    
+		    //그룹조회 처리
+			var fnGridSearch = function (){
+				
+				$("#jqGrid")[0].grid.beginReq();
+				
+				var param = $("#frm").serializeObject();
+				com.fnAjaxDef("/dev/selectDevDbMasList.do", param, fnGridSearchCallBack);
+			}
+			//그룹조회 콜백
+			var fnGridSearchCallBack = function(result){
+				comGrid.dataSet($("#jqGrid"), result); //결과 세팅
+			}
+			
+			
+			//그룹저장 콜백
+			var fnSaveCallBack = function(result){
+				fnGridSearch();
+			}
+			//그룹조회 콜백
+			var fnSearchDtlCallBack = function(result){
+				comGrid.dataSet($("#jqGridDtl"), result); //결과 세팅
+			}
+			//그룹조회 처리
+			var fnGridDtlSearch = function (){
+				
+				$("#jqGridDtl")[0].grid.beginReq();
+				
+				var param = $("#frm").serializeObject();
+				com.fnAjaxDef("/dev/selectDevDbDtlList.do", param, fnSearchDtlCallBack);
+			}
+			
+			//그룹저장 콜백
+			var fnSaveDtlCallBack = function(result){
+				fnGridDtlSearch();
+			}
+		    
+		    //그리드 옵션(마스터 버튼 옵션)
+			function fnGridBtn(cellVal, opt, rowObj) {
+				//console.log(rowObj)
+				var html = "";
+				html += "<a href='javascript:fnInsertCols("+opt.rowId+");' class='btnG style03' >초기화</a>";
+				html += "<a href='javascript:fnCreatTbl("+opt.rowId+");' class='btnG style03' >재생성</a>";
+				if(rowObj.tblAt == 0){
+					html += "&nbsp;<a href='javascript:fnDel("+opt.rowId+");' class='btnG style01' >삭제</a>";
+				}else if(rowObj.tblAt == 1){
+					html += "&nbsp;<a href='javascript:fnExep("+opt.rowId+");' class='btnG style01' >제외</a>";
+				}
+				return html;
+			}
+			
+			//컬럼 정보 초기화
+			function fnInsertCols(rowId) {
+				if(confirm("필드 정보를 초기화 처리 하시겠습니까?")){
+					$("#jqGrid").jqGrid('restoreRow',lastSelection); //에디터 비활성화
+					
+					var rowData = $("#jqGrid").jqGrid("getRowData", rowId);
+					com.fnAjaxDef("/dev/insertColsInitProc.do", rowData, fnGridDtlSearch());
+				}
+			}
+			
+			
+			//테이블생성 처리
+			function fnCreatTbl(rowId) {
+				var rowCnt = $("#jqGridDtl").getGridParam("reccount");
+				
+				if(rowCnt == 0){ alert("컬럼 정보가 존재하지 않습니다."); return; }
+				
+				if(confirm("테이블 생성 처리 하시겠습니까?")){
+					$("#jqGrid").jqGrid('restoreRow',lastSelection); //에디터 비활성화
+					
+					var rowData = $("#jqGrid").jqGrid("getRowData", rowId);
+					com.fnAjaxDef("/dev/createTblProc.do", rowData, function() { $("#btn_search").trigger("click"); });
+				}
+			}
+			
+			//테이블생성 삭제 처리
+			function fnDel(rowId) {
+				if(confirm("삭제 하시겠습니까?")){
+					$("#jqGrid").jqGrid('restoreRow',lastSelection); //에디터 비활성화
+					
+					var rowData = $("#jqGrid").jqGrid("getRowData", rowId);
+					com.fnAjaxDef("/dev/deleteDevDbProc.do", rowData, function() { $("#btn_search").trigger("click"); });
+				}
+			}
+			
+			//테이블 대상 제외
+			function fnExep(rowId) {
+				if(confirm("제외처리 하시겠습니까?")){
+					$("#jqGrid").jqGrid('restoreRow',lastSelection); //에디터 비활성화
+					
+					var rowData = $("#jqGrid").jqGrid("getRowData", rowId);
+					com.fnAjaxDef("/dev/updateDevDbProc.do", rowData, function() { $("#btn_search").trigger("click"); });
+				}
+			}
+			
+			//쿼리 생성
+			function fnSetQuery(type){
+				var masRowId = $("#jqGrid").jqGrid("getGridParam","selrow");
+				var masRow = $("#jqGrid").jqGrid("getRowData",masRowId);
+				
+				var rows = $("#jqGridDtl").jqGrid("getRowData");
+				console.log(masRow);		
+				
+				var querySet = "";
+				var whereSet = "";
+				if(type == "select"){
+					for(i = 0; i < rows.length; i++){
+						var row = rows[i];
+						var colNm = fnSetCamel(row.colNm);
+						
+						//컬럼 조회부
+						if(i == 0) querySet = "SELECT " + row.colNm;
+						else 	   querySet += "\n    , " + row.colNm;
+						
+						//조건절
+						if(row.pkAt == "1"){
+							if(whereSet == "") whereSet = "\nWHERE " + row.colNm + " = #{" + colNm + "}";
+							else 	   whereSet += "\n  AND " + row.colNm + " = #{" + colNm + "}";
+						}
+					}
+					querySet += "\n FROM " + masRow.tblNm + whereSet; //테이블 from 절
+					
+				}else if(type == "insert"){
+					var valueSet = "";
+					
+					querySet = "INSERT INTO " + masRow.tblNm + " (";
+					
+					for(i = 0; i < rows.length; i++){
+						var row = rows[i];
+						var colNm = fnSetCamel(row.colNm);
+						
+						//컬럼 조회부
+						if(i == 0){
+							querySet += "\n    " + row.colNm;	
+							valueSet += "\n    #{" + colNm + "}";
+						}else{
+						 	querySet += "\n    , " + row.colNm;
+						 	
+						 	var colType = colNm.toLowerCase(); 
+						 	if(colNm.toLowerCase().indexOf("dt") > 0){
+								valueSet += "\n    , REPLACE(#{" + colNm + "}, '-')";	 
+							}else if(colNm.toLowerCase().indexOf("amt") > 0){
+								valueSet += "\n    , REPLACE(#{" + colNm + "}, ',')";	 
+							}else{
+								valueSet += "\n    , #{" + colNm + "}";
+							}
+						}
+					}
+					querySet += "\n)VALUES(";
+					querySet += valueSet;
+					querySet += "\n)";
+					
+				}else if(type == "update"){
+					var valueSet = "";
+					
+					querySet = "UPDATE " + masRow.tblNm;
+					
+					for(i = 0; i < rows.length; i++){
+						var row = rows[i];
+						var colNm = fnSetCamel(row.colNm);
+						
+						var colType = colNm.toLowerCase(); 
+					 	if(colNm.toLowerCase().indexOf("dt") > 0){
+							colNm = "REPLACE(#{" + colNm + "}, '-')";	 
+						}else if(colNm.toLowerCase().indexOf("amt") > 0){
+							colNm = "REPLACE(#{" + colNm + "}, ',')";	 
+						}else{
+							colNm = "#{" + colNm + "}";
+						}
+						
+						//컬럼 조회부
+						if(i == 0){
+							querySet += "\n     SET " + row.colNm + " = " + colNm;
+						}else{
+						 	querySet += "\n     , " + row.colNm + " = " + colNm;
+						}
+						
+						//조건절
+						if(row.pkAt == "1"){
+							if(whereSet == "") whereSet = "\nWHERE " + row.colNm + " = " + colNm;
+							else 	   whereSet += "\n  AND " + row.colNm + " = " + colNm;
+						}
+					}
+					
+					querySet += whereSet; //
+					
+				}else if(type == "delete"){
+					querySet = "DELETE FROM " + masRow.tblNm;
+					
+					for(i = 0; i < rows.length; i++){
+						var row = rows[i];
+						var colNm = fnSetCamel(row.colNm);
+						
+						//조건절
+						if(row.pkAt == "1"){
+							if(whereSet == "") whereSet = "\nWHERE " + row.colNm + " = #{" + colNm + "}";
+							else 	   whereSet += "\n  AND " + row.colNm + " = #{" + colNm + "}";
+						}
+						
+					}
+					querySet += whereSet;
+				}else if(type == "insert2"){ //SELECT INSERT
+					var valueSet = "";
+					
+					
+					querySet = "INSERT INTO " + masRow.tblNm + " (";
+					valueSet = "(\nSELECT ";
+					valueSet += "\n(nSELECT COUNT(*) FROM " + masRow.tblNm + " WHERE 테이블키 = #{테이블키변수})";
+					valueSet += "\n, SYSDATE\n, #{userNm}";
+					
+					for(i = 0; i < rows.length; i++){
+						var row = rows[i];
+						var colNm = fnSetCamel(row.colNm);
+						
+						//컬럼 조회부
+						if(i == 0){
+							querySet += "\n    " + row.colNm;	
+							valueSet += "\n     " + row.colNm;
+						}else{
+						 	querySet += "\n    , " + row.colNm;
+						 	valueSet += "\n    , " + row.colNm;
+						}
+						
+						//조건절
+						if(row.pkAt == "1"){
+							if(whereSet == "") whereSet = "\nWHERE " + row.colNm + " = #{" + colNm + "}";
+							else 	   whereSet += "\n  AND " + row.colNm + " = #{" + colNm + "}";
+						}
+						
+						
+					}
+					querySet += "\n)\n";
+					querySet += valueSet + whereSet;
+					querySet += "\n)";
+					
+				}else if(type == "insert3"){ //SELECT INSERT
+					querySet = "SELECT 'INSERT INTO " + masRow.tblNm + " (";
+					valueSet = "";
+					
+					for(i = 0; i < rows.length; i++){
+						var row = rows[i];
+						var colNm = fnSetCamel(row.colNm);
+						
+						if(i == 0){
+							querySet += "\n" + row.colNm;	
+							valueSet += "\n'|'||" + row.colNm + "||";	
+						}else{
+							querySet += "\n," + row.colNm;	
+							valueSet += "\n'|,|'||" + row.colNm + "||";
+						}
+						
+					}	
+					valueSet += "'|'||";
+					querySet += "\n) VALUES ('||";
+					
+					querySet += valueSet;
+					querySet += "\n');'";
+					querySet += "\nFROM " + masRow.tblNm;
+				}
+				
+				
+				
+				$("#query").val(querySet);
+							
+			}
+			
+		    function fnSetCamel(str){
+				
+				return str.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
+				
+			}
+		    
+		    fnSetCamel("TEST_ABD_DET_1");
+		</script>
+		
+		<!-- FORM 영역 -->
+		<form name="frm" id="frm" onsubmit="return false;" enctype="multipart/form-data">
+			<input type="hidden" name="tblSn" id="tblSn"/>
+			<input type="hidden" name="tblNm" id="tblNm"/>
+			<input type="file" name="file" id="file" style="display:none"/>
+		</form>
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<h2 id="menuTitle">[[${menuNm}]]</h2>
+				<ul class="function_menu_area">
+					<!--
+					<li><button type="button" class="button btnMid gray_gradation">변경등록</button></li>
+					<li><button type="button" class="button btnMid gray_gradation">기재변경</button></li>
+					<li><button type="button" class="button btnMid gray_gradation">입력</button></li>
+					<li><button type="button" class="button btnMid gray_gradation">수정</button></li>
+					<li><button type="button" class="button btnMid gray_gradation">삭제</button></li>
+					<li><button type="button" class="button btnMid gray_gradation">상세보기</button></li>
+					-->
+				</ul>
+				
+				<ul class="page_menu_area">
+					<!--
+					<li><button type="button" class="btn_bookmark">bookmark</button></li>
+					<li><button type="button" class="btn_print">print</button></li>
+					<li><button type="button" class="btn_excel">excel</button></li>
+					<li><button type="button" class="btn_refresh">refresh</button></li>
+					<li><button type="button" class="btn_delete">delete</button></li> -->
+				</ul>
+			</div><!-- //contentsTop -->
+	
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>테이블명</dt>
+							<dd style="width:130px;">
+								<input type="text" name="sTblNm" id="sTblNm" style="width:150px;">
+							</dd>
+						</dl>
+						<dl>
+							<dt>테이블ID</dt>
+							<dd style="width:130px;">
+								<input type="text" name="sTblId" id="sTblId" style="width:150px;">
+							</dd>
+						</dl>
+					</div><!-- //row -->
+					
+					<div class="searchBtn">
+						<a href="javascript:;" class="btn search">조회</a>
+						<a href="javascript:;" class="btn style03" id="btn_init">초기생성</a>
+					</div>
+				</section>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt20">
+					
+					
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:40%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fl">
+								<!--
+								<a href="javascript:;" class="btn style05" id="btn_exp">EXP</a>
+								<a href="javascript:;" class="btn style02" id="btn_imp">IMP</a>
+								-->
+							</div>
+							<div class="fr">
+								<a href="javascript:;" class="btn style08" id="btn_rowAdd">행추가</a>
+								<a href="javascript:;" class="btn style08" id="btn_rowDel">행삭제</a>
+								<a href="javascript:;" class="btn style01" id="btn_save">저장</a>
+								<a href="javascript:;" class="btn style06" id="btn_search">조회</a>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<table id="jqGrid"></table>
+					    	<div id="jqGridPager"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+						
+					<!-- 그리드 우측 부분 -->
+					<div style="width: 59%;">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fl">
+								<a href="javascript:fnSetQuery('select');" class="btn style05" >select</a>
+								<a href="javascript:fnSetQuery('insert');" class="btn style05" >insert</a>
+								<a href="javascript:fnSetQuery('update');" class="btn style05" >update</a>
+								<a href="javascript:fnSetQuery('delete');" class="btn style05" >delete</a>
+								<a href="javascript:fnSetQuery('insert2');" class="btn style05" >insert(select)</a>
+								<a href="javascript:fnSetQuery('insert3');" class="btn style05" >이관insert</a>
+							</div>
+							<div class="fr">
+								<a href="javascript:;" class="btn style08" id="btn_rowAdd_dtl">행추가</a>
+								<a href="javascript:;" class="btn style08" id="btn_rowDel_dtl">행삭제</a>
+								<a href="javascript:;" class="btn style01" id="btn_save_dtl">저장</a>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<table id="jqGridDtl"></table>
+					    	<div id="jqGridDtlPager"></div>
+						</div>
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+	
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<br>
+				
+				<div>
+					
+					<textarea name="query" id="query" rows="10"></textarea>
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,229 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : lendInterCalc.html
+	파일명 : lendInterCalc.html
+	업무명 : 이자견적조회
+	생성자 : 변성균
+	생성일 : 2023.08.11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+
+			//달력처리
+			//$("#basDt").datepicker(datepicker_ymd);
+
+			//미상환대출현황 조회
+			fnSearchLendList();
+		});
+
+		//미상환대출현황 조회
+		var fnSearchLendList = function(){
+			obj = {url:"/lendInterCalc/selectLendInterCalcList.do", formId:"serchFrm", callBack:fnSearchLendListCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxPost(obj);
+		}
+
+		//내용조회 콜백
+		var fnSearchLendListCallBack = function(resData){
+			console.log(resData);
+			//조합원정보
+			var memb = /*[[${session}]]*/
+			com.fnSetKeyVal(memb);
+
+			$("#ele_lendList").empty();
+
+			if(resData.data.length === 0) $("#ele_lendList").append('<tr><td colspan=6">미상환 대출내역이 존재하지 않습니다.</td></tr>');
+
+			$.each(resData.data, function(index, item) {
+				var html  = '<tr id="tr_' + item.lendNo + '" data-lendNo="' + item.lendNo + '">';
+					html += '	<td class="alignC">' + Number(index + 1) + '</td>'; 	//번호
+					html += '	<td class="alignC">' + item.lendTypeNm + '</td>'; 		//대출종류
+					html += '	<td class="alignC">' + com.fnDateFormat(item.lendDt) + '</td>'; 	//대출일자
+					html += '	<td class="alignC">' + com.fnDateFormat(item.repayPreDt) + '</td>'; //상환기한
+					html += '	<td class="alignR">' + com.addComma(com.fnNvlChk(item.lendAmt, 0)) + '</td>'; 		//대출금액
+					html += '	<td class="alignR">' + com.addComma(com.fnNvlChk(item.totRepayAmt, 0)) + '</td>'; 	//상환금액
+					html += '</tr>';
+				$("#ele_lendList").append(html);
+			});
+
+			//리스트 클릭 이벤트
+			$("#ele_lendList").find('tr > td').on("click", function(){
+				//전체 리스트 선택 취소
+				$("[id^='tr_']").css("background-color", "");
+
+				//data는 소문자로 변환됨. 가독성을 위해 toLowerCase사용
+				var lendNo = $(this).closest('tr').data('lendNo'.toLowerCase());
+
+				$("#tr_" + lendNo).css("background-color", "#FAED7D;");	//리스트 선택
+				$("#lendNo").val(lendNo);
+			})
+		}
+
+		//상세페이지 이동
+		var fnView = function(){
+			if($("#lendNo").val() === ""){
+				alert("견적조회할 대출건을 선택해 주십시오.");
+				return;
+			}else if($("#basDt").val() === ""){
+				alert("기준일자를 입력(선택)해 주십시오.");
+				$("#basDt").focus();
+				return;
+			}
+
+			//상세 이동
+			var param = {
+				lendNo	: $("#lendNo").val(),
+				basDt	: $("#basDt").val(),
+				listNm	: /*[[${menuInfo.menuNm}]]*/,	//상세에서 left메뉴 on class주기위해 사용(메인 fnPageLnbSet() 호출시)
+			};
+			fnPage("2030306", param);	//lend/lendInterCalcDtl.html
+		}
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="serchFrm" id="serchFrm" onSubmit="return false">
+							<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+							<!-- 현재 페이지 조회용 -->
+							<input type="hidden" name="sSerchType"  id="sSerchType"	value="D">
+
+							<!-- 상세페이지 전달 -->
+							<input type="hidden" name="lendNo"  	id="lendNo"  	value="">
+
+	                        <section id="content" class="content">
+	                            <!-- 여기서부터 content -->
+	                            <div>
+	                                <article>
+	                                    <p class="title-dept1">조합원정보</p>
+	                                    <div class="table-wrap info">
+	                                        <div class="table-scroll">
+	                                            <table summary="조합원정보">
+	                                                <colgroup>
+	                                                	<col style="width:12%;">
+	                                                	<col style="width:23%;">
+	                                                	<col style="width:12%;">
+	                                                	<col style="width:18%;">
+	                                                	<col style="width:12%;">
+	                                                	<col style="width:23%;">
+	                                                </colgroup>
+	                                                <tbody>
+	                                                    <tr>
+	                                                        <th>조합원</th>
+	                                                        <td><span id="ele_membNo"></span>&nbsp;/&nbsp;<span id="ele_membNm"></span></td>
+	                                                        <th>대표자</th>
+	                                                        <td><span id="ele_ceoNm"></span></td>
+	                                                        <th>주장르</th>
+	                                                        <td><span id="ele_mainBussNm"></span></td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th>사업자번호</th>
+	                                                        <td><span id="ele_bizNo"></span></td>
+	                                                        <th>법인등록번호</th>
+	                                                        <td><span id="ele_lawNo"></span></td>
+	                                                        <th>소속단체</th>
+	                                                        <td><span id="ele_belong"></span></td>
+	                                                    </tr>
+	                                                    <tr>
+	                                                        <th>전화번호</th>
+	                                                        <td><span id="ele_telNo"></span></td>
+	                                                        <th>주소</th>
+	                                                        <td colspan="5"><span id="ele_addrFull"></span></td>
+	                                                    </tr>
+	                                                </tbody>
+	                                            </table>
+	                                        </div>
+	                                    </div>
+	                                </article>
+
+	                                <article>
+	                                    <p class="title-dept1">미상환대출현황</p>
+	                                    <div class="table-wrap board">
+	                                        <div class="table-scroll v2">
+	                                            <table class="border">
+													<colgroup>
+	                                                	<col style="width:6%;">
+	                                                	<col style="width:11%;">
+	                                                	<col style="width:11%;">
+	                                                	<col style="width:11%;">
+	                                                	<col style="width:11%;">
+	                                                	<col style="width:11%;">
+	                                                </colgroup>
+	                                                <thead class="back-gray">
+	                                                    <tr>
+	                                                        <th scope="col">순번</th>
+	                                                        <th scope="col">대출종류</th>
+	                                                        <th scope="col">대출일자</th>
+	                                                        <th scope="col">상환기한</th>
+	                                                        <th scope="col">대출금액</th>
+	                                                        <th scope="col">상환금액</th>
+	                                                    </tr>
+	                                                </thead>
+	                                                <tbody id="ele_lendList"></tbody>
+	                                            </table>
+	                                        </div>
+	                                    </div>
+	                                </article>
+
+	                                <article>
+	                                    <p class="title-dept1">견적조회조건</p>
+	                                    <div class="table-wrap info">
+	                                        <div class="table-scroll">
+	                                            <table width="100%">
+													<colgroup>
+	                                                	<col style="width:12%;">
+	                                                </colgroup>
+	                                                <tbody>
+	                                                    <tr>
+	                                                        <th>견적기준일</th>
+	                                                        <td>
+	                                                            <div class="flex-box gap-10 w-30">
+	                                                                <div class="flex-box al-center">
+	                                                                    <input type="text" name="basDt" id="basDt" th:value="${today}" class="date form-control w-100" title="견적기준일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                                                                	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'basDt', 'yyyy-mm-dd')" />
+	                                                                </div>
+	                                                                <button type="button" class="address-btn3" onclick="fnView();"></button>
+	                                                            </div>
+	                                                        </td>
+	                                                    </tr>
+	                                                </tbody>
+	                                            </table>
+	                                        </div>
+	                                    </div>
+	                                </article>
+
+	                            </div>
+	                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

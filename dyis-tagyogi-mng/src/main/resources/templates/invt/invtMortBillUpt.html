@@ -1,0 +1,265 @@
+<!--
+	파일정보 : ivnt/invtMortBillDtl.html
+	파일명 : mortDtl
+	업무명 : 출자담보정보 수정
+	생성자 : 윤가영1
+	생성일 : 2023-04-14
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "20112"}
+			
+			var todayString = /*[[${today}]]*/;
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//화면 처리
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				fnIbsInvtMort(gridOptList[0], "upt"); //출자담보정보(공통부)
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+
+					fnSearch(); //조회 호출
+				};
+				
+			});
+			
+			//검색
+			var fnSearch = function(){
+				//상세정보 조회
+			    var membNo = /*[[${paramMap.membNo}]]*/;
+			    membNo = membNo.toString(); // 한국콘텐츠공제조합처럼 0한자리수는 동적쿼리 조건문 string으로 인식안되어서 스킵됨, string처리
+			    
+			    var atthType = /*[[${menuInfo.atthType}]]*/;
+			    var param = {membNo : membNo, atthType: atthType, billStat: '10'};
+			    
+				obj = {url:"/invtBill/selectInvtMort.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+				
+			};
+			
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+				//$("#tr_reqWay").css("display", ""); //신청자정보
+				//console.log(resData);
+				
+				//총배정금액, 배정좌수 계산
+				resData.memb.assTotalAmt = Number(resData.memb.assGetAmt)-Number(resData.memb.assSetAmt);
+				resData.memb.assTotalNum = Number(resData.memb.assGetNum)-Number(resData.memb.assSetNum);
+				
+				//포맷
+				//resData.memb[0].investNum = com.addComma(resData.memb[0].investNum);
+				//resData.memb[0].investAmt = com.addComma(resData.memb[0].investAmt);
+				//resData.memb[0].mortNum = com.addComma(resData.memb[0].mortNum);
+				//resData.memb[0].mortAmt = com.addComma(resData.memb[0].mortAmt);
+				//resData.memb[0].assGetNum = com.addComma(resData.memb[0].assGetNum);
+				//resData.memb[0].assGetAmt = com.addComma(resData.memb[0].assGetAmt);
+				//resData.memb[0].assSetNum = com.addComma(resData.memb[0].assSetNum);
+				//resData.memb[0].assSetAmt = com.addComma(resData.memb[0].assSetAmt);
+				//resData.memb[0].assTotalAmt = com.addComma(resData.memb[0].assTotalAmt);
+				//resData.memb[0].assTotalNum = com.addComma(resData.memb[0].assTotalNum);
+				
+				//값세팅
+				com.fnSetKeyVal(resData.memb);
+				
+				//시트값 설정
+				sheetInvtMort.loadSearchData(resData.data);
+				
+				//콤마추가 클래스들 세팅
+				$.each($(".setCommaCls"), function(idx,item){
+					$(item).val($(item).val() === null ? "0":com.addComma($(item).val()));	
+				});
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+				
+			};
+			
+			//저장
+			var fnSave = function(){
+				
+				//필수체크
+				//var valChks = ["investDt","investNum","payWay","selBank"];
+				
+				if(confirm("수정 처리 하시겠습니까?")){
+					var param = { paramData: $("#saveFrm").serializeObject(), mortBillData: sheetInvtMort.getSaveJson()};
+					obj = {url:"/invtBill/updateInvtMort.do", jParam:param, callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxMulti(obj);
+					
+				}	
+			};
+			
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				//정상처리시
+				if(resData.resultCode === 0) {
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+					//fnSearch();//재조회 
+				}
+				
+			};
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+					<!--오른쪽 업무 버튼-->
+					<!--<div class="bizBtns">
+						<button type="button" onclick="" class="btn style01">저장</button>
+						<button type="button" onclick="" class="btn style02">저장</button>
+						<button type="button" onclick="" class="btn style03">저장</button>
+						<button type="button" onclick="" class="btn style04">저장</button>
+						<button type="button" onclick="" class="btn style07">저장</button>
+						<button type="button" onclick="" class="btn style08">저장</button>
+					</div>-->
+				</div>
+			
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<div class="contents flex">
+				
+				<div class="layer-flex collapseArea ">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						
+						<!--담보설정정보 : s-->
+						<div class="wrapBox mortFormat">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">담보설정정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>출자좌수</th>
+										<td colspan="3">
+											<input type="text" name="investNum" id="investNum" class="setCommaCls" style="width:100%" title="출자좌수" readonly="readonly">
+										</td>
+										<th>출자금액</th>
+										<td colspan="3">
+											<input type="text" name="investAmt" id="investAmt" class="setCommaCls" style="width:100%" title="출자금액" readonly="readonly">	
+										</td>
+									</tr>
+									<tr>
+										<th>담보좌수</th>
+										<td colspan="3">
+											<input type="text" name="mortNum" id="mortNum" class="setCommaCls" style="width:100%" title="담보좌수" readonly="readonly">	
+										</td>
+										<th>담보금액</th>
+										<td colspan="3">
+											<input type="text" name="mortAmt" id="mortAmt" class="setCommaCls" style="width:100%" title="담보금액" readonly="readonly">
+										</td>
+									</tr>
+									<tr>
+										<th>배정한좌수</th>
+										<td colspan="3">
+											<input type="text" name="assSetNum" id="assSetNum" class="setCommaCls" style="width:100%" title="배정좌수" readonly="readonly">
+										</td>
+										<th>배정한금액</th>
+										<td colspan="3">
+											<input type="text" name="assSetAmt" id="assSetAmt" class="setCommaCls" style="width:100%" title="배정금액" readonly="readonly">	
+										</td>
+									</tr>
+									<tr>
+										<th>배정받은좌수</th>
+										<td colspan="3">
+											<input type="text" name="assGetNum" id="assGetNum" class="setCommaCls" style="width:100%" title="배정좌수" readonly="readonly">
+										</td>
+										<th>배정받은금액</th>
+										<td colspan="3">
+											<input type="text" name="assGetAmt" id="assGetAmt" class="setCommaCls" style="width:100%" title="배정금액" readonly="readonly">	
+										</td>
+									</tr>
+									<tr>
+										<th>전체배정좌수</th>
+										<td colspan="3">
+											<input type="text" name="assTotalNum" id="assTotalNum" class="setCommaCls" style="width:100%" title="배정좌수" readonly="readonly">
+										</td>
+										<th>전체배정금액</th>
+										<td colspan="3">
+											<input type="text" name="assTotalAmt" id="assTotalAmt" class="setCommaCls" style="width:100%" title="배정금액" readonly="readonly">	
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--담보설정정보 : e-->
+						
+						<!--수정사유 : s-->
+						<!--<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">수정사유</h4>
+							</div>
+							<div>
+								<textarea id="modReason" name="modReason" cols="10" rows="5"></textarea>
+							</div>
+						</section>-->
+						<!--수정사유 : e-->
+						
+					</div>
+					
+					<!-- 그리드 우측 부분 시작 -->
+					
+					<div class="collapseBox fixable" style="width:49%">	
+						<!--출자증권목록 : s-->
+						<th:block th:include="com/comInvtMort"></th:block> <!-- 출자담보정보(공통) -->
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!--layer-flex-->
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">수정</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+						
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

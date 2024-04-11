@@ -1,0 +1,1395 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.sys.repository.WorkCloseMapper"> 
+
+	<!-- 조합마감 정보 조회 --> 
+	<!--IVA	출자금, IVR	출자금반환, IVI 예수금, IVO	예수금환불 -->
+ 	<!--GRC	보증수수료, GRR 보증수수료환불, GRD 보증대충, GRH	보증해제 -->
+ 	<!--LDA	대출지급, LDI	대출이자, LDR	대출상환, LDD	연체이자 -->
+ 	
+ 	<!--CS	현금, ND	보통예금, NP	미수금, DH	대충,해제, PP	보통예금(AR), PF	보통예금(PG) -->
+	<select id="selectWorkCloseList" parameterType="Map" resultType="camelMap"> 
+		/* WorkCloseMapper.selectWorkCloseList */ 
+		SELECT ACCT_DT
+		     , ACCT_TYPE
+		     , CASE WHEN ACCT_TYPE IN ('LDA', 'IVI','IVR','GRH','GRD') THEN ACCT_CD
+		            WHEN ACCT_TYPE IN ('LDR','GRC','IVA','GRH', 'IVO','GRR','GRP','LDI','LDD') THEN PAY_ACCT_CD  
+		            ELSE '999999' END DEBT_CD  /* 차변 */
+		     , CASE WHEN ACCT_TYPE IN ('GRC') AND PAY_WAY = 'NP' THEN ACCT_CD
+		            WHEN ACCT_TYPE IN ('LDA', 'IVI','IVR','GRD','GRH') THEN PAY_ACCT_CD 
+		            WHEN ACCT_TYPE IN ('LDR','GRC','IVA', 'IVO','GRR','GRP','LDI','LDD') THEN ACCT_CD
+		            ELSE '999999' END CRDT_CD /* 대변  */
+		     , CASE WHEN ACCT_TYPE IN ('LDA', 'IVO','IVR','GRH','GRD') THEN ACCT_CD
+		            WHEN ACCT_TYPE IN ('LDR','GRC','IVA','GRH', 'IVI','GRR','GRP','LDI','LDD') THEN PAY_ACCT_CD 
+		            ELSE '999999' END DEBT_CD_NM  /* 차변 */
+		     , CASE WHEN ACCT_TYPE IN ('GRC') AND PAY_WAY = 'NP' THEN ACCT_CD
+		            WHEN ACCT_TYPE IN ('LDA', 'IVO','IVR','GRD','GRH') THEN PAY_ACCT_CD 
+		            WHEN ACCT_TYPE IN ('LDR','GRC','IVA', 'IVI','GRR','GRP','LDI','LDD') THEN ACCT_CD 
+		            ELSE '999999' END CRDT_CD_NM /* 대변  */
+		     , F_GET_CD_NM('AT01',ACCT_TYPE) ACCT_TYPE_NM
+		     , F_GET_CD_NM('CM14',PAY_WAY) PAY_WAY_NM
+             , PAY_WAY
+             , CASE WHEN PAY_WAY IN ('ND', 'PP', 'PF') THEN PAY_BANK ELSE NULL END PAY_BANK /* 보통, AR, PG 경우 계좌 정보 */
+		     , CASE WHEN PAY_WAY IN ('ND', 'PP', 'PF') THEN PAY_ACCT ELSE NULL END PAY_ACCT /* 보통, AR, PG 경우 계좌 정보 */
+       	     , ACCT_AMT
+		     , MEMB_NM
+		 		  FROM 
+				  (
+				    SELECT A.ACCT_DT
+				         , ACCT_TYPE
+				         , NVL(CASE WHEN PAY_WAY = 'PP' OR PAY_WAY = 'PF' THEN F_GET_CD_ETC_CD(CD_TYPE, WORK_TYPE)
+				                     ELSE ACCT_CD END, '9999999') ACCT_CD /*  PG결제,  PG수수료 */
+				         , NVL(CASE WHEN PAY_WAY = 'CS' THEN '1020101' /* 현금 */
+				                WHEN PAY_WAY = 'ND' THEN '1020202' /* 보통예금 */
+				                WHEN PAY_WAY = 'PP' THEN '1020202' /* PG결제 (미수보증료 입금) */
+				                WHEN PAY_WAY = 'PF' THEN '5030301' /* PG수수료 */
+				                WHEN PAY_WAY = 'NP' OR PAY_WAY = 'DH' THEN F_GET_CD_ETC_CD(CD_TYPE, WORK_TYPE)
+				                ELSE NULL END, '9999999') PAY_ACCT_CD 
+				         , A.PAY_WAY
+				         , A.PAY_BANK
+				         , A.PAY_ACCT
+				         , A.ACCT_AMT
+				         , MEMB_NM
+		                 , CD_TYPE
+				      FROM 
+				      (
+				        /* #################################  출자 납부 ########################################## */
+				        SELECT INVEST_DT ACCT_DT
+				               , DECODE(PAY_WAY, '10', 'CS', '20', 'ND', 'ND') PAY_WAY 
+				               , PAY_BANK
+				               , PAY_ACCT
+				               , SUM(INVEST_AMT) ACCT_AMT
+				               , F_GET_CD_NM('AT02', '10') ACCT_CD
+				               , 'IVA' ACCT_TYPE
+				               , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                             THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                             ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+				                         END),1,43) MEMB_NM
+				               , 'AT02' CD_TYPE
+				               , '10' WORK_TYPE
+				          FROM IV_MASTER
+				         WHERE INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				           AND PROC_STAT IN ('30','40')
+				           AND INVEST_CD IN ('10','11')
+				           <if test="sCloseYn eq 'Y'.toString()">
+						   AND CLOSE_DT IS NOT NULL	   
+				           </if>
+				           <if test="sCloseYn eq 'N'.toString()">
+						   AND CLOSE_DT IS NULL	   
+				           </if>
+				         GROUP BY INVEST_DT, PAY_WAY, PAY_BANK, PAY_ACCT
+				         UNION ALL 
+				         /* #################################  출자금(양도양수) ########################################## */
+				         SELECT I.INVEST_DT ACCT_DT
+				               , DECODE(PAY_WAY, '10', 'CS', '20', 'ND', 'ND') PAY_WAY 
+				               , I.PAY_BANK
+				               , I.PAY_ACCT
+				               , SUM(I.INVEST_AMT) ACCT_AMT
+				               , F_GET_CD_NM('AT02', '10') ACCT_CD
+				               , 'IVA' ACCT_TYPE
+				               , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                             THEN MAX(F_GET_MEMB_NM(T.TAKE_MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                             ELSE MAX(F_GET_MEMB_NM(T.TAKE_MEMB_NO))
+				                         END),1,43) MEMB_NM
+				               , 'AT02' CD_TYPE
+				               , '10' WORK_TYPE
+				          FROM IV_MASTER I
+				              , IV_TRANS T
+				         WHERE T.INVEST_NO = I.INVEST_NO
+				           AND T.TRANS_MEMB_NO = I.MEMB_NO
+				           AND T.TAKE_MEMB_NO != 0
+				           AND T.TRANS_SEQ = 1
+				           AND I.INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				           AND I.INVEST_CD = '30'
+				           <if test="sCloseYn eq 'Y'.toString()">
+						   AND I.CLOSE_DT IS NOT NULL	   
+				           </if>
+				           <if test="sCloseYn eq 'N'.toString()">
+						   AND I.CLOSE_DT IS NULL	   
+				           </if>
+				         GROUP BY I.INVEST_DT, I.PAY_WAY, I.PAY_BANK, I.PAY_ACCT
+				          UNION ALL 
+				          /* ################################# 출자금반환  ################################# */
+				          SELECT INVEST_DT ACCT_DT
+				                   , DECODE(PAY_WAY, '10', 'CS', '20', 'ND', 'ND') PAY_WAY 
+				                   , OUT_BANK
+				                   , OUT_ACCT
+				                   , SUM(INVEST_AMT) ACCT_AMT
+				                   , F_GET_CD_NM('AT02', '10') ACCT_CD
+				                   , 'IVR' ACCT_TYPE
+				                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+				                             END),1,43) MEMB_NM
+				                   , 'AT02' CD_TYPE
+				                   , '10' WORK_TYPE
+				              FROM IV_MASTER
+				             WHERE INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND INVEST_CD = '30'
+				               AND MEMB_NO != 0
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND CLOSE_DT IS NULL	   
+					           </if>
+					      GROUP BY INVEST_DT, PAY_WAY, OUT_BANK, OUT_ACCT
+				          UNION ALL
+				         /* ################################# 예수금  ################################# */ 
+				        SELECT PAY_DT ACC_DT
+				             , DECODE(PAY_WAY, '10', 'CS', '20', 'ND', 'ND') PAY_WAY
+				             , PAY_BANK
+				             , PAY_ACCT
+				             , SUM(PAY_AMT) PAY_AMT
+				             , F_GET_CD_NM('AT02', '20') ACCT_CD
+				             , DECODE(PAY_TYPE, 'P', 'IVI', 'IVO') ACCT_TYPE
+				             , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                             THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                             ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+				                         END),1,43) MEMB_NM
+				             , 'AT02' CD_TYPE
+				             , '20' WORK_TYPE
+				          FROM IV_DEP_PAY
+				         WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				         <if test="sCloseYn eq 'Y'.toString()">
+					   AND CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND CLOSE_DT IS NULL	   
+			           </if>
+				         GROUP BY PAY_DT, PAY_WAY, PAY_BANK, PAY_ACCT, PAY_TYPE
+				         UNION ALL
+				         /* ################################# 보증수수료  ################################# */ 
+				         SELECT PAY_DT ACCT_DT
+						     , PAY_WAY
+						     , PAY_BANK
+						     , PAY_ACCT
+						     , SUM(COMM_AMT) ACCT_AMT
+						     , F_GET_CD_NM(CD_TYPE, GUAR_TYPE) ACCT_CD
+						     , 'GRC' ACCT_TYPE
+						     , SUBSTRB((CASE WHEN COUNT(*) > 1
+						             THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+						             ELSE MAX(MEMB_NM)
+						         END),1,43) MEMB_NM
+						     , CD_TYPE
+						     , GUAR_TYPE WORK_TYPE
+						  FROM 
+						      (
+						    SELECT MEMB_NO, MEMB_NM, GUAR_TYPE, AFTER_PAY_YN, PAY_DT
+						         , PAY_YN, PG_PAY_YN, PAY_BANK, PAY_ACCT, COMM_AMT
+						         , PAY_WAY
+						         , CD_TYPE
+						      FROM 
+						      (
+						        SELECT MEMB_NO, MEMB_NM, GUAR_TYPE, AFTER_PAY_YN, PAY_DT
+						             , PAY_YN, PG_PAY_YN, PAY_BANK, PAY_ACCT, COMM_AMT
+						             , CASE WHEN PG_PAY_YN = 'Y' THEN 'NP'
+						                    WHEN PAY_WAY = '10' THEN 'CS'
+						                    WHEN PAY_WAY = '30' THEN 'NP'
+						                    ELSE 'ND' END PAY_WAY
+						             , DECODE(AFTER_PAY_YN, 'Y', 'AT04', 'AT03') CD_TYPE   
+						          FROM GR_MASTER
+						         WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+						           AND PAY_YN = 'Y'
+						           AND GUAR_STAT != '31'
+						            <if test="sCloseYn eq 'Y'.toString()">
+								   AND CLOSE_DT IS NOT NULL	   
+						           </if> 
+						           <if test="sCloseYn eq 'N'.toString()">
+								   AND CLOSE_DT IS NULL	   
+						           </if>
+						        UNION ALL /*미수금*/
+						        SELECT MEMB_NO, MEMB_NM, GUAR_TYPE, AFTER_PAY_YN, GUAR_PUB_DT
+						            , PAY_YN, PG_PAY_YN, NULL PAY_BANK, NULL PAY_ACCT, COMM_AMT
+						            , 'NP' PAY_WAY
+						            , 'AT03' CD_TYPE
+						          FROM GR_MASTER
+						         WHERE GUAR_PUB_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+						           AND AFTER_PAY_YN = 'Y'
+						           AND GUAR_STAT != '31'
+						           <if test="sCloseYn eq 'Y'.toString()">
+								   AND PRE_CLOSE_DT IS NOT NULL	   
+						           </if>
+						           <if test="sCloseYn eq 'N'.toString()">
+								   AND PRE_CLOSE_DT IS NULL	   
+						           </if>
+						      )
+						    )
+						GROUP BY PAY_DT, PAY_WAY, PAY_BANK, PAY_ACCT, CD_TYPE, GUAR_TYPE
+						HAVING SUM(COMM_AMT) > 0
+				         UNION ALL
+				          /* ################################# 보증PG결제 (보통예금AR) ################################# */
+				           SELECT P.RECEIPT_DATE ACCT_DT
+				               , 'PP' PAY_WAY
+				               , 'NH' PAY_BANK
+				               , '3010231253821' PAY_ACCT
+				               , SUM(P.AMOUNT - P.FEE ) ACCT_AMT
+				               , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD 
+				               , 'GRC' ACCT_TYPE
+				               , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                             THEN MAX(G.MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                             ELSE MAX(G.MEMB_NM)
+				                         END),1,43) MEMB_NM
+				                , 'AT04' CD_TYPE
+				                 , GUAR_TYPE WORK_TYPE
+				          FROM GR_MASTER G,
+				               CM_PAY_RESULT P
+				         WHERE P.GUAR_NO = G.GUAR_NO
+				           AND P.RESP_CODE = '000'
+				           AND P.RECEIPT_DATE BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '') /*RECEIPT_DATE*/
+				           AND G.PAY_YN = 'Y'
+				           AND G.PG_PAY_YN = 'Y'
+				           AND G.GUAR_STAT != '31'
+				           <if test="sCloseYn eq 'Y'.toString()">
+						   AND P.CLOSE_DT IS NOT NULL	   
+				           </if>
+				           <if test="sCloseYn eq 'N'.toString()">
+						   AND P.CLOSE_DT IS NULL	   
+				           </if>
+				         GROUP BY P.RECEIPT_DATE, G.GUAR_TYPE
+				        HAVING SUM(G.COMM_AMT) > 0
+				         /* ################################# 보증 PG 수수료  ################################# */
+				         UNION ALL 
+				           SELECT P.RECEIPT_DATE ACCT_DT
+				                 , 'PF' PAY_WAY
+				                 , 'NH' PAY_BANK
+				                 , '3010231253821' PAY_ACCT
+				                 , SUM(TO_NUMBER(P.FEE)) ACCT_AMT
+				                 , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD
+				                 , 'GRP' ACCT_TYPE
+				                 , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(G.MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(G.MEMB_NM)
+				                             END),1,43) MEMB_NM
+				                 , 'AT03' CD_TYPE
+				                 , GUAR_TYPE WORK_TYPE
+				              FROM GR_MASTER G, 
+				                   CM_PAY_RESULT P
+				             WHERE P.GUAR_NO = G.GUAR_NO
+				               AND P.RESP_CODE = '000'
+				               AND P.RECEIPT_DATE BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND G.PAY_YN = 'Y'
+				               AND G.PG_PAY_YN = 'Y'
+				               AND G.GUAR_STAT != '31'
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND P.CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND P.CLOSE_DT IS NULL	   
+					           </if>
+				             GROUP BY P.RECEIPT_DATE, G.GUAR_TYPE
+				            HAVING SUM(G.COMM_AMT) > 0
+				          /* ################################# 수수료환불  ################################# */ 
+				          UNION ALL
+				            SELECT PAY_DT ACCT_DT
+				                  , CASE WHEN PAY_WAY = '10' THEN 'CS'
+				                          WHEN PAY_WAY = '30' OR (PAY_WAY = '40' AND PG_PAY_YN = 'Y') THEN 'NP'
+				                          ELSE 'ND' END PAY_WAY
+				                  , NULL PAY_BANK
+				                  , NULL PAY_ACCT
+				                  , SUM(COMM_AMT) ACCT_AMT
+				                  , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD
+				                  , 'GRR' ACCT_TYPE
+				                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(MEMB_NM)
+				                             END),1,43) MEMB_NM
+				                  , 'AT03' CD_TYPE
+				                  , GUAR_TYPE WORK_TYPE
+				              FROM GR_MASTER
+				             WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND PAY_YN = 'Y'
+				               AND GUAR_STAT != '31'
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND RET_CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND RET_CLOSE_DT IS NULL	   
+					           </if>
+				             GROUP BY PAY_DT, PAY_WAY, PAY_BANK, PAY_ACCT, PG_PAY_YN, GUAR_TYPE, PG_PAY_YN
+				            HAVING SUM(COMM_AMT) &lt; 0
+				             UNION ALL 
+				            /* ################################# 환불  ################################# */ 
+				            SELECT RET_DT ACCT_DT
+				                   , CASE WHEN RET_WAY = '10' THEN 'CS'
+				                          WHEN RET_WAY = '30' THEN 'NP'
+				                          ELSE 'ND' END PAY_WAY
+				                   , NULL RET_BANK
+				                   , NULL RET_ACCT
+				                   , SUM(RET_COMM_AMT) ACCT_AMT
+				                   , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD
+				                   , 'GRR' ACCT_TYPE
+				                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(MEMB_NM)
+				                             END),1,43) MEMB_NM
+				                   , 'AT03' CD_TYPE
+				                   , GUAR_TYPE WORK_TYPE
+				              FROM GR_MASTER
+				             WHERE RET_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND RET_YN = 'Y'
+				               AND GUAR_STAT != '31'
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND RET_CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND RET_CLOSE_DT IS NULL	   
+					           </if>
+				             GROUP BY RET_DT, RET_WAY, RET_BANK, RET_ACCT, PG_PAY_YN, GUAR_TYPE, PG_PAY_YN
+				            HAVING SUM(RET_COMM_AMT) > 0
+				          UNION ALL 
+				           /* ################################# 보증일부해제(선급, 지급)  ################################# */ 
+				            SELECT C.RET_DT ACCT_DT
+				                   , CASE WHEN C.RET_WAY = '10' THEN 'CS'
+				                          WHEN C.RET_WAY = '30' THEN 'NP'
+				                          ELSE 'ND' END PAY_WAY
+				                   , NULL RET_BANK
+				                   , NULL RET_ACCT
+				                   , SUM(C.RET_COMM_AMT) ACCT_AMT
+				                   , F_GET_CD_NM('AT03', G.GUAR_TYPE) ACCT_CD
+				                   , 'GRR' ACCT_TYPE
+				                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(G.MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(G.MEMB_NM)
+				                             END),1,43) MEMB_NM
+				                   , 'AT03' CD_TYPE
+				                   , GUAR_TYPE WORK_TYPE
+				              FROM GR_PART_CANCEL C,
+				                   GR_MASTER G
+				             WHERE C.GUAR_NO = G.GUAR_NO
+				               AND C.RET_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND C.RET_YN = 'Y'
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND C.RET_CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND C.RET_CLOSE_DT IS NULL	   
+					           </if>
+				             GROUP BY C.RET_DT, C.RET_WAY, C.RET_BANK, C.RET_ACCT, G.GUAR_TYPE, PG_PAY_YN
+				            HAVING SUM(C.RET_COMM_AMT) > 0
+				          UNION ALL 
+				          /* ################################# 보증대충  ################################# */ 
+				            SELECT GUAR_PUB_DT ACCT_DT
+				                  , 'DH' PAY_WAY
+				                  , NULL PAY_BANK 
+				                  , NULL PAY_ACCT
+				                  , SUM(GUAR_PRF_AMT) ACCT_AMT
+				                  , F_GET_CD_NM('AT05', G.GUAR_TYPE) ACCT_CD
+				                  , 'GRD' ACCT_TYPE
+				                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(MEMB_NM)
+				                             END),1,43) MEMB_NM
+				                  , 'AT05' CD_TYPE
+				                  , GUAR_TYPE WORK_TYPE
+				              FROM (
+				                    SELECT A.*
+				                         , F_GET_GUAR_PRF_AMT(A.GUAR_CLASS_CD, A.GUAR_AMT, A.BEF_GUAR_AMT) GUAR_PRF_AMT
+				                      FROM GR_MASTER A
+				                   ) G
+				             WHERE GUAR_PUB_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND (GUAR_CAN_DT IS NULL OR GUAR_CAN_DT > REPLACE(#{closeStaDt}, '-', ''))
+				               AND GUAR_STAT != '31'
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND DEBT_SET_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND DEBT_SET_DT IS NULL	   
+					           </if>
+				             GROUP BY GUAR_PUB_DT, PAY_WAY, PAY_BANK, PAY_ACCT, GUAR_TYPE
+				            HAVING SUM(GUAR_PRF_AMT) > 0
+				         UNION ALL
+				         /* ################################# 해제  ################################# */ 
+				            SELECT GUAR_CAN_DT ACCT_DT
+				                  , 'DH' PAY_WAY
+				                  , NULL PAY_BANK
+				                  , NULL PAY_ACCT 
+				                  , SUM(GUAR_PRF_AMT) ACCT_AMT
+				                  , F_GET_CD_NM('AT06', G.GUAR_TYPE) ACCT_CD
+				                  , 'GRH' ACCT_TYPE
+				                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(MEMB_NM)
+				                             END),1,43) MEMB_NM
+				                  , 'AT06' CD_TYPE
+				                  , G.GUAR_TYPE WORK_TYPE
+				              FROM (
+				                    SELECT A.*
+				                         , F_GET_GUAR_PRF_AMT(A.GUAR_CLASS_CD, A.GUAR_AMT, A.BEF_GUAR_AMT) GUAR_PRF_AMT
+				                      FROM GR_MASTER A
+				                   ) G
+				             WHERE GUAR_CAN_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND DEBT_SET_DT IS NOT NULL
+				               AND GUAR_STAT = '30'
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND DEBT_CAN_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND DEBT_CAN_DT IS NULL	   
+					           </if>
+				             GROUP BY GUAR_CAN_DT, PAY_WAY, PAY_BANK, PAY_ACCT, GUAR_TYPE
+				          UNION ALL 
+				          /* ################################# 대출지급  ################################# */
+				            SELECT LEND_DT ACCT_DT
+				                   , DECODE(PAY_WAY, '10', 'CS', 'ND') PAY_WAY
+				                   , PAY_BANK
+				                   , PAY_ACCT 
+				                   , SUM(NVL(PAY_AMT, 0) + NVL(REP_LEND_AMT, 0)) ACCT_AMT
+				                   , F_GET_CD_NM('AT07', LEND_TYPE) ACCT_CD
+				                   , 'LDA' ACCT_TYPE
+				                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+				                             END),1,43) MEMB_NM
+				                   , 'AT07' CD_TYPE
+				                   , LEND_TYPE WORK_TYPE
+				              FROM LD_MASTER
+				             WHERE LEND_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND PROC_STAT = '90'
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND CLOSE_DT IS NULL	   
+					           </if>
+				             GROUP BY LEND_DT, PAY_WAY, LEND_TYPE, PAY_BANK, PAY_ACCT
+				           UNION ALL 
+				           /* ################################# 대출이자  ################################# */
+				           SELECT A.PAY_DT ACCT_DT
+                                  , DECODE(B.PAY_WAY, '10', 'CS', 'ND') PAY_WAY
+                                  , B.PAY_BANK
+                                  , B.PAY_ACCT
+                                  , SUM(A.PAY_AMT) ACCT_AMT
+                                  , F_GET_CD_NM(DECODE(A.INTER_CD, '10', 'AT08', 'AT10'), LEND_TYPE) ACCT_CD
+                                  , DECODE(A.INTER_CD, '10', 'LDI', 'LDD') ACCT_TYPE
+                                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+				                             END),1,43) MEMB_NM
+                                  , DECODE(A.INTER_CD, '10', 'AT08', 'AT10') CD_TYPE
+                                  , LEND_TYPE WORK_TYPE
+                               FROM (SELECT LEND_NO, PAY_SEQ, PAY_DT, INTER_CD
+                                          , SUM(NVL(PAY_AMT, 0)) PAY_AMT
+                                       FROM LD_INTER_HIST 
+                                      GROUP BY LEND_NO, PAY_SEQ, PAY_DT, INTER_CD
+                                  ) A
+                                  , LD_INTER_PAY B
+                                  , LD_MASTER C
+                              WHERE A.LEND_NO = B.LEND_NO
+                                AND A.PAY_SEQ = B.PAY_SEQ
+                                AND A.LEND_NO = C.LEND_NO
+                                AND A.PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+                                <if test="sCloseYn eq 'Y'.toString()">
+							    AND B.CLOSE_DT IS NOT NULL	   
+					            </if>
+					            <if test="sCloseYn eq 'N'.toString()">
+							    AND B.CLOSE_DT IS NULL	   
+					            </if>
+                              GROUP BY A.PAY_DT, A.INTER_CD, B.PAY_WAY, B.PAY_BANK, B.PAY_ACCT, LEND_TYPE 
+				           UNION ALL 
+				           /* ################################# 대출상환현황  ################################# */
+				             SELECT P.REPAY_DT ACCT_DT
+				                  , DECODE(P.REPAY_WAY, '10', 'CS', 'ND') PAY_WAY
+				                  , P.REPAY_BANK PAY_BANK
+				                  , P.REPAY_ACCT PAY_ACCT
+				                  , SUM(NVL(P.REPAY_AMT, 0) + NVL(P.REP_REPAY_AMT, 0)) ACCT_AMT
+				                  , F_GET_CD_NM('AT09', LEND_TYPE) ACCT_CD
+				                  , 'LDR' ACCT_TYPE
+				                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+				                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+				                             END),1,43) MEMB_NM
+				                  , 'AT09' CD_TYPE
+				                   , LEND_TYPE WORK_TYPE
+				              FROM LD_REPAY P,
+				                   LD_MASTER L
+				             WHERE P.REPAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND P.LEND_NO = L.LEND_NO
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND P.CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND P.CLOSE_DT IS NULL	   
+					           </if>
+				             GROUP BY P.REPAY_DT, P.REPAY_WAY, P.REPAY_BANK, P.REPAY_ACCT, L.LEND_TYPE
+				            UNION ALL
+				            /* ################################# 대출연체이자  ################################# */ 
+				             SELECT P.REPAY_DT ACCT_DT
+						          , DECODE(P.REPAY_WAY, '10', 'CS', 'ND') PAY_WAY
+						          , P.REPAY_BANK
+						          , P.REPAY_ACCT
+						          , SUM(P.DELAY_PAY_AMT) ACCT_AMT
+						          , F_GET_CD_NM('AT10', LEND_TYPE) ACCT_CD
+						          , 'LDD' ACCT_TYPE
+						          , SUBSTRB((CASE WHEN COUNT(*) > 1
+						                         THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+						                         ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+						                     END),1,43) MEMB_NM
+						          , 'AT10' CD_TYPE
+						           , LEND_TYPE WORK_TYPE
+				              FROM LD_REPAY P,
+				                   LD_MASTER L
+				             WHERE P.REPAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				               AND P.LEND_NO = L.LEND_NO
+				               AND NVL(P.DELAY_PAY_AMT, 0) > 0
+				               <if test="sCloseYn eq 'Y'.toString()">
+							   AND P.DELAY_CLOSE_DT IS NOT NULL	   
+					           </if>
+					           <if test="sCloseYn eq 'N'.toString()">
+							   AND P.DELAY_CLOSE_DT IS NULL	   
+					           </if>
+				             GROUP BY P.REPAY_DT, P.REPAY_WAY, P.REPAY_BANK, P.REPAY_ACCT, L.LEND_TYPE
+				            HAVING SUM(P.DELAY_PAY_AMT) > 0
+				        ) A
+				 )
+				 WHERE PAY_WAY LIKE '%' || #{payWay} || '%'
+				 ORDER BY ACCT_DT, ACCT_TYPE, PAY_WAY, DEBT_CD, CRDT_CD
+		 
+		 <!--
+		SELECT ACCT_DT
+		     , ACCT_TYPE
+		     , ACCT_CD
+		     , PAY_ACCT_CD
+		     , CASE WHEN ACCT_TYPE IN ('GRC','LDR','LDI','IVA','LDD','GRP','GRR', 'IVI','IVR') THEN PAY_ACCT_CD 
+		            WHEN ACCT_TYPE IN ('LDA','GRD','GRH', 'IVO') THEN ACCT_CD /* 대출지급, 보증대충, 보증해제, 예수금환불 */
+		            ELSE '999999' END DEBT_CD /* 차변 */
+		     , CASE WHEN ACCT_TYPE IN ('GRC','LDR','LDI','IVA','LDD','GRP','GRR', 'IVI','IVR') THEN ACCT_CD
+		            WHEN ACCT_TYPE IN ('LDA','GRD','GRH', 'IVO') THEN PAY_ACCT_CD  /* 대출지급, 보증대충, 보증해제, 예수금환불 */
+		            ELSE '999999' END CRDT_CD  /* 대변 */
+		     , PAY_WAY
+		     , CASE WHEN PAY_WAY IN ('ND', 'PP', 'PF') THEN PAY_BANK ELSE NULL END PAY_BANK /* 보통, AR, PG 경우 계좌 정보 */
+		     , CASE WHEN PAY_WAY IN ('ND', 'PP', 'PF') THEN PAY_ACCT ELSE NULL END PAY_ACCT /* 보통, AR, PG 경우 계좌 정보 */
+		     , ACCT_AMT
+		     , MEMB_NM
+		  FROM 
+		  (
+		    SELECT A.ACCT_DT
+		         , ACCT_TYPE
+		         , NVL(CASE WHEN PAY_WAY = 'PP' OR PAY_WAY = 'PF' THEN F_GET_CD_ETC_CD(CD_TYPE, WORK_TYPE)
+		                ELSE ACCT_CD END, '9999999') ACCT_CD /*  PG결제,  PG수수료 */
+		         , NVL(CASE WHEN PAY_WAY = 'CS' THEN '1020101' /* 현금 */
+		                WHEN PAY_WAY = 'ND' THEN '1020202' /* 보통예금 */
+		                WHEN PAY_WAY = 'PP' THEN '1020202' /* PG결제 */
+		                WHEN PAY_WAY = 'PF' THEN '5030301' /* PG수수료 */
+		                WHEN PAY_WAY = 'NP' OR PAY_WAY = 'DH' THEN F_GET_CD_ETC_CD(CD_TYPE, WORK_TYPE)
+		                ELSE NULL END, '9999999') PAY_ACCT_CD 
+		         , A.PAY_WAY
+		         , A.PAY_BANK
+		         , A.PAY_ACCT
+		         , A.ACCT_AMT
+		         , MEMB_NM
+		      FROM 
+		      (
+		        /* #################################  출자 납부 ########################################## */
+		        SELECT INVEST_DT ACCT_DT
+		               , DECODE(PAY_WAY, '10', 'CS', '20', 'ND', 'ND') PAY_WAY 
+		               , PAY_BANK
+		               , PAY_ACCT
+		               , SUM(INVEST_AMT) ACCT_AMT
+		               , F_GET_CD_NM('AT02', '10') ACCT_CD
+		               , 'IVA' ACCT_TYPE
+		               , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                             THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                             ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+		                         END),1,43) MEMB_NM
+		               , 'AT02' CD_TYPE
+		               , '10' WORK_TYPE
+		          FROM IV_MASTER
+		         WHERE INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		           AND PROC_STAT IN ('30','40')
+		           AND INVEST_CD IN ('10','11')
+		           <if test="sCloseYn eq 'Y'.toString()">
+				   AND CLOSE_DT IS NOT NULL	   
+		           </if>
+		           <if test="sCloseYn eq 'N'.toString()">
+				   AND CLOSE_DT IS NULL	   
+		           </if>
+		           
+		         GROUP BY INVEST_DT, PAY_WAY, PAY_BANK, PAY_ACCT
+		         UNION ALL 
+		         /* #################################  출자금(양도양수) ########################################## */
+		         SELECT I.INVEST_DT ACCT_DT
+		               , DECODE(PAY_WAY, '10', 'CS', '20', 'ND', 'ND') PAY_WAY 
+		               , I.PAY_BANK
+		               , I.PAY_ACCT
+		               , SUM(I.INVEST_AMT) ACCT_AMT
+		               , F_GET_CD_NM('AT02', '10') ACCT_CD
+		               , 'IVA' ACCT_TYPE
+		               , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                             THEN MAX(F_GET_MEMB_NM(T.TAKE_MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                             ELSE MAX(F_GET_MEMB_NM(T.TAKE_MEMB_NO))
+		                         END),1,43) MEMB_NM
+		               , 'AT02' CD_TYPE
+		               , '10' WORK_TYPE
+		          FROM IV_MASTER I
+		              , IV_TRANS T
+		         WHERE T.INVEST_NO = I.INVEST_NO
+		           AND T.TRANS_MEMB_NO = I.MEMB_NO
+		           AND T.TAKE_MEMB_NO != 0
+		           AND T.TRANS_SEQ = 1
+		           AND I.INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		           AND I.INVEST_CD = '30'
+		           <if test="sCloseYn eq 'Y'.toString()">
+				   AND I.CLOSE_DT IS NOT NULL	   
+		           </if>
+		           <if test="sCloseYn eq 'N'.toString()">
+				   AND I.CLOSE_DT IS NULL	   
+		           </if>
+		           
+		         GROUP BY I.INVEST_DT, I.PAY_WAY, I.PAY_BANK, I.PAY_ACCT
+		          UNION ALL 
+		          /* ################################# 출자금반환  ################################# */
+		            SELECT INVEST_DT ACCT_DT
+		                   , 'ND' PAY_WAY 
+		                   , OUT_BANK
+		                   , OUT_ACCT
+		                   , SUM(INVEST_AMT) ACCT_AMT
+		                   , F_GET_CD_NM('AT02', '10') ACCT_CD
+		                   , 'IVR' ACCT_TYPE
+		                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+		                             END),1,43) MEMB_NM
+		                   , 'AT02' CD_TYPE
+		                   , '10' WORK_TYPE
+		              FROM IV_MASTER
+		             WHERE INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND INVEST_CD = '30'
+		               AND MEMB_NO != 0
+		               
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND CLOSE_DT IS NULL	   
+			           </if>
+		             GROUP BY INVEST_DT, OUT_BANK, OUT_ACCT
+		         UNION ALL
+		         /* ################################# 예수금  ################################# */ 
+		        SELECT PAY_DT ACC_DT
+		             , DECODE(PAY_WAY, '10', 'CS', '20', 'ND', 'ND') PAY_WAY
+		             , PAY_BANK
+		             , PAY_ACCT
+		             , SUM(PAY_AMT) PAY_AMT
+		             , F_GET_CD_NM('AT02', '20') ACCT_CD
+		             , DECODE(PAY_TYPE, 'P', 'IVI', 'IVO') ACCT_TYPE
+		             , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                             THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                             ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+		                         END),1,43) MEMB_NM
+		             , 'AT02' CD_TYPE
+		             , '20' WORK_TYPE
+		          FROM IV_DEP_PAY
+		         WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		         <if test="sCloseYn eq 'Y'.toString()">
+				   AND CLOSE_DT IS NOT NULL	   
+		           </if>
+		           <if test="sCloseYn eq 'N'.toString()">
+				   AND CLOSE_DT IS NULL	   
+		           </if>
+		           
+		         GROUP BY PAY_DT, PAY_WAY, PAY_BANK, PAY_ACCT, PAY_TYPE
+		         UNION ALL
+		         /* ################################# 보증수수료  ################################# */ 
+		         SELECT PAY_DT ACCT_DT
+				     , PAY_WAY
+				     , PAY_BANK
+				     , PAY_ACCT
+				     , SUM(COMM_AMT) ACCT_AMT
+				     , F_GET_CD_NM(CD_TYPE, GUAR_TYPE) ACCT_CD
+				     , 'GRC' ACCT_TYPE
+				     , SUBSTRB((CASE WHEN COUNT(*) > 1
+				             THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+				             ELSE MAX(MEMB_NM)
+				         END),1,43) MEMB_NM
+				     , CD_TYPE
+				     , GUAR_TYPE WORK_TYPE
+				  FROM 
+				      (
+				    SELECT MEMB_NO, MEMB_NM, GUAR_TYPE, AFTER_PAY_YN, PAY_DT
+				         , PAY_YN, PG_PAY_YN, PAY_BANK, PAY_ACCT, COMM_AMT
+				         , PAY_WAY
+				         , CD_TYPE
+				      FROM 
+				      (
+				        SELECT MEMB_NO, MEMB_NM, GUAR_TYPE, AFTER_PAY_YN, PAY_DT
+				             , PAY_YN, PG_PAY_YN, PAY_BANK, PAY_ACCT, COMM_AMT
+				             , CASE WHEN PG_PAY_YN = 'Y' THEN 'NP'
+				                    WHEN PAY_WAY = '10' THEN 'CS'
+				                    WHEN PAY_WAY = '30' THEN 'NP'
+				                    ELSE 'ND' END PAY_WAY
+				             , DECODE(AFTER_PAY_YN, 'Y', 'AT04', 'AT03') CD_TYPE   
+				          FROM GR_MASTER
+				         WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				           AND PAY_YN = 'Y'
+				           AND GUAR_STAT != '31'
+				           <if test="sCloseYn eq 'Y'.toString()">
+						   AND CLOSE_DT IS NOT NULL	   
+				           </if> 
+				           <if test="sCloseYn eq 'N'.toString()">
+						   AND CLOSE_DT IS NULL	   
+				           </if>
+				        UNION ALL /*미수금*/
+				        SELECT MEMB_NO, MEMB_NM, GUAR_TYPE, AFTER_PAY_YN, GUAR_PUB_DT
+				            , PAY_YN, PG_PAY_YN, NULL PAY_BANK, NULL PAY_ACCT, COMM_AMT
+				            , 'NP' PAY_WAY
+				            , 'AT04' CD_TYPE
+				          FROM GR_MASTER
+				         WHERE GUAR_PUB_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+				           AND AFTER_PAY_YN = 'Y'
+				           AND GUAR_STAT != '31'
+				           <if test="sCloseYn eq 'Y'.toString()">
+						   AND CLOSE_DT IS NOT NULL	   
+				           </if>
+				           <if test="sCloseYn eq 'N'.toString()">
+						   AND CLOSE_DT IS NULL	   
+				           </if>
+				      )
+				    WHERE PAY_WAY LIKE '%' || #{payWay} || '%'
+				    )
+				GROUP BY PAY_DT, PAY_WAY, PAY_BANK, PAY_ACCT, CD_TYPE, GUAR_TYPE
+				HAVING SUM(COMM_AMT) > 0
+		         UNION ALL
+		          /* ################################# 보증PG결제  ################################# */
+		           SELECT P.RECEIPT_DATE ACCT_DT
+		               , 'PP' PAY_WAY
+		               , 'NH' PAY_BANK
+		               , '3010231253821' PAY_ACCT
+		               , SUM(P.AMOUNT - P.FEE ) ACCT_AMT
+		               , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD 
+		               , 'GRP' ACCT_TYPE
+		               , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                             THEN MAX(G.MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                             ELSE MAX(G.MEMB_NM)
+		                         END),1,43) MEMB_NM
+		                , 'AT03' CD_TYPE
+		                 , GUAR_TYPE WORK_TYPE
+		          FROM GR_MASTER G,
+		               CM_PAY_RESULT P
+		         WHERE P.GUAR_NO = G.GUAR_NO
+		           AND P.RESP_CODE = '000'
+		           AND P.RECEIPT_DATE BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '') /*RECEIPT_DATE*/
+		           AND G.PAY_YN = 'Y'
+		           AND G.PG_PAY_YN = 'Y'
+		           AND G.GUAR_STAT != '31'
+		           <if test="sCloseYn eq 'Y'.toString()">
+				   AND P.CLOSE_DT IS NOT NULL	   
+		           </if>
+		           <if test="sCloseYn eq 'N'.toString()">
+				   AND P.CLOSE_DT IS NULL	   
+		           </if>
+		         GROUP BY P.RECEIPT_DATE, G.GUAR_TYPE
+		        HAVING SUM(G.COMM_AMT) > 0
+		         /* ################################# 보증 PG 수수료  ################################# */
+		         UNION ALL 
+		           SELECT P.RECEIPT_DATE ACCT_DT
+		                 , 'PF' PAY_WAY
+		                 , 'NH' PAY_BANK
+		                 , '3010231253821' PAY_ACCT
+		                 , SUM(TO_NUMBER(P.FEE)) ACCT_AMT
+		                 , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD
+		                 , 'GRP' ACCT_TYPE
+		                 , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(G.MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(G.MEMB_NM)
+		                             END),1,43) MEMB_NM
+		                 , 'AT03' CD_TYPE
+		                 , GUAR_TYPE WORK_TYPE
+		              FROM GR_MASTER G, 
+		                   CM_PAY_RESULT P
+		             WHERE P.GUAR_NO = G.GUAR_NO
+		               AND P.RESP_CODE = '000'
+		               AND P.RECEIPT_DATE BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND G.PAY_YN = 'Y'
+		               AND G.PG_PAY_YN = 'Y'
+		               AND G.GUAR_STAT != '31'
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND P.CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND P.CLOSE_DT IS NULL	   
+			           </if>
+		             GROUP BY P.RECEIPT_DATE, G.GUAR_TYPE
+		            HAVING SUM(G.COMM_AMT) > 0
+		          /* ################################# 수수료환불  ################################# */ 
+		          UNION ALL
+		            SELECT PAY_DT ACCT_DT
+		                  , CASE WHEN PAY_WAY = '10' THEN 'CS'
+		                          WHEN PAY_WAY = '30' OR (PAY_WAY = '40' AND PG_PAY_YN = 'Y') THEN 'NP'
+		                          ELSE 'ND' END PAY_WAY
+		                  , PAY_BANK
+		                  , PAY_ACCT
+		                  , SUM(COMM_AMT) ACCT_AMT
+		                  , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD
+		                  , 'GRR' ACCT_TYPE
+		                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(MEMB_NM)
+		                             END),1,43) MEMB_NM
+		                  , 'AT03' CD_TYPE
+		                  , GUAR_TYPE WORK_TYPE
+		              FROM GR_MASTER
+		             WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND PAY_YN = 'Y'
+		               AND GUAR_STAT != '31'
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND RET_CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND RET_CLOSE_DT IS NULL	   
+			           </if>
+		             GROUP BY PAY_DT, PAY_WAY, PAY_BANK, PAY_ACCT, PG_PAY_YN, GUAR_TYPE, PG_PAY_YN
+		            HAVING SUM(COMM_AMT) &lt; 0
+		             UNION ALL 
+		            /* ################################# 환불  ################################# */ 
+		            SELECT RET_DT ACCT_DT
+		                   , CASE WHEN RET_WAY = '10' THEN 'CS'
+		                          WHEN RET_WAY = '30' THEN 'NP'
+		                          ELSE 'ND' END PAY_WAY
+		                   , RET_BANK
+		                   , RET_ACCT
+		                   , SUM(RET_COMM_AMT) ACCT_AMT
+		                   , F_GET_CD_NM('AT03', GUAR_TYPE) ACCT_CD
+		                   , 'GRR' ACCT_TYPE
+		                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(MEMB_NM)
+		                             END),1,43) MEMB_NM
+		                   , 'AT03' CD_TYPE
+		                   , GUAR_TYPE WORK_TYPE
+		              FROM GR_MASTER
+		             WHERE RET_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND RET_YN = 'Y'
+		               AND GUAR_STAT != '31'
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND RET_CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND RET_CLOSE_DT IS NULL	   
+			           </if>
+		               
+		             GROUP BY RET_DT, RET_WAY, RET_BANK, RET_ACCT, PG_PAY_YN, GUAR_TYPE, PG_PAY_YN
+		            HAVING SUM(RET_COMM_AMT) > 0
+		          UNION ALL 
+		           /* ################################# 보증일부해제(선급, 지급)  ################################# */ 
+		            SELECT C.RET_DT ACCT_DT
+		                   , CASE WHEN C.RET_WAY = '10' THEN 'CS'
+		                          WHEN C.RET_WAY = '30' THEN 'NP'
+		                          ELSE 'ND' END PAY_WAY
+		                   , C.RET_BANK
+		                   , C.RET_ACCT
+		                   , SUM(C.RET_COMM_AMT) ACCT_AMT
+		                   , F_GET_CD_NM('AT03', G.GUAR_TYPE) ACCT_CD
+		                   , 'GRR' ACCT_TYPE
+		                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(G.MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(G.MEMB_NM)
+		                             END),1,43) MEMB_NM
+		                   , 'AT03' CD_TYPE
+		                   , GUAR_TYPE WORK_TYPE
+		              FROM GR_PART_CANCEL C,
+		                   GR_MASTER G
+		             WHERE C.GUAR_NO = G.GUAR_NO
+		               AND C.RET_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND C.RET_YN = 'Y'
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND C.RET_CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND C.RET_CLOSE_DT IS NULL	   
+			           </if>
+		               
+		             GROUP BY C.RET_DT, C.RET_WAY, C.RET_BANK, C.RET_ACCT, G.GUAR_TYPE, PG_PAY_YN
+		            HAVING SUM(C.RET_COMM_AMT) > 0
+		          UNION ALL 
+		          /* ################################# 보증대충  ################################# */ 
+		            SELECT GUAR_BEG_DT ACCT_DT
+		                  , 'DH' PAY_WAY
+		                  , NULL PAY_BANK
+		                  , NULL PAY_ACCT
+		                  , SUM(GUAR_AMT) ACCT_AMT
+		                  , F_GET_CD_NM('AT05', G.GUAR_TYPE) ACCT_CD
+		                  , 'GRD' ACCT_TYPE
+		                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(MEMB_NM)
+		                             END),1,43) MEMB_NM
+		                  , 'AT05' CD_TYPE
+		                  , GUAR_TYPE WORK_TYPE
+		              FROM GR_MASTER G
+		             WHERE GUAR_BEG_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND (GUAR_CAN_DT IS NULL OR GUAR_CAN_DT > REPLACE(#{closeEndDt}, '-', ''))
+		               AND GUAR_STAT != '31'
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND DEBT_SET_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND DEBT_SET_DT IS NULL	   
+			           </if>
+		             GROUP BY GUAR_BEG_DT, PAY_WAY, PAY_BANK, PAY_ACCT, GUAR_TYPE
+		         UNION ALL
+		         /* ################################# 해제  ################################# */ 
+		            SELECT GUAR_CAN_DT ACCT_DT
+		                  , 'DH' PAY_WAY
+		                  , NULL PAY_BANK
+		                  , NULL PAY_ACCT 
+		                  , SUM(GUAR_AMT) ACCT_AMT
+		                  , F_GET_CD_NM('AT06', G.GUAR_TYPE) ACCT_CD
+		                  , 'GRH' ACCT_TYPE
+		                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(MEMB_NM) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(MEMB_NM)
+		                             END),1,43) MEMB_NM
+		                  , 'AT06' CD_TYPE
+		                  , G.GUAR_TYPE WORK_TYPE
+		              FROM GR_MASTER G
+		             WHERE GUAR_CAN_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND DEBT_SET_DT IS NOT NULL
+		               AND GUAR_STAT = '30'
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND DEBT_CAN_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND DEBT_CAN_DT IS NULL	   
+			           </if>
+		             GROUP BY GUAR_CAN_DT, PAY_WAY, PAY_BANK, PAY_ACCT, GUAR_TYPE
+		          UNION ALL 
+		          /* ################################# 대출지급  ################################# */
+		            SELECT LEND_DT ACCT_DT
+		                   , DECODE(PAY_WAY, '10', 'CS', 'ND') PAY_WAY
+		                   , PAY_BANK
+		                   , PAY_ACCT
+		                   , SUM(PAY_AMT) ACCT_AMT
+		                   , F_GET_CD_NM('AT07', LEND_TYPE) ACCT_CD
+		                   , 'LDA' ACCT_TYPE
+		                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+		                             END),1,43) MEMB_NM
+		                   , 'AT07' CD_TYPE
+		                   , LEND_TYPE WORK_TYPE
+		              FROM LD_MASTER
+		             WHERE LEND_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND PROC_STAT = '90'
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND CLOSE_DT IS NULL	   
+			           </if>
+		               
+		             GROUP BY LEND_DT, PAY_WAY, LEND_TYPE, PAY_BANK, PAY_ACCT
+		           UNION ALL 
+		           /* ################################# 대출이자  ################################# */
+		             SELECT P.PAY_DT ACCT_DT
+		                   , DECODE(P.PAY_WAY, '10', 'CS', 'ND') PAY_WAY
+		                   , P.PAY_BANK
+		                   , P.PAY_ACCT
+		                   , SUM(P.PAY_AMT) ACCT_AMT
+		                   , F_GET_CD_NM('AT08', LEND_TYPE) ACCT_CD
+		                   , 'LDI' ACCT_TYPE
+		                   , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+		                             END),1,43) MEMB_NM
+		                   , 'AT08' CD_TYPE
+		                   , LEND_TYPE WORK_TYPE
+		              FROM LD_INTER_PAY P,
+		                   LD_MASTER L
+		             WHERE P.PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND P.LEND_NO = L.LEND_NO
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND P.CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND P.CLOSE_DT IS NULL	   
+			           </if>
+		               
+		             GROUP BY P.PAY_DT, P.PAY_WAY, P.PAY_BANK, P.PAY_ACCT, L.LEND_TYPE
+		           UNION ALL 
+		           /* ################################# 대출상환현황  ################################# */
+		             SELECT P.REPAY_DT ACCT_DT
+		                  , DECODE(P.REPAY_WAY, '10', 'CS', 'ND') PAY_WAY
+		                  , P.REPAY_BANK PAY_BANK
+		                  , P.REPAY_ACCT PAY_ACCT
+		                  , SUM(P.REPAY_AMT) ACCT_AMT
+		                  , F_GET_CD_NM('AT09', LEND_TYPE) ACCT_CD
+		                  , 'LDR' ACCT_TYPE
+		                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+		                             END),1,43) MEMB_NM
+		                  , 'AT09' CD_TYPE
+		                   , LEND_TYPE WORK_TYPE
+		              FROM LD_REPAY P,
+		                   LD_MASTER L
+		             WHERE P.REPAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND P.LEND_NO = L.LEND_NO
+		               <if test="sCloseYn eq 'Y'.toString()">
+					   AND P.CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND P.CLOSE_DT IS NULL	   
+			           </if>
+		               
+		             GROUP BY P.REPAY_DT, P.REPAY_WAY, P.REPAY_BANK, P.REPAY_ACCT, L.LEND_TYPE
+		            UNION ALL
+		            /* ################################# 대출연체이자  ################################# */ 
+		             SELECT P.PAY_DT ACCT_DT
+		                  , DECODE(P.PAY_WAY, '10', 'CS', 'ND') PAY_WAY
+		                  , P.PAY_BANK
+		                  , P.PAY_ACCT
+		                  , SUM(P.PAY_AMT) ACCT_AMT
+		                  , F_GET_CD_NM('AT10', LEND_TYPE) ACCT_CD
+		                  , 'LDD' ACCT_TYPE
+		                  , SUBSTRB((CASE WHEN COUNT(*) > 1
+		                                 THEN MAX(F_GET_MEMB_NM(MEMB_NO)) || ' 외 ' || TO_CHAR((COUNT(*) - 1)) || '건'
+		                                 ELSE MAX(F_GET_MEMB_NM(MEMB_NO))
+		                             END),1,43) MEMB_NM
+		                  , 'AT10' CD_TYPE
+		                   , LEND_TYPE WORK_TYPE
+		              FROM LD_REPAY_INTER P,
+		                   LD_MASTER L
+		             WHERE P.PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		               AND P.LEND_NO = L.LEND_NO
+		                <if test="sCloseYn eq 'Y'.toString()">
+					   AND P.CLOSE_DT IS NOT NULL	   
+			           </if>
+			           <if test="sCloseYn eq 'N'.toString()">
+					   AND P.CLOSE_DT IS NULL	   
+			           </if>
+		               AND P.PAY_WAY LIKE '%' || #{payWay} || '%'
+		             GROUP BY P.PAY_DT, P.PAY_WAY, P.PAY_BANK, P.PAY_ACCT, L.LEND_TYPE
+		            HAVING SUM(P.PAY_AMT) > 0
+		        ) A
+		 )
+		 WHERE PAY_WAY LIKE '%' || #{payWay} || '%'
+		 ORDER BY ACCT_DT, ACCT_TYPE, ACCT_CD, PAY_ACCT_CD, PAY_WAY
+		 -->
+	</select> 
+
+	<!-- 조합마감 정보 조회 --> 
+	<select id="selectEmp" parameterType="Map" resultType="camelMap"> 
+		/* WorkCloseMapper.selectEmp */ 
+		SELECT CD_COMPANY
+          	 , CD_DEPT
+          	 , NO_EMP
+	     FROM NEOE.MA_EMP
+	    WHERE NO_EMP = #{noEmp}
+	</select>
+	
+	<!-- 전표 nodocu 값 추출 --> 
+	<select id="selectCloseToMaxNoDocu" parameterType="Map" resultType="String"> 
+		/* WorkCloseMapper.selectCloseToMaxNoDocu */ 
+		SELECT TRIM('FI'||REPLACE(#{closeEndDt}, '-', '')||NVL(LPAD(SUBSTR(MAX(NO_DOCU),11,5)+1,5,0), '10001')) noDocu
+		  FROM NEOE.FI_ADOCU
+		 WHERE CD_COMPANY = (SELECT CD_COMPANY FROM NEOE.MA_EMP WHERE NO_EMP = #{noEmp})
+		   AND NO_DOCU LIKE 'FI'||REPLACE(#{closeEndDt}, '-', '')||'1%'
+	</select>
+	
+	<!-- 전표 등록 처리 (NEOE.FI_ADOCU --> 
+	<insert id="insertCloseToFiAdocu" parameterType="Map"  > 
+		/* WorkCloseMapper.insertCloseToFiAdocu */ 
+		INSERT INTO NEOE.FI_ADOCU
+	    (
+		    ROW_ID, ROW_NO, NO_TAX, CD_PC, CD_WDEPT
+	        , NO_DOCU, NO_DOLINE, CD_COMPANY, ID_WRITE, CD_DOCU
+	        , DT_ACCT, ST_DOCU, TP_DRCR, CD_ACCT, AMT
+	        , NM_NOTE, TP_DOCU, TP_GUBUN, ID_INSERT, DTS_INSERT
+	        , NO_DEPOSIT, CD_BANK
+        ) 
+	    VALUES 
+	    (
+	    	#{noDocu}, #{noDoline}, '*', '1000', #{cdDept}
+	        , #{noDocu}, #{noDoline}, #{cdCompany}, #{noEmp}, '11'
+	        , REPLACE(#{acctDt}, '-'), '1', #{noDoline}, #{acctCd}, #{acctAmt}
+	        , #{membNm}, 'N', '3', #{noEmp}, TO_CHAR(SYSDATE, 'YYYYMMDD')
+	        , REPLACE(#{payAcct}, '-'), (SELECT MAX(CD_BANK) FROM NEOE.FI_DEPOSIT WHERE REPLACE(NO_DEPOSIT, '-') = REPLACE(#{payAcct}, '-'))
+	    )
+	              
+	</insert> 
+	
+	<!-- ###################### 업무 마감 업데이트 ################################################################################ --> 
+	<!-- ###################### 업무 마감 업데이트 ################################################################################ --> 
+	<!-- ###################### 업무 마감 업데이트 ################################################################################ --> 
+	
+	<!-- 출자금 마감 --> 
+	<update id="updateCloseInvest" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseInvest */ 
+		UPDATE IV_MASTER
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, INVEST_DT)
+	     WHERE INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		   AND PROC_STAT IN ('30','40')
+	       AND INVEST_CD IN ('10','11')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		   AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		   </if>
+	       <if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		   AND CLOSE_DT IS NULL
+		   </if>
+	       <if test="payWay != null and payWay  != ''">
+		   AND PAY_WAY LIKE '%' || #{payWay} || '%' 
+		   </if>
+	       
+	</update> 
+	
+	<!-- 출자금반환 마감 --> 
+	<update id="updateCloseInvestRefund" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseInvestRefund */ 
+		UPDATE IV_MASTER
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, INVEST_DT)
+	     WHERE INVEST_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       AND INVEST_CD = '30'
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		   AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		   </if>
+	       <if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		   AND CLOSE_DT IS NULL
+		   </if>
+	       <if test="payWay != null and payWay  != ''">
+		   AND PAY_WAY = #{payWay}
+		   </if>
+	</update> 
+
+	<!-- 예수금/환불 마감 --> 
+	<update id="updateCloseDep" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseDep */ 
+		UPDATE IV_DEP_PAY
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, PAY_DT)
+	     WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	      	<if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+			AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND CLOSE_DT IS NULL
+			</if>
+			<if test="payWay != null and payWay  != ''">
+		    AND PAY_WAY = #{payWay} 
+		    </if>
+	       
+	</update> 
+	
+	<!-- 보증수수료 --> 
+	<update id="updateCloseGuar" parameterType="Map" > 
+		/* WorkCloseMapper.updateCloseGuar */ 
+		UPDATE GR_MASTER
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, PAY_DT)
+	     WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       AND PAY_YN = 'Y'
+	       AND COMM_AMT > 0
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		 	AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND CLOSE_DT IS NULL
+			</if>
+	       <if test="payWay != null and payWay  != ''">
+		    AND PAY_WAY = #{payWay} 
+		    </if>
+	       
+	</update> 
+	
+	<!-- 보증수수료(미수) --> 
+	<update id="updateCloseGuarAfter" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarAfter */ 
+		UPDATE GR_MASTER
+	       SET PRE_CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, GUAR_PUB_DT)
+	     WHERE GUAR_PUB_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       AND AFTER_PAY_YN = 'Y'
+	       AND GUAR_STAT != '31'
+	    	<if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		 	AND PRE_CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND PRE_CLOSE_DT IS NULL
+			</if>
+	       
+	</update> 
+	
+	<!-- 보증수수료(pg결제) --> 
+	<update id="updateCloseGuarPg" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarPg */ 
+		UPDATE CM_PAY_RESULT A
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, RECEIPT_DATE)
+	     WHERE A.RESP_CODE = '000'
+	       AND A.RECEIPT_DATE BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		   AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		   </if>
+	       <if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		   AND CLOSE_DT IS NULL
+		   </if>
+	</update> 
+	
+	<!-- 보증수수료 환불 --> 
+	<update id="updateCloseGuarChgRefund" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarChgRefund */ 
+		UPDATE GR_MASTER
+	       SET RET_CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, PAY_DT)
+	     WHERE PAY_YN = 'Y'
+	       AND COMM_AMT &lt; 0
+	       AND PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	        <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		 	AND RET_CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND RET_CLOSE_DT IS NULL
+			</if>
+			<if test="payWay != null and payWay  != ''">
+		    AND PAY_WAY = #{payWay} 
+		    </if>
+	</update> 
+	
+	<!-- 보증수수료 환불 --> 
+	<update id="updateCloseGuarRefund" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarRefund */ 
+		UPDATE GR_MASTER
+	       SET RET_CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, RET_DT)
+	     WHERE RET_YN = 'Y'
+	       AND RET_COMM_AMT &gt; 0
+	       AND RET_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		 	AND RET_CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND RET_CLOSE_DT IS NULL
+			</if>
+			<if test="payWay != null and payWay  != ''">
+		    AND PAY_WAY = #{payWay} 
+		    </if>
+	</update> 
+	
+	<!-- 보증수수료 일부해제환불 --> 
+	<update id="updateCloseGuarPartRefund" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarPartRefund */ 
+		UPDATE GR_PART_CANCEL
+	       SET RET_CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, RET_DT)
+	     WHERE RET_YN = 'Y'
+	       AND RET_COMM_AMT &gt; 0
+	       AND RET_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		 	AND RET_CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND RET_CLOSE_DT IS NULL
+			</if>
+			<if test="payWay != null and payWay  != ''">
+		    AND RET_WAY = #{payWay} 
+		    </if>
+	</update> 
+	
+	<!-- 보증수수료(대충) --> 
+	<update id="updateCloseGuarDebt" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarDebt */ 
+		UPDATE GR_MASTER
+	       SET DEBT_SET_DT = DECODE(#{closeReYn}, 'Y', NULL, GUAR_PUB_DT)
+	     WHERE (GUAR_CAN_DT IS NULL OR GUAR_CAN_DT > REPLACE(#{closeStaDt}, '-', ''))
+	       AND GUAR_PUB_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		 	AND DEBT_SET_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND DEBT_SET_DT IS NULL
+			</if>
+			<if test="payWay != null and payWay  != ''">
+		    AND 'DH' = #{payWay} 
+		    </if>
+	</update> 
+	
+	<!-- 보증수수료(해제) --> 
+	<update id="updateCloseGuarCan" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarCan */ 
+		UPDATE GR_MASTER
+	       SET DEBT_CAN_DT = DECODE(#{closeReYn}, 'Y', NULL, GUAR_CAN_DT)
+	     WHERE DEBT_SET_DT IS NOT NULL
+	       AND GUAR_STAT IN ('30','31')
+	       AND GUAR_CAN_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="payWay != null and payWay  != ''"> 
+		   AND 'DH' LIKE '%' || #{payWay} || '%'
+		   </if>	   
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		 	AND DEBT_CAN_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+	    	<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND DEBT_CAN_DT IS NULL
+			</if>
+	       
+	</update> 
+	
+	<!-- 보증수수료(일부해제) --> 
+	<update id="updateCloseGuarPartCan" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseGuarPartCan */ 
+		UPDATE GR_PART_CANCEL
+	       SET DEBT_CAN_DT = DECODE(#{closeReYn}, 'Y', NULL, PART_CAN_DT)
+	     WHERE PART_CAN_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	        <if test="payWay != null and payWay  != ''"> 
+		    AND DECODE(PAY_WAY, 10, 'CS', 'ND') = #{payWay}
+		    </if>
+		   	<if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+			AND DEBT_CAN_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+			<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND DEBT_CAN_DT IS NULL
+			</if>
+	</update> 
+	
+	<!-- 융자지급(대출 지급) --> 
+	<update id="updateCloseLend" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseLend */ 
+		UPDATE LD_MASTER
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, LEND_DT)
+	     WHERE PROC_STAT = '90'
+	       AND LEND_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+			AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+			<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND CLOSE_DT IS NULL
+			</if>
+	</update> 
+	
+	<!-- 융자이자 --> 
+	<update id="updateCloseLendInter" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseLendInter */ 
+		 UPDATE LD_INTER_PAY
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, PAY_DT) 
+	     WHERE PAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+		   AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+		   </if>
+		   <if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		   AND CLOSE_DT IS NULL
+		   </if>
+	</update> 
+	
+	<!-- 융자상환 --> 
+	<update id="updateCloseLendRepay" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseLendRepay */ 
+		UPDATE LD_REPAY
+	       SET CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, REPAY_DT)
+	     WHERE REPAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+			AND CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+			<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND CLOSE_DT IS NULL
+			</if>
+	       
+	</update> 
+	
+	<!-- 융자상환연체이자 --> 
+	<update id="updateCloseLendRepayDelay" parameterType="Map"  > 
+		/* WorkCloseMapper.updateCloseLendRepayDelay */ 
+		UPDATE LD_REPAY
+	       SET DELAY_CLOSE_DT = DECODE(#{closeReYn}, 'Y', NULL, REPAY_DT)
+	     WHERE REPAY_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+	       <if test="closeReYn eq 'Y'.toString()"> <!-- 원복 -->
+			AND DELAY_CLOSE_DT BETWEEN REPLACE(#{closeStaDt},'-','') AND REPLACE(#{closeEndDt}, '-', '')
+			</if>
+			<if test="closeReYn neq 'Y'.toString()"> <!-- 마감 -->
+		 	AND DELAY_CLOSE_DT IS NULL
+			</if>
+	</update> 
+	
+</mapper>

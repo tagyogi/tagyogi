@@ -1,0 +1,209 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : guarAuthChk.html
+	파일명 : guarAuthChk.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 변성균
+	생성일 : 2023.08.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/ //공통코드
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+
+			com.fnCodeSelectBox("GR01", "sHomeGuarType", 1, ""); //보증 종류 선택박스
+
+		});
+
+
+		//보증 조회
+		var fnGuarConfirm = function() {
+			if($.trim($("#sHomeGuarType").val()) === ""){
+				alert("보증종류를 입력해야합니다");
+				$("#sHomeGuarType").focus();
+				return;
+			}
+			if($.trim($("#sGuarPubStaDt").val()) === ""){
+				alert("발급일자를 입력해야합니다");
+				$("#sGuarPubStaDt").focus();
+				return;
+			}
+			if($.trim($("#sGuarPubStaDt").val().length) < 10){
+				alert("날짜가 유효하지 않습니다");
+				$("#sGuarPubStaDt").focus();
+				return;
+			}
+			if($.trim($("#sDocNo").val()) === ""){
+				alert("보증증권번호를 입력해야합니다");
+				$("#sDocNo").focus();
+				return;
+			}
+			
+			var param = $("#guarForm").serializeObject();
+
+			//필수체크
+			var valChks = ["sHomeGuarType", "sGuarPubStaDt", "sDocNo"];
+			if(com.fnValChk(valChks)) {
+				obj = {url:"/comConf/selectGuarConfirm.do", callBack:fnSelectCallBack, param:param, msgYn:"N", loadYn:"Y", sessYn:"N"};
+				com.fnAjaxDef(obj);
+			}
+		}
+
+		//보증 조회 콜백함수
+		var fnSelectCallBack = function(resData) {
+			var guar = resData.guar;
+
+			//console.log(guar);
+			if(guar.length === 0) {
+				alert("보증정보가 존재하지 않습니다.");
+				return;
+			} else {
+				var stat = guar[0].guarStat;
+				if(stat === "80" || stat === "90") {
+					alert($("#sDocNo").val() + "\n\n이 보증증권은 유효한 보증증권입니다.");
+					fnGuarPrint(guar[0]);
+				} else {
+					alert($("#sDocNo").val() + "\n\n이 보증증권은 유효하지 않은 보증증권입니다.");
+				}
+			}
+		}
+
+		//Report 호출
+		var fnGuarPrint = function(data) {
+			var ozName = "";
+			if(data.guarType === "11"){
+				ozName = "GR_이행입찰보증증권";
+			} else if(data.guarType === "12"){
+				ozName = "GR_이행계약보증증권";
+			} else if(data.guarType === "13"){
+				ozName = "GR_이행하자보증증권";
+			} else if(data.guarType === "14"){
+				ozName = "GR_이행선금급보증증권";
+			} else if(data.guarType === "15"){
+				ozName = "GR_이행지급보증증권";
+			} else if(data.guarType === "21"){
+				ozName = "GR_채무보증증권";
+			} else if(data.guarType === "31"){
+				ozName = "GR_성능이행보증증권";
+			} else if(data.guarType === "32"){
+				ozName = "GR_인허가보증증권";
+			} else if(data.guarType === "33"){
+				ozName = "GR_상품판매대금보증증권";
+			} else if(data.guarType === "34"){
+				ozName = "GR_지급보증의지급보증증권";
+			}
+			
+			var pubDt = data.guarPubDt.replace(/-/gi, "");
+		    if(pubDt >= "20190301") {
+		    	ozName += "_2019";
+		
+		    	if(data.guarType == 15 || data.guarType == 33){	//이행지급보증증권, 상품판매대금보증증권 약관변경
+		    		if(pubDt >= "20190930") {
+		        		ozName += "_1";
+		        	}
+		    	}
+		    }else if(pubDt >= "20171124") {
+		    	if(!(data.guarType == 31 || data.guarType == 32 || data.guarType == 33 || data.guarType == 34)){
+		    		ozName += "_2017";
+		    	}
+		    }
+			if(data.guarType == 11)  ozName = "GR_이행입찰보증증권_2023";
+
+			var nameArr = new Array("guar_no", "guar_pub_dt");
+			var valueArr = new Array(data.guarNo, data.guarPubDt);
+
+			//오즈파일명, 변수명, 변수값, 출력수, pdf저장여부, 결과처리여부
+		    ozLoad(ozName, nameArr, valueArr, 1, "pdf", false);
+
+		}
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<form name="guarForm" id="guarForm" method="post" onSubmit="return false;">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<!-- 경로 영역 시작 -->
+                        <div class="content-top flex-box jc-between">
+							<h2 class="ko-bold">[[${menuInfo.menuNm}]]</h2>
+                            <div>[[${menuInfo.menuPath}]] <b>[[${menuInfo.menuNm}]]</b></div>
+                        </div>
+                        <!-- 경로 영역 끝 -->
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <div class="flex-box gap-20 m-col dot-list">
+                                    <ul class="border pd30 w-50 flex-box fd-col gap-10 m-w-100 al-center">
+                                        <li class="ko-bold font-28 mb20 w-100">
+                                            <span class="color-up">온라인</span> 조회
+                                        </li>
+                                        <li class="txt-dept1 mb10 w-100">
+                                            ※ 보증증권발급정보 를 정확하게 입력해 주십시오.
+                                        </li>
+                                        <li class="flex-box al-center gap-10 w-80 m-col t-w-100">
+                                            <span style="color: red">*</span><span class="w-30 white-no mr3 m-w-100">보증종류</span>
+                                            <select name="sHomeGuarType" id="sHomeGuarType" title="보증종류" class=" w-80 m-w-100">
+                                            </select>
+                                        </li>
+                                        <li class="flex-box al-center gap-10 w-80 m-col t-w-100">
+                                            <span style="color: red">*</span><span class="white-no w-30 m-w-100">발급일자</span>
+                                            <div class="flex-box al-center dateBox position-r w-80 m-w-100">
+                                                <input type="text" name="sGuarPubStaDt" id="sGuarPubStaDt" title="발급일자" class="w-100" maxlength="10" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this)" autocomplete="off"/>
+												<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sGuarPubStaDt', 'yyyy-mm-dd')" />
+<!--                                                 <input type="text" name="bussStartDt" id="bussStartDt" value="" class="w-100" title="사업개시일" placeholder="YYYY-MM-DD" autocomplete="off">-->
+                                            </div>
+                                        </li>
+                                        <li class="flex-box al-center gap-10 w-80 m-col t-w-100">
+                                            <span style="color: red">*</span><span class="white-no w-30 m-w-100">보증증권번호</span>
+                                            <input type="text" class="w-80 m-w-100" id="sDocNo" name="sDocNo" title="보증증권번호" placeholder="-를 포함해서 입력해주세요">
+                                        </li>
+                                        <li class="alignC mt30 w-100"><button type="button" class="sub-btn2 btn-color" onclick="fnGuarConfirm()">조회</button>
+                                        </li>
+                                    </ul>
+                                    <ul class="border pd30 w-50 flex-box fd-col gap-10 m-w-100 jc-between">
+                                        <li>
+                                            <ul>
+                                                <li class="ko-bold font-28 mb30"><span class="color-up">오프라인</span>
+                                                    조회</li>
+                                                <li class="txt-dept1">※ 스캐너가 필요하며 프로그램을 설치 하신 후 이용하실 수 있습니다.</li>
+                                                <li class="dot-dept2-gray">위변조확인툴 프로그램
+                                                </li>
+                                                <li class="dot-dept2-gray">각종발급자료의 위변조 여부를 확인하는 프로그램</li>
+                                            </ul>
+                                        </li>
+                                        <li class="alignC mt30"><a href="/markany/install/Setup_NoaXOZ.exe" target="_blank" class="sub-btn2 btn-color" style="line-height: 50px;">다운로드</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

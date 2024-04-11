@@ -1,0 +1,193 @@
+<!--
+	파일정보 : confGuarList.html
+	파일명 :
+현황
+	업무명 : confGuar현황 조회, 등록, 수정
+	생성자 : 변성균
+	생성일 : 2023-04-04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				/*com.fnDateFromTo("ele_appDt", "sAppStaDt", "sAppEndDt"); //시작~종료 달력
+				$("#btn_appDt").click(function(){ com.fnDateCalVisible($("#ele_appDt")); }); */ //달력버튼처리
+				$("#sAppStaDt").val("");
+				$("#sAppEndDt").val("");
+
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+			    //저장후 이벤트
+			    sheet.bind("onAfterSave" , function(obj) {
+					resData = JSON.parse(obj.response.response);
+					if (resData.resultCode !== 0) {
+						alert("처리중 오류가 발생하였습니다.");
+			        }
+			        fnSearch(); //조회 호출
+				});
+
+				//sheetDiv 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+
+				//sheet 조회 이후
+				sheet.bind("onSearchFinish", function(obj) {
+					//화면 초기화
+					$("#guarCredList").empty();
+					
+					var rowData = this.getDataRows();
+					for(var i=0; i<9; i++) {
+						sheet.setAttribute(rowData[i], "appDt", "DataFormat", 'yyyyMMdd');
+						var appDt = sheet.getValue(rowData[i], "appDt");
+
+						var html = "<tr>";
+							html += "<td align='center''>"+ com.fnDateFormat(appDt, '-') +"</td>";		//적용일자
+							html += "<td align='center'>"+ rowData[i].finalGrade +"</td>";				//신용도
+							html += "<td align='right'>"+ rowData[i].bidRate +"</td>";					//입찰보증배수
+							html += "<td align='right'>"+ rowData[i].contrRate +"</td>";				//계약보증배수
+							html += "<td align='right'>"+ rowData[i].defectRate +"</td>";				//하자보수보증배수
+							html += "<td align='right'>"+ rowData[i].payRate +"</td>";					//선금급보증배수
+							html += "<td align='right'>"+ rowData[i].perfRate +"</td>";					//이행지급보증배수
+							html += "<td align='right'>"+ rowData[i].debtRate +"</td>";					//채무보증배수
+							html += "</tr>";
+
+						$("#guarCredList").append(html);
+					}
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/confGuar/selectConfGuarList.do", param); //param, sheetId 생략 가능
+			};
+
+			//행 추가
+			var fnRowAdd = function(){
+				initData = {};
+				com.fnIbsRowAdd("cur", initData, sheet);
+			};
+
+			//저장
+			var fnSave = function(){
+				com.fnIbsSave('/confGuar/saveConfGuar.do');
+			};
+
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>적용일자</dt>
+							<dd style="width:270px;">
+								<input type="text" name="sAppStaDt" id="sAppStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sAppStaDt', 'yyyy-mm-dd','sAppEndDt', 1)" />
+	                        	<input type="text" name="sAppEndDt" id="sAppEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sAppEndDt', 'yyyy-mm-dd', 'sAppStaDt', 2)" />
+							</dd>
+<!--							<dd style="width:250px;">-->
+<!--								<input type="text" name="sAppStaDt" id="sAppStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sAppStaDt','sAppEndDt','F');"/>-->
+<!--								<input type="text" name="sAppEndDt" id="sAppEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sAppStaDt','sAppEndDt','T');"/>-->
+<!--								<span class="text"><img src="../images/icon_calendar.png" alt="달력" title="달력" id="btn_appDt"/></span>-->
+<!--								<div id="ele_appDt" class="ele_dt"></div>-->
+<!--							</dd>-->
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt20">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<div id="frArea" style="margin-bottom:20px;">
+							<table class="tbl" summary="보증상품배수관리">
+								<colgroup>
+									<col style="width:12.5%">
+									<col style="width:12.5%">
+									<col style="width:12.5%">
+									<col style="width:12.5%">
+									<col style="width:12.5%">
+									<col style="width:12.5%">
+									<col style="width:12.5%">
+									<col style="width:12.5%">
+								</colgroup>
+								<thead>
+									<tr>
+										<th>적용일자</th>
+										<th>신용도</th>
+										<th>입찰보증배수</th>
+										<th>계약보증배수</th>
+										<th>하자보수보증배수</th>
+										<th>선금급보증배수</th>
+										<th>이행지급보증배수</th>
+										<th>채무보증배수</th>
+									</tr>
+								</thead>
+								<tbody id="guarCredList"></tbody>
+							</table>
+						</div>
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnRowAdd();" class="btn style08">행추가</button>
+								<button type="button" onclick="javascript:com.fnIbsRowDel();" class="btn style08">행삭제</button>
+								<button type="button" onclick="javascript:fnSave()" class="btn style07">저장</button>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

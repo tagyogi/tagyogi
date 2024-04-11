@@ -1,0 +1,497 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : membReqIns.html
+	파일명 : membReqIns.html
+	업무명 : 조합가입신청
+	생성자 : 변성균
+	생성일 : 2023.08.04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+	var codeList = /*[[${codeList}]]*/; //공통코드
+
+    //화면 초기화 처리 호출
+    $(document).ready(function () {
+         //lnb 세팅함수
+		fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+
+        //동적 첨부파일 생성(동적)
+		com.fnFileSet("MB37", "myUpload");
+
+		com.fnCodeSelectBox("SY13", "sEmail", 1, '');	//Email
+
+		$("#etcEmail").hide();
+
+		//공제조합 가입 신청 날짜 표시
+		var today = /*[[${today}]]*/;
+		var todayVal = today.split('-')
+		$("#dateSpan").text(todayVal[0] + "년 " + todayVal[1] + "월 " + todayVal[2] + "일");
+
+    });
+
+    //사업자번호 확인
+    var fnSearch = function(){
+		if($("#sBizNo").val() === ""){
+			alert("사업자번호를 입력 하십시오.");
+			$("#sBizNo").focus();
+			return;
+		}
+
+		var param = {bizNo : $("#sBizNo").val() };
+		obj = {url:"/membReq/selectMembReqChk.do", param:param, callBack:fnBizChkCallBack, msgYn:"N", sessYn:"N", loadYn:"Y"};
+		com.fnAjaxDef(obj);
+	}
+
+	//사업자번호 확인
+    var fnBizChkCallBack = function(resData){
+		var membCnt = resData.membCnt;
+		var membCounsel = resData.membCounsel;
+		var membJoin = resData.membJoin;
+		var menuCd;
+		var bizNo = $("#sBizNo").val();
+
+		if(membCnt > 0) {
+			//기존 가입된 조합원
+			alert("현재 조합원에 가입된 사업자입니다.");
+
+			//로그인 화면으로 이동
+			menuCd = JSON.stringify(20601);
+			param = {menuCd: menuCd};
+			obj = {url:"/kocfc.do", param:param, callBack:fnPageCallBack, msgYn:"N", sessYn:"N", loadYn:"N"};
+			com.fnAjaxHtml(obj);
+
+		} else {
+			if(membCounsel === null) {
+				alert("가입상담이 등록되어있지 않아 가입 신청이 불가능한 사업자입니다.");
+				location.reload();
+			} else {
+				if(membCounsel.procStat === "20") {
+					alert("공제가입상담 가입거부 사업자입니다.\n공제사업팀에 문의하여 주시기 바랍니다.");
+					location.reload();
+				} else {
+					if(membJoin === null) {
+						alert("사이버 조합가입 신청이 가능한 사업자입니다.");
+						$("#bizNo").val(bizNo);
+						return;
+					} else {
+						if(membJoin.procStat === "20") {
+							alert("가입신청이 거부된 사업자입니다.\n재 신청이 가능한 사업자입니다.");
+							return;
+						} else {
+							alert("현재 가입신청이 진행중인 사업자입니다.");
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//주소 검색
+	var fnAddrSerch = function() {
+      com.fnAddrSerch("popup");
+   }
+
+   //화면 이동 콜백
+   var fnPageCallBack = function(resData){
+	   $("#contFrme").html(resData);
+   }
+
+    //주소 검색 콜백
+    var fnAddrCallBack = function(resData) {
+		//console.log(resData);
+		$("#postNo").val(resData.zipNo); //우편
+		$("#doroCd").val(resData.rnMgtSn); //도로코드
+		$("#doroNm").val(resData.roadAddrPart1); //도로명
+		$("#doroBunho").val(resData.doroBunho); //도로번지
+		$("#doroDong").val(resData.emdNm); //주소동
+		$("#doroBdNo").val(resData.doroBdNo); //주소번지
+
+		$("#addrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+		$("#addr1").val(resData.jibunAddr);
+
+	}
+
+	//이메일 변경 함수
+	var fnEmailChg = function() {
+		$("#etcEmail").val("");
+
+		if($("#sEmail").val() === "90") {
+			$("#etcEmail").show();
+		} else {
+			$("#etcEmail").hide();
+		}
+	}
+
+    //저장
+    var fnSave = function(){
+		//필수체크
+		var valChks = ["bizNo", "membNm", "ceoNm", "ceoTelNo", "postNo", "telNo", "bussStartDt", "investCnt"];
+		if(com.fnValChk(valChks)){
+
+			if(confirm("신청 처리 하시겠습니까?")){
+				var param;
+
+				$("#lawNo").val($("#lawNo1").val()+$("#lawNo2").val());
+
+				let plan = "신청일자 : "				+ $("#reqDt").val().replace(/\-/g,'') + "\n" +
+							"상호 : " 				+ $("#membNm").val() + "\n" +
+							"대표자 명: "				+ $("#ceoNm").val() + "\n" +
+							"법인번호 : "				+ $("#lawNo").val() + "\n\n" +
+							"사업개시일 : "			+ $("#bussStartDt").val() + "\n" +
+							"출자좌수 : "				+ $("#investCnt").val() + "\n"
+							;
+				param = {plan:plan, idn:$("#bizNo").val(), loginYn:$("#loginYn").val()};
+				com.fnCertSign(param); //전자서명 처리
+			}
+		}
+	}
+
+	//전자서명 콜백
+	var fnCertSingCallBack = function(resData){
+
+		$("#signData").val(resData.signData);
+		var param = $("#saveFrm").serializeObject();
+
+		//파일여부
+		var fileList = $("#docFile10").IBUpload('fileList');
+		if(fileList.length === 0){
+			alert("사업자등록증사본을 첨부하십시오.");
+			return;
+		}
+
+		//알게된 사유
+		let knowCds = "";
+		$("input[name=knowCd]:checked").each(function(){
+			if(knowCds === "") knowCds = $(this).val();
+			else knowCds += ","+$(this).val();
+		});
+		$("#knowCds").val(knowCds);
+		//console.log(knowCds);
+
+		$("#lawNo").val($("#lawNo1").val()+$("#lawNo2").val());
+
+		if($("#sEmail").val() === "90") {
+			$("#email").val($("#email").val()+"@"+$("#etcEmail option:selected").text());
+		} else {
+			$("#email").val($("#email").val()+"@"+$("#sEmail option:selected").text());
+		}
+
+
+		//console.log($("#email").val());
+		//첨부파일 첨부한 순서 코드따오기 (물리적저장순서 맞춰야해서 필수)
+		com.fnGetModCds("docFile");
+
+		obj = {url:"/membReq/insertMembReq.do", callBack:fnSaveCallBack, fileId:"docFile", jParam:param,  msgYn:"Y", loadYn:"Y", sessYn:"N"};
+		com.fnAjaxMulti(obj);
+
+	}
+
+	//저장 콜백
+    var fnSaveCallBack = function(resData){
+		location.reload();
+
+	}
+
+		/*]]>*/
+</script>
+<div class="main-top sub">
+    <ul class="inner">
+        <li class="move1"></li>
+        <li class="move2"></li>
+        <li class="move3"></li>
+        <li class="move4"></li>
+        <li class="move5"></li>
+    </ul>
+</div>
+<div class="content-wrap">
+    <div class="inner">
+        <div class="content-box flex-box jc-between">
+            <!-- 업무 안내 영역 -->
+            <div id="lnb" class="lnb-wrap">
+                <h3 class="ko-bold h3-txt"></h3>
+
+            </div>
+
+
+            <!-- 업무 안내 영역 끝 -->
+            <div class="content-main">
+                <!-- 경로 영역 시작 -->
+                <div th:insert="~{/fragments/subTitle}"></div>
+                <!-- 경로 영역 끝 -->
+                <form name="saveFrm" id="saveFrm" onSubmit="return false">
+					<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+					<input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+					<input type="hidden" name="atthNo" id="atthNo"/>
+					<input type="hidden" name="modFileCds" id="modFileCds" />
+					<input type="hidden" name="knowCds" id="knowCds" />
+					<input type="hidden" name="lawNo" id="lawNo" />
+					<input type="hidden" name="reqDt" id="reqDt" th:value="${today}" maxlength="10"/>
+					<input type="hidden" name="signData" id="signData" />
+					<input type="hidden" name="loginYn" id="loginYn" value="Y" />
+                <section id="content" class="content">
+	                <div>
+	                    <ul class="dot-list">
+	                        <li class="title-dept1">최초가입상담 안내</li>
+	                        <li class="txt-dept1">조합 가입시, 소정의 사전심사가 필요하오니 우리조합 공제사업팀으로 연락주십시오(02-3661-5160)
+	                        </li>
+	                    </ul>
+	                    <article>
+	                        <p class="title-dept1">신청 가능/내역 조회</p>
+	                        <div class="txt-border-wrap search-wrap mb0">
+	                            <table>
+									<colgroup>
+                                        <col width="15%">
+                                        <col width="45%">
+                                    	<col width="*">
+                                    </colgroup>
+	                                <tbody>
+										<tr class="m-block">
+		                                    <th><label for="busi_num">사업자번호</label></th>
+		                                    <td class="m-block">
+	                                            <input type="text" name="sBizNo" id="sBizNo" class="m-w-100" onkeyup="com.makeBizNo(this);" maxlength="12" />
+		                                    </td>
+	                                	</tr>
+	                            	</tbody>
+	                            </table>
+	                            <div class="alignR btn-position">
+                                    <button type="button" class="sub-btn btn-black m-w-100" onclick="fnSearch()">조회</button>
+								</div>
+	                        </div>
+	                    </article>
+	                    <article class="table-wrap info auto">
+	                        <div class="table-scroll">
+	                            <table>
+	                                <tbody>
+										<tr>
+	                                        <th><span style="color: red">*</span>상호</th>
+	                                        <td colspan="5">
+	                                            <input type="text" name="membNm" id="membNm" title="상호" style="width:200px" value="" maxlength="40" >
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+											<th><span style="color: red">*</span>사업자등록번호</th>
+	                                        <td colspan="2">
+	                                            <input type="text" name="bizNo" id="bizNo" title="사업자등록번호" value="" readonly="readonly" >
+	                                        </td>
+	                                        <th>법인번호</th>
+	                                        <td colspan="2">
+	                                            <div class="flex-box al-center">
+	                                                <input name="lawNo1" type="text" id="lawNo1" size="6" maxlength="6" value="">
+	                                                <span class="mrl-5">-</span>
+	                                                <input name="lawNo2" type="text" id="lawNo2" size="7" maxlength="7" value="">
+	                                            </div>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th><span style="color: red">*</span>대표자 명</th>
+	                                        <td colspan="2">
+	                                            <input name="ceoNm" type="text" id="ceoNm" size="8" maxlength="30" value="">
+	                                        </td>
+	                                        <th><span style="color: red">*</span>대표자 휴대전화</th>
+	                                        <td colspan="2">
+	                                            <div class="flex-box al-center">
+	                                                <input type="text" name="ceoTelNo" id="ceoTelNo" onkeyup="com.makeTelNo(this)" maxlength="13" />
+	                                            </div>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+
+	                                        <th><span style="color: red">*</span>사업개시일</th>
+	                                        <td colspan="2">
+	                                            <div class="flex-box al-center">
+                                                	<input type="text" name="bussStartDt" id="bussStartDt" value="" maxlength="10" class="w-100" title="사업개시일" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this)" placeholder="YYYY-MM-DD" autocomplete="off">
+                                        			<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'bussStartDt', 'yyyy-mm-dd')" />
+                                        		</div>
+                                        	</td>
+	                                    </tr>
+
+	                                    <tr>
+	                                        <th>영업소재지</th>
+	                                        <td colspan="5">
+												<!--<input type="hidden" name="addrDiv" value="DR" />-->
+												<input type="hidden" name="doroCd" id="doroCd" title="" />
+												<input type="hidden" name="doroNm" id="doroNm" title="" />
+												<input type="hidden" name="doroBunho" id="doroBunho" title="" />
+												<input type="hidden" name="doroDong" id="doroDong" title="" />
+												<input type="hidden" name="doroBdNo" id="doroBdNo" title="" />
+
+	                                            <ul>
+													<li>
+														<label for="dr"><input type="radio" name="addrDiv" id="dr" value="DR" class="input1" checked><span>도로</span></label>
+														<input type="text" name="postNo" id="postNo" title="우편번호" style="width:80px" readonly/>
+														<button type="button" class="address-btn3" onclick="fnAddrSerch()"></button>
+														<input type="text" name="addrFullDoro" id="addrFullDoro" title="도로주소" style="width:368px;" readonly/>
+														<input type="text" name="doroDtl" id="doroDtl" title="도로상세" style="width:170px;" maxlength="50" />
+													</li>
+													<li class="mt3">
+														<label for="jb"><input type="radio" name="addrDiv" id="jb" value="JB" class="input1"><span>지번</span></label>
+														<input type="text" name="addr1" id="addr1" title="지번주소" style="width:495px;" readonly/>
+														<input type="text" name="addr2" id="addr2" title="지번상세" style="width:170px;"maxlength="50" />
+													</li>
+												</ul>
+
+
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th><span style="color: red">*</span>전화번호</th>
+	                                        <td colspan="2">
+	                                            <input type="text" id="telNo" name="telNo" title="전화번호" onkeyup="com.makeTelNo(this)" maxlength="13"/>
+	                                        </td>
+	                                        <th>팩스번호</th>
+	                                        <td colspan="2">
+	                                            <input type="text" name="faxNo" id="faxNo" size="12" maxlength="14" value="" onkeypress="" onkeyup="">
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th><span style="color: red">*</span>E-mail</th>
+	                                        <td colspan="5">
+	                                            <input type="text" name="email" id="email" size="14" maxlength="100" style="width:200px;" value="">@
+	                                            <select id="sEmail" style="width:200px;" onchange="fnEmailChg(this.value);"></select>
+	                                            <input type="text" name="etcEmail" id="etcEmail" style="width:200px;" maxlength="40" />
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>업태</th>
+	                                        <td colspan="2">
+	                                            <input type="text" name="bussCond" id="bussCond" size="20" maxlength="30" value="">
+	                                        </td>
+	                                        <th>종목</th>
+	                                        <td colspan="2">
+	                                            <input type="text" name="bussEvent" id="bussEvent" size="20" maxlength="30" value="">
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th rowspan="2">담당자</th>
+	                                        <th>성명</th>
+	                                        <th>직위</th>
+	                                        <th>전화번호</th>
+	                                        <th colspan="2">E-mail</th>
+	                                    </tr>
+	                                    <tr>
+	                                        <td style="height: 31px;">
+	                                            <input type="text" name="persNm" id="persNm" size="10" maxlength="30" value="">
+	                                        </td>
+	                                        <td>
+	                                            <input type="text" name="persPos" id="persPos" size="10" maxlength="25" value="">
+	                                        </td>
+	                                        <td>
+	                                            <input type="text" name="persCellNo" id="persCellNo" maxlength="11" onkeyup="com.makeTelNo(this)">
+	                                        </td>
+	                                        <td colspan="2">
+	                                            <input type="text" name="persEmail" id="persEmail" size="25" maxlength="50" value="">
+	                                        </td>
+	                                    </tr>
+
+	                                    <tr>
+	                                        <th><span style="color: red">*</span>출자좌수</th>
+	                                        <td colspan="5">
+	                                            <input type="text" name="investCnt" id="investCnt" style="width:120px" size="5" maxlength="5" class="currency" value="">
+	                                            <span class="annotation">*좌(1좌당 납입금액은 1백만원
+	                                                입니다.)</span>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>입금은행</th>
+	                                        <th colspan="3">계좌번호</th>
+	                                        <th colspan="2">예금주</th>
+	                                    </tr>
+	                                    <tr>
+	                                        <td class="alignC">농협은행</td>
+	                                        <td class="alignC" colspan="3">301-0231-2528-81</td>
+	                                        <td colspan="2" rowspan="2" class="alignC">한국콘텐츠공제조합</td>
+	                                    </tr>
+	                                    <tr>
+	                                        <td class="alignC">기업은행</td>
+	                                        <td class="alignC br-1" colspan="3">935-005619-04-058</td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>제출서류</th>
+	                                        <td colspan="5">
+	                                            <ul>
+	                                                <li>1. 사업자등록증 사본1부.</li>
+	                                                <li>2. 등기사항전부증명서(법인사업자에 한함) 1부.</li>
+	                                            </ul>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <td colspan="6" class="br-0" style="height: 31px;">
+	                                            위와같이 한국 콘텐츠 공제조합 가입을 신청합니다.
+	                                            <span id="dateSpan" style="float: right;"></span>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <td colspan="6" class="br-0">
+	                                            <p class="mb20">※ 우리 조합을 어떻게 알게 되었나요? (복수선택가능)</p>
+	                                            <div class="flex-box check-wrap">
+	                                                <label for="know_cd1" class="flex-box al-center jc-between">
+	                                                    <span class="flex-box al-center jc-between gap-10">
+	                                                        <input type="checkbox" name="knowCd" id="knowCd1" class="input1" value="1">인터넷
+	                                                        검색
+	                                                    </span>
+	                                                    <span class="flex-box white-no al-center">
+	                                                        (추천인 : <input type="text" name="recComp" id="recComp" maxlength="20" class="mrl-5">)
+	                                                    </span>
+	                                                </label>
+	                                                <label for="knowCd4" class="flex-box al-center jc-between">
+	                                                    <span class="flex-box al-center jc-between gap-10">
+	                                                        <input type="checkbox" name="knowCd" id="knowCd4" class="input1" value="4">조합 홍보물
+	                                                    </span>
+	                                                </label>
+	                                                <label for="know_cd2" class="flex-box al-center jc-between">
+	                                                    <span class="flex-box al-center jc-between gap-10">
+	                                                        <input type="checkbox" name="knowCd" id="knowCd2" class="input1" value="2">지인 추천
+	                                                    </span>
+	                                                    <span class="flex-box white-no al-center">(추천인
+	                                                        :<input type="text" name="recPers" id="recPers" maxlength="20" class="mrl-5">)
+	                                                    </span>
+	                                                </label>
+	                                                <label for="knowCd5" class="flex-box al-center jc-between">
+	                                                    <span class="flex-box al-center jc-between gap-10">
+	                                                        <input type="checkbox" name="knowCd" id="knowCd5" class="input1" value="5">언론 보도
+	                                                    </span>
+	                                                </label>
+	                                                <label for="know_cd3" class="flex-box al-center jc-between">
+	                                                    <span class="flex-box al-center jc-between gap-10">
+	                                                        <input type="checkbox" name="knowCd" id="knowCd3" class="input1" value="3">콘텐츠
+	                                                        관련기관 추천
+	                                                    </span>
+	                                                    <span class="flex-box white-no al-center">(검색어
+	                                                        :
+	                                                        <input type="text" name="webKeyword" id="webKeyword" class="mrl-5">)
+	                                                    </span>
+	                                                </label>
+	                                                <label for="knowCd6" class="flex-box al-center jc-between gap-10">
+	                                                    <span class="flex-box al-center jc-between gap-10">
+	                                                        <input type="checkbox" name="knowCd" id="knowCd6" class="input1" value="6">기타
+	                                                    </span>
+	                                                    <span class="flex-box white-no al-center fg-1">(<input type="text" name="etcCont" id="etcCont" class="mrl-5">)
+	                                                    </span>
+	                                                </label>
+	                                            </div>
+	                                        </td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>
+	                    </article>
+	                    <article class="table-wrap  auto info">
+	                        <p class="title-dept1">제출서류<span style="font-size: 13px; color: #ff6600"> (첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></p>
+                            <table class="tbl" id="myUpload"></table>
+	                    </article>
+	                    <div class="alignR">
+	                        <button type="button" class="sub-btn2 btn-color" onclick="fnSave();">신청</button>
+	                    </div>
+	                </div>
+	        	</section>
+	        	</form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</html>

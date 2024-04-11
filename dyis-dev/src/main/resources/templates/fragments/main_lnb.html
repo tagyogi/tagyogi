@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<th:block th:fragment="main-lnb">
+		
+	<div class="lnbArea" >
+		<!--
+        <dl id="T_1" class="lnb">
+            <dt>조합원업무</dt>
+            <dd class="has">
+                <a href="#" class="">퍼블리싱가이드</a>
+                <ul class="dep3">
+                    <li><a href="./A01목록조회.html" onclick="return false;" title="">조회화면</a></li>
+                </ul>
+            </dd>
+            <dd class="has">
+                <a href="#" class="">공제가입관리</a>
+                <ul class="dep3">
+                    <li><a href="#;" onclick="return false;" title="">공제가입상담</a></li>
+                </ul>
+            </dd>
+            <dd class="has">
+                <a href="#" class="">조합원관리</a>
+                <ul class="dep3">
+                    <li><a href="#;" onclick="return false;" title="">조합원관리</a></li>
+                </ul>
+            </dd>
+        </dl>
+        -->
+    </div><!-- //lnbArea -->
+    
+    <!-- 선택탭메뉴 시작 -->
+   	<div id="selTabArea">
+   		<div class="mdiTabArea">
+            <a href="javascript:showHideLnb();" class="collapse tab">lnb닫기</a>
+            <a href="javascript:menuSelect(0);" class="home tab">홈</a>
+            <div class="mList">
+                <!--움직일 탭메뉴 : move-tabs-->
+                <div class="move-tabs">
+                    <!--
+                    <a href="javascript:;" class="tab active">최초신고 <span class="close"></span></a>
+                    <a href="javascript:;" class="tab">변경신고<span class="close"></span></a>
+                    -->
+                </div>
+            </div>
+        </div><!-- // mdiTabArea -->
+        <div class="ctrl-btns">
+            <button type="button" class="prev" onclick="movePrev()">&lt;</button>
+            <button type="button" class="next" onclick="moveNext()">&gt;</button>
+            <button type="button" class="allClose" onclick="allMenuClose()">모두닫기 X</button>
+        </div>
+   	</div>
+   	
+   	</th:block>
+</html>

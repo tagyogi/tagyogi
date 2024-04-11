@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/jquery-3.3.1.min.js"></script>
+    <script src="../js/index.js"></script>
+</head>
+
+<body onscroll="scrollFix(menu_list, menu_btns)">
+    <div id="wrap">
+        <header>
+            <div>
+                <h1 class="logo">
+                    <a href="#;">
+                        <img src="../images/pizza-slice-solid.svg" alt="업체로고"><span class="ir">Shop</span>
+                    </a>
+                </h1>
+            </div>
+            <div>
+                <button class="circle receipt" type="button"><span class="ir">영수증 열기</span></button>
+                <button class="circle shop-info" type="button" onclick="addClassOn(dialog2)"><span class="ir">업체정보
+                        보기</span></button>
+            </div>
+        </header>
+
+        <main>
+            <div class="banner-box">
+                <ul>
+                    <li><img src="../images/pizza-slice-solid.svg" alt="logo"></li>
+                    <li>피자 양천향교점</li>
+                </ul>
+                <a href="#;" class="banner">
+                    <em>Shop을 사용하고 가게가 이렇게 변했어요</em>
+                    <span class="right-txt">사장님 인터뷰 보러가기</span>
+                </a>
+            </div><!--banner-box-->
+
+            <div class="menu-content">
+                <div id="menu_btns" class="menu-btns">
+                    <button type="button" class="menu-btn on">세트메뉴</button>
+                    <button type="button" class="menu-btn">피자</button>
+                    <button type="button" class="menu-btn">사이드</button>
+                    <button type="button" class="menu-btn">음료/주류</button>
+                    <button type="button" class="menu-btn">추가메뉴</button>
+                </div><!--menu_btns-->
+
+                <ul id="menu_list" class="menu-list">
+                    <li>
+                        <span class="title">세트메뉴</span>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">피자 프리미엄 2인 세트</li>
+                                <li class="descript">스파게티 1개, 음료 1개를 선택해주세요.</li>
+                                <li class="price">45000 원</li>
+                            </ul>
+                        </div>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">피자 프리미엄 3인 세트</li>
+                                <li class="descript">스파게티 2개, 음료 1개를 선택해주세요.</li>
+                                <li class="price">45000 원</li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="title">피자</span>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample1.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">페페로니 피자</li>
+                                <li class="descript">베스트셀러 가득한 페페로니와 치즈의 조합</li>
+                                <li class="price">22000 원</li>
+                            </ul>
+                        </div>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample2.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">베이컨 포테이토 피자</li>
+                                <li class="descript">갈릭디핑소스 1개 + 핫소스 1개 + 파마산가루 1개</li>
+                                <li class="price">24000 원</li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="title">사이드</span>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">오븐 치즈 미트 스파게티</li>
+                                <li class="descript">미트소스 모짜렐라 치즈</li>
+                                <li class="price">45000 원</li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="title">음료/주류</span>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample2.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">레몬에이드</li>
+                                <li class="descript">직접 만든 레몬청에 시원한 탄산</li>
+                                <li class="price">4000 원</li>
+                            </ul>
+                        </div>
+                        <div class="menu-item">
+                            <img src="../images/drink-sample.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">제로콜라</li>
+                                <li class="price">2000 원</li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="title">추가메뉴</span>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">피클</li>
+                                <li class="price">500 원</li>
+                            </ul>
+                        </div>
+                        <div class="menu-item">
+                            <img src="../images/pizza-sample.jpeg" alt="sample">
+                            <ul>
+                                <li class="name">갈릭디핑소스</li>
+                                <li class="price">200 원</li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul><!--menu_list-->
+
+                <a href="#;" class="banner">
+                    <em>Shop을 사용하고 가게가 이렇게 변했어요</em>
+                    <span class="right-txt">사장님 인터뷰 보러가기</span>
+                </a>
+            </div><!--menu-content-->
+        </main><!--main-->
+
+        <footer>
+            <div class="logo">
+                <a href="#;">
+                    <img src="../images/pizza-slice-solid.svg" alt="업체로고"><span class="ir">Shop</span>
+                </a>
+            </div>
+            <ul>
+                <li class="pre-bold">피자</li>
+                <li class="pre-bold">양천향교점</li>
+                <li class="pre-medium"><span class="ellipsis">서울 강서구 공항대로 양천향교</span></li>
+                <li class="pre-medium"><span>0212345678</span></li>
+            </ul>
+            <div>
+                <a href="#;" class="circle insta"><span class="ir">인스타</span></a>
+            </div>
+        </footer><!--footer-->
+
+        <div class="fix-btns">
+            <button type="button" class="btn bell" onclick="addClassOn(order_check)">호출하기</button>
+            <button type="button" class="btn cart" onclick="addClassOn(order)"><span class="ir">주문하기</span></button>
+        </div><!--fix-btns 호출, 주문-->
+
+        <div id="order" class="order">
+            <div class="menu-item border-bottom">
+                <ul>
+                    <li><span class="req-txt gray">5번 테이블</span></li>
+                    <li class="price between mt10"><span class="black">총 주문금액</span><em>4000 원</em></li>
+                </ul>
+            </div>
+            <div class="order-content">
+                <div class="menu-item al-start">
+                    <ul>
+                        <li class="name">레몬에이드
+                        </li>
+                        <li class="descript">직접 만든 레몬청에 시원한 탄산</li>
+                        <li class="price">4000 원</li>
+                    </ul>
+                    <div class="sort-btns">
+                        <button type="button" class="minus circle small"><span class="ir">수량
+                                -1</span></button>
+                        1
+                        <button type="button" class="plus circle small"><span class="ir">수량
+                                +1</span></button>
+                    </div>
+                </div>
+                <div class="menu-item al-start">
+                    <ul>
+                        <li class="name">레몬에이드
+                        </li>
+                        <li class="descript">직접 만든 레몬청에 시원한 탄산</li>
+                        <li class="price">4000 원</li>
+                    </ul>
+                    <div class="sort-btns">
+                        <button type="button" class="minus circle small"><span class="ir">수량
+                                -1</span></button>
+                        1
+                        <button type="button" class="plus circle small"><span class="ir">수량
+                                +1</span></button>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-order"
+                onclick="removeClassOn(order); addClassOn(order_check)">주문하기</button>
+        </div><!--order-->
+
+        <div id="order_check" class="order-check">
+            <ul>
+                <li>주문을</li>
+                <li>완료하시겠습니까?</li>
+                <li class="sort-btns mt20">
+                    <button type="button" class="btn-rect gray">아니요</button>
+                    <button type="button" class="btn-rect" onclick="removeClassOn(order_check)">예</button>
+                </li>
+            </ul>
+        </div><!--order_check-->
+
+        <!-- 매장 정보, 알레르기/영양성분 팝업 -->
+        <div id="dialog2" class="dialog v2">
+            <div class="dialog-box">
+                <div class="fix-btns">
+                    <button type="button" class="close"><span class="ir">닫기</span></button>
+                    <span class="name">매장정보 • 원산지</span>
+                </div>
+                <div class="img-box">
+                    <img src="../images/map.png" alt="sample">
+                </div>
+                <div class="dialog-content menu-item top">
+                    <ul class="info">
+                        <li class="price">피자 양천향교점</li>
+                        <li><span>전화번호</span>0212345678</li>
+                        <li><span>주소</span> 서울 강서구 공항대로 양천향교</li>
+                        <li><span>인스타그램</span></li>
+                    </ul>
+                    <ul>
+                        <li class="price"><span>원산지 정보</span></li>
+                        <li class="descript f12">태그히어는 중개 플랫폼으로서 상품 판매의 당사자가 아니며, 판매자가 등록한 상품 정보, 상품의 품질 및 거래에 대해서 일체의
+                            책임을
+                            지지 않습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div><!--dialog2-->
+
+        <!-- 메뉴 상세 팝업 -->
+        <div id="dialog" class="dialog">
+            <div class="dialog-box" onscroll="scrollFix(dialog_content, dialog_fix, this)">
+                <div id="dialog_fix" class="fix-btns">
+                    <button type="button" class="close"><span class="ir">닫기</span></button>
+                    <span class="name">페페로니 피자</span>
+                </div>
+                <div class="img-box">
+                    <img src="../images/pizza-sample1.jpeg" alt="sample">
+                </div>
+                <div id="dialog_content" class="dialog-content">
+                    <ul class="menu-list">
+                        <li class="menu-item top">
+                            <ul>
+                                <li class="name">
+                                    <span>페페로니 피자</span>
+                                    <button type="button" class="round gray" onclick="addClassOn(dialog2)">알레르기/영양성분
+                                        정보</button>
+                                </li>
+                                <li class="descript">베스트셀러 가득한 페페로니와 치즈의 조합 다함께 즐길 수 있는 짭조름한 피자</li>
+                                <li class="price"><span>가격</span><em>2,2000 원</em></li>
+                                <li class="price">
+                                    <span>수량</span>
+                                    <div class="sort-btns">
+                                        <button type="button" class="minus circle small"><span class="ir">수량
+                                                -1</span></button>
+                                        1
+                                        <button type="button" class="plus circle small"><span class="ir">수량
+                                                +1</span></button>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="menu-item">
+                            <ul>
+                                <li class="title">
+                                    <span>도우 선택1.(필수)</span>
+                                    <span class="round blue">필수</span>
+                                </li>
+                                <li><span class="req-txt">* 최대 1개 선택 가능</span></li>
+                                <li>
+                                    <label><input type="checkbox">기본 도우</label>
+                                    <span>+ 0 원</span>
+                                </li>
+                                <li>
+                                    <label><input type="checkbox">치즈 크러스트</label>
+                                    <span>+ 0 원</span>
+                                </li>
+                                <li>
+                                    <label><input type="checkbox">고구마 크러스트</label>
+                                    <span>+ 0 원</span>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="menu-item">
+                            <ul>
+                                <li class="title">
+                                    <span>도우 선택1.(필수)</span>
+                                    <span class="round blue">필수</span>
+                                </li>
+                                <li><span class="req-txt">* 최대 1개 선택 가능</span></li>
+                                <li>
+                                    <label><input type="checkbox">기본 도우</label>
+                                    <span>+ 0 원</span>
+                                </li>
+                                <li>
+                                    <label><input type="checkbox">치즈 크러스트</label>
+                                    <span>+ 0 원</span>
+                                </li>
+                                <li>
+                                    <label><input type="checkbox">고구마 크러스트</label>
+                                    <span>+ 0 원</span>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="menu-item">
+                            <ul>
+                                <li class="title">
+                                    <span>추가 메뉴</span>
+                                </li>
+                                <li><span class="req-txt gray">* 최대 2개 선택 가능</span></li>
+                                <li>
+                                    <label><input type="checkbox">피클</label>
+                                    <span>+ 500 원</span>
+                                </li>
+                                <li>
+                                    <label><input type="checkbox">갈릭디핑소스</label>
+                                    <span>+ 200 원</span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul><!--menu-list-->
+                </div><!--dialog_content-->
+                <button type="button" class="btn-order">22,000원 담기</button>
+            </div>
+        </div><!--dialog-->
+
+        <div class="overlay"></div><!--공통-->
+
+        <!-- toast alert -->
+        <div class="toast-box">
+            <span class="toast-message fadeInDown">주문이 완료되었습니다.</span>
+            <span class="toast-message fadeInDown">주문이 완료되었습니다.</span>
+        </div>
+    </div>
+</body>
+
+</html>

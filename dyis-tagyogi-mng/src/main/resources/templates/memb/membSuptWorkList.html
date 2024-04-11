@@ -1,0 +1,188 @@
+<!--
+	파일정보 : membWorkList.html
+	파일명 : membWorkList현황
+	업무명 :  업무거래현황
+	생성자 : 김민혜
+	생성일 : 2023-06-14
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB08", gridNoList : "60102"}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//코드값 처리
+				com.fnCodeSelectBox("MB08", "sMembStat", 1, "10"); //조합원상태
+				com.fnCodeSelectBox("MB02", "sMainBussCd", 2, "");	//장르
+				com.fnCodeSelectBox("CRET", "sMembCretop", 2, "", "1");	//조기경보
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter" || obj.kind === "Header") return;
+					fnView("V");
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/membSupt/selectMembWorkList.do", param); //param, sheetId 생략 가능
+			};
+
+
+			//화면 호출(상세)
+			var fnView = function(){
+				var row = sheet.getFocusedRow();
+
+				if(validateUtil.isNull(row)){
+					alert("조회 대상을 선택하십시오.");
+					return;
+				}
+
+				param = { menuCd:"1080104", paramMap:{membNo: row.membNo} };
+				parent.menuOpen(param);
+			};
+
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				fnSearch();
+			};
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt style="width:97px;">조합원명</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:165px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+						</dl>
+						<dl>
+							<dt style="width:97px;">대표자</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sCeoNm" id="sCeoNm" maxlength="15" style="width:258px;">
+							</dd>
+						</dl>
+						<dl>
+							<dt>조합원상태</dt>
+							<dd style="width:90px;">
+								<select name="sMembStat" id="sMembStat" style="width:125px;" title="조합원상태"></select>
+							</dd>
+						</dl>					</div><!-- //row -->
+
+					<div class="row">
+						<dl>
+							<dt style="width:97px;">사업자번호</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sBizNo" id="sBizNo" style="width:258px;" onkeyup="com.fnOnlyNum(this);com.makeBizNo(this);" maxlength="12">
+							</dd>
+						</dl>
+						<dl>
+							<dt style="width:97px;">법인등록번호</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sLawNo" id="sLawNo" style="width:258px;" onkeyup="com.fnOnlyNum(this);com.makeJuminNo(this);" maxlength="14">
+							</dd>
+						</dl>
+						<dl>
+							<dt>장르</dt>
+							<dd style="width:90px;">
+								<select name="sMainBussCd" id="sMainBussCd" style="width:125px;" title="장르"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+
+					<div class="row">
+						<dl>
+							<dt style="width:97px;">보증최종거래일</dt>
+							<dd style="width:260px;">
+								<input type="text" name="sGuarStaDt" id="sGuarStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sGuarStaDt','sGuarEndDt','F');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sGuarStaDt', 'yyyy-mm-dd','sGuarEndDt', 1)" />
+								<input type="text" name="sGuarEndDt" id="sGuarEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sGuarStaDt','sGuarEndDt','T');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sGuarEndDt', 'yyyy-mm-dd','sGuarStaDt', 2)" />
+							</dd>
+						</dl>
+						<dl>
+							<dt style="width:97px;">융자최종거래일</dt>
+							<dd style="width:260px;">
+								<input type="text" name="sLendStaDt" id="sLendStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sLendStaDt','sLendEndDt','F');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sLendStaDt', 'yyyy-mm-dd','sLendEndDt', 1)" />
+								<input type="text" name="sLendEndDt" id="sLendEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sLendStaDt','sLendEndDt','T');"/>
+								<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sLendEndDt', 'yyyy-mm-dd','sLendStaDt', 2)" />
+							</dd>
+						</dl>
+						<dl>
+							<dt>조기경보</dt>
+							<dd style="width:90px;">
+								<select name="sMembCretop" id="sMembCretop" style="width:125px;" title="조기경보"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt20">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 그리드 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnView();" class="btn style08">상세</button>
+								<button type="button" onclick="javascript:fnExcel();" class="btn style04">엑셀</button>
+							</div>
+						</section>
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 그리드 좌측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

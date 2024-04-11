@@ -1,0 +1,288 @@
+<!--
+	파일정보 : comGuarReqGuar.html
+	파일명 : comGuarReqGuar
+	업무명 : 보증신청 주계약정보
+	생성자 : bsg
+	생성일 : 2023.04.03
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body th:fragment="type(type)">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			//comGuarPay.html 사용시 필수 공통코드: [MB02, GR09, GR13]
+			$(document).ready(function(){
+				//달력처리
+				if(guarType === '14' && paramMap.menuCd === '1030206')	$("#guarBegDt").val(/*[[${today}]]*/);	//선금급 신규등록일때 보증기간 오늘
+
+				//radioBox
+				if(guarType === "21") com.fnCodeRadio("GR13", "ele_repayCd", "repayCd", false, "10"); //채무보증방법
+				com.fnCodeRadio("GR09", "ele_guarAddCdArea", "guarAddCd", false, "0"); //보증기간가산
+				//보증기간가산 클릭 이벤트
+				$("input[name=guarAddCd]").on("click",function(){
+				    if($("#guarBegDt").val().length !== 10 || $("#guarExpDt").val().length !== 10) 	return;
+
+					var addCd = Number($(this).val());
+					$("#guarAddDays").val(addCd);
+				    if(tmpGuarExpDt === undefined) 	tmpGuarExpDt = $("#guarExpDt").val();
+
+				    // 보증종료일계산
+				    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, addCd));
+
+				    // 보증일수 계산
+				    guarCom.fnSetGuarDays();
+				});
+
+				//체크박스 값 한개만 클릭되도록
+				$("input[name=specContrs]").on("click", function(){
+					if($(this).is(":checked")){
+						$("input[name=specContrs]").prop("checked", false);
+						$(this).prop("checked", true);
+					}
+				});
+			});
+
+			//보증내용 자동 입력
+			var selectGuarTypeNm = function(){
+
+				var guarTypeNm = "";	//보증내용
+				if(guarType === "11")	guarTypeNm = "입찰보증";
+				if(guarType === "12")	guarTypeNm = "계약보증";
+				if(guarType === "13")	guarTypeNm = "하자보증";
+				if(guarType === "14")	guarTypeNm = "선금급보증";
+				if(guarType === "15")	guarTypeNm = "지급보증";
+
+				if(guarType === "21")	guarTypeNm = "채무보증";
+				if(guarType === "31")	guarTypeNm = "성능이행보증";
+				if(guarType === "32")	guarTypeNm = "인·허가보증";
+				if(guarType === "33")	guarTypeNm = "상품판매대금보증";
+				if(guarType === "34")	guarTypeNm = "지급보증의지급보증";
+
+				$("#guarCont").val(guarTypeNm);
+			}
+
+			//적용요율 수기입력 체크박스 클릭 이벤트
+			var modifyRate = function() {
+			    if($("input[name=rateModYn]").is(":checked"))	$("#commRate").attr("readonly", false);
+			    else								 			$("#commRate").attr("readonly", true);	//tempCommRate : guarCom.js(fnSelectRateCallBack에서 정의)
+			    //else								 			$("#commRate").attr("readonly", true).val(tempCommRate);	//tempCommRate : guarCom.js(fnSelectRateCallBack에서 정의)
+			    guarCom.fnCalcCommAmt();
+			}
+
+			//수정페이지(기존 데이터 체크박스,라디오박스 값 체크)
+			var fnUptCheckValGuar = function(guar){
+				com.checkBoxCheckValue(guar.guarAddCd, "guarAddCd");	//보증기간가산
+				com.checkBoxCheckValue(guar.specContrs, "specContrs");	//특약
+				com.checkBoxCheckValue(guar.g2bContCheck, "g2bContCheck");	//실제이행기일
+				com.checkBoxCheckValue(guar.koccaYn, "koccaYn");		//공공기관지원사업 여부
+				com.checkBoxCheckValue(guar.rateModYn, "rateModYn");	//수기입력 여부
+				com.checkBoxCheckValue(guar.pgAddYn, "pgAddYn");		//pg수수료 보함여부
+				if(guar.rateModYn === "Y")	$("#commRate").attr("readonly", false);	//수기입력 Y면 readonly 해제
+			}
+
+			//보증일수 입력 이벤트
+			var fnAddGuarDay = function(){
+				if($("#guarBegDt").val() === "") {
+		            alert("시작일자를 입력해 주십시오.");
+		            $("#guarDays").val("");
+		            $("#guarBegDt").focus();
+		            return;
+		        }
+
+				//focus는 onblur 이벤트 작동을 위한 코드같음..
+		        $("#guarExpDt").val(com.fnDateGet($("#guarBegDt").val(), guarCom.fnToNumber($("#guarDays").val()) - 1)).focus();
+		        $("#guarDays").focus();
+			}
+
+
+		    /*]]>*/
+		</script>
+		<section class="area mt10">
+			<div class="fl">
+				<h4 class="title">보증계약정보<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarReqGuar.html)</th:block></h4>
+			</div>
+		</section>
+		<table class="tbl">
+			<colgroup>
+				<col style="width:90px;">
+				<col style="width:140px;">
+				<col style="width:90px;">
+				<col style="width:140px;">
+				<col style="width:90px;">
+				<col style="width:140px;">
+			</colgroup>
+			<tbody>
+				<th:block th:if="${#strings.equals(paramMap.menuCd,'1030220')}">	<!-- 기재변경등록에만 -->
+				<tr>
+					<th><span class="reqMark">*</span>보증료</th>
+					<td colspan="5">
+						<!--<span id="ele_chgCommAmt"></span>-->
+						<input type="search" name="commAmt" id="commAmt" title="보증료" maxlength="20" style="width:120px" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value=""/>
+					</td>
+				</tr>
+				</th:block>
+
+				<th:block th:if="${#strings.equals(paramMap.menuCd,'1030218')}">	<!-- 보증변경등록 수정일때만 -->
+				<tr>
+					<th>기존보증기간</th>
+					<td colspan="5">
+						<input type="search" name="befGuarBegDt" id="befGuarBegDt" title="기존시작일" maxlength="10" style="width:100px" value="" readonly/>
+						~
+						<input type="search" name="befGuarExpDt" id="befGuarExpDt" title="기존종료일" maxlength="10" style="width:100px" value="" readonly/>
+						<input type="search" name="befGuarDays" id="befGuarDays" title="기존보증일수" maxlength="4" style="width:60px" readonly/>&nbsp;일
+					</td>
+				</tr>
+				</th:block>
+
+				<th:block  th:if="${!#strings.equals(type, 'guarChgDescIns')}">	<!-- 기재변경등록이 아니면 -->
+				<tr>
+					<th><span class="reqMark">*</span>보증기간</th>
+					<td colspan="5">
+						<input type="text" name="guarBegDt" id="guarBegDt" title="하자담보시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetGuarDays();" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('guarBegDt','guarExpDt','F');guarCom.fnSetGuarDays();" autocomplete="off"/>
+                    	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'guarBegDt', 'yyyy-mm-dd','guarExpDt', 1, guarCom.fnSetGuarDays)" />
+                    	&nbsp;~
+                    	<input type="text" name="guarExpDt" id="guarExpDt" title="하자담보종료일" maxlength="10" style="width:100px" value=""onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetGuarDays();" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('guarBegDt','guarExpDt','T');guarCom.fnSetGuarDays();" autocomplete="off"/>
+                    	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'guarExpDt', 'yyyy-mm-dd', 'guarBegDt', 2, guarCom.fnSetGuarDays)" />
+						(<input type="search" name="guarDays" id="guarDays" title="보증일수" maxlength="4" style="width:60px" onkeyup="com.fnOnlyNum(this);fnAddGuarDay();"/>&nbsp;일)
+
+						<input type="hidden" name="guarAddDays" id="guarAddDays" title="보증기간가산일수" value="0"/>
+					</td>
+				</tr>
+
+				<tr>
+					<th><span class="reqMark">*</span>보증기간가산</th>
+					<td colspan="5">
+						<div id="ele_guarAddCdArea"></div>
+					</td>
+				</tr>
+				</th:block>
+
+				<th:block th:if="${#strings.equals(paramMap.menuCd,'1030218')}">	<!-- 보증변경등록 수정일때만 -->
+				<tr>
+					<th>기존보증금액</th>
+					<td>
+						<input type="search" name="befGuarAmt" id="befGuarAmt" title="기존보증금액" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" readonly/>
+					</td>
+					<th>기존보증료</th>
+					<td colspan="3">
+						<input type="search" name="befCommAmt" id="befCommAmt" title="기존보증료" maxlength="20" style="width:120px" value="" readonly/>
+					</td>
+				</tr>
+				</th:block>
+
+				<th:block  th:if="${!#strings.equals(type, 'guarChgDescIns')}">	<!-- 기재변경등록이 아니면 -->
+				<tr>
+					<th>보증금액</th>
+					<td colspan="5">
+						<input type="search" name="guarAmt" id="guarAmt" title="보증금액" maxlength="15" style="width:120px" value="" onkeyup="com.fnOnlyNum(this);com.makeComma(this); guarCom.fnCalcCommAmt();"/>
+					</td>
+				</tr>
+				<tr>
+					<th>기본요율</th>
+					<td>
+						<input type="search" name="orgRate" id="orgRate" title="기본요율" maxlength="5" style="width:120px" value="" readonly/>&nbsp;%
+					</td>
+					<th>적용요율</th>
+					<td colspan="3">
+						<input type="search" name="commRate" id="commRate" title="적용요율" maxlength="5" style="width:120px" value="" onkeyup="com.fnOnlyDecimal(this);guarCom.fnCalcCommAmt();" readonly/>&nbsp;%&nbsp;
+						<input type="checkbox" name="rateModYn" title="" value="Y" onclick="modifyRate();"/>&nbsp;수기입력
+					</td>
+				</tr>
+				<tr>
+					<th id="txt_commAmt">보증료</th>
+					<td>
+						<input type="search" name="commAmt" id="commAmt" title="보증료" maxlength="20" style="width:120px" value="" readonly/>
+						<input type="hidden" name="calcCommAmt" id="calcCommAmt" title="계산보증료" maxlength="20" value=""/>
+					</td>
+					<!-- 채무보증 제외 -->
+					<th:block th:if="${!#strings.equals(paramMap.refVal,'21')}">
+					<th>PG수수료</th>
+					<td colspan="3">
+						<input type="search" name="pgCommAmt" id="pgCommAmt" title="PG수수료" maxlength="20" style="width:120px" value="" readonly/>&nbsp;
+						<input type="checkbox" name="pgAddYn" title="" value="Y" onclick="guarCom.fnPgAddYnChange();"/>&nbsp;포함(전자결제시)
+					</td>
+					</th:block>
+				</tr>
+				<tr>
+					<th>보증료산식</th>
+					<td colspan="5">
+						<input type="text" name="commCalc" id="commCalc" title="보증료산식" maxlength="20" style="min-width:400px" value="" readonly />
+					</td>
+				</tr>
+				</th:block>
+
+				<tr>
+					<th>보증내용</th>
+					<td colspan="5">
+						<input type="search" name="guarCont" id="guarCont"  value=""  maxlength="100" style="width:400px" />
+					</td>
+				</tr>
+				<!-- 채무 (보증방법) -->
+				<th:block th:if="${#strings.equals(paramMap.refVal, '21')}">
+				<tr >
+					<th>보증방법</th>
+					<td colspan="5">
+						<div id="ele_repayCd"></div>
+					</td>
+				</tr>
+				</th:block>
+
+				<tr>
+					<th>특약</th>
+					<td colspan="5">
+						<th:block th:if="${#strings.equals(paramMap.refVal,  '11') || #strings.equals(paramMap.refVal,  '12') || #strings.equals(paramMap.refVal,  '13') || #strings.equals(paramMap.refVal,  '14')}"> <!-- 입찰보증 -->
+						<input type="checkbox" name="specContrs" value="1"/>&nbsp;공제금지급특별약관
+						</th:block>
+
+						<th:block th:if="${#strings.equals(paramMap.refVal,  '12')}"> <!-- 계약보증 -->
+						<input type="checkbox" name="g2bContCheck" value="Y"/>&nbsp;실제이행기일
+						</th:block>
+
+						<th:block th:if="${#strings.equals(paramMap.refVal,  '15') || #strings.equals(paramMap.refVal,  '31') || #strings.equals(paramMap.refVal,  '32') || #strings.equals(paramMap.refVal,  '33') || #strings.equals(paramMap.refVal,  '34')}"> <!-- 계약보증, 성능이행, 인허가, 상품팜내 -->
+						<input type="checkbox" name="specContrs" id="specContrs_1" value="1"/>&nbsp;보증금지급특별약관&nbsp;
+						<input type="checkbox" name="specContrs" id="specContrs_2" value="2"/>&nbsp;추가위험부담특별약관
+						</th:block>
+
+						<th:block th:if="${#strings.equals(paramMap.refVal,  '21')}"> <!-- 채무보증 -->
+						<input type="checkbox" name="specContrs" id="specContrs_3" value="3"/>&nbsp;특별출연업무협약&nbsp;
+						<input type="checkbox" name="specContrs" id="specContrs_4" value="4"/>&nbsp;기업일반자금대출
+						</th:block>
+
+						<th:block th:if="${#strings.equals(paramMap.refVal,  '15') || #strings.equals(paramMap.refVal,  '31') || #strings.equals(paramMap.refVal,  '32') || #strings.equals(paramMap.refVal,  '33') || #strings.equals(paramMap.refVal,  '34')}"> <!-- 이행지급, 성능이행, 인허가, 상품팜내 -->
+						<input type="checkbox" name="koccaYn" value="Y" onclick="guarCom.fnKoccaChange();"/>&nbsp;공공기관지원사업 여부&nbsp;
+						</th:block>
+					</td>
+				</tr>
+
+				<th:block  th:if="${!#strings.isEmpty(type)}">	<!-- 일반 보증등록이 아니면(변경등록, 기재변경에서는 나오게) -->
+				<tr>
+					<th>보증문구</th>
+					<td colspan="5">
+						<textarea name="guarClassCont" id="guarClassCont" rows="2" cols="60"></textarea>
+					</td>
+				</tr>
+				</th:block>
+
+				<tr>
+					<th>비고</th>
+					<td colspan="5">
+						<textarea name="remark" id="remark" rows="2" cols="60"></textarea>
+					</td>
+				</tr>
+
+				<tr>
+					<th>특기사항</th>
+					<td colspan="5">
+						<textarea name="guarClassContAdd" id="guarClassContAdd" rows="2" cols="60"></textarea>
+					</td>
+				</tr>
+				<tr>
+					<th>적요</th>
+					<td colspan="5">
+						<textarea name="summary" id="summary" rows="2" cols="60"></textarea>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</body>
+</html>

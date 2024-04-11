@@ -1,0 +1,182 @@
+<!--
+	시스템구분 : 홈페이지 (콘텐츠 화면 처리 영역)
+	파일정보 : insPersPop.html
+	파일명 : insPersPop.html
+	업무명 : 홈페이지 (콘텐츠 화면 처리 영역)
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xml:lang="ko">
+
+<head>
+   <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/content.css">
+    <script src="/js/jquery-1.10.2.min.js"></script>
+	<script src="/js/jquery-3.3.1.min.js"></script>
+	<script src="/js/jquery-ui-1.10.3.js"></script>
+	<script src="/js/jquery.modal.js"></script>
+	<script src="/js/main.js"></script>
+	<script src="/js/common.js"></script>
+	<script src="/js/calendar.js"></script>
+</head>
+
+	<script th:inline="javascript">
+	 /*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/; //공통코드
+		var status = "";	//추가, 수정 상태값
+		var persSeq = "";	//조합원순번
+		var num = "";		//신규 수정일때 리스트 순번
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//상태
+			com.fnCodeSelectBox("MB10", "persStat", 1, '');
+
+			if(!com.fnIsEmpty(parent.$("#persSeq").val())  ){	//수정이면
+				status = "Changed";
+				persSeq = parent.$("#persSeq").val();
+
+				fnMembSearch();	//조회
+			}else if(!com.fnIsEmpty(parent.$("#persNum").val())){	//신규건 수정이면
+				status = "Added";	//추가
+				num = Number(parent.$("#persNum").val());
+				com.fnSetKeyVal(parent.persList[num-1]);
+			}else{
+				status = "Added";	//추가
+			}
+
+		});
+
+		//담당자 정보 조회
+		var fnMembSearch = function(){
+			var param = { persSeq: persSeq };
+			obj = {url:"/memb/selectMembPers.do", param:param, callBack:fnMembSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+		}
+
+		//담당자 정보 조회 콜백
+		var fnMembSearchCallBack = function(resData){
+			com.fnSetKeyVal(resData.data);
+		}
+
+		//등록 버튼
+		var fnSave = function() {
+			var valChks = ["persNm", "persPos", "deptNm", "persStat", "persTelNo"];
+
+			if(com.fnValChk(valChks)){
+				var param = $("#popForm").serializeObject();
+				param.STATUS = status;
+				if(status === "Changed") param.persSeq = persSeq;	//수정건은 순번까지 추가
+
+				var newUptYn = "N";
+				if(!com.fnIsEmpty(num))	newUptYn = "Y";
+				parent.fnPersPopCallBack(param, newUptYn);
+				parent.com.dialpopupClose();
+			}
+		}
+
+		//취소 버튼
+		var fnCancel = function() {
+			parent.com.dialpopupClose();
+		}
+
+		/*]]>*/
+	</script>
+
+<body>
+    <!-- 업무 안내 영역 끝 -->
+    <div class="popWrap">
+		<!-- 경로 영역 시작 -->
+        <form name="popForm" id="popForm" method="post" onSubmit="return false;">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<input type="hidden" name="menuCd" id="menuCd" value=""/>
+			<input type="hidden" name="exprYn" id="exprYn" value=""/>	<!-- 표출여부 -->
+            <!-- 경로 영역 끝 -->
+            <section id="content" class="content">
+                <!-- 여기서부터 content -->
+                <div>
+					<div class="table-wrap">
+                        <div class="table-scroll">
+                            <table>
+								<colgroup>
+									<col width="15%" />
+									<col width="42%" />
+									<col width="15%" />
+									<col width="*" />
+								</colgroup>
+                                <tbody>
+                                    <tr>
+										<th><span class="reqMark">*</span>담당자명</th>
+										<td>
+											<input type="text" id="persNm" name="persNm" value="" size="8" style="width:130px;" maxlength="10" title="담당자명">
+										</td>
+										<th><span class="reqMark">*</span>직위</th>
+										<td>
+											<input type="text" id="persPos" name="persPos" value="" size="8" style="width:130px;" maxlength="10" title="직위">
+										</td>
+									</tr>
+									<tr>
+										<th><span class="reqMark">*</span>부서명</th>
+										<td>
+											<input type="text" id="deptNm" name="deptNm" value="" size="14" style="width:130px;" maxlength="10" title="부서명">
+										</td>
+										<th><span class="reqMark">*</span>상태</th>
+										<td>
+											<select name="persStat" id="persStat" style="width:120px" title="상태"></select>
+										</td>
+									</tr>
+									<tr>
+										<th><span class="reqMark">*</span>전화번호</th>
+										<td>
+											<input type="text" name="persTelNo" id="persTelNo" size="14" maxlength="14" value="" title="전화번호" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+											(내선 :
+											<input type="text" id="persExtNo" name="persExtNo" size="4" maxlength="10" style="width:100px"/>
+											)
+										</td>
+										<th>팩스번호</th>
+										<td>
+											<input type="text" name="persFaxNo" id="persFaxNo" size="14" maxlength="14" value="" title="팩스번호" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+										</td>
+									</tr>
+									<tr>
+										<th>휴대전화번호</th>
+										<td>
+											<input type="text" name="persCell" id="persCell" size="14" maxlength="14" value="" title="휴대전화번호" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:140px"/>
+										</td>
+										<th>이메일</th>
+										<td>
+											<input type="text" name="persEmail" id="persEmail" size="28" maxlength="30" value=""  title="이메일" style="max-width:200px;"/>
+										</td>
+									</tr>
+									<tr>
+										<th>수신</th>
+										<td colspan="3">
+											<label><input type="checkbox" id="smsYn" name="smsYn" value="Y">SMS수신</label>
+											<label><input type="checkbox" id="emailYn" name="emailYn" value="Y">이메일수신</label>
+										</td>
+									</tr>
+									<tr>
+										<th>비고</th>
+										<td colspan="3"><textarea id="persRemark" name="persRemark" cols="60" rows="3"></textarea></td>
+									</tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tac mt10">
+                        <button type="button" class="btn-color sub-btn2" onclick="fnSave();">저장</button>
+                        <button type="button" class="btn-black sub-btn2" onclick="fnCancel();">취소</button>
+                    </div>
+                </div>
+            </section>
+        </form>
+    </div>
+</body>
+</html>

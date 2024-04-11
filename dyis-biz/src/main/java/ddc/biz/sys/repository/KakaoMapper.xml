@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.sys.repository.KakaoMapper"> 
+	
+	<!-- 카카오채널전송 정보 조회 --> 
+	<select id="selectKakaoSndList" parameterType="Map" resultType="camelMap"> 
+		/* KakaoMapper.selectKakaoSndList */ 
+		SELECT 
+			CMID
+			, SND_YEAR
+			, SND_CONT
+			, F_GET_CRYPT_DEC(SND_TEL_NO) SND_TEL_NO
+			, SND_TEL_NM
+			, MEMB_NO
+			, MSG_SEQ
+			, PARAM
+			, REF_NO
+			, TO_CHAR(REG_DTM, 'YYYY-MM-DD HH24:MI:SS') REG_DTM
+			, REG_NM
+		  FROM CM_KAKAO_LOG 
+		<where> 
+		<if test="sWorkType != null and sWorkType  != ''"> 
+		AND WORK_TYPE = #{sWorkType} 
+		</if>
+		<if test="sSndTelNm != null and sSndTelNm  != ''"> 
+		AND SND_TEL_NM LIKE '%' || #{sSndTelNm} || '%' 
+		</if>
+		<if test="sSerchStaDt != null and sSerchStaDt  != ''">
+		AND TO_CHAR(REG_DTM, 'YYYYMMDD') &gt;= REPLACE(#{sSerchStaDt}, '-')
+		</if>
+		<if test="sSerchEndDt != null and sSerchEndDt  != ''">
+		AND TO_CHAR(REG_DTM, 'YYYYMMDD') &lt;= REPLACE(#{sSerchEndDt}, '-')
+		</if>
+		 
+		</where> 
+		ORDER BY REG_DTM DESC
+	</select> 
+	
+	<!-- 카카오채널관리 메시지 리스트  --> 
+	<select id="selectKakaoTitlList" parameterType="Map" resultType="camelMap"> 
+		/* KakaoMapper.selectKakaoTitlList */ 
+		SELECT 
+			MSG_SEQ 
+			, MSG_TITL ||'('||MSG_SEQ||')' MSG_TITL
+		  FROM CM_KAKAO
+		GROUP BY MSG_SEQ, MSG_TITL 
+		ORDER BY MSG_SEQ 
+	</select> 
+	
+	<!-- 카카오채널관리 정보 조회 --> 
+	<select id="selectKakaoList" parameterType="Map" resultType="camelMap"> 
+		/* KakaoMapper.selectKakaoList */ 
+		SELECT 
+			MSG_SEQ 
+			, MSG_TITL
+			, MSG_CONT 
+			, BIZ_CD
+			, REF_VAL 
+			, WORK_TYPE 
+			, REF_VAL
+			, USE_YN
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		  FROM CM_KAKAO 
+		<where> 
+		<if test="sMsgSeq != null and sMsgSeq  != ''"> 
+		AND MSG_SEQ = #{sMsgSeq} 
+		</if> 
+		</where> 
+		ORDER BY MSG_SEQ DESC
+	</select> 
+	
+	<!-- 카카오채널관리 정보 조회 --> 
+	<select id="selectKakao" parameterType="Map" resultType="camelMap"> 
+		/* KakaoMapper.selectKakao */ 
+		SELECT 
+			MSG_SEQ 
+			, MSG_TITL
+			, MSG_CONT 
+			, BIZ_CD
+			, REF_VAL 
+			, WORK_TYPE 
+			, REF_VAL
+			, USE_YN
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		  FROM CM_KAKAO 
+		 WHERE MSG_SEQ = #{msgSeq}
+	</select> 
+
+	<!-- 카카오채널관리 등록 처리 --> 
+	<insert id="insertKakao" parameterType="Map"  > 
+		/* KakaoMapper.insertKakao */ 
+		INSERT INTO CM_KAKAO ( 
+			MSG_SEQ 
+			, MSG_TITL
+			, MSG_CONT 
+			, BIZ_CD
+			, REF_VAL 
+			, WORK_TYPE 
+			, USE_YN
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		) VALUES ( 
+			(SELECT NVL(MAX(MSG_SEQ),0) + 1 FROM CM_KAKAO) 
+			, #{msgTitl} 
+			, #{msgCont} 
+			, #{bizCd} 
+			, #{refVal} 
+			, #{workType} 
+			, #{useYn} 
+			, #{remark} 
+			, SYSDATE 
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 카카오채널관리 수정 처리 --> 
+	<update id="updateKakao" parameterType="Map"  > 
+		/* KakaoMapper.updateKakao */ 
+		UPDATE CM_KAKAO 
+		SET 
+			MSG_TITL 	= #{msgTitl}
+			, MSG_CONT 	= #{msgCont} 
+			, BIZ_CD 	= #{bizCd} 
+			, WORK_TYPE = #{workType} 
+			, REF_VAL 	= #{refVal} 
+			, USE_YN 	= #{useYn} 
+			, REMARK 	= #{remark} 
+			, MOD_DTM 	= SYSDATE 
+			, MOD_NM 	= #{userNm} 
+		WHERE MSG_SEQ 	= #{msgSeq} 
+	</update> 
+
+	<!-- 카카오채널관리 삭제 처리 --> 
+	<delete id="deleteKakao" parameterType="Map"  > 
+		/* KakaoMapper.deleteKakao */ 
+		DELETE FROM CM_KAKAO 
+		WHERE MSG_SEQ = #{msgSeq} 
+	</delete> 
+	
+	
+	
+	<!-- 카카오채널관리 로그 등록 처리 --> 
+	<insert id="insertKakaoLog" parameterType="Map"  > 
+		/* KakaoMapper.insertKakaoLog */ 
+		<selectKey resultType="java.lang.String" keyProperty="cmid" order="BEFORE">
+          SELECT TO_CHAR(SYSDATE, 'YYYYMMDD')||TRIM(TO_CHAR(NVL(MAX(SUBSTR(CMID, 9)), 0) + 1, '0000')) AS CMID 
+      		FROM CM_KAKAO_LOG 
+      	   WHERE CMID LIKE TO_CHAR(SYSDATE, 'YYYYMMDD')||'%'
+	    </selectKey> 
+		INSERT INTO CM_KAKAO_LOG ( 
+			CMID
+			, SND_YEAR
+			, SND_CONT
+			, SND_TEL_NO
+			, SND_TEL_NM
+			, MEMB_NO
+			, MSG_SEQ
+			, PARAM
+			, REF_NO
+			, REG_DTM 
+			, REG_NM 
+		) VALUES ( 
+			#{cmid}
+			, TO_CHAR(SYSDATE, 'YYYY')
+			, #{sndCont} 
+			, F_GET_CRYPT_ENC(#{sndTelNo}) 
+			, #{sndTelNm} 
+			, #{membNo} 
+			, #{msgSeq} 
+			, #{param} 
+			, #{refNo} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+
+
+	<!-- 카카오채널관리 전송처리 --> 
+	<insert id="insertBizMsg" parameterType="Map"  > 
+		/* KakaoMapper.insertBizMsg */ 
+		INSERT INTO BIZ_MSG
+		(
+			MSG_TYPE
+			, CMID
+			, REQUEST_TIME
+			, SEND_TIME
+			, DEST_PHONE
+			, SEND_PHONE
+			, MSG_BODY
+			, TEMPLATE_CODE
+			, SENDER_KEY
+			, NATION_CODE
+		)
+    	VALUES 
+    	(
+    		6
+    		, #{cmid}
+    		, SYSDATE
+    		, SYSDATE
+    		, #{sndTelNo} 
+    		, (
+    		  SELECT REPLACE(TEL_NO, '-')
+		        FROM CM_KOCFC
+		       WHERE APP_DT = (
+		                      SELECT MAX(APP_DT)
+		                        FROM CM_KOCFC
+		                        )
+		    )
+    		, #{sndCont}
+    		, #{bizCd}
+    		, #{senderKey}
+    		, '82'
+    	)
+
+	</insert> 
+</mapper>

@@ -1,0 +1,319 @@
+<!--
+	파일정보 : main/mainStat.html
+	파일명 : main
+	업무명 : 메인대쉬보드
+	생성자 : 변성균
+	생성일 : 2023-07-14
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//날짜세팅
+				var today = /*[[${today}]]*/;
+				$(".dateTxt").text(today.replaceAll("-","."));
+
+				//요일 세팅
+				var getDate = new Date().getDay();
+				var week_array = new Array('일', '월', '화', '수', '목', '금', '토');
+				$(".dateStr").text(week_array[getDate] + "요일");
+
+				//IBsheet 초기화
+				com.fnIbsInit("60210:60212:60213"); //조합원실적순위
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetGuar", el: "sheetDivGuar", options: gridOptList[1] });
+			    IBSheet.create({ id: "sheetGuarPref", el: "sheetDivGuarPref", options: gridOptList[2] });
+
+				//헤더메뉴제어
+				sheet.bind("onShowMenu" , function(evt) {
+					if(evt.row.Kind == 'Header') {
+				      	return true;
+				      }
+				});
+				
+
+			    //화면확인가능한 목록 보이고 안보이기 버튼  - 임시
+				$("#chkWrapBtn").click(function(){
+					$("#chkWrap").toggle();
+				});
+
+				$(".reLoadFrm").click(function(){
+					fnSearchStat();
+				});
+
+				//메인상태 호출
+				fnSearchStat();
+
+			});
+
+			//현황 조회
+			var fnSearchStat = function(){
+				var today = /*[[${today}]]*/;
+				$("#guarRankYear").text("("+today.substring(0,4)+"년)");
+				param = {sSerchStaDt: com.fnDateGetSta(today), sSerchEndDt: com.fnDateGetEnd(today)};
+				obj = {url:"/index/selectMainStat.do", param:param, callBack:fnSearchStatCallBack, msgYn:"N", loadYn:"Y", sessYn:"Y"};
+				com.fnAjaxDef(obj);
+				
+			};
+
+			//현황 조회 콜백
+			var fnSearchStatCallBack = function(resData){
+			//	console.log(resData);
+
+				//조합원현황
+				com.fnSetKeyVal(resData.statMemb);
+
+				//자본금현황
+				resData.statInvest.totalNum = resData.statInvest.totAddInvestNum;
+				resData.statInvest.totalAmt = resData.statInvest.totAddInvestAmt;
+				com.fnSetKeyVal(resData.statInvest);
+
+				//콤마추가 클래스들 세팅
+				$.each($(".setCommaCls"), function(idx,item){
+					$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
+				});
+
+				//실적순위
+				sheet.loadSearchData({ data: resData.statGuarRank, sync: 1 });
+				
+				//당일보증현황
+				sheetGuar.loadSearchData(resData.statGuar);
+				
+				//보증실적
+				sheetGuarPref.loadSearchData(resData.statGuarPref);
+				
+				/*
+				//당일보증현황
+				$("#tbl_guarToday").empty();
+
+				var initHtml = "";
+
+				initHtml += '<colgroup>';
+				initHtml += '	<col style="width:140px;">';
+				initHtml += '	<col style="width:80px;">';
+				initHtml += '	<col style="width:180px;">';
+				initHtml += '	<col style="width:140px;">';
+				initHtml += '</colgroup>';
+
+				initHtml += '<tbody>';
+				initHtml += '	<tr>';
+				initHtml += '		<th class="tac">상품</th>';
+				initHtml += '		<th class="tac">건수</th>';
+				initHtml += '		<th class="tac">실적</th>';
+				initHtml += '		<th class="tac">수수료</th>';
+				initHtml += '	</tr>';
+				initHtml += '</tbody>';
+
+				$("#tbl_guarToday").append(initHtml);
+				resData.statGuar.forEach((item, idx) => {
+					//console.log(item);
+					var html = '<tr>';
+						html += '<td class="tac">' + item.cdNm + '</td>'; //삼품
+						html += '<td class="tac">' + item.cnt + '</td>'; //건수
+						html += '<td class="tar">' + com.addComma(item.guarAmt) + '</td>'; //실적
+						html += '<td class="tar">' + com.addComma(item.commAmt) + '</td>'; //수수료
+
+						html += '</tr>';
+
+					$("#tbl_guarToday > tbody:last").append(html);
+				});
+				*/
+			};
+
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div>
+					<h2 id="menuTitle">
+						<b style="color:#138cc4">메인</b>
+					</h2>
+				</div>
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false;" action="">
+
+			<div class="contents flex" style="height: calc(100vh - 140px);">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:65%">
+						<!--인트로-->
+						<div class="intro">
+							<span class="logoArea"></span>
+							<div>
+								<em>함께 담고 함께 쓰는 콘텐츠계의 큰 마중물 그릇</em>
+								<span><strong>한국콘텐츠공제조합 관리자시스템</strong>에 오신걸 환영합니다.</span>
+							</div>
+						</div><!--wrapBox-->
+
+						<!--자본금현황-->
+						<div class="boxItem capitalStat mt20">
+							<ul>
+								<li>
+									<p>자본금현황 [출자]</p>
+									<div>
+										<span>금년 출자금액</span>
+										<span><strong id="ele_nowInvestAmt" class="setCommaCls"></strong><em class="unit">원</em></span>
+									</div>
+									<dl>
+										<dt>전년 출자금액</dt>
+										<dd><strong id="ele_befInvestAmt" class="setCommaCls"></strong>원</dd>
+									</dl>
+								</li>
+								<li>
+									<p>자본금현황 [반환]</p>
+									<div>
+										<span>금년 반환금액</span>
+										<span><strong id="ele_nowTakeAmt" class="setCommaCls"></strong><em class="unit">원</em></span>
+									</div>
+									<dl>
+										<dt>전년 반환금액</dt>
+										<dd><strong id="ele_befTakeAmt" class="setCommaCls"></strong>원</dd>
+									</dl>
+								</li>
+								<!--
+								<li>
+									<p>자본금현황 [순증]</p>
+									<div>
+										<span>누적 순증금액</span>
+										<span><strong id="ele_totAddInvestAmt" class="setCommaCls"></strong><em class="unit">원</em></span>
+									</div>
+									<dl>
+										<dt>전년 금액</dt>
+										<dd><strong id="ele_befAddInvestAmt" class="setCommaCls"></strong>원</dd>
+									</dl>
+									<dl>
+										<dt>금년 금액</dt>
+										<dd><strong id="ele_nowAddInvestAmt" class="setCommaCls"></strong>원</dd>
+									</dl>
+								</li>
+								-->
+								<li>
+									<p>자본금현황 현황</p>
+									<div style="margin-bottom: 5px;">
+										<span>총 금액</span>
+										<span><strong id="ele_totalAmt" class="setCommaCls"></strong><em class="unit">원</em></span>
+									</div>
+									<div style="margin-bottom: 0;">
+										<span>총 좌수</span>
+										<span><strong id="ele_totalNum" class="setCommaCls"></strong><em class="unit">좌</em></span>
+									</div>
+								</li>
+							</ul>
+						</div><!--wrapBox-->
+						<div class="layer-flex collapseBox" style="width: 100%">
+							<div class="" style="width:49%;">
+								<section class="area mt20">
+									<div class="fl">
+										<h4 class="title"><span>당일보증현황</span> (<span class="dateTxt"></span> <span class="dateStr"></span>)</h4>
+									</div>
+								</section>
+								<div class="">
+							    	<div id="sheetDivGuar" style="width:100%;height:280px"></div>
+								</div>
+							</div>
+							<div class="" style="width:49%">
+								<section class="area mt20">
+									<div class="fl">
+										<h4 class="title">보증실적</h4>
+									</div>
+								</section>
+								<div id="sheetDivGuarPref" style="width:100%;height:280px"></div>
+							</div>
+						</div>
+					</div>
+
+					<!-- #####  우측 #######-->
+					<div class="collapseBox" style="width:34%">
+						<div class="introDate" >
+							<span class="nameArea"><strong>[[${session.userNm}]]님,</strong> 안녕하세요.</span>
+							<div>
+								오늘은,
+								<span class="dateTxt"></span>
+								<span class="dateStr"></span>입니다.
+							</div>
+						</div><!--wrapBox-->
+						<div class="boxItem membStat mt70" >
+							<ul style="height: 224px;">
+								<li>
+									<p>조합원 현황</p>
+									<div>
+										<dl>
+											<dt><em>(전년)</em>가입</dt>
+											<dd><b><span id="ele_befJoinCnt" style="color:blue;"></span></b>&nbsp;건</dd>
+										</dl>
+										<dl>
+											<dt><em>(전년)</em>탈퇴</dt>
+											<dd><b><span id="ele_befLeaveCnt" style="color:red"></span></b>&nbsp;건</dd>
+										</dl>
+										<dl>
+											<dt><em>(전년)</em>순증</dt>
+											<dd><b><span id="ele_befAddCnt" style="color:blue"></span></b>&nbsp;건</dd>
+										</dl>
+										<dl>
+											<dt><em>(금년)</em>가입</dt>
+											<dd><b><span id="ele_nowJoinCnt" style="color:blue"></span></b>&nbsp;건</dd>
+										</dl>
+										<dl>
+											<dt><em>(금년)</em>탈퇴</dt>
+											<dd><b><span id="ele_nowLeaveCnt" style="color:red"></span></b>&nbsp;건</dd>
+										</dl>
+										<dl>
+											<dt><em>(금년)</em>순증</dt>
+											<dd><b><span id="ele_nowAddCnt" style="color:blue"></span></b>&nbsp;건</dd>
+										</dl>
+										<!--
+										<dl>
+											<dt><em>(누적)</em>가입</dt>
+											<dd><span id="ele_totJoinCnt" style="color:blue"></span>&nbsp;건</dd>
+										</dl>
+										<dl>
+											<dt><em>(누적)</em>탈퇴</dt>
+											<dd><span id="ele_totLeaveCnt" style="color:red"></span>&nbsp;건</dd>
+										</dl>
+										<dl>
+											<dt><em>(누적)</em>순증</dt>
+											<dd><b><span id="ele_totAddCnt" style="color:blue"></span></b>&nbsp;건</dd>
+										</dl>
+										-->
+									</div>
+								</li>
+							</ul>
+						</div>
+
+						<section class="area mt20">
+							<div class="fl">
+								<h4 class="title"><span>조합원실적 순위</span><span id="guarRankYear"></span></h4>
+							</div>
+						</section>
+						<div class="">
+					    	<div id="sheetDiv" style="width:100%;height:280px"></div>
+						</div>
+
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

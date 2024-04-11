@@ -1,0 +1,364 @@
+<!--
+	파일정보 : sample/devDescJs.html
+	파일명 : devDescJs
+	업무명 : devDescJs 자바스크립트 공통함수 설정
+	생성자 : DEV
+	생성일 : 1900.01.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			
+			/*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div th:insert="~{/fragments/subTitle}"></div><form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<div class="contents flex">
+				
+				<div class="layer-flex">
+					<div class="" style="width:100%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">JS함수정보(호출부) ( com. 으로 시작되는 함수는 common.js 참조 ) </h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:140px;">
+								<col style="width:120px;">
+								<col style="width:100px;">
+								<col style="width:300px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th class="tac">함수명</th>
+									<th class="tac">호출명</th>
+									<th class="tac">리턴(콜백함수)</th>
+									<th class="tac">관련변수</th>
+									<th class="tac">설명</th>
+								</tr>
+								<tr>
+									<td class="tac">ajax기본호출</td>
+									<td class="tac">com.fnAjaxDef</td>
+									<td class="tac"></td>
+									<td>json ( url, param, callBack, loadYn, sessYn, msgYn, moveUrl)</td>
+									<td>설명)</br> param: 메소드에게 넘길 변수, callBack : 콜백함수, loadYn :로딩이미지표시여부, </br>sessYn:세션여부체크, msgYn: 처리메세지출력여부, moveUrl:처리후 페이지호출url
+										
+									</br>예시)</br>param = {sMembNo:sMembNo, sMembNm:sMembNm };</br>
+										obj = {url:"/com/selectMembList.do", param:param, callBack:com.fnMembInfoCallBack, loadYn:"Y"};</br>
+										com.fnAjaxDef(obj);
+									</td>
+								</tr>
+								<tr>
+									<td class="tac">ajax호출(post)</td>
+									<td class="tac">com.fnAjaxPost</td>
+									<td class="tac"></td>
+									<td>json ( url, param, callBack, loadYn, sessYn, msgYn, formId)</td>
+									<td>설명)</br> param: 메소드에게 넘길 변수, callBack : 콜백함수, loadYn :로딩이미지표시여부, </br>sessYn:세션여부체크, msgYn: 처리메세지출력여부, formId:formId
+										
+									</br>예시)</br>
+										obj = {url:"/com/selectMembList.do", formId:"saveForm", callBack:com.fnMembInfoCallBack, loadYn:"Y"};</br>
+										com.fnAjaxDef(obj);
+									</td>
+								</tr>
+								<tr>
+									<td class="tac">ajax호출(Multi)</td>
+									<td class="tac">com.fnAjaxMulti</td>
+									<td class="tac"></td>
+									<td>json ( url, param, callBack, loadYn, sessYn, msgYn, formId, fileId)</td>
+									<td>설명)</br> param: 메소드에게 넘길 변수, callBack : 콜백함수, loadYn :로딩이미지표시여부, </br>sessYn:세션여부체크, msgYn: 처리메세지출력여부, formId:formId fileId:fileId공통부분
+										
+									</br>예시)</br>
+										obj = {url:"/com/selectMembList.do", formId:"saveForm", fileId:"file_", callBack:com.fnMembInfoCallBack, loadYn:"Y"};</br>
+										com.fnAjaxDef(obj);
+									</td>
+								</tr>
+								<tr>
+									<td class="tac">form호출</td>
+									<td class="tac">com.fnAction</td>
+									<td class="tac"></td>
+									<td></td>
+									<td>기본 폼 action 호출</td>
+								</tr>
+								<tr>
+									<td class="tac">모달팝업 호출</td>
+									<td class="tac">com.dialpopupOpen</td>
+									<td class="tac"></td>
+									<td></td>
+									<td>모달팝업 호출</td>
+								</tr>
+								<tr>
+									<td class="tac">모달팝업 닫기</td>
+									<td class="tac">com.dialpopupClose</td>
+									<td class="tac"></td>
+									<td></td>
+									<td>모달팝업 닫기 처리</td>
+								</tr>
+								<tr>
+									<td class="tac">현황엑셀다운로</td>
+									<td class="tac">com.fnExcel</td>
+									<td class="tac">엑셀파일</td>
+									<td>param = $("#serchFrm").serializeObject();<br>
+										param.gridCols = gridOptList[0].Cols;<br>
+										param.excelMth = "selectSampleList";<br>
+										param.excelNm = /*[[${menuInfo.menuNm}]]*/;<br>
+									</td>
+									<td>
+										폼ID (조회 변수 전달)<br>
+										gridCols : 헤더정보(열)<br>
+										excelMth : 현황호출메소드 <br>
+										excelNm : 엑셀파일명 <br>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="layer-flex">
+					<div class="" style="width:100%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">JS함수정보(초기설정) ( com. 으로 시작되는 함수는 common.js 참조 ) </h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:140px;">
+								<col style="width:120px;">
+								<col style="width:100px;">
+								<col style="width:300px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th class="tac">함수명</th>
+									<th class="tac">호출명</th>
+									<th class="tac">리턴(콜백함수)</th>
+									<th class="tac">관련변수</th>
+									<th class="tac">설명</th>
+								</tr>
+								<tr>
+									<td class="tac">선탭박스생성(코드)</td>
+									<td class="tac">com.fnCodeSelectBox</td>
+									<td class="tac">innerHtml</td>
+									<td>cdType, paramId, choiceType, value, ref1, ref2, ref3<br>
+										코드id, inputId, 선택유형, 기본값, 참조1, 참조2,참조3
+									</td>
+									<td>com.fnCodeSelectBox("GR01", "guarStat1", 1, ""); //선택
+									</td>
+								</tr>
+								<tr>
+									<td class="tac">라디오버튼(코드)</td>
+									<td class="tac">com.fnCodeRadio</td>
+									<td class="tac">innerHtml</td>
+									<td>cdType, divId, nameId, brYn, value, ref1, ref2, ref3<br>
+										코드id, divId, inputId, "세로형", 기본값, 참조1, 참조2,참조3
+									</td>
+									<td>com.fnCodeRadio("CM01", "div_raidoCm01", "rdoCm01", true); //세로
+									</td>
+								</tr>
+								<tr>
+									<td class="tac">체크박스(코드)</td>
+									<td class="tac">com.fnCodeCheckBox</td>
+									<td class="tac">innerHtml</td>
+									<td>cdType, divId, nameId, brYn, value, ref1, ref2, ref3<br>
+										코드id, divId, inputId, "세로형", 기본값, 참조1, 참조2,참조3
+									</td>
+									<td>com.fnCodeCheckBox("MB04", "div_checkBoxMb04", "chkMb01", false); //가로
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">JS함수정보 ( com. 으로 시작되는 함수는 common.js 참조 ) </h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:140px;">
+								<col style="width:120px;">
+								<col style="width:100px;">
+								<col style="width:300px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th class="tac">함수명</th>
+									<th class="tac">호출명</th>
+									<th class="tac">리턴(콜백함수)</th>
+									<th class="tac">관련변수</th>
+									<th class="tac">설명</th>
+								</tr>
+								<tr>
+									<td class="tac">조합원검색</td>
+									<td class="tac">com.fnMembInfo</td>
+									<td class="tac">com.fnMembInfoCallBack</td>
+									<td>조합원번호: sMembNo, 조합원명: sMembNm</td>
+									<td>조합원검색 조회 및 팝업 호출</td>
+								</tr>
+								<tr>
+									<td class="tac">세션체크</td>
+									<td class="tac">com.fnSessChk</td>
+									<td class="tac"></td>
+									<td></td>
+									<td>세션 여부 확인</td>
+								</tr>
+								<tr>
+									<td class="tac">숫자만입력</td>
+									<td class="tac">com.fnOnlyNum(this);</td>
+									<td class="tac"></td>
+									<td>value 값 </td>
+									<td>kepress 키 입력시 숫자만 가능하도록 통제</td>
+								</tr>
+								<tr>
+									<td class="tac">필수입력체크</td>
+									<td class="tac">com.fnValChk</td>
+									<td class="tac">true / false</td>
+									<td>체크항목 id값 (배열)</td>
+									<td>대상항목을 입력여부 확인 (input title 값이 설정 되어있어야 함)</td>
+								</tr>
+								
+								<tr>
+									<td class="tac">시작~종료 달력 폼</td>
+									<td class="tac">com.fnDateFromTo</td>
+									<td class="tac">innerHtml</td>
+									<td>divId, fromId, toId</td>
+									<td>페이지 초기화영역 설정 com.fnDateFromTo("ele_guarDt", "guarStaDt", "guarEndDt"); //시작~종료 달력<br>
+									$("#btn_guarDt").click(function(){ com.fnDateCalVisible($("#ele_guarDt"));  }); //달력버튼처리<br>
+									<br>
+									input 종료일, 시작일, div 달력이미지, div 달력호출 영역 화면내 설정 필요
+									</td>
+								</tr>
+								<tr>
+									<td class="tac">이전/이후일자 추출</td>
+									<td class="tac">com.fnDateGet</td>
+									<td class="tac">산출일자</td>
+									<td>기준일자, 일수</td>
+									<td>기준일자  + 일수 에 대한 일자추출 일수는 (-/+)를 통해 이후/이전 일자 추출 가능</td>
+								</tr>
+								<tr>
+									<td class="tac">날자유효성체크</td>
+									<td class="tac">com.fnDateValiChk</td>
+									<td class="tac"></td>
+									<td></td>
+									<td></td>
+								</tr>
+								<tr>
+									<td class="tac">날짜형식변환</td>
+									<td class="tac">com.fnDateMakeForm</td>
+									<td class="tac">true / false</td>
+									<td>input객체 (this)</td>
+									<td>입력된 값 날짜 형식(유효성) 체크 </td>
+								</tr>
+								<tr>
+									<td class="tac">시작/종료일비교</td>
+									<td class="tac">com.fnDateFromToChk</td>
+									<td class="tac"></td>
+									<td>시작일, 종료일, 체크대상(F/T)</td>
+									<td>시작일, 종료일 기준체크 F 인 경우 시작일 기준, T 인 경우 종료일 기준</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">JS함수 IBSheet ( com. 으로 시작되는 함수는 common.js 참조 ) </h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:140px;">
+								<col style="width:120px;">
+								<col style="width:100px;">
+								<col style="width:300px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th class="tac">함수명</th>
+									<th class="tac">호출명</th>
+									<th class="tac">리턴(콜백함수)</th>
+									<th class="tac">관련변수</th>
+									<th class="tac">설명</th>
+								</tr>
+								<tr>
+									<td class="tac">시트초기설정</td>
+									<td class="tac">com.fnIbsInit</td>
+									<td class="tac"></td>
+									<td>헤더옵션, 초기환경설정</td>
+									<td>헤더옵션은 화면초기화에서 가져오는 그리드정보, 초기환경설정은 없을경우 default 처리</td>
+								</tr>
+								<tr>
+									<td class="tac">현황조회</td>
+									<td class="tac">com.fnIbsSearch</td>
+									<td class="tac">com.fnIbsSearchCallBack (로딩방비활성화처리)</td>
+									<td>url, param, sheeId(default:sheet)</td>
+									<td>호출메서드, 참조변수, sheetId sheeId 없을경우 default 설정</td>
+								</tr>
+								<tr>
+									<td class="tac">행추가</td>
+									<td class="tac">com.fnIbsRowAdd</td>
+									<td class="tac"></td>
+									<td>focs, initData, sheetId, editYn</td>
+									<td>포커스(first :맨위, cur:현위치위, pre:아래, tree :트리하위, editYn: 행추가 후 입력가능여부)</td>
+								</tr>
+								<tr>
+									<td class="tac">행삭제</td>
+									<td class="tac">com.fnIbsRowDel</td>
+									<td class="tac"></td>
+									<td>sheetId</td>
+									<td>해당시트에 선택된 행이 추가된 행인 경우 삭제</td>
+								</tr>
+								<tr>
+									<td class="tac">현황저장</td>
+									<td class="tac">com.fnIbsSave</td>
+									<td class="tac"></td>
+									<td>url, sheetId</td>
+									<td>변경(수정,삭제(체크박스))된 대상에 대한 저장 처리</td>
+								</tr>
+								<tr>
+									<td class="tac">행상태변경(삭제)</td>
+									<td class="tac">com.fnIbsStatusCh</td>
+									<td class="tac"></td>
+									<td>obj, status</td>
+									<td>선택된 행에 대한 삭제 처리 </td>
+								</tr>
+								<tr>
+									<td class="tac">업로드영역</td>
+									<td class="tac">com.fnIbsUploadOne </td>
+									<td class="tac"></td>
+									<td>divId</td>
+									<td>divId 영역에 첨부파일 기능 생성 (단건)</td>
+								</tr>
+								<tr>
+									<td class="tac">업로드영역</td>
+									<td class="tac">com.fnIbsUpload </td>
+									<td class="tac"></td>
+									<td>divId</td>
+									<td>divId 영역에 첨부파일 기능 생성 (다건)</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

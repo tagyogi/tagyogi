@@ -1,0 +1,158 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : lendInterCalc.html
+	파일명 : lendInterCalc.html
+	업무명 : 이자견적조회
+	생성자 : 변성균
+	생성일 : 2023.08.11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/, "대출현황"); //lnb세팅
+			
+			//내용조회
+			var param = /*[[${paramMap}]]*/;
+			obj = {url:"/lend/selectLend.do", param:param, callBack:fnSerchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+			
+		});
+		
+		var fnSerchCallBack = function(resData){
+			//조합원정보
+			com.fnSetKeyVal(resData.memb);
+			com.fnSetKeyVal(resData.data);
+		}
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+                        
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article>
+                                    <p class="title-dept1">조합원정보</p>
+                                    <div class="table-wrap info">
+                                        <div class="v2">
+                                            <table summary="조합원정보">
+                                                <colgroup>
+                                                	<col style="width:12%;">
+                                                	<col style="width:23%;">
+                                                	<col style="width:12%;">
+                                                	<col style="width:18%;">
+                                                	<col style="width:12%;">
+                                                	<col style="width:23%;">
+                                                </colgroup>
+                                                <tbody>
+                                                    <tr>
+                                                        <th>조합원</th>
+                                                        <td><span id="ele_membNo"></span>&nbsp;/&nbsp;<span id="ele_membNm"></span></td>
+                                                        <th>대표자</th>
+                                                        <td><span id="ele_ceoNm"></span></td>
+                                                        <th>주장르</th>
+                                                        <td><span id="ele_mainBussNm"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>사업자번호</th>
+                                                        <td><span id="ele_bizNo"></span></td>
+                                                        <th>법인등록번호</th>
+                                                        <td><span id="ele_lawNo"></span></td>
+                                                        <th>소속단체</th>
+                                                        <td><span id="ele_belong"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>전화번호</th>
+                                                        <td><span id="ele_telNo"></span></td>
+                                                        <th>주소</th>
+                                                        <td colspan="3"><span id="ele_addrFull"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>신용도</th>
+                                                        <td><span id="ele_bizNo"></span></td>
+                                                        <th>약정구분</th>
+                                                        <td><span id="ele_lawNo"></span></td>
+                                                        <th>약정기간</th>
+                                                        <td><span id="ele_belong"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>대출한도</th>
+                                                        <td><span id="ele_bizNo"></span></td>
+                                                        <th>대출총액</th>
+                                                        <td><span id="ele_lawNo"></span></td>
+                                                        <th>대출가능금액</th>
+                                                        <td><span id="ele_belong"></span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <article>
+                                    <p class="title-dept1">대출정보</p>
+                                    <div class="table-wrap info">
+                                        <div class="v2">
+                                            <table summary="대출정보">
+                                                <colgroup>
+                                                	<col style="width:12%;">
+                                                	<col style="width:23%;">
+                                                	<col style="width:12%;">
+                                                	<col style="width:23%;">
+                                                </colgroup>
+                                                <tbody>
+                                                    <tr>
+                                                        <th>대출구분</th>
+                                                        <td><span id="ele_lendTypeNm"></span></td>
+                                                        <th>대출상태</th>
+                                                        <td><span id="ele_lendStatNm"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>대출일자</th>
+                                                        <td><span id="ele_lendDt"></span></td>
+                                                        <th>상환기한</th>
+                                                        <td><span id="ele_repayPreDt"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>대출금액</th>
+                                                        <td><span id="ele_lendAmt"></span></td>
+                                                        <th>이자율</th>
+                                                        <td><span id="ele_interPer"></span><span> %</span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

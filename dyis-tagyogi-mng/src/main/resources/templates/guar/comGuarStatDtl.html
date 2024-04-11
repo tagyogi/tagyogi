@@ -1,0 +1,117 @@
+<!--
+	파일정보 : searchGuar/searchGuar.html
+	파일명 : comGuarStatDtl
+	업무명 : 보증일보월보 팝업
+	생성자 : BSG
+	생성일 : 2023.06.13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "", gridNoList : "80103"}
+
+			var paramMap = /*[[${paramMap}]]*/;
+			//console.log(paramMap);
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+
+				$("#ele_loading").css("display","block"); //로딩바
+
+				//실적화면
+				if(parent.pageType == "pref"){
+
+					rowData = parent.sheet.getFocusedRow(); //생성된 행 정보 가져오기
+
+					param = {sGuarType : parent.$("#sGuarType").val(), sGuarIssueCd : parent.$("#sGuarIssueCd").val(), sMembCd : parent.$("#sMembCd").val()
+							, sSerchDt : parent.$("#sSerchDt").val(), sGuarFromAmt : parent.$("#sGuarFromAmt").val(), sGuarToAmt : parent.$("#sGuarToAmt").val()
+							, sBelong : parent.$("#sBelong").val(), sYear : rowData.yyyy
+						};
+					obj = {url:"/guarSupt/selectGuarYearPerfListDtl.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+
+				//일보월보
+				}else{
+
+					param = {basDt : parent.basDt, serchType : parent.serchType, baseType : parent.baseType, guarType : parent.guarType };
+					console.log(param)
+					obj = {url:"/guarStat/selectGuarStatDtlList.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+
+					/*
+					guarStatService.selectGuarStatDtlBefList(paramMap)); //보증및해제현황 전일잔액 현황
+					guarStatService.selectGuarStatDtlCurList(paramMap)); //보증및해제현황 당일보증 현황
+					guarStatService.selectGuarStatDtlCanList(paramMap)); //보증및해제현황 당일해지 현황
+					guarStatService.selectGuarStatDtlRemList(paramMap)); //보증및해제현황 당일잔액 현황
+					guarStatService.selectGuarStatDtlTotList(paramMap)); //보증및해제현황 보증누계 현황
+					guarStatService.selectGuarStatDtlYearList(paramMap)); //보증및해제현황 당년보증실적 현황
+					guarStatService.selectGuarStatDtlTotPayList(paramMap)); //수수료수입 전일잔액(당일잔액)
+					guarStatService.selectGuarStatDtlCurPayList(paramMap)); //수수료수입 전일잔액(당일잔액)
+					guarStatService.selectGuarStatDtlRetPayList(paramMap)); //수수료수입 당일환불
+					guarStatService.selectGuarStatDtlCurSumPayList(paramMap)); //수수료수입 당일수입(합계)
+					*/
+				}
+			};
+
+
+			var fnSearchCallBack = function(resData){
+
+				sheet.loadSearchData(resData.data); //
+
+				$("#ele_loading").css("display","none"); //로딩바
+			}
+
+			//엑셀 다운로드
+			var fnExcel = function(){
+				title = "년도별실적상세현황";
+				if(parent.pageType !== "pref"){
+					title = "보증일보월보상세현황";
+				}
+				var today = /*[[${today}]]*/;
+
+				parent.com.fnExcelToJs(sheet, gridOptList[0].Cols, title +"_"+ today);
+			};
+
+		    /*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="sSerchType" id="sSerchType" value=""/>
+			</form>
+			<section class="area">
+				<div class="fl">
+					<button type="button" onclick="javascript:fnExcel();" class="btn small style04">엑셀</button>
+				</div>
+			</section>
+			<div class="">
+		    	<div id="sheetDiv" style="width:100%;height:580px"></div>
+			</div>
+		</div><!-- //contentsArea -->
+		<div id="ele_loading" style="display:none">
+			<img src="/images/loading.gif" onerror="" alt="로딩바"/>
+		</div>
+	</body>
+</html>

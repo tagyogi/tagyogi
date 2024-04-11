@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-definition>
+	<service>admin</service>
+	<active>local</active>
+    <domain>http://localhost:18080/</domain>
+	<domainHome>http://localhost:18080/</domainHome>
+	
+    <file>
+       	<path>D:\\upload</path>
+       	<imgPath>D:\\upload\\IMG</imgPath>
+       	<rptPath>D:\\upload\\RPT</rptPath>
+   	</file>
+   	
+   	<g2b>
+		<id>z105822157200</id>   
+       	<path>D:\project\KOCFC_2023\GePSClient\</path>
+       	<pathRecv>D:\project\KOCFC_2023\GePSClient\g2bAPI\fileRep\receive\</pathRecv>
+       	<pathSend>D:\project\KOCFC_2023\GePSClient\g2bAPI\fileRep\</pathSend>
+   	</g2b>
+   	
+   	<mgwr>
+		<path>D:\project\KOCFC_2023\GePSClient\megaware\</path>
+       	<pathSend>D:\project\KOCFC_2023\GePSClient\megaware\send\</pathSend>
+       	<pathRecv>D:\project\KOCFC_2023\GePSClient\megaware\recv\</pathRecv>
+   	</mgwr>
+   	
+   	<bankPay>
+		<url>https://pgtest.bankpay.or.kr:7743/StartBankPay.do</url>      
+		<appNo>12001347</appNo>    
+       	<orgNm>한국콘텐츠공제조합</orgNm>
+   	</bankPay>
+   	
+   	<iniPay>
+		<url>https://stgstdpay.inicis.com/stdjs/INIStdPay.js</url>
+		<mid>INIpayTest</mid>    
+       	<signKey>SU5JTElURV9UUklQTEVERVNfS0VZU1RS</signKey>
+   	</iniPay>
+   	
+    <database>
+        <oralce>oralce</oralce>
+    </database>
+    
+    
+    <kakao>
+        <key>f8c54040490f492c4606dffd3ff3f4eddaa52a5b</key>
+    </kakao>
+
+
+</application-definition>

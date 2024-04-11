@@ -1,0 +1,1121 @@
+<!--
+	파일정보 : membCred/membCredIns.html
+	파일명 : membCred
+	업무명 : membCred등록, 수정
+	생성자 : 김상민1
+	생성일 : 2023-04-11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "RA02:RA04:RA05:RA06:RA07:RA08:RA09:RA10:RA11:RA12:RA14:RA15:RA19:RA21:RA25:RA26:RA27:RA28:RA30:RA31:RA33:RA35:RA38:RA39:RA40:RA41:RA42:RA44:RA45:RA47:RA18:RA50:RA51:RA53:SY07:MB04:MB29:MB13:MB15:MB22:MB30",
+//								 gridNoList : "10211:10212:10213:10214:30107"}
+
+
+			var gradeArr;         //자체등급배열
+			var valGradeArr;      //가치등급배열
+			var financeRate;         //재무비율
+			var nonFinanceRate;     //비재무비율
+			var ceoRate;             //대표자비율
+			var financeScore = 0;        //재무점수
+			var nonFinanceScore = 0;    //비재무점수
+			var ceoScore = 0;            //대표자점수
+			var gradeScope;       //자체등급범위
+			var valGradeScope;    //가치등급범위
+
+			//진행상태
+			var selReleRow = {}; //관련인선택정보
+
+			var selMembType = ""; //관련인선택
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				$('#first-tab-group > div').hide();
+				$('#tab1').show();
+		        $('.tabBasic a').click(function(e) {
+		            e.preventDefault();
+		            var $this = $(this),
+		                tabgroup = '#' + $this.parents('.tabBasic').data('tabgroup'),
+		                tabfn =  $this.parents('.tabBasic').data('tabfunction'),
+		                others = $this.closest('li').siblings().children('a'),
+		                target = $this.attr('href');
+
+		            others.removeClass('active');
+		            $this.addClass('active');
+		            $(tabgroup).children('div').hide();
+		            $(target).show();
+
+		            //fnChgScale();
+
+		        });
+
+
+		        //화면 처리
+
+				$("[id^=filCd]").each(function(idx, item){
+					var idx = idx+1;
+					com.fnCodeSelectBox("MB29", "filCd0"+idx, 1, "");
+				});
+				com.fnCodeSelectBox("MB13", "gnreStat", 1, "");
+				com.fnCodeSelectBox("MB04", "scaleCd", 1, "");
+				com.fnCodeSelectBox("MB15", "limitCd", "");
+				com.fnCodeSelectBox("MB22", "outGrade", 1, "");
+				com.fnCodeSelectBox("MB22", "valueGrade", 1, "");
+				com.fnCodeSelectBox("MB22", "finalGrade", 1, "");
+
+				com.fnCodeRadio("MB04", "div_raidoMb04", "rdoMb04", false); //가로
+				com.fnCodeRadio("CM01", "div_raidoCm01", "rdoCm01", true); //세로
+
+				com.fnCodeCheckBox("MB04", "div_checkBoxMb04", "chkMb01", false); //가로
+				com.fnCodeCheckBox("CM01", "div_checkBoxCm01", "chkCm01", true); //세로
+
+				//동적 첨부파일 생성(동적)
+				//com.fnFileSet("GR21", "");
+
+				com.fnIbsUpload($("#docFile"));
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    //IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				gridOptList[0].Cfg.DataMerge = "1";
+				gridOptList[1].Cfg.DataMerge = "1";
+				gridOptList[4].Cfg.DataMerge = "1";
+
+				$.each(gridOptList[1].Cols, function(idx, item){
+					if(item.Name === "idxInput1"){ //입력컬럼
+						item.Visible = "1"      //숨겨져있는 컬럼 보이게 변경
+						item.CanEdit = "1"
+						item.TrueValue = "Y";
+						item.FalseValue = "N";
+						item.OnChange= fnSelNfncChange; //선택 컨트롤러 추가
+					}
+				});
+
+				$.each(gridOptList[2].Cols, function(idx, item){
+					if(item.Name === "idxInput1") {
+						item.Visible = "1"      //숨겨져있는 컬럼 보이게 변경
+						item.CanEdit = "1"
+						item.TrueValue = "Y";
+						item.FalseValue = "N";
+						item.OnChange = fnSelRprtChange;
+					}
+				});
+
+			    IBSheet.create({ id: "sheetFnc", el: "sheetDivFnc", options: gridOptList[0]});
+			    IBSheet.create({ id: "sheetNfnc", el: "sheetDivNfnc", options: gridOptList[1]});
+			    IBSheet.create({ id: "sheetRprt", el: "sheetDivRprt", options: gridOptList[2]});
+			    IBSheet.create({ id: "sheetRele", el: "sheetDivRele", options: gridOptList[4]}); //관련조합원정보
+
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+
+					var param = {scaleCd: $("#scaleCd").val()};
+					obj = {url:"/membCred/selectCredInfoList.do", callBack:fnCredInfoCallBack, param:param, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+
+		        	//fnLoadInRate();	//자체비율 조회
+					//fnSearchFnc(); //CM_INDEX 비율값 조회 호출
+				};
+
+				//sheetNfnc 조회 이후 selectBox 처리
+                sheetNfnc.bind("onSearchFinish" , function(obj) { //selectBox
+	                var Rows = sheetNfnc.getDataRows();
+
+	                for(var i=0; i<Rows.length-1; i++){
+					  var valCd = Rows[i].valCd1;
+					  var refCd = Rows[i].refCd1;
+					  var valCdNm = Rows[i].valCd1Nm;
+
+					  if(valCd === '02') {
+						  var getEnum = com.fnIbSelectBox("SY07", '1', '');
+		                  sheetNfnc.setAttribute(Rows[i], "idxInput1", "Enum", getEnum.enumNm);
+		                  sheetNfnc.setAttribute(Rows[i], "idxInput1", "EnumKeys", getEnum.enumKeys);
+					  }else{
+						  var getEnum = com.fnIbSelectBox(refCd, '1', '');
+		                  sheetNfnc.setAttribute(Rows[i], "idxInput1", "Enum", getEnum.enumNm);
+		                  sheetNfnc.setAttribute(Rows[i], "idxInput1", "EnumKeys", getEnum.enumKeys);
+					  }
+	               	}
+            	});
+
+            	//대표자 조회 이후 selectBox 처리
+            	sheetRprt.bind("onSearchFinish", function(obj) {
+					var Rows = sheetRprt.getFirstRow();
+
+					var getEnum = com.fnIbSelectBox("RA12", '1', '');
+                    sheetRprt.setAttribute(Rows, "idxInput1", "Enum", getEnum.enumNm);
+                    sheetRprt.setAttribute(Rows, "idxInput1", "EnumKeys", getEnum.enumKeys);
+				});
+
+
+			});
+
+			//자체등급 평가 지표 참조값 조회 결과
+			var fncList, nFncList, rprtList, releList, selfList;
+			var fnCredInfoCallBack = function(resData){
+				fncList  = resData.fncList; //재무항목
+				nFncList = resData.nFncList; //비재무항목
+				rprtList = resData.rprtList; //대표자항목
+				releList = resData.releList;
+				selfList = resData.selfList; //자체항목
+				
+				$("#idxAppDt").val(fncList[0].appDt);
+				
+				sheetFnc.loadSearchData(resData.fncList);
+				sheetNfnc.loadSearchData(resData.nFncList);
+				sheetRprt.loadSearchData(resData.rprtList);
+				sheetRele.loadSearchData(resData.releList);
+
+				fnChgScale();
+
+			}
+
+
+			var fnSelNfncChange = function(evtParam){
+				var rowId = evtParam.row.id;
+				var rowIdx = evtParam.sheet.getRowIndex(rowId);
+				var rowData = evtParam.sheet.getRowById(rowId);
+				var inputVal = sheetNfnc.getValue(rowData, "idxInput1");
+
+				sheetNfnc.setValue(evtParam.row, "idxVal1", inputVal);
+
+				var small = fnCalSmall(rowData, inputVal);
+				sheetNfnc.setValue({row:evtParam.row, col:"smallGrade", val:small.grade});
+				sheetNfnc.setValue({row:evtParam.row, col:"smallScore", val:small.score});
+
+				var fsRowIdx = sheetNfnc.getRowById("AR12");
+				var finalScore = fnTotSumVal(sheetNfnc, "smallScore");
+				sheetNfnc.setValue(fsRowIdx, "smallScore", finalScore);
+				nonFinanceScore = Math.round(finalScore);
+
+				fnPrintInGrade();
+			}
+
+			// 대표자 selectBox 함수
+			var fnSelRprtChange = function(evtParam){
+				var rowId = evtParam.row.id;
+				var rowIdx = evtParam.sheet.getRowIndex(rowId);
+				var rowData = evtParam.sheet.getRowById(rowId);
+				var inputVal = sheetRprt.getValue(rowData, "idxInput1");
+
+				sheetRprt.setValue(evtParam.row, "idxVal1", inputVal);
+
+				var small = fnCalSmall(rowData, inputVal);
+				sheetRprt.setValue({row:evtParam.row, col:"smallGrade", val:small.grade});
+				sheetRprt.setValue({row:evtParam.row, col:"smallScore", val:small.score});
+
+				var fsRowIdx = sheetRprt.getRowById("AR2");
+				var finalScore = fnTotSumVal(sheetRprt, "smallScore");
+				sheetRprt.setValue(fsRowIdx, "smallScore", finalScore);
+				ceoScore = Math.round(finalScore);
+
+				fnPrintInGrade();
+			}
+
+			//조합원조회 콜백
+			var fnMembInfoSet = function(resData){
+				//관련인
+				if(selMembType === "rele"){
+					if($("#membNo").val() === resData.membNo){
+						alert("약정 조합원을 관련조합원으로 선택할 수 없습니다.");
+						return;
+					}
+					if(com.fnIbsRowDup(sheetRele, "releMembNo", resData.membNo)){
+						var data = {};
+						data.releMembNo = resData.membNo;
+						data.releMembNm = resData.membNm;
+						data.releCeoNm = resData.ceoNm;
+						data.releBizNo = resData.bizNo;
+						data.btnDel = "삭제";
+
+						com.fnIbsRowAdd("pre", data, sheetRele);
+
+						selMembType = "";
+					}
+
+
+				}else{
+					membInfo = resData;
+					com.fnSetKeyVal(resData); //조합원설정
+
+					param = {atthType: [[${paramMap.atthType}]], membNo: resData.membNo};
+					obj = {url:"/membCred/selectMembCred.do", callBack:fnMembCredCallBack, param:param, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+
+				}
+
+			};
+
+			//조합원 정보 조회 콜백
+			var fnMembCredCallBack = function(resData){
+				
+				//console.log(resData);
+				var memb = resData.memb;			//재무정보
+				var nFncList = resData.nFncList;	//비재무지표
+				var fncList = resData.fncList;		//재무지표
+				var fncInfo = resData.fncInfo;		//재무정보
+				var releList = resData.releList;	//관련조합원
+				var rprtList = resData.rprtList;	//대표자정보
+				var fileList = resData.fileList;	//파일리스트
+
+				com.fnSetKeyVal(fncInfo);
+				com.fnSetKeyVal(memb);
+
+				//재무지표 콤마 처리
+				$("[id^=finVal]").each(function(idx, item){
+					var obj = $(item).val();
+					//$(item).attr("readonly", true);
+					$(item).val(com.addComma(obj));
+				});
+
+				$("#ele_inGrade").text(fncInfo.inGrade);
+				$("#ele_modifyGrade").text(fncInfo.modifyGrade);
+
+				//재무지표
+				if(fncList.length !== 0) 	sheetFnc.loadSearchData(fncList);
+
+				//관련조합원
+				if(releList.length !== 0) 	sheetRele.loadSearchData(releList);
+
+				//비재무지표
+				if(nFncList.length !== 0){
+					sheetNfnc.loadSearchData(nFncList);
+					//비재무 selectBox 조회
+					var nFncRows = sheetNfnc.getDataRows();
+
+					for(var i=0; i<nFncRows.length-1; i++){
+						//var rowObj = sheetNfnc.getRowByIndex(i);
+						var valCd = nFncRows[i].valCd1;
+						var refCd = nFncRows[i].refCd1;
+
+						if(valCd === '02') {
+							var getEnum = com.fnIbSelectBox("SY07", '1', '');
+		                	sheetNfnc.setAttribute(nFncRows[i], "idxInput1", "Enum", getEnum.enumNm);
+		                  	sheetNfnc.setAttribute(nFncRows[i], "idxInput1", "EnumKeys", getEnum.enumKeys);
+		                  	sheetNfnc.setValue(nFncRows[i], "idxInput1", nFncList[i].idxVal1);
+					  	} else{
+						  	var getEnum = com.fnIbSelectBox(refCd, '1', '');
+		                  	sheetNfnc.setAttribute(nFncRows[i], "idxInput1", "Enum", getEnum.enumNm);
+		                  	sheetNfnc.setAttribute(nFncRows[i], "idxInput1", "EnumKeys", getEnum.enumKeys);
+		                  	sheetNfnc.setValue(nFncRows[i], "idxInput1", nFncList[i].idxVal1);
+					  	}
+					}
+				}
+
+				//대표자
+				if(rprtList.length !== 0){
+					sheetRprt.loadSearchData(rprtList);
+					//대표자 sheet selectBox값 조회
+	               	var rprtRows = sheetRprt.getFirstRow();
+
+	               	var getEnum = com.fnIbSelectBox("RA12", '1', '');
+	                sheetRprt.setAttribute(rprtRows, "idxInput1", "Enum", getEnum.enumNm);
+	                sheetRprt.setAttribute(rprtRows, "idxInput1", "EnumKeys", getEnum.enumKeys);
+	                sheetRprt.setValue(rprtRows, "idxInput1", rprtList[0].idxVal1);
+				}
+
+				//첨부 파일 조회
+				//com.fnIbsUploadView($("#docFile"), resData.fileList);
+				
+				fnChgFnc();
+				
+				if(fncInfo.scaleCd !== null) {
+					fnChgScale();
+				}
+				
+				$("#gradeDt").val(/*[[${today}]]*/);
+			}
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["sMembNo", "gradeDt", "scaleCd", "limitCd"];
+				var param = $("#saveFrm").serializeObject();
+				param.membFnc = sheetFnc.getSaveJson(0);
+				param.membNfnc = sheetNfnc.getSaveJson(0);
+				param.membRprt = sheetRprt.getSaveJson(0);
+				param.membRele = sheetRele.getSaveJson(0);
+
+				if($("#outGrade").val() === "") {
+					alert("외부등급을 입력해주세요");
+					$("#outGrade").focus();
+					return false;
+				}
+
+				//파일여부
+				var fileList = $("#docFile").IBUpload('fileList');
+				if(fileList.length === 0){
+					alert("신용평가 서식을 첨부해주세요.");
+					return;
+				}
+
+				//결산연도 여부 체크
+				if($("#balYear").val() === "") {
+					alert("결산년도를 입력해주세요");
+					$("#balYear").foucs();
+					return;
+				}
+
+				//결산연도 자리수 체크
+				if($("#balYear").val().length < 4) {
+					alert("결산년도는 4자리를 입력해야합니다");
+					$("#balYear").focus();
+					return;
+				}
+
+
+				//첨부파일 첨부한 순서 코드따오기 (물리적저장순서 맞춰야해서 필수)
+				com.fnGetModCds("docFile");
+
+
+				if(com.fnValChk(valChks)){
+					if(confirm("저장 처리 하시겠습니까?")){
+						obj = {url:"/membCred/insertMembCred.do", jParam:param, callBack:fnSaveCallBack, fileId:"docFile", msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+			};
+
+
+			//input 입력 시 재무그리드 계산
+			var fnChgFnc = function(obj){
+				var rowCnt = sheetFnc.getTotalRowCount();
+
+				for(var i=0; i<rowCnt; i++) {
+					var rowData = sheetFnc.getDataRows();
+					var rowId = sheetFnc.getRowById(rowData[i].id);
+					var idxCal = sheetFnc.getValue(rowId, "idxCal");
+
+					$("[id^=finVal]").each(function(){
+						idxCal = fnCalSet(idxCal, com.rmComma($(this).val()), $(this).attr("title"));
+					});
+
+					if(idxCal.indexOf("#") === -1) {
+						var idxVal1 = fnCalEval(idxCal, 0);
+						sheetFnc.setValue({row:rowId, col:"idxVal1", val:idxVal1});
+					} else {
+						sheetFnc.setValue({row:rowId, col:"idxVal1", val:""});
+					}
+
+					if($("#finVal10").val() !== "" && $("#finVal18").val() !== "" && $("#finVal19").val() !== "") {
+						var tmpVal03 = Number($("#finVal10").val().replace(/,/g,"")) + Number($("#finVal18").val().replace(/,/g,"")) - Number($("#finVal19").val().replace(/,/g,""));
+						$("#finVal03").val(com.addComma(tmpVal03));
+					}
+
+					var smallScore = sheetFnc.getValue(rowId, "idxVal1");
+					var smallRowData = sheetFnc.getRowById(rowData[i].id);
+					var small = fnCalSmall(smallRowData, smallScore);
+
+					sheetFnc.setValue({row:rowId, col:"smallGrade", val:small.grade});
+					sheetFnc.setValue({row:rowId, col:"smallScore", val:small.score});
+
+					//최종점수
+					var fsRowIdx = sheetFnc.getRowById("AR7");
+					var finalScore = fnTotSumVal(sheetFnc, "smallScore");
+					sheetFnc.setValue({row:fsRowIdx, col:"smallScore", val:finalScore});
+					financeScore = Math.round(finalScore);
+
+					fnPrintInGrade();
+
+
+				}
+
+			}
+
+			// 산식 적용
+			var fnCalSet = function(idxCal, val, title) {
+
+				var rtn = idxCal;
+
+				if(rtn === null || rtn === "") {
+					return rtn;
+				}
+
+				if(val === null || val === "") {
+					return rtn;
+				}
+
+				val = ""+val;
+				rtn = rtn.replace("#" + title + "#", val);
+				return rtn;
+
+			}
+
+			//산식 계산
+			var fnCalEval = function(cal, point) {
+				var rtn = 0;
+				rtn = eval(cal);
+				rtn = Math.round((rtn));
+				//rtn = $.number(rtn, point, '.', '');
+				if(isNaN(rtn)) {
+					rtn = 0;
+				}
+
+				return rtn;
+			}
+
+			//소항목계산
+			var fnCalSmall = function(smallRowData, smallScore){
+				var small = Object();
+				small.grade = "";
+				small.score = "";
+
+				var range_a = smallRowData.rangeA;
+				var range_b = smallRowData.rangeB;
+				var range_c = smallRowData.rangeC;
+				var range_d = smallRowData.rangeD;
+				var range_e = smallRowData.rangeE;
+				var score_a = smallRowData.scoreA;
+				var score_b = smallRowData.scoreB;
+				var score_c = smallRowData.scoreC;
+				var score_d = smallRowData.scoreD;
+				var score_e = smallRowData.scoreE;
+
+				if((range_a === "") || (range_b === "") || (range_c === "") || (range_d === "") || (range_e === "")) {
+					small.grade = "";
+					small.socre = smallScore;
+				} else {
+					if(score_a === "") score_a = 5;
+					if(score_b === "") score_b = 4;
+					if(score_c === "") score_c = 3;
+					if(score_d === "") score_d = 2;
+					if(score_e === "") score_e = 1;
+					if((small.grade === "") && fnIsRange(range_a, smallScore)){
+						small.grade = "A";
+						small.score = score_a;
+					}
+					if((small.grade === "") && fnIsRange(range_b, smallScore)){
+						small.grade = "B";
+						small.score = score_b;
+					}
+					if((small.grade === "") && fnIsRange(range_c, smallScore)){
+						small.grade = "C";
+						small.score = score_c;
+					}
+					if((small.grade === "") && fnIsRange(range_d, smallScore)){
+						small.grade = "D";
+						small.score = score_d;
+					}
+					if((small.grade === "") && fnIsRange(range_e, smallScore)){
+						small.grade = "E";
+						small.score = score_e;
+					}
+				}
+				return small;
+			}
+
+			//범위여부
+
+			var fnIsRange = function(range, val) {
+				if(val === null || $.trim(val).length === 0) return false;
+				if(range === null || range === ""){
+					return false;
+				} else {
+					return eval(range.replace(/#지표값#/g, val));
+				}
+			}
+
+			var fnTotSumVal = function($grid, colNm, inputRowData){
+				var sum_val = 0;
+				var colIdx = $grid.getColIndex(colNm);
+				var rowCnt = $grid.getTotalRowCount();
+				for(var i=0; i<=rowCnt-1; i++){
+					var rowData = $grid.getDataRows();
+					var rowId = $grid.getRowById(rowData[i].id);
+					var rowCd = $grid.getValue({row:rowId, col:"rowCd"});
+					if(rowCd !== "01" && rowCd !=="05"){
+						continue;
+					}
+					var val = $grid.getValue(rowId, colNm);
+					var floatVal = parseFloat(val);
+					if(!isNaN(floatVal)){
+						sum_val += floatVal;
+					}
+				}
+				if(sum_val === null || sum_val === undefined) {
+					sum_val = 0;
+				}
+				return sum_val;
+
+			}
+
+
+			//자체등급 출력
+			var fnPrintInGrade = function() {
+				var idxCal = "(" + financeScore + " * " + financeRate + ") + (" +nonFinanceScore + " * " + nonFinanceRate + ") + (" + ceoScore + " * " + ceoRate + ")";
+				var idxScore = eval(idxCal, 0);
+					idxScore = Math.round(idxScore);
+				var remark2 = "※ 최종평점 = 재무평점×" + financeRate + " + 비재무평점×" + nonFinanceRate + " + 대표자평점×" + ceoRate + "</br>";
+			        remark2 += "&nbsp;&nbsp;&nbsp;→&nbsp;" + idxScore + " = " + idxCal + "</br>";
+			        remark2 += "※ 자체등급 = 최종평점 ( " + gradeScope + " )";
+			    $("#remark2").html(remark2);
+
+			    var finalGrade = getFinalInGrade(idxScore);
+			    $("#ele_inGrade").text(finalGrade);
+			    $("#inGrade").val(finalGrade);
+
+			    if(finalGrade !== undefined && finalGrade !== "" && idxScore > 0) {
+					isStep2 = true;
+				}
+
+				printFinalGrade();
+			}
+
+			//가치등급 출력
+			var fnPrintValueGrade = function() {
+				var remark3 = "※ 자체등급 = 최종평점 ( " + valGradeScope + " )";
+				$("#remark3").html(remark3);
+
+				printFinalGrade();
+			}
+
+			//기업규모 변경
+			var fnChgScale = function() {
+				gradeScope = ""; //내부등급 범위
+				valGradeScope = ""; //가치등급 범위
+				gradeArr = new Array(); //내부등급 범위 배열
+				valGradeArr = new Array(); //가치등급 범위 배열
+
+				if($("#scaleCd").val() === "") {
+					financeRate = selfList[2].financeRate2;
+					nonFinanceRate = selfList[2].nonFinanceRate2;
+					ceoRate = selfList[2].ceoRate2;
+				} else {
+					financeRate = selfList[0].financeRate2;
+					nonFinanceRate = selfList[0].nonFinanceRate2;
+					ceoRate = selfList[0].ceoRate2;
+				}
+
+				for(var i=0; i<selfList.length; i++) {
+					var inGrades = new Object(); //내부등급 담을 객체
+					var valGrades = new Object(); //가치등급 담을 객체
+					if(selfList[i].gradeCd === "2") {
+						inGrades.grade = selfList[i].grade;
+						inGrades.highScore = selfList[i].highScore;
+						inGrades.lowScore = selfList[i].lowScore;
+						gradeScope += inGrades.grade +":"+ inGrades.highScore + "~" + inGrades.lowScore + (i === 6?"":", ");
+						gradeArr.push(inGrades);
+					}
+					if(selfList[i].gradeCd === "3") {
+						valGrades.grade = selfList[i].grade;
+						valGrades.highScore = selfList[i].highScore;
+						valGrades.lowScore = selfList[i].lowScore;
+						valGradeScope += valGrades.grade +":"+ valGrades.highScore +"~"+ valGrades.lowScore + (i === selfList.length-1?"":", ");
+						valGradeArr.push(valGrades);
+					}
+
+				}
+				fnPrintInGrade();
+				fnPrintValueGrade();
+			}
+
+			//최종자체등급
+			var getFinalInGrade = function(finalScore) {
+				if(gradeArr === null || gradeArr.length === 0) return "";
+				for(var i=0; i<gradeArr.length; i++){
+					var grade = gradeArr[i].grade;
+					var highScore = gradeArr[i].highScore;
+					var lowScore = gradeArr[i].lowScore;
+					var range = "((#지표값# >= " + lowScore + ") && (#지표값# <= " + highScore + "))";
+					if(fnIsRange(range, finalScore))
+						return (grade === undefined?"":grade);
+				}
+				return "";
+			}
+
+			//최종등급출력
+			var printFinalGrade = function() {
+				var outGrade = $("#outGrade").val();
+				var inGrade = $("#inGrade").val();
+				var valueGrade = $("#valueGrade").val();
+				if(valueGrade === "AAA" || valueGrade === "AA")
+					valueGrade = "A";
+				if(valueGrade === "BBB" || valueGrade === "BB")
+					valueGrade = "B";
+				if(valueGrade === "CCC" || valueGrade === "CC")
+					valueGrade = "C";
+
+				var modifyGrade = inGrade;
+
+				if($.trim(outGrade) === "") {
+					if(inGrade === "D") {
+						$("#remark4").html("※ 외부등급이 없을경우 자체등급과 가치등급 중 D등급이 있을 경우 계약 거절</br>&nbsp;&nbsp;&nbsp;→&nbsp;<span style='color: red'>계약 거절 (자체등급 D)</span></br>");
+						$("#ele_modifyGrade").text("");
+						$("#modifyGrade").val("");
+						modifyGrade = "";
+					} else if(valueGrade === "D"){
+						$("#remark4").html("※ 외부등급이 없을경우 자체등급과 가치등급 중 D등급이 있을 경우 계약 거절</br>&nbsp;&nbsp;&nbsp;→&nbsp;<span style='color: red'>계약 거절 (자체등급 D)</span></br>");
+						$("#ele_modifyGrade").text();
+						$("#modifyGrade").val("");
+						modifyGrade = "";
+					} else {
+						if((inGrade === "A" && valueGrade === "C") || (inGrade === "C" && valueGrade === "A")) {
+							modifyGrade = "B";
+						} else {
+							if(valueGrade === "N") {
+								modifyGrade = inGrade;
+							} else {
+								if(inGrade > valueGrade)
+									modifyGrade = valueGrade;
+							}
+						}
+						 var remark4 = "※ 조정등급 = [자체등급, 가치등급] (A = [A, B], B = [A, C], B = [B, C], B = [B, N(없음)])" + "</br>";
+			                 remark4 += "※ 가치등급 AAA~A는 A등급, BBB~B는 B등급, CCC~C는 C등급 적용</br>";
+			                 remark4 += "&nbsp;&nbsp;&nbsp;→&nbsp;" + modifyGrade + " = [ " + inGrade + ", " + valueGrade + " ]";
+						$("#remark4").html(remark4);
+						$("#ele_modifyGrade").text(modifyGrade);
+						$("#modifyGrade").val(modifyGrade);
+					}
+				} else {
+					if(inGrade > valueGrade)
+						modifyGrade = valueGrade;
+					var idxCal = "(" + financeScore + " * " + financeRate + ") + (" + nonFinanceScore + " * " + nonFinanceRate + ") + (" + ceoScore + " * " + ceoRate + ")";
+					var idxScore = Math.round(eval(idxCal), 0);
+					var remark4 = "※ 조정등급 = Max { 자체등급, 가치등급 }" + "</br>";
+            			remark4 += "&nbsp;&nbsp;&nbsp;→&nbsp;" + modifyGrade + " = Max { " + inGrade + ", " + valueGrade + " }";
+					$("#remark4").html(remark4);
+					$("#ele_modifyGrade").text(modifyGrade);
+					$("#modifyGrade").val(modifyGrade);
+				}
+
+				var isFil = true;
+				$("[id^=filterType]").each(function(){
+					if($(this).val() !== "1")
+						isFil = false;
+				});
+				if(!isFil){
+					$("#remark5").html("<span style='color: red'>※ [자체등급 > 필터링] 탭에 부적합기준이 모두 해당없음(신용평가 적합)이어야만 합니다</span></br>");
+					$("#finalGrade").val("");
+					final_grade = "";
+				} else {
+					if($.trim(outGrade) === "") {
+						var remark5 = "※ 최종등급 = 조정등급" + "</br>";
+           	 				remark5 += "&nbsp;&nbsp;&nbsp;→&nbsp;" + modifyGrade + " = " + modifyGrade;
+
+           	 			$("#remark5").html(remark5);
+
+           	 			if($("#finalGrade").val() === "") {
+								$("#finalGrade").val(modifyGrade);
+						}
+					} else {
+						var outGradeArr = ['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'CC', 'C', 'D'];
+						var outGradeIdx = $.inArray(outGrade, outGradeArr);
+						var addGrade = "";
+						var addDesc = "";
+
+						if(modifyGrade === "A") {
+							addGrade = -1;
+							addDesc = "1등급상향";
+						}
+						if(modifyGrade === "B") {
+							addGrade = 0;
+							addDesc = "B:등급유지";
+						}
+						if(modifyGrade === "C") {
+							addGrade = 1;
+							addDesc = "1등급하향";
+						}
+						if(modifyGrade === "D") {
+							addGrade = 2;
+							addDesc = "2등급하향";
+						}
+						outGradeIdx += addGrade;
+						if(outGradeIdx < 0) outGradeIdx = 0;
+						if(outGradeIdx > 9) outGradeIdx = 9;
+						var finalGrade = outGradeArr[outGradeIdx];
+						if(outGrade === "" || modifyGrade === "") finalGrade = "";
+
+						var remark5 = "※ 최종등급 = 외부등급 + 조정등급 (A:1등급상향, B:등급유지, C:1등급하향, D:2등급하향)" + "</br>";
+            				remark5 += "&nbsp;&nbsp;&nbsp;→&nbsp;" + finalGrade + " = " + outGrade + " + " + modifyGrade + " (" + addDesc + ")";
+
+            			$("#remark5").html(remark5);
+            			if($("#finalGrade").val() === "") {
+							$("#finalGrade").val(finalGrade);
+						}
+					}
+				}
+			}
+
+
+			var outGradeSearch = function(){
+				alert("작업중");
+			}
+
+
+			//보증인/담보/관련조합원 팝업 호출
+			var fnPopup = function(type, addYn){
+
+				if($("#sMembNo").val() === ""){
+					alert("조합원을 선택 하십시오.");
+					return;
+				}
+				if(type === "rele") {
+					selMembType = "rele";
+					if(addYn === "Y") selReleRow = {}; //초기화
+					com.dialpopupOpen("관련조합원 추가", "/index/pageCall.do?menuCd=1070707", "900", "650"); ///com/comMortAdd
+					//com.fnMembInfo();
+				}
+			}
+
+			//필터링 변경시 최종등급 출력
+			var fnChangeFilter = function(){
+				printFinalGrade();
+			}
+
+			//외부등급 변경 시 외부등급출력
+			var fnChangeOutGrade = function() {
+				printFinalGrade();
+			}
+
+			var fnChangeValueGrade = function() {
+				fnPrintValueGrade();
+			}
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+				<input type="hidden" id="appDt" name="appDt" th:value="${today}" />
+				<input type="hidden" id="atthType" name="atthType" th:value="${paramMap.atthType}" />
+				<input type="hidden" name="modFileCds" id="modFileCds" />
+				<input type="hidden" id="idxCd" name="idxCd" value="" />
+				<input type="hidden" id="modifyGrade" name="modifyGrade" value="" />
+				<input type="hidden" id="inGrade" name="inGrade" value="" />
+				<input type="hidden" id="idxAppDt" name="idxAppDt" value=""/>
+			<div class="contents flex">
+				<!--탭메뉴 시작-->
+				<div class="tabBasicWrap v1">
+					<ul class="tabBasic" data-tabgroup="first-tab-group">
+						<li><a href="#tab1" class="active">자체등급</a></li>
+						<li><a href="#tab2" class="">최종등급</a></li>
+					</ul>
+				</div>
+				<div id="first-tab-group">
+					<div id="tab1">
+						<div class="layer-flex">
+							<!-- 그리드 좌측 부분 -->
+							<div class="" style="width:49%">
+								<div class="wrapBox">
+									<th:block th:include="com/comMembSearch"></th:block> <!--조합원조회 -->
+								</div>
+								<section class="area mt10">
+									<div class="fl">
+										<h4 class="title">재무정보(
+											<span>결산년도
+												<input type="text" name="balYear" id="balYear" maxlength="4" size="20" placeholder="YYYY" onkeyup="com.fnOnlyNum(this);" style="width:80px;"/>) 년
+											</span>
+
+										</h4>
+									</div>
+								</section>
+								<table class="tbl" summary="재무정보">
+		                            <colgroup>
+		                                <col width="11%" />
+		                                <col width="23%" />
+		                                <col width="11%" />
+		                                <col width="23%" />
+		                                <col width="12%" />
+		                                <col width="*" />
+		                            </colgroup>
+		                            <tr>
+		                                <td class="name1">당좌자산</td>
+		                                <td><input type="text" name="finVal01" id="finVal01" title="당좌자산" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">유동부채</td>
+		                                <td><input type="text" name="finVal02" id="finVal02" title="유동부채" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1" rowspan="2">매출을 통한<br />현금창출규모</td>
+		                                <td rowspan="2"><input type="text" name="finVal03" id="finVal03" title="매출을통한현금창출규모" class="currency readonly" size="20" maxlength="25" style="width:105px; text-align:right;" readonly/> 원</td>
+		                            </tr>
+		                            <tr>
+		                                <td class="name1">총자산</td>
+		                                <td><input type="text" name="finVal04" id="finVal04" title="총자산" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">총부채</td>
+		                                <td><input type="text" name="finVal05" id="finVal05" title="총부채" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                            </tr>
+		                            <tr>
+		                                <td class="name1">단기차입금</td>
+		                                <td><input type="text" name="finVal06" id="finVal06" title="단기차입금" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">회사채</td>
+		                                <td><input type="text" name="finVal07" id="finVal07" title="회사채" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">자본총액</td>
+		                                <td><input type="text" name="finVal08" id="finVal08" title="자본" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                            </tr>
+		                            <tr>
+		                                <td class="name1">장기차입금</td>
+		                                <td><input type="text" name="finVal09" id="finVal09" title="장기차입금" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">매출액</td>
+		                                <td><input type="text" name="finVal10" id="finVal10" title="매출액" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">기초매출채권</td>
+		                                <td><input type="text" name="finVal18" id="finVal18" title="기초매출채권" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                            </tr>
+		                            <tr>
+		                                <td class="name1">전기총자산</td>
+		                                <td><input type="text" name="finVal12" id="finVal12" title="전기총자산" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">전기매출액</td>
+		                                <td><input type="text" name="finVal13" id="finVal13" title="전기매출액" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                                <td class="name1">기말매출채권</td>
+		                                <td><input type="text" name="finVal19" id="finVal19" title="기말매출채권" class="currency" size="20" maxlength="25" onkeyup="com.makeComma(this); fnChgFnc(this);" style="width:105px; text-align:right;" /> 원</td>
+		                            </tr>
+		                        </table>
+
+		                        <section class="area mt10">
+										<div class="fl">
+											<h4 class="title">재무 평가지표</h4>
+										</div>
+								</section>
+								<div id="sheetDivFnc" style="width:100%;height:209px"></div>
+
+								<section class="area mt10">
+										<div class="fl">
+											<h4 class="title">비재무 평가지표</h4>
+										</div>
+								</section>
+								<div id="sheetDivNfnc" style="width:100%; height:317px"></div>
+							</div>
+							<!-- 그리드 좌측부분 종료 -->
+
+							<!-- 그리드 우측부분 시작 -->
+							<div class="" style="width:49%">
+								<section class="area mt10">
+									<div class="fl">
+										<h4 class="title">대표자 <span>(<a href="http://cpr.allcredit.co.kr/kcm" target="_blank" style="color: blue;">KCB 바로가기</a>)</span></h4>
+									</div>
+								</section>
+								<div id="sheetDivRprt" style="width:100%; height:120px"></div>
+
+								<section class="area mt10">
+									<div class="fl">
+										<h4 class="title">필터링</h4>
+									</div>
+								</section>
+								<table class="tbl" width="100%" summary="외부등급 조회결과">
+			                            <colgroup>
+			                                <col width="10%" />
+			                                <col width="60%" />
+			                                <col width="30%" />
+			                            </colgroup>
+			                            <tr>
+			                                <td class="name1 alignC">순번</td>
+			                                <td class="name1 alignC">부적합 기준</td>
+			                                <td class="name1 alignC">해당여부</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">1</td>
+			                                <td class="name1" style="text-align: left;">외부 신용등급 D등급</td>
+			                                <td style="text-align: center;">
+												<select name="filCd01" id="filCd01" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">2</td>
+			                                <td class="name1" style="text-align: left;">외부감사의견 한정, 부적정, 의견거절</td>
+			                                <td style="text-align: center;">
+												<select name="filCd02" id="filCd02" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">3</td>
+			                                <td class="name1" style="text-align: left;">결산일 기준 자기자본 완전잠식</td>
+			                                <td style="text-align: center;">
+												<select name="filCd03" id="filCd03" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">4</td>
+			                                <td class="name1" style="text-align: left;">최근 3년 연속 영업손실</td>
+			                                <td style="text-align: center;">
+												<select name="filCd04" id="filCd04" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">5</td>
+			                                <td class="name1" style="text-align: left;">차입금이 매출액의 100%이상</td>
+			                                <td style="text-align: center;">
+												<select name="filCd05" id="filCd05" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">6</td>
+			                                <td class="name1" style="text-align: left;">차입금이자가 매출액의 10%이상</td>
+			                                <td style="text-align: center;">
+												<select name="filCd06" id="filCd06" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">7</td>
+			                                <td class="name1" style="text-align: left;">채무불이행(국세, 국민연금, 건강보험)</td>
+			                                <td style="text-align: center;">
+												<select name="filCd07" id="filCd07" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">8</td>
+			                                <td class="name1" style="text-align: left;">부도사실(신용관리대상)</td>
+			                                <td style="text-align: center;">
+												<select name="filCd08" id="filCd08" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                            <tr>
+			                                <td class="name1 alignC">9</td>
+			                                <td class="name1" style="text-align: left;">대표자 신용 9~10등급(KCB)</td>
+			                                <td style="text-align: center;">
+												<select name="filCd09" id="filCd09" title="약정구분" onchange="fnChangeFilter();" style="width:150px;" /></select>
+											</td>
+			                            </tr>
+			                        </table>
+			                        <section class="area mt10">
+										<div class="fl">
+											<h4 class="title">관련조합원</h4>
+										</div>
+										<div class="fr">
+											<button type="button" onclick="javascript:fnPopup('rele', 'Y');" class="btn small style08">추가</button>
+											<button type="button" onclick="javascript:com.fnIbsStatusChg(sheetRele, 'D');" class="btn small style08">삭제</button>
+										</div>
+									</section>
+									<div id="sheetDivRele" style="width:100%; height:200px"></div>
+							</div>
+							<!-- 그리드 우측부분 종료 -->
+						</div>
+					</div>
+					<div id="tab2">
+						<div class="layer-flex">
+							<div class="" style="width:49%; height:65%">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">평가정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+			                        <col width="16%" />
+			                        <col width="20%" />
+			                        <col width="15%" />
+			                        <col width="17%" />
+			                        <col width="15%" />
+			                        <col width="*" />
+			                    </colgroup>
+			                    <tr>
+			                        <td class="name1">등급일자</td>
+			                        <td>
+										<input type="text" name="gradeDt" id="gradeDt" th:value="${today}" title="기본달력" style="width:95px" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);fnCmGrade();"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'gradeDt', 'yyyy-mm-dd')" />
+									</td>
+			                        <td class="name1">기업규모</td>
+			                        <td><select name="scaleCd" id="scaleCd" style="width:120px" title="기업규모" onchange="fnChgScale();"></select></td>
+			                        <td class="name1">한도구분</td>
+			                        <td><select name="limitCd" id="limitCd" style="width:120px" title="한도구분" ></select></td>
+			                    </tr>
+			                    <tr>
+			                        <td class="name1">평가내용</td>
+			                        <td colspan="5"><textarea name='rateCont' id='rateCont' cols='90' rows='2' class='mgTop03 mgBtm03'></textarea></td>
+			                    </tr>
+							</table>
+							</div>
+						<div class="fixScroll" style="width:49%; height:65%">
+							<div class="wrapBox">
+								<section class="area">
+									<div class="fl">
+										<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+									</div>
+									<div class="fr">
+			                           <button type="button" onclick="javascript:com.fnIbsFileAdd($('#docFile'));" class="btn small style08">추가</button>
+			                           <button type="button" onclick="javascript:com.fnIbsFileDel($('#docFile'));" class="btn small style08">삭제</button>
+			                    	</div>
+								</section>
+								<div id="docFile" style="height:140px;"></div>
+							</div>
+						</div>
+						</div>
+						<div class="layer-flex-mt20">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">등급정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+			                        <col width="16%" />
+			                        <col width="14%" />
+			                        <col width="*" />
+			                    </colgroup>
+			                    <tr style="height:30px;">
+			                        <td class="name1">등급구분</td>
+			                        <td class="name1">등  급</td>
+			                        <td class="name1">비     고</td>
+			                    </tr>
+			                    <tr style="height:53px;">
+			                        <td class="name1" >
+			                                외부등급</br>
+			                            <span style="font-weight: normal;">(<a href="http://www.cretop.com/" target="_blank" style="color: blue;">CRETOP 바로가기</a>)</span>
+			                        </td>
+			                        <td id="grade1" style="text-align: center;">
+										<select name="outGrade" id="outGrade" style="width:120px" onchange="fnChangeOutGrade();" title="외부등급"></select>
+									</td>
+			                        <td id="remark1"></td>
+			                    </tr>
+			                    <tr style="height:53px;">
+			                        <td class="name1">자체등급</td>
+			                        <td style="text-align: center;"><span id="ele_inGrade"></span></td>
+			                        <td id="remark2">
+			                        </td>
+			                    </tr>
+			                    <tr style="height:53px;">
+			                        <td class="name1">가치등급</td>
+			                        <td id="grade3" style="text-align: center;">
+										<select name="valueGrade" id="valueGrade" style="width:120px" onchange="fnChangeValueGrade();" title="외부등급"></select>
+									</td>
+			                        <td id="remark3"></td>
+			                    </tr>
+			                    <tr style="height:53px;">
+			                        <td class="name1">조정등급</td>
+			                        <td style="text-align: center;"><span id="ele_modifyGrade"></span></td>
+			                        <td id="remark4"></td>
+			                    </tr>
+			                    <tr style="height:53px;">
+			                        <td class="name1">최종등급</td>
+			                        <td id="grade5" style="text-align: center;">
+										<select name="finalGrade" id="finalGrade" style="width:120px" title="최종등급"></select>
+									</td>
+			                        <td id="remark5"></td>
+			                    </tr>
+							</table>
+						</div>
+					</div>
+				</div>
+				<!--탭메뉴 종류-->
+				<!-- 처리 버튼 영역 -->
+				<div class="layer-flex mt50">
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+				</div>
+					<!-- END 컨텐츠 영역 -->
+					<!-- 그리드 우측 부분 끝 -->
+
+					<!-- END 컨텐츠 영역 -->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

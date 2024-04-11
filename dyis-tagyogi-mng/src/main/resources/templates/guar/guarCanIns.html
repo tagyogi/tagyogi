@@ -1,0 +1,1069 @@
+<!--
+	파일정보 : guarCan/guarCanIns.html
+	파일명 : guarCan
+	업무명 : 보증해제 등록
+	생성자 : 변성균
+	생성일 : 2023-04-11
+
+	com/comMemb  조합원조회
+	guar/comGuarDtl 보증상세정보
+
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "CM01:MB04:GR01:GR21", gridNoList : "70100"}
+
+			var paramMap = /*[[${paramMap}]]*/;
+			var rowData;
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//console.log(paramMap.type);
+				//화면 처리
+				$("#guarCanReason").hide();
+
+				//코드값 처리
+				com.fnCodeSelectBox("GR02", "canGuarStat", 1, "", "1");
+				com.fnCodeSelectBox("GR19", "guarCanType", 1, "");
+				com.fnCodeSelectBox("CM01", "sRetWay", 1, "");
+				com.fnCodeSelectBox("CM02", "sRetBanks", 1, "");
+
+				com.fnCodeRadio("MB04", "div_raidoMb04", "rdoMb04", false); //가로
+				com.fnCodeRadio("CM01", "div_raidoCm01", "rdoCm01", true); //세로
+
+				com.fnCodeCheckBox("MB04", "div_checkBoxMb04", "chkMb01", false); //가로
+				com.fnCodeCheckBox("CM01", "div_checkBoxCm01", "chkCm01", true); //세로
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#myUpload"));
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				IBSheet.create({ id: "sheetHist", el: "sheetHistDiv", options: gridOptList[0] });
+				IBSheet.create({ id: "sheetPart", el: "sheetPartDiv", options: gridOptList[1] });
+
+				//시트 생성 이후
+			    //IBSheet.onRenderFirstFinishAll = function(obj){
+					//fnSearch(); //조회 호출
+				//};
+
+				$("#membNo").val(paramMap.membNo);
+				$("#guarNo").val(paramMap.guarNo);
+
+				obj = {url:"/guar/selectGuar.do", formId:"saveFrm", callBack:fnDtlCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxPost(obj);
+
+				sheetHist.bind("onSearchFinish", function(obj){
+					rowData = this.getFirstRow();
+				})
+
+			});
+
+			var fnDtlCallBack = function(resData){
+				console.log(resData);
+
+				//1. 조합원 정보
+				com.fnSetKeyVal(resData.memb);
+
+				$("#acctNo").val('');
+				$("#acctNm").val('');
+				$("#sMembNo").val(resData.memb.membNo);
+				$("#canGuarAmt").val(resData.guar.guarAmt);
+
+				//2-1. 보증정보 + 주계약정보(화면)
+				guarType = resData.guar.guarType;
+				fnGuarContrViewSet(guarType, resData); //주계약정보 화면설정(상세) guar/comGuarDtl
+				com.fnSetKeyVal(resData.guar, "areaGuarDtl");
+				com.fnSetKeyVal(resData.contr, "areaGuarContr");
+
+				//3-2. 약정정보(상품별 한도정보)
+				var typeValue = guarType;
+				if(guarType === "31")	typeValue = "13";
+				if(guarType === "32")	typeValue = "12";
+				if(guarType === "33" || guarType === "34")	typeValue = "15";
+				$("#ele_limitAmt").text(com.addComma(resData.contr["limitAmt"+typeValue]));	//한도금액
+				$("#ele_useAmt").text(com.addComma(resData.contr["useAmt"+typeValue]));		//사용액
+				$("#ele_remainAmt").text(com.addComma(resData.contr["remainAmt"+typeValue]));	//가능액
+
+				//7. 첨부파일
+				com.fnIbsUploadView($("#docFile"), resData.fileList);
+
+				//납입정보 표출 (comGuarPay.html)
+				$("#ele_guarPayArea").show(); //납입정보
+				com.fnSetKeyVal(resData.guar, "ele_guarPayArea");
+
+				//환불정보 표출 (comGuarPay.html)
+				if(resData.guar.retCommAmt !== null){
+					$("#ele_guarRetArea").show(); //납입정보
+					com.fnSetKeyVal(resData.guar, "ele_guarRetArea");
+				}
+
+				if(resData.guarList !== null) {
+					sheetHist.loadSearchData(resData.guarList);
+				}
+
+				//일부해제 있을 경우
+				if(!com.fnIsEmpty(resData.partList)) {
+					$(".partCancel").css("display", "");
+					sheetPart.loadSearchData(resData.partList);
+				}
+
+				$("#guarPubDt").val(resData.guar.guarPubDt);
+				//보증해제 최초 등록
+				if(paramMap.type === "CAN"){
+					com.fnSetKeyVal(resData.guar);
+					$("#ele_canGuarAmt").text(resData.guar.guarAmt);		//해제금액
+					$("#ele_canPreDt").html($("#scanGuarDate").val());
+
+					$("#canGuarStat").val("30");			//보증상태
+					$("#canGuarStat option:eq(3)").attr("selected", "selected");
+					fnCalcData();
+				}
+
+
+				//선급금 / 지급 일부해제 등록 일시
+				if(paramMap.type === "CANINS" && (paramMap.refVal === "14" || paramMap.refVal === "15")) {
+					$("#ele_totCommAmt").text(resData.guar.totCommAmt);
+					$("#preCommAmt").text(resData.guar.commAmt);
+					$("#befGuarAmt").val(resData.guar.guarAmt);
+					$("#befCommRate").val(resData.guar.commRate);
+					$("#canTotCommAmt").val(resData.guar.totCommAmt);
+					$("#canGuarAmt").val(resData.guar.guarAmt);
+					$("#ele_contrCanInterRate").text(resData.guar.contrInterRate);
+					$("#ele_contrCanInterAmt").text(resData.guar.contrInterAmt);
+
+					if(paramMap.refVal === "14") {
+						$("#befRepayAmt").val(resData.guar.repayAmt);
+						var repayAmt = resData.guar.repayAmt.replace(/,/g, '');
+					}
+
+					var guarAmt = resData.guar.guarAmt.replace(/,/g, '');
+					var sumCanRepayAmt = 0;
+					var sumPartCanAmt = 0;
+
+					var partList = new Array();
+					partList = resData.partList;
+
+					if(com.fnIsEmpty(partList.length)){
+						sumCanRepayAmt = 0;
+						sumPartCanAmt = 0;
+					} else {
+						for(var i=0; i<partList.length; i++) {
+							sumCanRepayAmt += partList[i].canRepayAmt;
+							sumPartCanAmt += partList[i].partCanAmt;
+						}
+					}
+
+					$("#sumCanRepayAmt").val(sumCanRepayAmt);
+					$("#sumPartCanAmt").val(sumPartCanAmt);
+					$("#sumBefRepayAmt").val(Number(repayAmt) - Number(sumCanRepayAmt));
+					$("#sumBefGuarAmt").val(Number(guarAmt) - Number(sumPartCanAmt));
+				}
+
+				//선금급, 지급보증 제외 수정 시
+				if(paramMap.type === "CANUPT" && paramMap.guarStat !== "32" ) {
+					$("#canGuarStat").val(resData.guar.guarStat);
+					$("#guarCanReason").val(resData.guar.guarCanReason);
+					$("#scanGuarDate").val(resData.guar.guarCanDt);
+					$("#ele_canGuarAmt").text(resData.guar.guarAmt);
+					$("#ele_totCommAmt").text(resData.guar.commAmt);
+					$("#befCommAmt").val(resData.guar.commAmt);
+					$("#guarExpDt").attr("readonly", "readonly");
+					$("guarDays").attr("readonly", "readonly");
+					$("#sRetDt").val('');
+					$("#sRetWay").val('');
+					$("#sRetYn").val('');
+					$("#sRetBanks").val('');
+					$("#acctNo").val('');
+					$("#acctNm").val('');
+				}
+
+				//선금급보증, 지급보증 일부해제 수정일시
+				if(paramMap.type === "CANUPT" && paramMap.guarStat === '32'){
+					com.fnSetKeyVal(resData.guarPart);
+
+					$("#ele_totCommAmt").text(com.addComma(resData.guar.commAmt));	//총보증료
+					$("#preCommAmt").text(resData.guar.commAmt);					//기존보증료
+					$("#befCommRate").val(resData.guarPart.commRate);				//기존수수료요율
+					$("#befGuarAmt").val(resData.guarPart.befGuarAmt);				//기존보증금액
+
+					if(paramMap.refVal === "14") {
+						$("#befRepayAmt").val(resData.guar.repayAmt);
+						var repayAmt = resData.guar.repayAmt.replace(/,/g, '');
+						var repayAmt = resData.guar.repayAmt.replace(/,/g, '');
+					}
+
+					var guarAmt = resData.guar.guarAmt.replace(/,/g, '');
+					var sumCanRepayAmt = 0;
+					var sumPartCanAmt = 0;
+
+					var partList = new Array();
+					partList = resData.partList;
+
+					if(com.fnIsEmpty(partList)){
+						sumCanRepayAmt = 0;
+						sumPartCanAmt = 0;
+					} else {
+						for(var i=0; i<partList.length; i++) {
+							sumCanRepayAmt += partList[i].canRepayAmt;
+							sumPartCanAmt += partList[i].partCanAmt;
+						}
+					}
+
+					$("#sumCanRepayAmt").val(sumCanRepayAmt);
+					$("#sumPartCanAmt").val(sumPartCanAmt);
+					$("#sumBefRepayAmt").val(Number(repayAmt) - Number(sumCanRepayAmt));
+					$("#sumBefGuarAmt").val(Number(guarAmt) - Number(sumPartCanAmt));
+
+					fnCalcBefCommAmt();
+				}
+
+				//반환은행 조합원계좌로 재세팅
+				var accParam = {paramId: "sRetBanks", sMembNo: $("#sMembNo").val(), sUseYn: "Y", choiceType: 1}
+				com.fnSetMembAccList(accParam);
+				if(obj.bankCd !== ""){
+					$("#sRetBanks").val(obj.bankCd+","+obj.acctNo+","+obj.depoNm);
+					$("#sRetBanks").trigger('change');
+					//$("#payBank").val(obj.bankCd);
+				}
+				$("#sRetBanks option:eq(0)").attr("selected", "selected");
+
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+			};
+
+			// 선금급, 지금 제외 계산
+			var fnCalcData = function(){
+
+				var guarStat = $("#canGuarStat option:selected").val();
+				var totCommAmt = Number($("#ele_totCommAmt").text().replace(/,/g, ''));
+				var befCommAmt = $("#befCommAmt").val();
+				var guarExpDt = Number($("#ele_guarExpDt").text().replace(/-/g, ''));
+				var guarBegDt = Number($("#ele_guarBegDt").text().replace(/-/g, ''));
+				var canGuarDate = Number($("#scanGuarDate").val().replace(/-/g, ''));
+				var guarDays = $("#ele_guarDays").val();
+				var canGuarDays = $("#guarDays").val();
+
+				if(guarStat === "30") {
+					$("#befCommAmt").val(com.addComma($("#ele_totCommAmt").text()));
+					$("#ele_befCommAmt").text(com.addComma($("#ele_totCommAmt").text()));
+					befCommAmt = $("#ele_totCommAmt").val();
+				} else {
+					$("#befCommAmt").val(com.addComma($("#ele_commAmt").val()));
+					$("#ele_befCommAmt").text(com.addComma($("#ele_commAmt").text()));
+					befCommAmt = $("#ele_commAmt").val();
+				}
+
+				if($("#scanGuarDate").val().length !== 10) {
+					$("#calcExpDt").val("");
+					$("#guarDays").val("");
+					$("#ele_calcAmt").val("");
+					return;
+				}
+
+				if(guarExpDt <= canGuarDate) {
+					befCommAmt = $("#befCommAmt").val();
+
+					$("#modCommAmt").val(com.addComma($("#ele_totCommAmt").text()));
+					$("#calcExpDt").val($("#ele_guarExpDt").text());
+					$("#guarDays").val(guarDays);
+					$("#ele_calcAmt").val(com.addComma(befCommAmt));
+					$("#sRetCommAmt").val("0");
+					$("#guarDays").val(com.fnDateTerm($("#guarBegDt").val(), $("#calcExpDt").val()));
+
+					$("#ele_guarUseDtTerm").text($("#ele_guarBegDt").text() +"~"+ $("#ele_guarExpDt").text() +"("+ $("#guarDays").val() +"일)");
+					return;
+				}
+
+				$("#calcExpDt").val($("#scanGuarDate").val());
+				var calcBegDt = Number($("#ele_guarBegDt").text().replace(/-/g, ''));
+				var calcExpDt = Number($("#calcExpDt").val().replace(/-/g, ''));
+
+				if(calcExpDt < calcBegDt) {
+					$("#guarDays").val("0");
+				} else if(calcExpDt === calcBegDt) {
+					$("#guarDays").val("1");
+				} else {
+					$("#guarDays").val(com.fnDateTerm(guarBegDt, $("#calcExpDt").val()));
+					$("#ele_guarUseDtTerm").text($("#ele_guarBegDt").text() +"~"+ $("#scanGuarDate").val() + "("+ $("#guarDays").val() +"일)");
+				}
+
+				//수수료 재산출
+				if($("#canGuarStat option:selected").val() === "31") {
+					$("#modCommAmt").val("0");
+					$("#ele_modCanCommAmt").text("0");
+					$("#sRetCommAmt").val(com.addComma(befCommAmt));
+				} else if(calcBegDt === calcExpDt){
+					$("#modCommAmt").val("0");
+					$("#ele_modCanCommAmt").text("0");
+					$("#sRetCommAmt").val(com.addComma(befCommAmt));
+				} else {
+					var orgCommAmt = totCommAmt;
+					var orgGuarAmt = Number($("#ele_canGuarAmt").text().replace(/,/g, ''));
+					var orgCommRate = ($("#commRate").val() / 100).toFixed(5);
+
+					var newDays = $("#guarDays").val();
+					var amt = (orgGuarAmt * orgCommRate * newDays / 365);
+              		var newCommAmt = (Math.round(parseInt(Math.round(Math.floor(amt))) / 100) * 100);
+               		/*20231212 배서현대리 재산출보증료 10원단위 반올림 끝*/
+					//var newCommAmt = Math.trunc(orgGuarAmt * orgCommRate * newDays / 365);
+
+					if(newCommAmt >= 0 && newCommAmt < 7000) {
+						newCommAmt = 7000;
+					}
+					$("#modCommAmt").val(com.addComma(newCommAmt));
+					$("#ele_modCanCommAmt").text(com.addComma(newCommAmt));
+					$("#sRetCommAmt").val(com.addComma(orgCommAmt - newCommAmt));
+				}
+
+			};
+
+			// 선금급 잔액 계산
+			var fnCalcPayment = function() {
+				//해제일자 체크
+				if(!fnPartCanDtValCheck()) return;
+
+				var canRepayAmt = Number($("#canRepayAmt").val().replace(/,/g, ''));
+				var befRepayAmt = Number($("#sumBefRepayAmt").val().replace(/,/g, ''));
+
+				if(canRepayAmt === "" || canRepayAmt === undefined) return;
+				if(befRepayAmt === "" || befRepayAmt === undefined) return;
+
+				if(canRepayAmt >= befRepayAmt) {
+					alert("해제금액을 확인해주십시오.");
+					$("#canRepayAmt").focus();
+					return;
+				}
+
+				$("#remRepayAmt").val(com.addComma(befRepayAmt - canRepayAmt));
+
+				//보증일부해제금액 계산
+				fnCalcPartCanGuarAmt();
+
+			}
+
+			//지급 보증 잔액 계산
+			var calcRemGuar = function() {
+				//해제일자 체크
+				if(!fnPartCanDtValCheck()) return;
+
+				var befGuarAmt = Number($("#befGuarAmt").val().replace(/,/g, ''));
+				var canGuarAmt = Number($("#partCanAmt").val().replace(/,/g, ''));
+
+				if(befGuarAmt < canGuarAmt) {
+					alert("보증해제금액을 확인해주십시오.");
+					$("#partCanAmt").focus();
+					return;
+				}
+
+				var sumBefGuarAmt = $("#sumBefGuarAmt").val();
+
+				$("#remGuarAmt").val(com.addComma(befGuarAmt - canGuarAmt));
+
+				fnCalcBefCommAmt();
+			}
+
+			//해제일자 체크
+			var fnPartCanDtValCheck = function(){
+				var guarBegDt = Number($("#ele_guarBegDt").text().replace(/-/g, ''));
+				var guarExpDt = Number($("#ele_guarExpDt").text().replace(/-/g, ''));
+				var partCanDt = Number($("#partCanDt").val().replace(/-/g, ''));
+
+				if(guarBegDt > partCanDt || guarExpDt < partCanDt) {
+					alert("해제일자를 확인해주십시오.");
+					$("#partCanDt").focus();
+					return false;
+				} else {
+					return true;
+				}
+			}
+
+			var fnCalcPartCanGuarAmt = function(){
+				var canRepayAmt = Number($("#canRepayAmt").val().replace(/,/g, ''));
+				if(canRepayAmt === "" || canRepayAmt === "0") return;
+
+				var contrInterRate = Number($("#contrInterRate").val()) / 100; //약정이자율
+
+				//잔여보증일수
+				var guarBegDt = $("#procDt").val();
+				var guarExpDt = $("#ele_guarExpDt").text();
+				var aftCanGuarDays = Number(com.fnDateTerm(guarBegDt, guarExpDt)) - 1;
+
+				//보증일부해제금액
+				var partCanAmt = Math.floor(canRepayAmt + (canRepayAmt * contrInterRate / 365 * aftCanGuarDays));
+				$("#partCanAmt").val(com.addComma(partCanAmt));
+
+				//보증잔여액
+				var remRepayAmt = Number($("#remRepayAmt").val().replace(/,/g, ''));
+				var remGuarAmt = Math.floor(remRepayAmt + (remRepayAmt * contrInterRate / 365 * aftCanGuarDays));
+				$("#remGuarAmt").val(com.addComma(remGuarAmt));
+
+				//재산출보증료 계산
+				fnCalcBefCommAmt();
+
+			}
+
+			//재산출보증료 계산
+			var fnCalcBefCommAmt = function() {
+				//기존 보증금액
+				var befGuarAmt = Number($("#befGuarAmt").val().replace(/,/g, ''));
+
+				var canPartDt = com.fnDateGet($("#partCanDt").val(), 1);
+
+				var sumBefCommAmt = 0;
+				//기존 보증일수
+				var guarBegDt = $("#ele_guarBegDt").text();
+
+				var guarExpDt = $("#partCanDt").val();
+				if($("#partCanDt").val() === "") {
+					$("#procDt").focus();
+				}
+
+				//해제일자 이전보증기간
+				var befCanGuarDays = com.fnDateTerm(guarBegDt, guarExpDt);
+				var befCommRate = Number($("#befCommRate").val() / 100).toFixed(5);
+
+				//기존일부해제존재 시
+				//$("#calcTermArea").html(canPartDt + "~" + $("#ele_guarExpDt").text() + "(" + befCanGuarDays + "일)");
+
+				var befCommAmt = befGuarAmt * befCanGuarDays * befCommRate / 365;
+				sumBefCommAmt += befCommAmt;
+
+				$("#befCanCommAmt").val(sumBefCommAmt);
+
+				//해제일자이후 보증료
+				fnCalcAftCommAmt();
+
+			}
+
+			//해제일자이후 보증료
+			var fnCalcAftCommAmt = function() {
+				//일부해제보증금액
+				var remCanAmt = Number($("#remGuarAmt").val().replace(/,/g, ''));
+
+				//보증일수
+				var guarBegDt = com.fnDateGet($("#partCanDt").val(), 1);
+				var guarExpDt = $("#ele_guarExpDt").text();
+
+				//해제일자이후보증기간
+				var aftCanGuarDays = com.fnDateTerm(guarBegDt, guarExpDt);
+				$("#aftCanGuarDays").val(aftCanGuarDays);
+
+				//보증요율
+				var commRate = Number(($("#befCommRate").val() / 100).toFixed(5));
+
+				var aftCommAmt = remCanAmt * aftCanGuarDays * commRate / 365;
+				$("#aftCanCommAmt").val(aftCommAmt);
+
+				var befCommAmt = Number($("#befCanCommAmt").val());
+				aftCommAmt = Number(aftCommAmt);
+
+				$("#calcTermArea").html(guarBegDt + "~" + $("#ele_guarExpDt").text() + "(" + aftCanGuarDays + "일)");
+
+				$("#calcArea").val($("#calcArea").val() + "\n" + remCanAmt + "*" + aftCanGuarDays + "*" + commRate + " / " + 365 + "=" + aftCommAmt + "\n" + (befCommAmt + aftCommAmt));
+
+				//재산출보증료 계산
+				fnCalcModCommAmt();
+			}
+
+			var fnCalcModCommAmt = function(){
+				if($("#befCanCommAmt").val() === "") fnCalcBefCommAmt();
+
+				if($("#aftCanCommAmt").val() === "") fnCalcAftCommAmt();
+
+				var befCanCommAmt = Number($("#befCanCommAmt").val());					//해제일자이전보증료
+				var aftCanCommAmt = Number($("#aftCanCommAmt").val());					//해제일자이후보증료
+				var canTotCommAmt = Number($("#canTotCommAmt").val().replace(/,/g, ''));//총보증료
+				//기존보증료 - (이전 + 이후 보증료)
+				var modCommAmt = Math.floor(befCanCommAmt + aftCanCommAmt);
+
+				$("#modCommAmt").val(com.addComma(modCommAmt));
+				$("#ele_modCanCommAmt").text(com.addComma(modCommAmt));
+
+				var retCommAmt = Math.floor(canTotCommAmt - modCommAmt);
+				if(retCommAmt < 7000) retCommAmt = "0";
+				$("#sRetCommAmt").val(com.addComma(retCommAmt));
+
+			}
+
+			//보증상태 변경
+			var fnGuarStatChange = function(obj){
+				var guarPubDt = $("#guarPubDt").val().replace(/-/g, ''); //보증발급일
+				var date = /*[[${today}]]*/;
+				var today = date.replace(/-/g, '');
+				var docNo = $("#ele_docNo").text().replace(/-/g, '');
+				var initDocNo = $("#ele_initDocNo").text().replace(/-/g, '');
+				if(rowData !== null) {
+					var sDocNo = rowData.docNo.replace(/-/g, '');
+				}
+
+				//최초보증서인지 확인 + 당일날짜와 발급일자 비교
+				if((docNo === initDocNo || initDocNo === "") && today === guarPubDt) {
+					$("#vCanPreDt").text(getStatNm(obj) + "예정일자");
+					$("#vCanDt").text(getStatNm(obj) + "일자");
+					$("#vCanReason").text(getStatNm(obj) + "사유");
+					$("#vCanAmt").text(getStatNm(obj) + "금액");
+					fnCalcData();
+				} else if(sDocNo === docNo && today === guarPubDt) { //보증서중 가장 마지막인지를 비교 + 당일날짜와 발급일자 비교
+					$("#vCanPreDt").text(getStatNm(obj) + "예정일자");
+					$("#vCanDt").text(getStatNm(obj) + "일자");
+					$("#vCanReason").text(getStatNm(obj) + "사유");
+					$("#vCanAmt").text(getStatNm(obj) + "금액");
+					fnCalcData();
+				} else {
+					alert("보증발급일자와 당일날짜가 같지 않으면 취소할 수 없습니다");
+					$("#canGuarStat").val("30");
+					return false;
+				}
+			};
+
+
+
+			var getStatNm = function(guarStat) {
+				if(guarStat === "30") {
+					return "해제";
+				} else {
+					return "취소";
+				}
+			}
+
+
+			var fnCanTypeChg = function(obj) {
+				$("#guarCanReason").val("");
+
+				if(obj === "90"){
+					$("#guarCanReason").show();
+				} else {
+					$("#guarCanReason").hide();
+				}
+			}
+
+
+			//해제일자 변경 함수
+			var fnCanDateChg = function(obj) {
+				$("#ele_canPreDt").text($("#scanGuarDate").val());
+			}
+
+			//조합원 환불계좌 변경 함수
+			var fnMembAccChange = function(obj) {
+				//기본
+			    if(obj === "") {
+			        $("#retBank").val("");
+			        $("#acctNo").val("");
+			        $("#acctNm").val("")
+			    } else {
+			        $("#retBank").val(obj.split(",")[0]);
+			        $("#acctNo").val(obj.split(",")[1]);
+			        $("#acctNm").val(obj.split(",")[2]);
+			    }
+			}
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["sRetYn", "scanGuarDate", "guarCanType"];
+
+				//환불여부가 환불이면 환불방법, 환불일자 필수 체크로 변경(2024-01-15 강기원 대리 요청)
+				if($("#sRetYn").val() === "Y")	valChks.push( ...["sRetWay", "sRetDt"])
+
+				//저장하기전 원보증번호 담기
+				$("#sInitDocNo").val($("#ele_initDocNo").text());
+				var message = "";
+				var guarCanDt = Number($("#scanGuarDate").val().replace(/-/g, ''));
+				var retDt = Number($("#sRetDt").val().replace(/-/g, ''));
+				if(paramMap.type === "CAN" && (guarCanDt !== retDt)){
+					message = "해제일자와 환불일자가 다릅니다";
+				}
+
+
+				var param = $("#saveFrm").serializeObject();
+
+				if(com.fnValChk(valChks)){
+					if(confirm(message + "\n" + "저장 처리 하시겠습니까?")){
+						if(paramMap.type === "CANUPT" && paramMap.guarStat !== "32") { //해제수정
+							obj = {url:"/guarCan/updateGuarModCancel.do", jParam:param, fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y" };
+						} else if(paramMap.type === "CAN"){ //보증해제등록
+							obj = {url:"/guarCan/updateGuarCancel.do", jParam:param, fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y" };
+						} else if(paramMap.type === "CANINS"){ //(선금급, 지급) 일부 해제 등록
+							obj = {url:"/guarCan/insertPartGuarCancel.do", jParam:param, callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y" };
+						} else if(paramMap.type === "CANUPT" && paramMap.guarStat === "32") {
+							obj = {url:"/guarCan/updatePayPartCancel.do", jParam:param, callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						}
+
+						com.fnAjaxMulti(obj);
+
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+			};
+
+			//환불여부 체크시 reqMark 삭제 처리
+			var fnChageRetReqMark = function(yn){
+				if(yn === "N") {	//미환불이면
+					//환불일자, 환불방법 * 제거
+					$("#txt_retDt, #txt_retWay").find(".reqMark").text("");
+				}else {	//환불포함 나머지면(빈값)
+					//환불일자, 환불방법 * 추가
+					$("#txt_retDt, #txt_retWay").find(".reqMark").text("*");
+				}
+			}
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="membNo" id="membNo" />
+			<input type="hidden" name="sMembNo" id="sMembNo" />
+			<input type="hidden" name="contrNo" id="contrNo" />
+			<input type="hidden" name="guarNo" id="guarNo" />
+			<input type="hidden" name="sInitDocNo" id="sInitDocNo" />
+			<input type="hidden" name="guarPubDt" id="guarPubDt" />
+			<input type="hidden" name="commRate" id="commRate" />
+			<input type="hidden" name="canSeq" id="canSeq" />
+			<input type="hidden" name="guarStat" id="guarStat" />
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+			<input type="hidden" name="atthNo" id="atthNo"/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<th:block th:include="guar/comGuarDtl"></th:block> <!--보증상세정보 -->
+					</div>
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<th:block th:include="guar/comGuarContrDtl"></th:block> <!--약정정보 -->
+						</div>
+						<th:block th:include="guar/comGuarPay"></th:block> <!-- 보증납부정보 -->
+						<th:block th:if="${#strings.equals(paramMap.type,'CAN') || #strings.equals(paramMap.type,'CANUPT') && !#strings.equals(paramMap.guarStat, '32')}">
+						<div class="wrapBox">
+							<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">보증해제정보</h4>
+							</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th id="vCanAmt">해제금액</th>
+										<td><span id="ele_canGuarAmt" class="setCommaCls"></span>
+											<input type="hidden" id="canGuarAmt" name="canGuarAmt" value="">
+										</td>
+										<th id="vCanPreDt">해제예정일</th>
+										<td id="ele_canPreDt"></td>
+										<th>해제구분</th>
+										<td><select name="canGuarStat" id="canGuarStat" style="width:120px" onchange="fnGuarStatChange(this.value)"></select></td>
+									</tr>
+									<tr>
+										<th id="vCanDt">해제일자<span class="reqMark">*</span></th>
+										<td>
+											<input type="text" name="scanGuarDate" id="scanGuarDate" title="해제예정일" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);fnCalcData();" onchange="fnCanDateChg(this.value);" style="width:100px"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'scanGuarDate', 'yyyy-mm-dd', '', '', fnCalcData)" />
+										</td>
+										<th id="vCanReason">해제사유<span class="reqMark">*</span></th>
+										<td colspan="3">
+											<select name="guarCanType" id="guarCanType" title="해제사유" style="width:130px;" onChange="fnCanTypeChg(this.value)"></select>
+											<input type="text" id="guarCanReason" name="guarCanReason" title="해제사유" style="width:190px" maxlength="50"/>
+										</td>
+
+									</tr>
+									<tr>
+										<th>보증사용기간</th>
+										<td colspan="3">
+											<span id="ele_guarUseDtTerm"></span>
+											<input type="hidden" name="guarBegDt" id="guarBegDt" style="width:105px"/>
+											<input type="hidden" name="calcExpDt" id="calcExpDt" th:value="${today}" style="width:105px"/>
+											<input type="hidden" name="guarDays" id="guarDays" style="width:80px"/>
+										</td>
+										<th>총납부금액</th>
+										<td><span id="ele_totCommAmt" ></span></td>
+									</tr>
+									<tr>
+										<th>이전보증료</th>
+										<td>
+											<span id="ele_befCommAmt"></span>
+											<input type="hidden" name="befCommAmt" id="befCommAmt" style="width:105px" />
+										</td>
+										<th>재산출보증료</th>
+										<td>
+											<span id="ele_modCanCommAmt"></span>
+											<input type="hidden" name="modCommAmt" id="modCommAmt" style="width:105px" />
+										</td>
+										<th>환불금액</th>
+										<td>
+											<input type="text" name="sRetCommAmt" id="sRetCommAmt" style="width:105px" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);com.addComma();" />
+										</td>
+									</tr>
+									<tr>
+										<th id="txt_retDt">환불일자<span class="reqMark">*</span></th>
+										<td>
+											<input type="text" name="sRetDt" id="sRetDt" title="환불일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" style="width:100px"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sRetDt', 'yyyy-mm-dd')" />
+										</td>
+										<th id="txt_retWay">환불방법<span class="reqMark">*</span></th>
+										<td><select name="sRetWay" id="sRetWay" title="환불방법" style="width:120px"></select></td>
+										<th>환불여부<span class="reqMark">*</span></th>
+										<td>
+											<select id="sRetYn" name="sRetYn" style="width:105px" title="환불여부" onchange="fnChageRetReqMark(this.value)">
+												<option value="">선택</option>
+												<option value="Y">환불</option>
+												<option value="N">미환불</option>
+											</select>
+										</td>
+									</tr>
+									<tr>
+										<th>환불은행</th>
+										<td>
+											<select name="sRetBanks" id="sRetBanks" title="환불은행" style="width:100%" onchange="fnMembAccChange(this.value)">
+											</select>
+										</td>
+										<th>환불계좌</th>
+										<td><input type="text" id="acctNo" name="acctNo" maxlength="20" /></td>
+										<th>환불예금주</th>
+										<td>
+											<input type="text" name="acctNm" id="acctNm" style="width:105px" maxlength="20"/>
+										</td>
+									</tr>
+									<tr>
+										<th>비고</th>
+										<td colspan="5">
+											<input type="search" name="canRetRmk" id="canRetRmk" style="min-width:280px;" title="비고" maxlength="100" />
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						</th:block>
+						<!--선급금이고 등록인경우 또는 수정이고 선급급 이고 상태가 보증일부해제 인경우 -->
+						<th:block th:if="${#strings.equals(paramMap.refVal, '14') && #strings.equals(paramMap.type, 'CANINS')} or ${#strings.equals(paramMap.type, 'CANUPT') && #strings.equals(paramMap.refVal, '14') && #strings.equals(paramMap.guarStat, '32')}">
+						<div class="wrapBox">
+							<input type="hidden" id="sumCanRepayAmt" name="sumCanRepayAmt" title="총선금급해제금액" />
+							<input type="hidden" id="sumPartCanAmt" name="sumPartCanAmt" title="총보증해제금액" />
+							<input type="hidden" id="sumBefRepayAmt" name="sumBefRepayAmt" title="최종선금급잔여액" />
+							<input type="hidden" id="sumBefGuarAmt" name="sumBefGuarAmt" title="최종보증잔여액" />
+							<input type="hidden" id="befGuarAmt" name="befGuarAmt" title="기존보증금액" />
+							<input type="hidden" id="befCommRate" name="befCommRate" title="기존수수료요율" />
+							<input type="hidden" id="befCommAmt" name="befCommAmt" title="기존 보증료" />
+							<input type="hidden" id="befCanCommAmt" name="befCanCommAmt" title="해제일자이전보증료" />
+							<input type="hidden" id="aftCanGuarDays" name="aftCanGuarDays" title="해제일자이후보증기간" />
+							<input type="hidden" id="aftCanCommAmt" name="aftCanCommAmt" title="해재일자이후보증료" />
+							<input type="hidden" id="canTotCommAmt" name="canTotCommAmt" title="총보증료" />
+							<input type="hidden" id="befRepayAmt" name="befRepayAmt" title="기존선금급금액" />
+							<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">보증해제정보 (일부해제)</h4>
+							</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>처리일자</th>
+										<td>
+											<input type="text" name="procDt" id="procDt" title="처리일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px" />
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'procDt', 'yyyy-mm-dd')" />
+										</td>
+										<th id="vCanPreDt">약정이자율</th>
+										<td>
+											<span id="ele_contrCanInterRate">%</span>
+											<input type="hidden" id="contrInterRate" name="contrInterRate" title="약정이자율" style="width:105px" readonly/>
+										</td>
+										<th>약정이자액</th>
+										<td>
+											<span id="ele_contrCanInterAmt"></span>
+											<input type="hidden" id="contrInterAmt" name="contrInterAmt" title="약정이자액" readonly/>
+										</td>
+									</tr>
+									<tr>
+										<th>해제일자</th>
+										<td>
+											<input type="text" name="partCanDt" id="partCanDt" title="해제일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);fnCalcPayment();" style="width:100px"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'partCanDt', 'yyyy-mm-dd', '', '', fnCalcPayment)" />
+										</td>
+										<th>선금급 <br /> 해제금액</th>
+										<td>
+											<input type="text" name="canRepayAmt" id="canRepayAmt" title="선금급 해제금액" style="width:105px" maxlength="15" onblur="fnCalcPayment();"/>
+										</td>
+										<th>잔액</th>
+										<td>
+											<input type="text" id="remRepayAmt" name="remRepayAmt" title="잔액" style="width:105px" readonly/>
+										</td>
+									</tr>
+									<tr>
+										<th>산출기간</th>
+										<td id="calcTermArea"></td>
+										<th>보증 <br /> 일부해제금액</th>
+										<td>
+											<input type="text" id="partCanAmt" name="partCanAmt" title="보증 일부해제금액" style="width:105px" maxlength="15" onkeyup="fnCalcPayment();" onblur="fnCalcPayment();" />
+										</td>
+										<th>보증잔여액</th>
+										<td>
+											<input type="text" id="remGuarAmt" name="remGuarAmt" title="보증잔여액" style="width:105px" readonly/>
+										</td>
+									</tr>
+									<tr>
+										<th>해제사유</th>
+										<td colspan="5">
+											<input type="text" id="partCanReason" name="partCanReason" title="해제사유" style="width:150px" maxlength="50"/>
+										</td>
+									</tr>
+									<tr>
+										<th>총보증료</th>
+										<td><span id="ele_totCommAmt" class="setCommaCls"></span></td>
+										<th>재산출보증료</th>
+										<td>
+											<span id="ele_modCanCommAmt"></span>
+											<input type="hidden" name="modCommAmt" id="modCommAmt" style="width:105px" readonly/>
+										</td>
+										<th>환불보증료</th>
+										<td>
+											<input type="text" name="sRetCommAmt" id="sRetCommAmt" style="width:105px" readonly/>
+										</td>
+									</tr>
+									<tr>
+										<th>환불여부<span class="reqMark">*</span></th>
+										<td>
+											<select id="sRetYn" name="sRetYn" style="width:105px" title="환불여부" onchange="fnChageRetReqMark(this.value)">
+												<option value="">선택</option>
+												<option value="Y">환불</option>
+												<option value="N">미환불</option>
+											</select>
+										</td>
+										<th id="txt_retDt">환불일자<span class="reqMark">*</span></th>
+										<td>
+											<input type="text" name="sRetDt" id="sRetDt" title="환불일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this)" style="width:100px"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sRetDt', 'yyyy-mm-dd')" />
+										</td>
+										<th id="txt_retWay">환불방법<span class="reqMark">*</span></th>
+										<td><select name="sRetWay" id="sRetWay" title="환불방법" style="width:120px"></select></td>
+
+									</tr>
+									<tr>
+										<th>환불은행</th>
+										<td>
+											<select name="sRetBanks" id="sRetBanks" title="환불은행" style="width:100%" onchange="fnMembAccChange(this.value)">
+												<option value="">선택</option>
+											</select>
+											<input type="hidden" id="retBank" name="retBank" style="width:100%" title="반환은행">
+										</td>
+										<th>환불계좌</th>
+										<td><input type="text" id="acctNo" name="acctNo" maxlength="20" /></td>
+										<th>환불예금주</th>
+										<td>
+											<input type="text" name="acctNm" id="acctNm" style="width:105px" maxlength="20"/>
+										</td>
+									</tr>
+									<tr>
+										<th>비고</th>
+										<td colspan="5">
+											<input type="search" name="canRetRmk" id="canRetRmk" style="min-width:280px;" title="비고" maxlength="100" />
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						</th:block>
+						<th:block th:if="${#strings.equals(paramMap.refVal, '15') && #strings.equals(paramMap.type, 'CANINS')} or ${#strings.equals(paramMap.type, 'CANUPT') && #strings.equals(paramMap.refVal, '15') && #strings.equals(paramMap.guarStat, '32')}">
+							<div class="wrapBox">
+								<input type="hidden" id="sumPartCanAmt" name="sumPartCanAmt" title="총보증해제금액" />
+								<input type="hidden" id="sumBefGuarAmt" name="sumBefGuarAmt" title="최종보증잔여액" />
+								<input type="hidden" id="befGuarAmt" name="befGuarAmt" title="기존보증금액" />
+								<input type="hidden" id="befCommRate" name="befCommRate" title="기존수수료요율" />
+								<input type="hidden" id="befCommAmt" name="befCommAmt" title="기존 보증료" />
+								<input type="hidden" id="befCanCommAmt" name="befCanCommAmt" title="해제일자이전보증료" />
+								<input type="hidden" id="aftCanGuarDays" name="aftCanGuarDays" title="해제일자이후보증기간" />
+								<input type="hidden" id="aftCanCommAmt" name="aftCanCommAmt" title="해재일자이후보증료" />
+								<input type="hidden" id="canTotCommAmt" name="canTotCommAmt" title="총보증료" />
+								<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">보증해제정보 (일부해제)</h4>
+								</div>
+								</section>
+								<table class="tbl">
+									<colgroup>
+										<col style="width:80px;">
+										<col style="width:140px;">
+										<col style="width:80px;">
+										<col style="width:140px;">
+										<col style="width:80px;">
+										<col style="">
+									</colgroup>
+									<tbody>
+										<tr>
+											<th>보증상태</th>
+											<td>일부해제</td>
+											<th>해제일자</th>
+											<td>
+												<input type="text" name="partCanDt" id="partCanDt" title="해제일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);calcRemGuar();" style="width:100px"/>
+												<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'partCanDt', 'yyyy-mm-dd', '', '', calcRemGuar)" />
+											</td>
+											<td colspan="2"></td>
+										</tr>
+										<tr>
+											<th>보증 <br /> 해제금액</th>
+											<td>
+												<input type="text" name="partCanAmt" id="partCanAmt" title="선금급 해제금액" style="width:105px" maxlength="15" onblur="calcRemGuar();"/>
+											</td>
+											<th>잔액</th>
+											<td>
+												<input type="text" id="remGuarAmt" name="remGuarAmt" title="잔액" style="width:105px" readonly/>
+											</td>
+											<td colspan="2"></td>
+										</tr>
+										<tr>
+											<th>산출기간</th>
+											<td id="calcTermArea"></td>
+											<th>해제사유</th>
+											<td colspan="4">
+												<input type="text" id="partCanReason" name="partCanReason" title="해제사유" style="width:150px" maxlength="50"/>
+											</td>
+										</tr>
+										<tr>
+											<th>계산식</th>
+											<td colspan="5"><textarea id="calcArea" rows="3" cols="80"></textArea></td>
+										</tr>
+										<tr>
+											<th>기존보증료</th>
+											<td><span id="preCommAmt" class="setCommaCls"></span></td>
+											<th>재산출보증료</th>
+											<td>
+												<spain id="ele_modCanCommAmt"></span>
+												<input type="hidden" name="modCommAmt" id="modCommAmt" style="width:105px" readonly/>
+											</td>
+											<th>환불보증료</th>
+											<td>
+												<input type="text" name="sRetCommAmt" id="sRetCommAmt" style="width:105px" readonly/>
+											</td>
+										</tr>
+										<tr>
+											<th>환불여부<span class="reqMark">*</span></th>
+											<td>
+												<select id="sRetYn" name="sRetYn" style="width:105px" title="환불여부" onchange="fnChageRetReqMark(this.value)">
+													<option value="">선택</option>
+													<option value="Y">환불</option>
+													<option value="N">미환불</option>
+												</select>
+											</td>
+											<th id="txt_retDt">환불일자<span class="reqMark">*</span></th>
+											<td>
+												<input type="text" name="sRetDt" id="sRetDt" title="환불일자" style="width:105px" th:value="${today}" maxlength="10" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sRetDt','sRetDt','F');"/>
+											</td>
+											<th id="txt_retWay">환불방법<span class="reqMark">*</span></th>
+											<td><select name="sRetWay" id="sRetWay" title="환불방법" style="width:120px"></select></td>
+
+										</tr>
+										<tr>
+											<th>환불은행</th>
+											<td>
+												<select name="sRetBanks" id="sRetBanks" title="환불은행" style="width:100%" onchange="fnMembAccChange(this.value)">
+													<option value="">선택</option>
+												</select>
+												<input type="hidden" id="retBank" name="retBank" style="width:100%" title="반환은행">
+											</td>
+											<th>환불계좌</th>
+											<td><input type="text" id="acctNo" name="acctNo" maxlength="20" /></td>
+											<th>환불예금주</th>
+											<td>
+												<input type="text" name="acctNm" id="acctNm" style="width:105px" maxlength="20"/>
+											</td>
+										</tr>
+										<tr>
+											<th>비고</th>
+											<td colspan="5">
+												<input type="search" name="canRetRmk" id="canRetRmk" style="min-width:280px;" title="비고" maxlength="100" />
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</th:block>
+						<th:block th:if="${#strings.equals(paramMap.type, 'CAN')}">
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+	                           		<button type="button" onclick="javascript:com.fnIbsFileAdd($('#docFile'));" class="btn small style08">추가</button>
+	                           		<button type="button" onclick="javascript:com.fnIbsFileDel($('#docFile'));" class="btn small style08">삭제</button>
+	                    		</div>
+							</section>
+							<div id="docFile" style="height:140px;"></div>
+						</th:block>
+						<div class="wrapBox ">
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">보증변경현황</h4>
+								</div>
+							</section>
+							<div id="sheetHistDiv" style="width:100%;height:200px;"></div>
+						</div>
+						<div class="wrapBox partCancel" id="guarPartCanListArea" style="display:none">
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">일부해제현황</h4>
+								</div>
+							</section>
+							<div id="sheetPartDiv" style="width:100%;height:200px;"></div>
+						</div>
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!--하단 버튼 영역-->
+				<div class="layer-flex mt20">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+									<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

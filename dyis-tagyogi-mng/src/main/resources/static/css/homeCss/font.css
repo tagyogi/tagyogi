@@ -1,0 +1,136 @@
+@charset "utf-8";
+/************************************************************************
+ * 파일명	: font.css
+ * 작성일	: 2022.12.30
+************************************************************************/
+/* Montserrat(google)-영어전용 */
+@font-face 
+{
+	font-family:"montBold";
+	src:url('../../fonts/Montserrat/Montserrat-Bold.eot');
+    src:url('../../fonts/Montserrat/Montserrat-Bold.eot?#iefix') format('embedded-opentype'),
+        /* url('../fonts/Montserrat/Montserrat-Bold.woff2') format('woff2'), */
+        url('../../fonts/Montserrat/Montserrat-Bold.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"montLight";
+	src:url('../../fonts/Montserrat/Montserrat-Light.eot');
+    src:url('../../fonts/Montserrat/Montserrat-Light.eot?#iefix') format('embedded-opentype'),
+        /* url('../fonts/Montserrat/Montserrat-Light.woff2') format('woff2'), */
+        url('../../fonts/Montserrat/Montserrat-Light.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"montMedium";
+	src:url('../../fonts/Montserrat/Montserrat-Medium.eot');
+    src:url('../../fonts/Montserrat/Montserrat-Medium.eot?#iefix') format('embedded-opentype'),
+        /* url('../fonts/Montserrat/Montserrat-Medium.woff2') format('woff2'), */
+        url('../../fonts/Montserrat/Montserrat-Medium.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"montRegular";
+	src:url('../../fonts/Montserrat/Montserrat-Regular.eot');
+    src:url('../../fonts/Montserrat/Montserrat-Regular.eot?#iefix') format('embedded-opentype'),
+        /* url('../fonts/Montserrat/Montserrat-Regular.woff2') format('woff2'), */
+        url('../../fonts/Montserrat/Montserrat-Regular.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"montSemiBold";
+	src:url('../../fonts/Montserrat/Montserrat-SemiBold.eot');
+    src:url('../../fonts/Montserrat/Montserrat-SemiBold.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Montserrat/Montserrat-SemiBold.woff2') format('woff2'),
+        url('../../fonts/Montserrat/Montserrat-SemiBold.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"montThin";
+	src:url('../../fonts/Montserrat/Montserrat-Thin.eot');
+    src:url('../../fonts/Montserrat/Montserrat-Thin.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Montserrat/Montserrat-Thin.woff2') format('woff2'),
+        url('../../fonts/Montserrat/Montserrat-Thin.woff') format('woff');
+}
+
+
+/* 본고딕(google, adobe) */
+@font-face 
+{
+	font-family:"NotoKR-Black";
+	src:url('../../fonts/Noto-San/NotoKR/NotoKR-Black/notokr-black.eot');
+    src:url('../../fonts/Noto-San/NotoKR/NotoKR-Black/notokr-black.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Black/notokr-black.woff2') format('woff2'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Black/notokr-black.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"NotoKR-Bold";
+	src:url('../../fonts/Noto-San/NotoKR/NotoKR-Bold/notokr-bold.eot');
+    src:url('../../fonts/Noto-San/NotoKR/NotoKR-Bold/notokr-bold.eot?#iefix') format('embedded-opentype'),
+	 	url('../../fonts/Noto-San/NotoKR/NotoKR-Bold/notokr-bold.woff2') format('woff2'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Bold/notokr-bold.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"NotoKR-DemiLight";
+	src:url('../../fonts/Noto-San/NotoKR/NotoKR-DemiLight/notokr-demilight.eot');
+    src:url('../../fonts/Noto-San/NotoKR/NotoKR-DemiLight/notokr-demilight.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-DemiLight/notokr-demilight.woff2') format('woff2'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-DemiLight/notokr-demilight.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"NotoKR-Light";
+	src:url('../../fonts/Noto-San/NotoKR/NotoKR-Light/notokr-light.eot');
+    src:url('../../fonts/Noto-San/NotoKR/NotoKR-Light/notokr-light.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Light/notokr-light.woff2') format('woff2'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Light/notokr-light.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"NotoKR-Medium";
+	src:url('../../fonts/Noto-San/NotoKR/NotoKR-Medium/notokr-medium.eot');
+    src:url('../../fonts/Noto-San/NotoKR/NotoKR-Medium/notokr-medium.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Medium/notokr-medium.woff2') format('woff2'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Medium/notokr-medium.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"NotoKR-Regular";
+	src:url('../../fonts/Noto-San/NotoKR/NotoKR-Regular/notokr-regular.eot');
+    src:url('../../fonts/Noto-San/NotoKR/NotoKR-Regular/notokr-regular.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Regular/notokr-regular.woff2') format('woff2'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Regular/notokr-regular.woff') format('woff');
+}
+@font-face 
+{
+	font-family:"NotoKR-Thin";
+	src:url('../../fonts/Noto-San/NotoKR/NotoKR-Thin/notokr-thin.eot');
+    src:url('../../fonts/Noto-San/NotoKR/NotoKR-Thin/notokr-thin.eot?#iefix') format('embedded-opentype'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Thin/notokr-thin.woff2') format('woff2'),
+        url('../../fonts/Noto-San/NotoKR/NotoKR-Thin/notokr-thin.woff') format('woff');
+}
+
+
+/* 폰트사이즈 */
+.px12 {font-size:12px;}
+.px13 {font-size:13px;}
+.px14 {font-size:14px;}
+.px15 {font-size:15px;}
+.px17 {font-size:17px;}
+.px18 {font-size:18px;}
+.px20 {font-size:20px;}
+.px22 {font-size:22px;}
+.px25 {font-size:25px;}
+.px28 {font-size:28px;}
+.px30 {font-size:30px;}
+
+.ko-regular {font-family: 'NotoKR-Regular';}
+.ko-medium {font-family: 'NotoKR-Medium';}
+.ko-bold {font-family: 'NotoKR-Bold';}
+
+.en-regular {font-family: 'montRegular'; color: #666;}
+.en-medium {font-family: 'montMedium'; color: #666;}
+.en-bold {font-family: 'montBold'; color: #666;}
+

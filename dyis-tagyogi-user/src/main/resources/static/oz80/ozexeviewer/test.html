@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script src="/oz80/ozexeviewer/ozws.js" language="javascript"></script>
+<!--<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>-->
+<!--<script src="http://127.0.0.1:8080/oz80/ozexeviewer/jquery-1.8.3.min.js" language="javascript"></script>-->
+<script language="JavaScript">
+
+var OZUtil = start_OZUtil;
+var namespace = "exeViewer";
+var OZViewerID = "OZViewer";
+
+OZViewerLoaded = function()
+{
+	
+}
+
+GetInformataion = function(str)
+{
+	OZUtil.GetInformation(OZViewerID, "TOTAL_PAGE", function(retval) { 
+			alert(retval); 
+			});
+}
+
+createOZViewer = function()
+{
+	
+	var json = {"Category":[{"CategoryID":1,"CategoryName":"음료","Description":"청량음료,커피,홍차,맥주"},{"CategoryID":2,"CategoryName":"조미료","Description":"감미료,향신료,양념,스프레드"}],"Product":[{"ProductID":75,"ProductName":"알파인맥주","CategoryID":1,"QuantityPerUnit":"24-0.5lbottles","UnitPrice":24000.0000,"UnitsInStock":125},{"ProductID":39,"ProductName":"OK바닐라셰이크","CategoryID":1,"QuantityPerUnit":"750ccperbottle","UnitPrice":28000.0000,"UnitsInStock":69},{"ProductID":34,"ProductName":"태일라이트맥주","CategoryID":1,"QuantityPerUnit":"24-12ozbottles","UnitPrice":34000.0000,"UnitsInStock":111},{"ProductID":65,"ProductName":"루이지애나특산후추","CategoryID":2,"QuantityPerUnit":"32-8ozbottles","UnitPrice":21000.0000,"UnitsInStock":76},{"ProductID":61,"ProductName":"사계절핫소스","CategoryID":2,"QuantityPerUnit":"24-500mlbottles","UnitPrice":28000.0000,"UnitsInStock":111},{"ProductID":6,"ProductName":"대양특선블루베리잼","CategoryID":2,"QuantityPerUnit":"12-8ozjars","UnitPrice":25000.0000,"UnitsInStock":120}]};
+	
+	OZUtil.setParameter("connection.servlet","http://175.125.91.225:8088/oz80/server");
+	OZUtil.setParameter("connection.reportname","/oz_markany.ozr");
+//	OZUtil.setParameter("connection.2dbarcodeurl","http://175.125.91.225:8088/oz80/markany");
+	
+//	OZUtil.setParameter("connection.extraparam","ShowCustomPrintUI=true,MaxCopies=1,SupportPrinter=3,DatFileName=MaPrintInfo_NoaXOZ.dat");
+//	OZUtil.setParameter("print.externalmoduleEx","OZPrintBarcodeEx_MarkAny.dll");
+	
+	/*
+	OZUtil.setParameter("connection.pcount","2");
+	OZUtil.setParameter("connection.args1","jsondata="+ JSON.stringify(json));
+	OZUtil.setParameter("connection.args2","viewerType=EXE Viewer");
+	OZUtil.setParameter("information.debug","true");
+
+	OZUtil.setParameter("viewer.mode","print");
+	OZUtil.setParameter("print.mode","silent");
+	*/
+	
+
+	/*
+	OZUtil.setParameter("connection.servlet","http://127.0.0.1:8080/oz80/server");
+	OZUtil.setParameter("connection.reportname","/big_test.ozr");
+	OZUtil.setParameter("information.debug","true");
+	*/
+
+	/* 마크애니
+	OZUtil.setParameter("connection.2dbarcodeurl","http://127.0.0.1:8080/oz80/markany?type=h"); //세로
+	OZUtil.setParameter("connection.reportname","/h.ozr"); //세로
+	
+	//OZUtil.setParameter("connection.2dbarcodeurl","http://127.0.0.1:8080/oz80/markany?type=w"); //가로
+	//OZUtil.setParameter("connection.reportname","/w.ozr"); //가로
+	
+    OZUtil.setParameter("connection.extraparam","ShowCustomPrintUI=true,MaxCopies=1,Copies=1,SupportPrinter=3,DatFileName=MaPrintInfo_ghrp.dat,UseImageSafer=true,UseRemoteCapture=true");
+    OZUtil.setParameter("print.externalmoduleEx","OZPrintBarcodeEx_MarkAny.dll");
+	
+
+
+	// Setting Exe
+	OZUtil.setParameter("connection.fetchtype", "CONCURRENT");
+	OZUtil.setParameter("connection.pageque", "-500");
+	OZUtil.setParameter("connection.serverdmtype", "MEMORY");
+	OZUtil.setParameter("connection.clientdmtype", "MEMORY");
+	OZUtil.setParameter("connection.compresseddatamodule", "false");
+	OZUtil.setParameter("connection.compressedForm", "false");
+	OZUtil.setParameter("connection.fetchtype", "CONCURRENT");
+	OZUtil.setParameter("connection.fetchtype", "CONCURRENT");
+
+	// Setting Exe Print Option
+	OZUtil.setParameter("print.printbypage", "true");
+	OZUtil.setParameter("print.spoolpages", "10000");
+
+	// Setting Exe Viewer
+	OZUtil.setParameter("viewer.smartframesize", "true");
+	*/
+	
+	
+	var opt = {};
+	opt['namespace'] = namespace;
+	OZUtil.setOption(opt);
+	OZUtil.createViewer(OZViewerID,OZViewerLoaded);
+}
+
+
+installOZWebLauncher = function()
+{
+    if(confirm("설치가 필요 합니다. 프로그램 설치 후 다시 시도 하십시오.")) 
+	{
+		downExe('/oz80/ozexeviewer/OnLine_Install_Dialog_UI_SSL.exe');
+	}
+    
+}
+
+OZCall = function()
+{
+	var	protocolversion = 2012;
+	var ztParam = new Object();
+    ztParam.InstallBase = "<PROGRAMS>/Forcs";
+    ztParam.InstallNamespace = namespace;
+    ztParam.DownloadServer = "http://175.125.91.225/oz80/ozexeviewer/ozrviewer";
+    ztParam.DownloadPort = 8088;
+    ztParam.DownloadInstruction = "ozrviewer.idf";
+	
+    OZUtil.installViewer(protocolversion, ztParam, installOZWebLauncher, createOZViewer);
+}
+
+
+downExe = function(url)
+{
+	document.getElementById('downfrm').src = url;
+    //window.location = ;
+}
+
+EndViewer = function()
+{
+	OZUtil.CloseEXEViewer(OZViewerID);
+}
+
+</script>
+</head>
+<body onbeforeunload = EndViewer();>
+<iframe id="downfrm" style="display:none;"></iframe>
+
+<input type=button value="RunViewer" onclick="OZCall();">
+<!--input type=button value="EndViewer" onclick="EndViewer();">
+<input type=button value="GetInformataion" onclick="GetInformataion();"-->
+<br>
+
+
+<br>OZ Viewer EXE WS Version  테스트 페이지 입니다.<br/>
+<br>1. 상단의 [RunViewer] 버튼을 클릭하세요. <br/>
+<br>2. 최초 실행 시 [설치가 필요 합니다. 프로그램 설치 후 다시 시도 하십시오.] 라는 메시지가 나오면 프로그램을 설치 합니다.  <br/>
+<br>  방화벽 메시지가 나오면 허용 합니다.  <br/>
+<br>3. 프로그램 설치가 완료된 후 다시 1번을 실행합니다.  <br/>
+<br>4. 오즈 뷰어가 실행 됩니다. <br/>
+<br>5. 뷰어의 저장 버튼을 눌러서 아무 파일이나 저장합니다. [export 완료.] 라는 메시지가 표시됩니다. <br/>
+<br>6. 뷰어 와 브라우저를 닫은 후 다른 브라우저 로 다시 페이지를 엽니다.(Chrome,FireFox,Opera,Edge,IE 본인 pc에 설치된 모든 브라우져) 2,3번 과정 없이 1->4,5,6 과정으로 실행되면 정상입니다. <br/>
+
+</body>
+
+</html>

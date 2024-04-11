@@ -1,0 +1,192 @@
+<!--
+	파일정보 : lendRepayList.html
+	파일명 : lendRepay현황
+	업무명 : lendRepay현황 조회, 등록, 수정
+	생성자 : 김대성
+	생성일 : 2023-04-14
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = {}; //공통코드
+			var gridOptList = []; //그리드옵션
+			
+			
+			//초기화 조회 콜백
+			var fnInitCallBack = function(resData){
+				
+				//화면 처리
+					
+				//IBsheet 초기화
+				com.fnIbsInit(resData.gridOptList);
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+				
+			};
+			
+			
+			//검색
+			var fnSearch = function(){
+				
+				//상세정보 조회
+			    var membNo = /*[[${paramMap.membNo}]]*/;
+			    var lendNo = /*[[${paramMap.lendNo}]]*/;
+			    
+			    var param = {sMembNo : membNo, lendNo : lendNo };
+				obj = {url:"/lendRepay/selectLendRepay.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			//	console.log(resData);
+			};
+			
+			//검색콜백
+			var fnSearchCallBack = function(resData){
+				console.log(resData);
+				com.fnSetKeyVal(resData.lend);
+				com.fnSetKeyVal(resData.memb[0]);
+								
+				//시트값 설정
+				sheet.loadSearchData(resData.data);
+				
+			};
+			
+			$(document).ready(function(){
+				//화면 초기화 처리 호출 (대출종류, 대출상태 )(샘플현황)
+				var initParam = {codeList : "LD01:LD04:CM01:CM02", gridNoList : "40310"}
+				obj = {url:"/index/pageInit.do", param:initParam, callBack:fnInitCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj); 
+			});
+			
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="lendNo" id="lendNo" value=""/>
+			<input type="hidden" name="repaySeq" id="repaySeq" value=""/>
+			<div class="contents flex">
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<section class="area">
+							<div class="fl">
+								<h4 class="title fl mt10">약정정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:80px;">
+								<col style="width:150px;">
+								<col style="width:80px;">
+								<col style="width:150px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>신용도</th>
+									<td><span id="ele_grade"></span></td>
+									<th>약정구분</th>
+									<td><span id="ele_contrTypeNm"></span></td>
+									<th>약정기간</th>
+									<td><span id="ele_contrTermShotDt"></span></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="" style="width:49%">
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">대출상환정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:100px;">
+								<col style="width:150px;">
+								<col style="width:100px;">
+								<col style="width:150px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>상환일자</th>
+									<td ><span id="ele_lendNo" ></td>
+									<th>연체기간</th>
+									<td ><span id="ele_lendTypeNm" ></td>
+								</tr>
+								<tr>
+									<th>연체금액</th>
+									<td ><span id="ele_lendNm" ></td>
+									<th>연체납입액</th>
+									<td ><span id="ele_lendDt" ></td>
+								</tr>
+								<tr>	
+									<th>실상환금액(A)</th>
+									<td ><span id="ele_repayPreDt" ></td>
+									<th>대체상환액(B)</th>
+									<td ><span id="ele_lendStatNm" ></td>
+								</tr>
+								<tr>
+									<th>상환금액(A + B)</th>
+									<td ><span id="ele_lendAmt" ></td>
+									<th>연체이자납입액</th>
+									<td ><span id="ele_repayAmt" ></td>
+								</tr>
+								<tr>
+									<th>입금구분</th>
+									<td ><span id="ele_remainAmt" ></td>
+									<th>입금자</th>
+									<td ><span id="ele_remainAmt" ></td>
+								</tr>	
+								<tr>
+									<th>입금은행</th>
+									<td ><span id="ele_remainAmt" ></td>
+									<th>계좌번호</th>
+									<td ><span id="ele_remainAmt" ></td>
+								</tr>	
+								<tr>
+									<th>비고</th>
+									<td colspan="5"></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex">
+					<div class="" style="width: 100%">
+						<div class="wrapBox">
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">상환대상 대출정보</h4>
+								</div>
+							</section>
+							<div class="">
+								<div id="sheetDiv" style="width:100%;height:150px"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

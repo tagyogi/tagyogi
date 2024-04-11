@@ -1,0 +1,134 @@
+<!--
+	파일정보 : kakaoSndList.html
+	파일명 : 카카오전송현황
+	업무명 : 카카오전송현황
+	생성자 : 변성균
+	생성일 : 2023-12-19
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//통계화면 활성화여부
+				$("#sSerchStaDt").val(com.fnDateGet(/*[[${today}]]*/, -30)); //발급일자 시작일설정
+				$("#sSerchEndDt").val(com.fnDateGet(/*[[${today}]]*/, 0)); //발급일자 종료알 설정
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				/////////////////////sheet 이벤트 시작 /////////////////////////////////
+				//그리드 이벤트 바인드 처리
+			   
+				//sheetDivMas 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					if(obj.col === "delChk"){
+						com.fnIbsStatusChg(this, "D");//삭제상태변경
+					};
+				});
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/kakao/selectKakaoSndList.do", param); //param, sheetId 생략 가능
+			};
+
+			
+			//전송
+			var fnSend = function(){
+				rowData = sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				if(rowData === null){
+					alert("전송할 메세지를 선택하십시오.");
+					return;
+				}
+				
+				if(confirm("전송 처리 하시겠습니까?")){
+					param = {msgSeq:rowData.msgSeq, param:rowData.param, telNo:rowData.sndTelNo, telNm:rowData.sndTelNm, refNo:""}
+					obj = {url:"/kakao/sendKakao.do", param:param, callBack:fnSendCallBack, msgYn:"Y", sessYn:"Y", loadYn:"N"};
+					com.fnAjaxDef(obj);
+				}
+			}
+			
+			//전송콜백
+			var fnSendCallBack = function(){
+				fnSearch(); //조회 호출
+			}
+			
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						
+						<dl>
+							<dt >전송일자</dt>
+							<dd style="width:260px;">
+	                        	<input type="text" name="sSerchStaDt" id="sSerchStaDt" title="시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sSerchStaDt', 'yyyy-mm-dd','sSerchEndDt', 1)" />
+	                        	<input type="text" name="sSerchEndDt" id="sSerchEndDt" title="종료일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('sSerchStaDt','sSerchEndDt','T');" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sSerchEndDt', 'yyyy-mm-dd', 'sSerchStaDt', 2)" />
+							</dd>
+							
+						</dl>
+						<dl>
+							<dt >연락처명</dt>
+							<dd style="width:140px;">
+	                        	<input type="text" name="sSndTelNm" id="sSndTelNm" title="연락처명" maxlength="20" style="width:140px" />
+	                        </dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+
+				<div class="layer-flex mt20">
+					<!-- 내용 좌측 부분 -->
+					<div class="" style="width:100%">
+						<!-- 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button type="button" onclick="javascript:fnSend();" class="btn style07">재전송</button>
+							</div>
+						</section>
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 내용 좌측 부분 끝 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

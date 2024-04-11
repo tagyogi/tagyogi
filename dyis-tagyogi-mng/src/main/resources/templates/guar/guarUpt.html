@@ -1,0 +1,544 @@
+<!--
+	파일정보 : guar/guarUpt.html
+	파일명 : guarUpt
+	업무명 : guarUpt 수정
+	생성자 : 권다슬
+	생성일 : 2023-07-27
+	미사용? 231219 확인필요
+	
+	
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			var guarType = /*[[${paramMap.refVal}]]*/; //메뉴참조값 (보증상품)
+			var paramMap = /*[[${paramMap}]]*/;
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//심사승인자 조회
+				guarCom.fnSelectEmployList();
+
+				//코드값 처리
+				com.fnCodeSelectBox("GR06", "guarIssueCd", 0, ""); //발급형태
+				//com.fnCodeSelectBox("GR05", "procStat", 1, "22"); //처리상태
+				guarCom.fnProcStatSelectBox();	//처리상태
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#docFile"));
+
+				//주계약정보 화면 설정(guar/comGuarReqContr.html)
+				fnGuarContrInputSet();
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//보증로(미수) 부분납입 합계 추가
+				$.each(gridOptList[0].Cols, function(idx, item){
+					if(item.Name === "payAmt"){
+						item.FormulaRow = "Sum"
+					}
+					if(item.Name === "payDt"){
+						item.FormulaRow = "합계"
+					}
+				});
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    //보증료 부분납 이력
+			    IBSheet.create({ id: "sheetGuarPayHist", el: "sheetGuarPayHistDiv", options: gridOptList[0] });
+				//시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearchPayHist(); //상세 조회
+				};
+
+				//보증 신청 조회
+				fnSearchDtl();
+			});
+
+
+			//보증료(미수) 부분납입이력 조회
+			var fnSearchPayHist = function(){
+				var param = {guarNo: $("#guarNo").val()};
+				com.fnIbsSearch("/guarPay/selectGuarPartPayList.do", param, sheetGuarPayHist); //param, sheetId 생략 가능
+			}
+
+			//
+			var fnSearchDtl = function(){
+				var initParam = {
+					"guarNo"	: /*[[${paramMap.guarNo}]]*/,
+					"atthType"  : /*[[${menuInfo.atthType}]]*/
+				};
+
+				obj = {url:"/guar/selectGuar.do", param:initParam, callBack:fnDtlCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//상세 조회 콜백
+			var fnDtlCallBack = function(resData){
+				//console.log(resData);
+
+				//1. 조합원정보
+				com.fnSetKeyVal(resData.memb);
+				$("#sMembNo").val(resData.memb.membNo);
+
+				//2-1. 약정정보(신용도, 약정구분, 약정기간)
+				com.fnSetKeyVal(resData.contr, "areaGuarContr");	//
+				$("#finalGrade").val(resData.contr.finalGrade);		//신용도
+				$("#contrType").val(resData.contr.contrType);		//약정구분
+
+				//2-2. 약정정보(상품별 한도정보)
+				var typeValue = guarType;
+				if(guarType === "31")	typeValue = "13";
+				if(guarType === "32")	typeValue = "12";
+				if(guarType === "33" || guarType === "34")	typeValue = "15";
+				$("#ele_limitAmt").text(resData.contr["limitAmt"+typeValue]);	//한도금액
+				$("#ele_useAmt").text(resData.contr["useAmt"+typeValue]);		//사용액
+				$("#ele_remainAmt").text(resData.contr["remainAmt"+typeValue]);	//가능액
+
+
+				//3-1. 보증 정보 세팅
+				com.fnSetKeyVal(resData.guar);
+				$("#befGuarAmt").val(resData.guar.guarAmt);	//fnSave 기존 보증금액 체크떄문에 set (저장x)
+				$("#ele_guarNoPayArea").find("#commAmt").val(resData.guar.commAmt);	//보증료 납입 commAmt 데이터
+
+				//3-2. (보증신청정보) 전자공고 영역 변경
+				guarCom.fnGuarIssueChg($("#guarIssueCd").val());	//해당사항없음 or input + 검색 조회 버튼
+
+
+				//3-3. (보증신청정보) 신청자 선택처리
+				$("#txt_guarTitl").text(resData.guar.guarTypeNm + "( 보증상태 : " + resData.guar.guarStatNm + " )");
+				guarCom.fnSelCpSelectBox(resData.persList, resData.guar.reqNm);	//신청자
+				
+
+				//3-4. 발급정보(심사자)
+				if(com.fnIsEmpty(resData.guar.guarApprNm))	$("#ele_guarApprNm").text(/*[[${session.userNm}]]*/);
+
+				//4-1. 심사정보 처리(화면)
+				if(guarCom.fnToNumber(resData.guar.procStat) < 30) {
+					$("#procStat").show();	//심사완료 이전 수정가능한 처리상태 보이기
+				}else if(guarCom.fnToNumber(resData.guar.procStat) === 30){
+					$("#ele_procStatNm").text("심사완료");
+					$("#ele_procStatNm").show();
+				}else{	//심사완료 이후 text만 보이기
+					$("#ele_procStatNm").text("발급가능");
+					$("#ele_procStatNm").show();
+				}
+
+				//4-2. 심사승인자 처리(화면)
+				if(resData.guar.examYn !== "Y")	$("#examNm").show();
+				else							$("#ele_examNm").show();
+
+				//5. 미수처리 경우 납부 처리 화면 활성 화 및 계좌정보 세팅
+				if(guarType !== "13"){	//보증료납부정보 이행하자에만 없음(asis)
+					//procStat : 10(신청), 11(접수), 20(심사중), 22(심사승인), 30(심사완료), 31(입금확인중), 40(발급가능), 41(기관전송), 42(전송반려), 80(전송완료), 90(발급완료)
+					if(guarCom.fnToNumber(resData.guar.procStat) >= 30) {
+						//환불, 청구 구분 입력영역 처리
+						if( guarCom.fnToNumber(resData.guar.commAmt) < 0)		guarCom.fnPayReturn("y");
+						else												guarCom.fnPayReturn("n");
+						//입력영역 활성화
+						showGuarPayArea("mod");	//comGuarPay.html
+						$("#ele_guarNoPayArea").find("#commAmt").val(resData.guar.commAmt);	//보증료 납입 commAmt 데이터(보증계약정보 보증료와 중복)
+					}
+				}
+
+				//6. 체크박스, radio 체크 처리
+				fnUptCheckValGuar(resData.guar);	//comGuarReqGuar.html 체크값 체크
+				fnUptCheckValContr(resData.guar);	//comGuarReqContr.html 체크값 체크
+
+				//7. 첨부파일
+				com.fnIbsUploadView($("#docFile"), resData.fileList);
+
+				//8. 보증상품정보 목록
+				guarCom.fnSetGuarLimitView("GR22", "tbl_guarLimit", resData.contrLimit);
+
+
+				//8. 보증요율, 기본요율 조회
+				//guarCom.fnSelectGuarRate("N");
+			}
+
+			//저장
+			var fnSave = function(){
+				var userNm = /*[[${session.userNm}]]*/;
+
+				if(!com.fnIsEmpty($("#ele_guarApprNm").text()) && !com.fnIsEmpty($("#ele_examNm").text()) && $("#ele_guarApprNm").text() !== $("#ele_examNm").text() && userNm === $("#ele_examNm").text() ){
+					alert("심사자와 심사승인자가 다를경우 심사자만 수정가능합니다.");
+					return;
+				}
+
+				//필수체크
+				var valChks = ["servNm", "orderCd", "orderNm", "contrAmt", "guarBegDt", "guarExpDt", "examNm", "histReason"];
+				if(guarType !== "11")						valChks.push(...["contrBegDt", "contrExpDt", "contrDays"]);
+				if(guarType === "11" || guarType === "13")	valChks.push(...["releDt"]);
+				if(guarType === "13")						valChks.push(...["releBegDt", "releEndDt", "releDays"]);
+				if(guarType === "15" || guarType === "31" || guarType === "32" || guarType === "33" || guarType === "34")	valChks.push(...["reqDt", "guarAmt", "guarCont"]);
+
+				if(com.fnValChk(valChks)){
+					//약정번호(조합원 조회시 등록됨)
+					if($("#contrNo").val() === ""){
+						alert("조합원을 선택해 주십시오.");
+						$("sMembNo").focus();
+						return;
+					}
+
+					//전자보증 체크
+				    if($("#guarIssueCd").val() === "G" ) {
+						//입찰공고 번호
+						if($("#publicNo").val() === ""){
+							alert("입찰공고번호를 입력해 주십시오.");
+				            $("#publicNo").focus();
+				            return;
+						}
+
+						//사업자번호
+						if(guarType !== "11"){
+							if($("#orderBizNo").val() === "") {
+								alert("사업자번호를 입력해 주십시오.");
+								$("#orderBizNo").focus();
+					            return;
+							}
+						}
+				    }
+
+					//보증금액
+					if(guarCom.fnToNumber($("#guarAmt").val()) > guarCom.fnToNumber($("#ele_remainAmt").text()) + guarCom.fnToNumber($("#befGuarAmt").val()) ) {
+				        alert("보증금액이 보증가능금액을 초과하였습니다.");
+				        $("#guarAmt").focus();
+				        return false;
+				    }
+
+				    //출자면제보증한도체크
+				    if($("#contrType").val() === "13" && guarCom.fnToNumber($("#guarAmt").val()) > guarCom.fnToNumber($("#exemLimitAmt").val())) {
+				    	alert("보증금액이 출자면제약정 건당 한도액(" + com.addComma($("#exemLimitAmt").val()) + ")을 초과하였습니다.");
+				    	$("#guarAmt").focus();
+				        return false;
+				    }
+
+					//보증료
+				    if($("#commAmt").val() === "") {
+				        alert("보증료가 계산되지 않았습니다.\n보증내용을 확인해 주십시오.");
+				        $("#guarAmt").focus();
+				        return false;
+				    }
+
+					//경보
+				    if(guarCom.fnToNumber($("#cretop").val()) > 12) {
+				        alert("이 업체는 "+   com.fnInputText("CRET", $("#cretop").val()) +" 등급입니다.");
+				        //return false;
+				    }
+
+				    //보증금율 계산
+				    if(guarType === "12" || guarType === "31" || guarType === "32" || guarType === "33" || guarType === "34"){
+						if(guarCom.fnToNumber($("#guarRate").val()) === 0) {
+					        guarCom.fnSetGuarRate();
+					    }
+					}
+
+					if(confirm("저장 처리 하시겠습니까?")){
+						var param = $("#saveFrm").serializeObject();
+						param.commAmt = $("#commAmt").eq(0).val();	//한개만 들어가도록 설정(보증료 미수영역과 겹침)
+						//console.log(param);
+
+						//guarUpt 페이지는 보증서발급에서 넘어와 단순오타수정 처리만 하도록 처리
+						obj = {url:"/guar/updateGuarEtc.do", jParam: param, fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+			};
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down active"><span></span></button>
+<!--						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<!-- 첨부파일 관련 -->
+			<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>
+			<input type="hidden" name="atthNo" id="atthNo"/>
+
+			<!-- 화면 관련 -->
+			<input type="hidden" name="guarNo"    	id="guarNo" /> 		<!-- 보증번호 -->
+			<input type="hidden" name="guarYear" 	id="guarYear" />	<!--  -->
+			<input type="hidden" name="guarSeq"  	id="guarSeq"  />
+			<input type="hidden" name="befPublicNo" id="befPublicNo" />
+
+			<input type="hidden" name="guarType"    id="guarType"   th:value="${paramMap.refVal}" /> <!-- 보증상품 -->
+		    <input type="hidden" name="contrType"   id="contrType"  value="" /> <!-- 약정구분 -->
+		    <input type="hidden" name="finalGrade"  id="finalGrade" value="" /> <!-- 신용등급 -->
+		    <input type="hidden" name="contrNo"     id="contrNo"    value="" /> <!-- 약정번호 -->
+		    <input type="hidden" name="cretop" 		id="cretop" 	value="" /> <!-- 조합원신용 -->
+			<input type="hidden" name="reqType" 	id="reqType"/> <!-- 신청유형 -->
+			<input type="hidden" name="reqSeq"  	id="reqSeq"/> <!-- 신청순번 -->
+			<input type="hidden" name="membNo"  	id="membNo"/>
+			<input type="hidden" name="sMembNo"  	id="sMembNo"/>
+			<input type="hidden" name="membNm"  	id="membNm"/>
+			<input type="hidden" name="ceoNm"  		id="ceoNm"/>
+
+			<input type="hidden" name="mortCnt"  	id="mortCnt"/> <!-- 담보갯수 -->
+			<input type="hidden" name="exemLimitAmt"  	id="exemLimitAmt"/> <!-- 출자면제보증한도 -->
+
+			<!-- 신규보증(asis serviceimple initGuarParam 파라미터 페이지에 세팅) -->
+			<input type="hidden" name="guarStat"  	id="guarStat" value=""/> <!-- 보증상태 : GR02 -->
+			<input type="hidden" name="guarClassCd" id="guarClassCd" value=""/> <!-- 신청유형 : GR03 - 최초 -->
+			<input type="hidden" name="guarReqCd"  	id="guarReqCd"	value=""/> <!-- 신청유형 : GR04 - 신규 -->
+			<!--<input type="hidden" name="initGuarSeq" id="initGuarSeq" value=""/>--> <!-- 최초신청번호 : guarSeq -->
+			<!--<input type="hidden" name="initReqDt"  	id="initReqDt" value=""/>--> <!-- 최초신청일자 : reqDt -->
+
+			<input type="hidden" id="befGuarAmt"/>
+
+			<!--전자보증용 필드 #######################################################################################-->
+			<th:block th:include="guar/comHiddenElect"></th:block> <!--전자보증용 -->
+			<!--전자보증용 필드 #######################################################################################-->
+
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">보증신청정보 <font color="blue" id="txt_guarTitl"></font></h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="width:140px;">
+								<col style="width:90px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+
+								<tr>
+									<th>보증번호</th>
+									<td><span id="ele_guarNo"></span></td>
+									<th>신청구분</th>
+									<td><span id="ele_guarReqCdNm"></span></td>
+									<th>변경구분</th>
+									<td>--</td>
+								</tr>
+
+								<tr>
+									<th>신청일자</th>
+									<td>
+										<input type="search" name="reqDt" id="reqDt" title="신청일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSelectGuarRate();" onblur="com.fnDateValiChk(this);" style="width:100px"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd', '', '', guarCom.fnSelectGuarRate)" />
+									</td>
+									<th>발급구분</th>
+									<td><select name="guarIssueCd" id="guarIssueCd" title="발급구분" style="width:120px" onchange="guarCom.fnGuarIssueChg(this.value);"></select></td>
+									<th>전자공고번호</th>
+									<td><div id="ele_g2bNone">해당사항없음</div>
+										<div id="ele_g2b" style="display:none">
+											<input type="search" name="publicNo" id="publicNo" maxlength="30" style="width:100px" />
+											<button type="button" name="btnG2b" id="btnG2b" class="btn icoSearch" onclick="guarCom.fnG2bSearch()" >검색</button>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<th>신청자</th>
+									<td>
+										<select name="selCp" id="selCp" title="신청자" style="width:120px"></select>
+									</td>
+									<th>신청자명</th>
+									<td><input type="search" name="reqNm" id="reqNm" title="신청자명" style="width:100px" maxlength="20"/></td>
+									<th>신청자연락처</th>
+									<td><input type="search" name="reqTel" id="reqTel" title="신청자연락처" style="width:120px" maxlength="13" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)"/></td>
+								</tr>
+							</tbody>
+						</table>
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">주계약정보<th:block th:if="${#strings.equals(session.userId,'admin')}"> (comGuarReqContr.html)</th:block></h4>
+							</div>
+						</section>
+						<!--주계약정보 #######################################################################################-->
+						<th:block th:include="guar/comGuarReqContr"></th:block> <!--주계약정보 -->
+						<!--주계약정보 #######################################################################################-->
+
+						<!--보증계약정보 #######################################################################################-->
+						<th:block th:include="guar/comGuarReqGuar"></th:block> <!--보증계약정보 -->
+						<!--보증계약정보 #######################################################################################-->
+
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">첨부파일</h4>
+							</div>
+						</section>
+						<div id="docFile" style="height:140px;"></div>
+
+					</div>
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<th:block th:include="guar/comGuarContrDtl"></th:block> <!--보증약정정보 -->
+
+						<!-- 보증 상품정보 -->
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">보증상품정보</h4>
+							</div>
+						</section>
+						<table class="tbl" id="tbl_guarLimit"></table>
+
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">발급정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:80px;">
+								<col style="width:140px;">
+								<col style="width:80px;">
+								<col style="width:140px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>처리상태</th>
+									<td>
+										<span id="ele_procStatNm" style="display:none;"></span>
+										<select name="procStat" id="procStat" title="처리상태" style="width:120px; display:none;"></select>
+									</td>
+									<th>심사일자</th>
+									<td><span id="ele_guarApprDtm"></span></td>
+									<th>심사자</th>
+									<td><span id="ele_guarApprNm"></span></td>
+								</tr>
+								<tr>
+									<th>처리사유</th>
+									<td colspan="5">
+										<input type="search" name="procReason" id="procReason" title="처리사유" maxlength="50" style="min-width:400px" value="" />
+									</td>
+								</tr>
+								<tr>
+									<th>발급일자</th>
+									<td>
+										<input type="search" name="guarPubDt" id="guarPubDt" title="발급일자" th:value="${today}" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" style="width:100px"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'guarPubDt', 'yyyy-mm-dd')" />
+									</td>
+									<th>최근발급일시</th>
+									<td><span id="ele_guarPubRecenDtm"></span></td>
+									<th>발급횟수</th>
+									<td><span id="ele_guarPubCnt"></span></td>
+								</tr>
+								<tr>
+									<th>보증서번호</th>
+									<td><span id="ele_docNo" onfocus="this.select()"></span></td>
+									<th>최초보증서</th>
+									<td><span id="ele_initDocNo"></span></td>
+									<th>이전보증서</th>
+									<td><span id="ele_befDocNo"></span></td>
+								</tr>
+							</tbody>
+						</table>
+
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">심사정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:80px;">
+								<col style="width:140px;">
+								<col style="width:80px;">
+								<col style="width:80px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>심사승인여부</th>
+									<td><span id="ele_examYnNm"></span></td>
+									<th>승인일자</th>
+									<td><span id="ele_examDtm"></span></td>
+									<th>심사승인자</th>
+									<td>
+										<span id="ele_examNm" style="display:none;"></span>
+										<select name="examNm" id="examNm" title="심사승인자" style="width:120px; display:none;"></select>
+									</td>
+								</tr>
+								<!-- 상세에만 있음 -->
+								<!--<tr id="ele_decDirInfo" style="display:none">
+									<th>확인여부</th>
+									<td><span id="ele_decDirYnNm"></span></td>
+									<th>확인일자</th>
+									<td><span id="ele_decDirNm"></span></td>
+									<th>확인자</th>
+									<td><span id="ele_decDirDt"></span></td>
+								</tr>
+								<tr id="ele_decMngInfo" style="display:none">
+									<th>전결여부</th>
+									<td><span id="ele_decMngYnNm"></span></td>
+									<th>전결일자</th>
+									<td><span id="ele_decMngNm"></span></td>
+									<th>전결자</th>
+									<td><span id="ele_decMngDt"></span></td>
+								</tr>-->
+							</tbody>
+						</table>
+
+						<!-- 보증료납부정보 입력칸이 11(이행입찰),14(이행선금급)에만 존재 -->
+						<th:block th:include="guar/comGuarPay"></th:block> <!--보증납부정보 -->
+
+						<!-- 수정사유 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">수정사유</h4>
+							</div>
+							<div>
+								<textarea id="histReason" name="histReason" title="수정사유" cols="10" rows="5"></textarea>
+							</div>
+						</section>
+
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<!--하단 버튼 영역-->
+				<div class="layer-flex mt20">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

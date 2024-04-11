@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<div id="rightSidebar" th:fragment="main-right">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+
+			//메모 이동
+			/*var btnIdx = 0;
+			var fnMemoMove = function (type,nm){
+
+				var memoCnt = $("#memoBox > li").length;
+
+				if(type === "N" && (memoCnt-1 > btnIdx)){
+					btnIdx++;
+					$("#memoBox > li").hide();
+					$("#memoBox > li").eq(btnIdx).show();
+					fnActiveBtns(btnIdx);
+				}else if(type === "P" && (btnIdx > 0)){
+					btnIdx--;
+					$("#memoBox > li").hide();
+					$("#memoBox > li").eq(btnIdx).show();
+					fnActiveBtns(btnIdx);
+				}else if(type !== "P" && type !== "N"){
+					btnIdx = type - 1;
+					$("#memoBox > li").hide();
+					$("#memoBox > li").eq(btnIdx).show();
+					fnActiveBtns(btnIdx);
+
+				}
+			};*/
+
+			var posCd = /*[[${session.posCd}]]*/; //직급
+
+			$(document).ready(function(){
+
+				//메모 등록, 목록 버튼 컨트롤
+				$(".memoBtns > button").click(function(){
+
+					$(this).siblings('button').removeClass('on');
+					$(this).addClass('on');
+
+					//저장버튼 컨트롤
+					if($(this).hasClass('ins')) $("#memoBtn").show();
+					else  $("#memoBtn").hide();
+
+					//박스컨트롤
+					var target = "#" + $(this).data('box');
+					$("#memoBox > li").hide();
+					$(target).show();
+				});
+
+				$("#workReq > li").click(function(){
+
+					var small = $("#workReq > li:eq("+$(this).index()+") > span:eq(1)");
+					//small.css("color", "#000000");
+
+					smallId = small.attr("id");
+					var menuCd = "";
+
+					var param = {};
+					if(smallId === "g2bCnt") {menuCd = "1030202"; param.sG2bSendYn = "Y";}  //발급현황
+					if(smallId === "decCnt") menuCd = "1030213";  //전결현황
+					if(smallId === "nopayCnt") {menuCd = "1030307"; param.sLapseYn = "Y"} //미수수료
+					if(smallId === "qnaCnt") menuCd = "1070212";  //질문과답변
+					if(smallId === "memCnt") {menuCd = "1010121"; param.sProcStat = "10";}  //조합원기재신청
+					if(smallId === "ivtCnt") {menuCd = "1020101"; param.sProcStat = "10";}  //조합원출자신청
+
+					if(smallId === "bidCnt") {menuCd = "1030201"; param.sGuarType = "11";}  //입찰보증신청
+					if(smallId === "ctrCnt") {menuCd = "1030201"; param.sGuarType = "12";}	//계약보증신청
+					if(smallId === "defCnt") {menuCd = "1030201"; param.sGuarType = "13";}	//하자보증신청
+					if(smallId === "payCnt") {menuCd = "1030201"; param.sGuarType = "14";}	//선급금보증신청
+					if(smallId === "perCnt") {menuCd = "1030201"; param.sGuarType = "15";}	//이행지급보증신청
+					//if(smallId === "debCnt") menuCd = "1030201"; //채무보증신청
+					if(smallId === "effCnt") {menuCd = "1030201"; param.sGuarType = "31";}	//성능이행보증신청
+					if(smallId === "pemCnt") {menuCd = "1030201"; param.sGuarType = "32";}	//인허가보증신청
+					if(smallId === "selCnt") {menuCd = "1030201"; param.sGuarType = "33";}	//상품판매보증신청
+					if(smallId === "repCnt") {menuCd = "1030201"; param.sGuarType = "34";}	//지급의지급보증신청
+
+					if(smallId === "cnfIpCnt") {menuCd = "1020302"; param.sProcStat = "10";}	//출자좌수증명원
+					if(smallId === "cnfIkCnt") {menuCd = "1020303"; param.sProcStat = "10";}	//출자증권보관증
+					if(smallId === "cnfDpCnt") {menuCd = "1020304"; param.sProcStat = "10";}	//예수금증명원
+
+					if(smallId === "cnfGrCnt") {menuCd = "1030602"; param.sProcStat = "10";}	//보증잔액증명서
+
+					if(smallId === "cnfLpCnt") {menuCd = "1040401"; param.sProcStat = "10";}	//대출상환증명서
+					if(smallId === "cnfLrCnt") {menuCd = "1040402"; param.sProcStat = "10";}	//대출잔액증명서
+					if(smallId === "cnfLiCnt") {menuCd = "1040403"; param.sProcStat = "10";}	//대출이자납입증명서
+					if(smallId === "cnfFlCnt") {menuCd = "1040404"; param.sProcStat = "10";}	//금융거래확인서
+
+					if(smallId === "accCnt") {menuCd = "1050101"; param.sAccStatCd = "31";}	//공제금(사고)신청
+
+					param = {menuCd:menuCd, paramMap:param };
+					menuOpen(param);
+				});
+
+				//업뭄메모호출
+				fnSearch();
+
+			});
+
+
+			//업무메모리스트
+			var fnSearch = function(){
+				param = {};
+				obj = {url:"/com/selectUserMemoList.do", param:param, formId:"serch", callBack:fnSearchCallBack, msgYn:"N", sessYn:"N", loadYn:"N"};
+				com.fnAjaxPost(obj);
+			}
+
+			//업무메모리스트 콜백
+			var fnSearchCallBack = function(resData){
+				//console.log(resData);
+				$("#listBox").empty();
+
+				let totCnt = resData.data.length;
+				if(totCnt === 0) $("#listBox").append('<span>정보가 없습니다.<span>');
+
+				$.each(resData.data, function(index, item) {
+					let html  = '';
+						html += '<a href="#;" class="" onclick="openMemoPop(\''+item.memoSeq+'\')"><span>'+item.memoSeq+'</span>'+item.memoCont+'</a>'
+
+					//totCnt--;
+					$("#listBox").append(html);
+				});
+
+			}
+
+			//공제가입 상담 조회 팝업
+			var openMemoPop = function(val){
+				com.dialpopupOpen("업무메모 상세", "/index/pageCall.do?menuCd=1070724&memoSeq="+val, "800", "500"); //menuPage=/memb/popupSearchCons
+			}
+
+			/*var fnActiveBtns = function (idx){
+				$(".memoBtns > button").removeClass('on');
+					$(".memoBtns > button").eq(btnIdx).addClass('on');
+			}*/
+
+			//메모 저장
+			var fnMemoSave = function (){
+				if($("#memoCont").val() === '') {
+					alert('저장할 내용이 없습니다');
+					return;
+				}
+				if(confirm("저장 처리 하시겠습니까?")){
+					param = {};
+					obj = {url:"/com/insertUserMemo.do", param:param, formId:"serch", callBack:fnMemoSaveCallback, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxPost(obj);
+				}
+			};
+
+			var fnMemoSaveCallback = function(resData){
+				$("#memoCont").val('');
+				fnSearch();
+			}
+
+			//
+
+
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		    //소켓 통신부(사용안함)
+		    /*
+		    var stompClient = null;
+		    var socket 		= null;
+
+		    //응답메세지 처리
+		    var fnOnMsg = function(resData){
+				result = JSON.parse(resData.body);
+				//console.log(result)
+				if(result.sockType === "work"){
+
+					if(result.user.alrmYn === "Y"){
+						$(".alarm").addClass("on");
+
+						var workIds = ["g2bCnt", "nopayCnt","qnaCnt","memCnt","ivtCnt"
+						                ,"bidCnt","ctrCnt","defCnt","payCnt","perCnt","effCnt","pemCnt"
+										,"selCnt"
+										,"cnfIpCnt","cnfIkCnt","cnfDpCnt","cnfGrCnt","cnfLpCnt","cnfLrCnt","cnfLiCnt","cnfFlCnt"
+										,"accCnt"
+									 ];
+						var workNews = ["g2bCnt", "nopayCnt","qnaTotCnt","memTotCnt","memIvtCnt"
+						                ,"bidTotCnt","ctrTotCnt","defTotCnt","payTotCnt","perTotCnt","effTotCnt","pemTotCnt"
+										,"selTotCnt"
+										,"cnfIpTotCnt","cnfIkTotCnt","cnfDpTotCnt","cnfGrTotCnt","cnfLpTotCnt","cnfLrTotCnt","cnfLiTotCnt","cnfFlTotCnt"
+										,"cnfTotCnt"
+										,"accTotCnt"
+									 ];
+
+						var workInfo = "";
+
+						
+
+						var getWorkInfo = result.workList;
+						//console.log(getWorkInfo);
+
+						//본부장, 이사 전결 건 별도 추가
+						if(posCd === "30" || posCd === "20" || posCd === "90"){
+							var decId = "decMngCnt";//전무이사
+							if(posCd === "90") decId = "decDirCnt"; //본부장
+
+							if(workInfo[decId] !== undefined && workInfo[decId] !== getWorkInfo[decId]){
+								$("#decCnt").css("color", "#f0680d");
+							}
+							$("#decCnt").text(getWorkInfo[decId]+"건");
+						};
+
+						$.each(workIds, function(idx, item){
+							if(workInfo[workNews[idx]] !== undefined && workInfo[workNews[idx]] !== getWorkInfo[workNews[idx]]){
+								$("#"+item).css("color", "#f0680d");
+							}
+							//console.log(item + " /  " + getWorkInfo[item]);
+							$("#"+item).text(getWorkInfo[item]+"건");
+						});
+
+						workInfo = getWorkInfo;
+					}
+				}
+			}
+
+		    //소켓 통신
+		    var fnSocketConn = function(){
+				socket 		= new SockJS('/kocfc-websocket'); //소켓이름
+				stompClient = Stomp.over(socket);
+
+			    stompClient.connect({}, function (frame) {
+			        stompClient.subscribe('/kocfc/message', fnOnMsg); //서버에서 호출되는 명
+			    });
+			}
+			
+			//fnSocketConn(); //소켓 연결
+			*/
+			
+			//민원신청 조회
+		    var fnWorkList = function(){
+				var param = {};
+				obj = {url:"/index/workReqList.do", param:param, callBack:fnWorkListCallBack, msgYn:"N", sessYn:"N", loadYn:"N"};
+				com.fnAjaxDef(obj);
+
+			}
+
+			//민원신청 콜백
+			var fnWorkListCallBack = function(resData){
+				//console.log(resData);
+
+				if(resData.user.alrmYn === "Y"){
+					$(".alarm").addClass("on");
+				}
+
+				var workIds = ["g2bCnt", "nopayCnt","qnaCnt","memCnt","ivtCnt"
+				                ,"bidCnt","ctrCnt","defCnt","payCnt","perCnt","effCnt","pemCnt"
+								,"selCnt"
+								,"cnfIpCnt","cnfIkCnt","cnfDpCnt","cnfGrCnt","cnfLpCnt","cnfLrCnt","cnfLiCnt","cnfFlCnt"
+								,"accCnt"
+							 ];
+				var workNews = ["g2bCnt", "nopayCnt","qnaTotCnt","memTotCnt","memIvtCnt"
+				                ,"bidTotCnt","ctrTotCnt","defTotCnt","payTotCnt","perTotCnt","effTotCnt","pemTotCnt"
+								,"selTotCnt"
+								,"cnfIpTotCnt","cnfIkTotCnt","cnfDpTotCnt","cnfGrTotCnt","cnfLpTotCnt","cnfLrTotCnt","cnfLiTotCnt","cnfFlTotCnt"
+								,"cnfTotCnt"
+								,"accTotCnt"
+							 ];
+				
+				var specIds = ["qnaCnt","memCnt","ivtCnt", "cnfIpCnt","cnfIkCnt","cnfDpCnt","cnfGrCnt","cnfLpCnt","cnfLrCnt","cnfLiCnt","cnfFlCnt"
+								,"accCnt"
+							 ];
+							 
+				var workInfo = "";
+
+				var getWorkInfo = resData.data;
+				//console.log(getWorkInfo);
+
+				//본부장, 이사 전결 건 별도 추가
+				if(posCd === "30" || posCd === "20" || posCd === "90"){
+					var decId = "decMngCnt";//전무이사
+					if(posCd === "90") decId = "decDirCnt"; //본부장
+
+					if(workInfo[decId] !== undefined && workInfo[decId] !== getWorkInfo[decId]){
+						$("#decCnt").css("color", "#f0680d");
+					}
+					$("#decCnt").text(getWorkInfo[decId]+"건");
+				};
+				
+				
+				$.each(workIds, function(idx, item){
+					if(workInfo[workNews[idx]] !== undefined && workInfo[workNews[idx]] !== getWorkInfo[workNews[idx]]){
+						$("#"+item).css("color", "#f0680d");
+					}else{
+						$("#"+item).css("color", "#000000");
+					}
+					
+					$("#"+item).text(getWorkInfo[item]+"건");
+					
+					$.each(specIds, function(idx2, item2){
+						
+						if(item2 === item && getWorkInfo[item] != "0"){
+							$("#"+item).css("color", "#FF0000");
+						}
+					});
+					
+					
+				});
+
+				workInfo = getWorkInfo;
+
+			}
+
+		    fnWorkList();
+
+		    setTimeout(fnWorkList, 6000);
+		    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		    /*]]>*/
+		</script>
+
+
+		<button type="button" id="sideBarBtn">펼치기</button>
+	    <ul class="right-box">
+	        <li id="comStatus">
+	            <p>민원신청현황</p>
+	            <div>
+	                <button type="button" onclick="fnWorkList()">새로고침</button><span id="refreshTime"></span>
+	                <ul id="workReq" class="scrollBar" style="max-height:360px;cursor:pointer">
+						<li th:if="${#strings.equals(session.posCd,'20') || #strings.equals(session.posCd,'30') || #strings.equals(session.posCd,'90')}"><span>보증전결승인</span><span id="decCnt">건</span></li>
+						<li><span>G2B미전송</span><span id="g2bCnt">건</span></li>
+						<li><span>3개월경과미수수수료</span><span id="nopayCnt">건</span></li>
+						<li><span>질문과답변</span><span id="qnaCnt">건</span></li>
+						<li><span>조합원기재신청</span><span id="memCnt">건</span></li>
+						<li><span>조합원출자신청</span><span id="ivtCnt">건</span></li>
+
+						<li><span>입찰보증신청</span><span id="bidCnt">건</span></li>
+						<li><span>계약보증신청</span><span id="ctrCnt">건</span></li>
+						<li><span>하자보증신청</span><span id="defCnt">건</span></li>
+						<li><span>선금급보증신청</span><span id="payCnt">건</span></li>
+						<li><span>이행지급보증신청</span><span id="perCnt">건</span></li>
+						<!--<li><span>채무보증신청</span><span id="debCnt">건</span></li>-->
+						<li><span>성능이행보증신청</span><span id="effCnt">건</span></li>
+						<li><span>인·허가보증신청</span><span id="pemCnt">건</span></li>
+						<li><span>상품판매보증신청</span><span id="selCnt">건</span></li>
+						<!--<li><span>지급의지급보증신청</span><span id="repCnt">건</span></li>-->
+						<li><span>출자좌수증명원</span><span id="cnfIpCnt">건</span></li>
+						<li><span>출자증권보관증</span><span id="cnfIkCnt">건</span></li>
+						<li><span>예수금증명원</span><span id="cnfDpCnt">건</span></li>
+						<li><span>보증잔액증명서</span><span id="cnfGrCnt">건</span></li>
+						<li><span>대출상환증명서</span><span id="cnfLpCnt">건</span></li>
+						<li><span>대출잔액증명서</span><span id="cnfLrCnt">건</span></li>
+						<li><span>대출이자증명서</span><span id="cnfLiCnt">건</span></li>
+						<li><span>금융거래확인서</span><span id="cnfFlCnt">건</span></li>
+						<li><span>공제금(사고)신청</span><span id="accCnt">건</span></li>
+					</ul>
+	            </div>
+	        </li>
+	        <li id="myMemo">
+	            <p>업무메모장</p>
+	            <div class="scrollBar">
+					<form name="serch" id="serch" method="post" onSubmit="return false;" action="">
+						<div class="memoBtns">
+							<button type="button" data-box="insBox" class="ins" onclick="">등록</button>
+							<button type="button" data-box="listBox"  class="on" onclick="">목록</button>
+						</div>
+
+						<ul id="memoBox">
+		                    <li id="insBox" style="display: none;">
+								<textarea name="memoCont" id="memoCont" cols="30" rows="13"></textarea>
+							</li>
+							<li id="listBox" >
+
+							</li>
+		                </ul>
+		                <div class=" tar">
+		                    <a href="javascript:fnMemoSave();" id="memoBtn" class="btn style08" style="display:none;">저장</a>
+		                </div>
+	            	</form>
+				</div>
+	        </li>
+	    </ul>
+	</div> <!-- // rightSidebar -->
+
+
+</html>

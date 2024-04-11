@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.memb.repository.MembRateLendMapper">
+
+	<!-- 조합원별융자요 현황 조회 -->
+	<select id="selectMembRateLendList" parameterType="Map" resultType="camelMap">
+		/* MembRateLendMapper.selectMembRateLendList */
+		SELECT
+			R.MEMB_NO
+			, M.MEMB_NM
+			, M.CEO_NM
+			, M.BIZ_NO
+			, M.MAIN_BUSS_CD
+			, F_GET_CD_NM('MB02',M.MAIN_BUSS_CD) MAIN_BUSS_NM
+			, F_GET_PATTERN(R.APP_DT, 'DT') AS APP_DT
+			, R.FINAL_GRADE
+			, R.ORG_CONCLUS_RATE
+			, R.ORG_CREDIT_RATE
+			, R.ORG_NOTE_RATE
+			, R.ORG_BOND_RATE
+			, R.ORG_CLAIM_RATE
+			, R.ORG_DELAY_RATE
+			, R.ORG_MORT_DISC_RATE
+			, R.DISC_CONCLUS_RATE
+			, R.DISC_CREDIT_RATE
+			, R.DISC_NOTE_RATE
+			, R.DISC_BOND_RATE
+			, R.DISC_CLAIM_RATE
+			, R.DISC_DELAY_RATE
+			, R.DISC_MORT_DISC_RATE
+			, R.DISC_REASON
+          FROM LD_MEMB_RATE R
+             , MB_MASTER M
+         WHERE M.MEMB_NO = R.MEMB_NO
+     	<if test="sMembNo != null and sMembNo != ''"> 	<!-- 조합원번호 -->
+		   AND M.MEMB_NO = #{sMembNo}
+		</if>
+		<if test="sMembNm != null and sMembNm != ''"> 	<!-- 조합원명 -->
+		   AND M.MEMB_NM LIKE '%' || REPLACE( #{sMembNm},' ','' ) || '%'
+		</if>
+		<if test="sCeoNm != null and sCeoNm != ''"> 		<!-- 대표자명 -->
+		   AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+		</if>
+		<if test="sMainBussCd != null and sMainBussCd != ''"> <!-- 장르 -->
+		   AND M.MAIN_BUSS_CD = #{sMainBussCd}
+		</if>
+		<if test="sMembRateLendStaDt != null and sMembRateLendStaDt != ''"> 	<!-- 적용일자 시작일 -->
+		   AND R.APP_DT &gt;= REPLACE(#{sMembRateLendStaDt},'-','')
+		</if>
+		<if test="sMembRateLendEndDt != null and sMembRateLendEndDt != ''"> 	<!-- 적용일자 종료일 -->
+		   AND R.APP_DT &lt;= REPLACE(#{sMembRateLendEndDt},'-','')
+		</if>
+		<if test="sBizNo != null and sBizNo != ''"> 		<!-- 사업자등록번호 -->
+		    AND M.BIZ_NO = REPLACE( #{sBizNo},'-','' )
+		</if>
+		<if test="sLawNo != null and sLawNo != ''"> 		<!-- 법인등록번호 -->
+		    AND M.LAW_NO = REPLACE( #{sLawNo},'-','' )
+		</if>
+         ORDER BY R.APP_DT DESC, R.MEMB_NO
+	</select>
+
+	<!-- 조합원별융자요 상세 조회 -->
+	<select id="selectMembRateLend" parameterType="Map" resultType="camelMap">
+		/* MembRateLendMapper.selectMembRateLend*/
+		SELECT
+			MEMB_NO
+			, F_GET_PATTERN(APP_DT, 'DT') AS APP_DT
+			, FINAL_GRADE
+			, ORG_CONCLUS_RATE
+			, ORG_CREDIT_RATE
+			, ORG_NOTE_RATE
+			, ORG_BOND_RATE
+			, ORG_CLAIM_RATE
+			, ORG_DELAY_RATE
+			, ORG_MORT_DISC_RATE
+			, DISC_CONCLUS_RATE
+			, DISC_CREDIT_RATE
+			, DISC_NOTE_RATE
+			, DISC_BOND_RATE
+			, DISC_CLAIM_RATE
+			, DISC_DELAY_RATE
+			, DISC_MORT_DISC_RATE
+			, DISC_REASON
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+		  FROM LD_MEMB_RATE
+		 WHERE MEMB_NO = #{membNo}
+		   AND APP_DT = REPLACE(#{appDt}, '-', '')
+	</select>
+
+	<!-- 조합원별융자요 등록 처리 -->
+	<insert id="insertMembRateLend" parameterType="Map"  >
+		/* MembRateLendMapper.insertMembRateLend */
+		INSERT INTO LD_MEMB_RATE (
+			MEMB_NO
+			, APP_DT
+			, FINAL_GRADE
+			, ORG_CONCLUS_RATE
+			, ORG_CREDIT_RATE
+			, ORG_NOTE_RATE
+			, ORG_BOND_RATE
+			, ORG_CLAIM_RATE
+			, ORG_DELAY_RATE
+			, ORG_MORT_DISC_RATE
+			, DISC_CONCLUS_RATE
+			, DISC_CREDIT_RATE
+			, DISC_NOTE_RATE
+			, DISC_BOND_RATE
+			, DISC_CLAIM_RATE
+			, DISC_DELAY_RATE
+			, DISC_MORT_DISC_RATE
+			, DISC_REASON
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+		) VALUES (
+			#{membNo}
+			, REPLACE(#{appDt}, '-', '')
+			, #{finalGrade}
+			, #{orgConclusRate}
+			, #{orgCreditRate}
+			, #{orgNoteRate}
+			, #{orgBondRate}
+			, #{orgClaimRate}
+			, #{orgDelayRate}
+			, #{orgMortDiscRate}
+			, #{discConclusRate}
+			, #{discCreditRate}
+			, #{discNoteRate}
+			, #{discBondRate}
+			, #{discClaimRate}
+			, #{discDelayRate}
+			, #{discMortDiscRate}
+			, #{discReason}
+			, SYSDATE
+			, #{userNm}
+			, SYSDATE
+			, #{userNm}
+		)
+	</insert>
+
+	<!-- 조합원별융자요 수정 처리 -->
+	<update id="updateMembRateLend" parameterType="Map"  >
+		/* MembRateLendMapper.updateMembRateLend */
+		UPDATE LD_MEMB_RATE
+		SET
+			APP_DT = REPLACE(#{appDt}, '-', '')
+			, FINAL_GRADE = #{finalGrade}
+			, ORG_CONCLUS_RATE = #{orgConclusRate}
+			, ORG_CREDIT_RATE = #{orgCreditRate}
+			, ORG_NOTE_RATE = #{orgNoteRate}
+			, ORG_BOND_RATE = #{orgBondRate}
+			, ORG_CLAIM_RATE = #{orgClaimRate}
+			, ORG_DELAY_RATE = #{orgDelayRate}
+			, ORG_MORT_DISC_RATE = #{orgMortDiscRate}
+			, DISC_CONCLUS_RATE = #{discConclusRate}
+			, DISC_CREDIT_RATE = #{discCreditRate}
+			, DISC_NOTE_RATE = #{discNoteRate}
+			, DISC_BOND_RATE = #{discBondRate}
+			, DISC_CLAIM_RATE = #{discClaimRate}
+			, DISC_DELAY_RATE = #{discDelayRate}
+			, DISC_MORT_DISC_RATE = #{discMortDiscRate}
+			, DISC_REASON = #{discReason}
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{userNm}
+		WHERE MEMB_NO = #{membNo}
+		  AND APP_DT = REPLACE(#{orgAppDt}, '-', '')
+	</update>
+
+	<!-- 조합원별융자요 삭제 처리 -->
+	<delete id="deleteMembRateLend" parameterType="Map"  >
+		/* MembRateLendMapper.deleteMembRateLend */
+		DELETE FROM LD_MEMB_RATE
+		 WHERE MEMB_NO = #{membNo}
+		   AND APP_DT = REPLACE(#{appDt}, '-', '')
+	</delete>
+
+
+	<!-- 신용도별 요율 조회(임시) -->
+	<select id="selectLendRate" parameterType="Map" resultType="camelMap">
+		/* MembRateLendMapper.selectLendRate*/
+		 SELECT
+		 	APP_DT
+		 	, FINAL_GRADE
+            , CONCLUS_RATE
+            , CREDIT_RATE
+            , NOTE_RATE
+            , BOND_RATE
+            , CLAIM_RATE
+            , DELAY_RATE
+            , MORT_DISC_RATE
+            , (SELECT (CASE WHEN #{lendType} = '11' THEN DISC_CONCLUS_RATE	/* 계약진행자금대출 */
+                            WHEN #{lendType} = '12' THEN DISC_CREDIT_RATE	/* 신용운영자금대출 */
+                            WHEN #{lendType} = '13' THEN DISC_NOTE_RATE		/* 어음할인 */
+                            WHEN #{lendType} = '14' THEN DISC_BOND_RATE		/* 매출채권자금대출 */
+                            WHEN #{lendType} = '15' THEN DISC_CLAIM_RATE	/* 보험청구권담보부대출 */
+                         END)
+                 FROM LD_MEMB_RATE
+                WHERE APP_DT = (SELECT MAX(APP_DT)
+                                  FROM LD_MEMB_RATE
+                                 WHERE APP_DT &lt;= SUBSTR (REPLACE(#{appDt},'-',''),1,8)
+                                   AND MEMB_NO = #{membNo})
+                  AND MEMB_NO = #{membNo}) DISC_RATE
+           FROM CM_LEND_RATE
+          WHERE FINAL_GRADE = #{finalGrade}
+            AND APP_DT = NVL(
+                             (SELECT MAX(APP_DT)
+                                FROM CM_LEND_RATE
+                               WHERE APP_DT &lt;= REPLACE(#{appDt}, '-', '')
+                                 AND FINAL_GRADE = #{finalGrade}
+                             ),
+                             (SELECT MIN(APP_DT)
+                                FROM CM_LEND_RATE
+                               WHERE FINAL_GRADE = #{finalGrade}
+                             )
+                           )
+	</select>
+
+</mapper>

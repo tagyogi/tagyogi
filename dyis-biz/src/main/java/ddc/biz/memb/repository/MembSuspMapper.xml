@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.memb.repository.MembSuspMapper">
+
+	<!-- 업무정지 정보 조회 -->
+	<select id="selectMembSuspList" parameterType="Map" resultType="camelMap">
+		/* MembSuspMapper.selectMembSuspList */
+
+		SELECT
+           AG.ACC_DT
+           , NG.NOR_DT AS ACC_END_DT
+           , (CASE WHEN AG.ACC_DT IS NOT NULL THEN F_GET_PATTERN(AG.ACC_DT, 'DT') ELSE '' END || ' ~ ' ||
+              CASE WHEN NG.NOR_DT IS NOT NULL THEN F_GET_PATTERN(NG.NOR_DT, 'DT') ELSE '현재' END) AS ACC_FROM_TO
+           , AG.MEMB_NM
+           , AG.MEMB_NO
+           , '보증사고' AS ACC_GB
+           , AG.ACC_STAT_CD
+           , AG.ACC_AMT
+           , AG.ACC_REASON_CD
+           , AG.REG_DTM
+         FROM AC_GR_ACCIDENT AG
+           , AC_GR_NOR NG
+        WHERE AG.ACC_NO = NG.ACC_NO(+)  
+        <if test="sMembNo != null and sMembNo != ''"> 	<!-- 조합원번호 -->
+		  AND AG.MEMB_NO = #{sMembNo}
+		</if>
+		<if test="sMembNm != null and sMembNm != ''"> 	<!-- 조합원명 -->
+		  AND AG.MEMB_NM LIKE '%' || REPLACE( #{sMembNm},' ','' ) || '%'
+		</if>
+        <if test="sMembSuspStaDt != null and sMembSuspStaDt != ''"> 	<!-- 업무정지기간 시작일 -->
+		  AND AG.ACC_DT &gt;= REPLACE(#{sMembSuspStaDt}, '-', '')
+		</if>
+		<if test="sMembSuspEndDt != null and sMembSuspEndDt != ''"> 	<!-- 업무정지기간 종료일 -->
+		  AND AG.ACC_DT &lt;= REPLACE(#{sMembSuspEndDt}, '-', '')
+		</if>
+
+        UNION ALL
+
+        SELECT
+        	AL.ACC_DT
+        	, NL.NOR_DT ACC_END_DT
+        	, (CASE WHEN AL.ACC_DT IS NOT NULL THEN F_GET_PATTERN(AL.ACC_DT, 'DT') ELSE '' END || ' ~ ' ||
+               CASE WHEN NL.NOR_DT IS NOT NULL THEN F_GET_PATTERN(NL.NOR_DT, 'DT') ELSE '현재' END) AS ACC_FROM_TO
+            , AL.MEMB_NM
+            , AL.MEMB_NO
+            , '대출사고' ACC_GB
+            , AL.ACC_STAT_CD
+            , AL.ACC_AMT
+            , AL.ACC_REASON_CD
+            , AL.REG_DTM
+         FROM AC_LD_ACCIDENT AL
+            , AC_LD_NOR NL
+        WHERE AL.ACC_NO = NL.ACC_NO(+)     
+        <if test="sMembNo != null and sMembNo != ''"> 	<!-- 조합원번호 -->
+		  AND AL.MEMB_NO = #{sMembNo}
+		</if>
+		<if test="sMembNm != null and sMembNm != ''"> 	<!-- 조합원명 -->
+		  AND AL.MEMB_NM LIKE '%' || REPLACE( #{sMembNm},' ','' ) || '%'
+		</if>
+        <if test="sMembSuspStaDt != null and sMembSuspStaDt != ''"> 	<!-- 업무정지기간 시작일 -->
+		 AND AL.ACC_DT &gt;= REPLACE(#{sMembSuspStaDt}, '-', '')
+		</if>
+		<if test="sMembSuspEndDt != null and sMembSuspEndDt != ''"> 	<!-- 업무정지기간 종료일 -->
+		 AND AL.ACC_DT &lt;= REPLACE(#{sMembSuspEndDt}, '-', '')
+		</if>
+        ORDER BY ACC_DT DESC, MEMB_NM
+
+	</select>
+
+	<!-- 업무정지 상세 조회 -->
+	<select id="selectMembSusp" parameterType="Map" resultType="camelMap">
+		/* MembSuspMapper.selectMembSusp*/
+		SELECT
+			ACC_NO
+			, ACC_DT
+			, MEMB_NO
+			, MEMB_NM
+			, ACC_STAT_CD
+			, ACC_REASON_CD
+			, ACC_AMT
+			, ACC_CONT
+			, ACC_LEND_NO
+			, NOR_DT
+			, NOR_RCV
+			, NOR_REASON_CD
+			, NOR_NM
+			, NOR_CONT
+			, ENQ_FR_DT
+			, ENQ_TO_DT
+			, ENQ_NM
+			, ENQ_PLACE
+			, ENQ_DOC_DT
+			, REAL_AMT
+			, ENQ_CONT1
+			, ENQ_CONT2
+			, ENQ_CONT4
+			, ENQ_CONT5
+			, ACC_END_DT
+			, CASE_NM
+			, SEST_CD
+			, DOC_DT
+			, SEST_DT
+			, SEST_AMT
+			, AGENCY_NM
+			, CAN_CD
+			, CREDITOR
+			, CLAI_CONT
+			, SEST_CONT
+			, PROG_CONT
+			, BASE_CONT
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, ACC_INVEST
+			, PROP_INVEST
+			, ACC_PLAN
+			, INVEST_AMT
+		  FROM AC_LD_ACCIDENT
+		<where>
+		</where>
+	</select>
+
+	<!-- 업무정지 등록 처리 -->
+	<insert id="insertMembSusp" parameterType="Map"  >
+		/* MembSuspMapper.insertMembSusp */
+		INSERT INTO AC_LD_ACCIDENT (
+			ACC_NO
+			, ACC_DT
+			, MEMB_NO
+			, MEMB_NM
+			, ACC_STAT_CD
+			, ACC_REASON_CD
+			, ACC_AMT
+			, ACC_CONT
+			, ACC_LEND_NO
+			, NOR_DT
+			, NOR_RCV
+			, NOR_REASON_CD
+			, NOR_NM
+			, NOR_CONT
+			, ENQ_FR_DT
+			, ENQ_TO_DT
+			, ENQ_NM
+			, ENQ_PLACE
+			, ENQ_DOC_DT
+			, REAL_AMT
+			, ENQ_CONT1
+			, ENQ_CONT2
+			, ENQ_CONT4
+			, ENQ_CONT5
+			, ACC_END_DT
+			, CASE_NM
+			, SEST_CD
+			, DOC_DT
+			, SEST_DT
+			, SEST_AMT
+			, AGENCY_NM
+			, CAN_CD
+			, CREDITOR
+			, CLAI_CONT
+			, SEST_CONT
+			, PROG_CONT
+			, BASE_CONT
+			, REG_DTM
+			, REG_NM
+			, MOD_DTM
+			, MOD_NM
+			, ACC_INVEST
+			, PROP_INVEST
+			, ACC_PLAN
+			, INVEST_AMT
+		) VALUES (
+			#{accNo}
+			, REPLACE(#{accDt}, '-', '')
+			, #{membNo}
+			, #{membNm}
+			, #{accStatCd}
+			, #{accReasonCd}
+			, REPLACE(#{accAmt}, ',', '')
+			, #{accCont}
+			, #{accLendNo}
+			, REPLACE(#{norDt}, '-', '')
+			, #{norRcv}
+			, #{norReasonCd}
+			, #{norNm}
+			, #{norCont}
+			, REPLACE(#{enqFrDt}, '-', '')
+			, REPLACE(#{enqToDt}, '-', '')
+			, #{enqNm}
+			, #{enqPlace}
+			, REPLACE(#{enqDocDt}, '-', '')
+			, REPLACE(#{realAmt}, ',', '')
+			, #{enqCont1}
+			, #{enqCont2}
+			, #{enqCont4}
+			, #{enqCont5}
+			, REPLACE(#{accEndDt}, '-', '')
+			, #{caseNm}
+			, #{sestCd}
+			, REPLACE(#{docDt}, '-', '')
+			, REPLACE(#{sestDt}, '-', '')
+			, REPLACE(#{sestAmt}, ',', '')
+			, #{agencyNm}
+			, #{canCd}
+			, #{creditor}
+			, #{claiCont}
+			, #{sestCont}
+			, #{progCont}
+			, #{baseCont}
+			, SYSDATE
+			, #{regNm}
+			, SYSDATE
+			, #{modNm}
+			, #{accInvest}
+			, #{propInvest}
+			, #{accPlan}
+			, REPLACE(#{investAmt}, ',', '')
+		)
+	</insert>
+
+	<!-- 업무정지 수정 처리 -->
+	<update id="updateMembSusp" parameterType="Map"  >
+		/* MembSuspMapper.updateMembSusp */
+		UPDATE AC_LD_ACCIDENT
+		SET
+			ACC_NO = #{accNo}
+			, ACC_DT = REPLACE(#{accDt}, '-', '')
+			, MEMB_NO = #{membNo}
+			, MEMB_NM = #{membNm}
+			, ACC_STAT_CD = #{accStatCd}
+			, ACC_REASON_CD = #{accReasonCd}
+			, ACC_AMT = REPLACE(#{accAmt}, ',', '')
+			, ACC_CONT = #{accCont}
+			, ACC_LEND_NO = #{accLendNo}
+			, NOR_DT = REPLACE(#{norDt}, '-', '')
+			, NOR_RCV = #{norRcv}
+			, NOR_REASON_CD = #{norReasonCd}
+			, NOR_NM = #{norNm}
+			, NOR_CONT = #{norCont}
+			, ENQ_FR_DT = REPLACE(#{enqFrDt}, '-', '')
+			, ENQ_TO_DT = REPLACE(#{enqToDt}, '-', '')
+			, ENQ_NM = #{enqNm}
+			, ENQ_PLACE = #{enqPlace}
+			, ENQ_DOC_DT = REPLACE(#{enqDocDt}, '-', '')
+			, REAL_AMT = REPLACE(#{realAmt}, ',', '')
+			, ENQ_CONT1 = #{enqCont1}
+			, ENQ_CONT2 = #{enqCont2}
+			, ENQ_CONT4 = #{enqCont4}
+			, ENQ_CONT5 = #{enqCont5}
+			, ACC_END_DT = REPLACE(#{accEndDt}, '-', '')
+			, CASE_NM = #{caseNm}
+			, SEST_CD = #{sestCd}
+			, DOC_DT = REPLACE(#{docDt}, '-', '')
+			, SEST_DT = REPLACE(#{sestDt}, '-', '')
+			, SEST_AMT = REPLACE(#{sestAmt}, ',', '')
+			, AGENCY_NM = #{agencyNm}
+			, CAN_CD = #{canCd}
+			, CREDITOR = #{creditor}
+			, CLAI_CONT = #{claiCont}
+			, SEST_CONT = #{sestCont}
+			, PROG_CONT = #{progCont}
+			, BASE_CONT = #{baseCont}
+			, REG_DTM = SYSDATE
+			, REG_NM = #{regNm}
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{modNm}
+			, ACC_INVEST = #{accInvest}
+			, PROP_INVEST = #{propInvest}
+			, ACC_PLAN = #{accPlan}
+			, INVEST_AMT = REPLACE(#{investAmt}, ',', '')
+	</update>
+
+	<!-- 업무정지 삭제 처리 -->
+	<delete id="deleteMembSusp" parameterType="Map"  >
+		/* MembSuspMapper.deleteMembSusp */
+		DELETE FROM AC_LD_ACCIDENT
+	</delete>
+
+</mapper>

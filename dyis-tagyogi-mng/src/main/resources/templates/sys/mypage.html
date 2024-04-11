@@ -1,0 +1,403 @@
+<!--
+   파일정보 : sys/mypage.html
+   파일명 : mypage
+   업무명 : 관리자 마이페이지
+   생성자 : 윤가영
+   생성일 : 2023.09.11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+   <body>
+      <script th:inline="javascript">
+         /*<![CDATA[*/
+         var codeList = /*[[${codeList}]]*/; //공통코드
+		 var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+		 var gridOptList = []; //그리드옵션
+		 var rowData = {}; //선택된 행
+         var themeOption = window.localStorage.getItem('mainTheme');
+
+         //화면 초기화(게시판정보 조회)
+         $(document).ready(function(){
+
+			//정보변경 컨트롤
+			$("#uptBtn").click(function(){
+				$("#canBtn, #saveBtn").show();
+				$("#modInfo").find('input').prop("readonly", false);
+			});
+
+			$("#canBtn").click(function(){
+				$("#canBtn, #saveBtn").hide();
+				$("#modInfo").find('input').val('');
+				$("#modInfo").find('input').prop("readonly", true);
+			});
+
+			console.log(themeOption);
+			console.log($("#themeWrap input:radio[value='" + themeOption + "']"));
+			//테마 세팅 (로컬스토리지에서 get 한 값)
+			if(themeOption !== "" || themeOption !== undefined){
+				$('#themeWrap input:radio[value='+themeOption +']').attr("checked",true);
+			}else {
+				$("#themeWrap input:radio[value='theme1']").attr("checked",true);
+			}
+
+			//IBsheet 초기화
+			com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+			//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+		    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+		    //console.log(sheetIvntColat);
+
+		    //시트 생성 이후
+		    IBSheet.onRenderFirstFinishAll = function(obj){
+				fnSearchGrid(); //조회 호출
+			};
+
+			/////////////////////sheet 이벤트 시작 /////////////////////////////////
+
+			//sheetDiv 원클릭 처리
+			sheet.bind("onAfterClick" , function(obj) { //원클릭
+				if(obj.kind === "Filter") return;
+				rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+				var val = rowData.memoSeq;
+				console.log(val);
+				com.dialpopupOpen("업무메모 상세", "/index/pageCall.do?menuCd=1070724&memoSeq="+val, "800", "500"); //menuPage=/memb/popupSearchCons
+
+			});
+			/////////////////////sheet 이벤트 시작 /////////////////////////////////
+
+			//개인정보조회
+            fnSearch();
+         });
+
+		//현황 조회 (개인정보조회)
+		var fnSearch = function(){
+			//param = JSON.stringify($("#serchFrm").serializeObject());
+			param = {};
+			obj = {url:"/empl/selectEmpl.do", param:param, formId:"serch", callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+		};
+
+		//조회 콜백 (개인정보조회)
+		var fnSearchCallBack = function(resData){
+			//resData.data.regDt = com.fnDateFormat(resData.data.regDt,'-')
+			com.fnSetKeyVal(resData.data);
+		}
+
+		//업무메모 그리드 조회
+		var fnSearchGrid = function(){
+			param = JSON.stringify($("#serchFrm").serializeObject());
+			com.fnIbsSearch("/com/selectUserMemoList.do", param, sheet); //param, sheetId 생략 가능
+		}
+
+		//새비밀번호 확인 체크
+		var fnChkPw = function(){
+			var pw1 = $("#newPw").val();
+			var pw2 = $("#newPwChk").val();
+
+			if(pw1 === "" && pw2 === ""){
+				$("#noTxt, #yesTxt").hide();
+				return;
+			}
+
+			if(pw1 !== pw2){
+				$("#noTxt").show();
+				$("#yesTxt").hide();
+			}else{
+				$("#yesTxt").show();
+				$("#noTxt").hide();
+			}
+		}
+
+		//저장
+		var fnSave = function(){
+			param = {};
+			//공백제거
+			$.each($("#modInfo").find('input'), function(idx, item){
+				var getval = $(item).val().replace(/\s/g, "");
+				$(item).val(getval);
+			});
+
+			//비밀번호가 공백이아니라면, 새비밀번호 확인과 같은지 확인필요
+			if($("#newPw").val() !== ""){
+				var pw1 = $("#newPw").val();
+				var pw2 = $("#newPwChk").val();
+
+				if(pw1.length < 8) {
+					alert('비밀번호는 최소 8자리여야합니다');
+					$("#newPw").focus();
+					return;
+				}
+
+				let regPass = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,25}$/;
+				 if(!regPass.test(pw1)){
+					 alert('영문, 숫자, 특수기호 조합으로 8~20자리로 입력해주세요');
+					 return;
+				 }
+
+				if(pw1 !== pw2) {
+					alert('비밀번호가 불일치 합니다.');
+					$("#newPwChk").val('');
+					$("#newPwChk").focus();
+					return;
+				}
+
+				//비밀번호
+				param.userPwNew = $("#newPw").val();
+			}
+
+			//전화번호
+			if($("#telNo").val() !== "")    param.userTel = $("#telNo").val();
+			//휴대폰
+			if($("#cellNo").val() !== "")   param.userCell = $("#cellNo").val();
+			//이메일
+			if($("#newEmail").val() !== "") param.userEmail = $("#newEmail").val();
+
+			console.log(param);
+			obj = {url:"/empl/updateMyInfo.do", param:param, formId:"serch", callBack:fnsaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+
+
+		}
+
+		//저장 콜백
+		var fnsaveCallBack = function(resData){
+			window.location.reload();
+		}
+
+		//테마변경
+		var fnSetTheme = function(mod){
+
+			if(!confirm("테마적용을 위해 관리자시스템이 재로드 되어 작성하시던 데이터가 초기화 될 수 있습니다.\n테마를 적용하시겠습니까?")){
+				return;
+			}
+
+			//초기화시 로컬스토리지 테마키값 제거
+			if(mod === "reset") {
+				window.localStorage.removeItem('mainTheme');
+				//재세팅
+				window.localStorage.setItem('mainTheme', 'theme1');
+				//리로드
+				top.location.reload();
+				
+				return;
+			}
+
+			var value = $("#themeWrap input:radio[name=theme]:checked").val();
+
+			//초기화
+			window.localStorage.removeItem('mainTheme');
+
+			//재세팅
+			window.localStorage.setItem('mainTheme', value);
+
+			//리로드
+			top.location.reload();
+		}
+
+      /*]]>*/
+
+      </script>
+
+      <!-- 콘텐츠 시작 -->
+      <div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="btn-collapse close"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="" id="" value=""/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+
+						<!--개인정보 : s-->
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">개인정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:150px;">
+									<col style="">
+								</colgroup>
+								<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>직원명</th>
+										<td colspan="3"><div id="ele_userNm"></div></td>
+										<th>아이디</th>
+										<td colspan="3"><div id="ele_userId"></div></td>
+									</tr>
+									<tr>
+										<th>부서</th>
+										<td colspan="3"><div id="ele_deptNm"></div></td>
+										<th>직위</th>
+										<td colspan="3">
+											<div id="ele_posNm"></div>
+										</td>
+									</tr>
+									<tr>
+										<th>담당업무</th>
+										<td colspan="3"><div id="ele_business"></div></td>
+										<th>재직상태</th>
+										<td colspan="3"><div id="ele_userStatNm"></div></td>
+									</tr>
+									<tr>
+										<th>전화번호</th>
+										<td colspan="3"><div id="ele_userTel"></div></td>
+										<th>휴대전화번호</th>
+										<td colspan="3"><div id="ele_userCell"></div></td>
+									</tr>
+									<tr>
+										<th>이메일</th>
+										<td colspan="7"><div id="ele_userEmail"></div></td>
+									</tr>
+									<tr>
+										<th>근무시작일자</th>
+										<td colspan="3"><div id="ele_workBegDt"></div></td>
+										<th>근무종료일자</th>
+										<td colspan="3"><div id="ele_workEndDt"></div></td>
+									</tr>
+									<tr>
+										<th>비고</th>
+										<td colspan="7"><div id="ele_remark"></div></td>
+									</tr>
+								</tbody>
+							</table>
+						</div><!-- //wrapbox-->
+						<!--개인정보 : e-->
+
+						<!--개인정보변경 : s-->
+						<div class="wrapBox">
+							<section class="area mt15">
+								<div class="fl">
+									<h4 class="title">정보변경 <span style="font-size: 11px;">(변경을 원하는 항목을 입력하신 후 저장해주세요)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:"  id="uptBtn" class="btn small style08">수정</button>
+									<button type="button" onclick="javascript:"  id="canBtn" class="btn small style08" style="display:none;">취소</button>
+									<button type="button" onclick="javascript:fnSave();" id="saveBtn" class="btn small style03" style="display:none;">저장</button>
+								</div>
+							</section>
+							<table id="modInfo" class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+									<col style="width:100px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>새비밀번호</th>
+										<td colspan="3">
+											<input type="password" name="newPw" id="newPw" title="새비밀번호" style="width:150px" maxlength="20" onblur="fnChkPw();" autocomplete="off" readonly />
+										</td>
+										<th>새비밀번호 확인</th>
+										<td colspan="3">
+											<input type="password" name="newPwChk" id="newPwChk" title="새비밀번호확인" style="width:150px" onkeyup="fnChkPw();" maxlength="20" autocomplete="off" readonly/>
+											<span id="noTxt" style="display: none; font-size: 11px; color: #ff6600;">(비밀번호 불일치)</span>
+											<span id="yesTxt" style="display: none; font-size: 11px; color: green;">(비밀번호 일치)</span>
+										</td>
+									</tr>
+									<tr>
+										<th>전화번호</th>
+										<td colspan="3">
+											<input type="search" name="telNo" id="telNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:150px" readonly>
+										</td>
+										<th>휴대전화번호</th>
+										<td colspan="3">
+											<input type="search" name="cellNo" id="cellNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:150px" readonly>
+										</td>
+									</tr>
+									<tr>
+										<th>이메일</th>
+										<td colspan="7">
+											<input type="search" name="newEmail" id="newEmail" size="25" maxlength="50" value="" style="width:270px;" readonly>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div><!-- //wrapbox-->
+						<!--개인정보변경 : e-->
+
+						<!-- 테마변경 : s-->
+						<div class="wrapBox">
+							<section class="area mt15">
+								<div class="fl">
+									<h4 class="title">테마변경 <span style="font-size: 11px;">(원하는 테마를 클릭해주세요)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:fnSetTheme();" id="" class="btn small style03">적용</button>
+									<button type="button" onclick="javascript:fnSetTheme('reset');" id="" class="btn small style08">초기화</button>
+								</div>
+							</section>
+							<div id="themeWrap" style="border: 1px solid #ccc;">
+								<ul>
+									<li><label><input type="radio" name="theme" id="theme1" value="theme1"/><span>기본(네이비)</span></label></li>
+									<li><label><input type="radio" name="theme" id="theme2" value="theme2"/><span>그린</span></label></li>
+									<li><label><input type="radio" name="theme" id="theme3" value="theme3"/><span>브라운</span></label></li>
+								</ul>
+							</div>
+						</div><!-- //wrapbox-->
+						<!-- 테마변경 : e-->
+
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+
+						<!--업무메모장 : s-->
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">업무메모장</h4>
+								</div>
+							</section>
+							<div class="mt5">
+						    	<div id="sheetDiv" style="width:100%;height:260px"></div>
+							</div>
+						</div><!-- //wrapbox-->
+						<!--업무메모장 : e-->
+
+
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+   </body>
+</html>

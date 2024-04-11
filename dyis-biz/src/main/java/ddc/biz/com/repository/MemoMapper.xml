@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.com.repository.MemoMapper"> 
+
+	<!-- memo 정보 조회 --> 
+	<select id="selectMemoList" parameterType="Map" resultType="camelMap"> 
+		/* MemoMapper.selectMemoList */ 
+		SELECT 
+			USER_ID 
+			, MEMO_SEQ 
+			, MEMO_CONT 
+			, DEL_YN 
+			, REG_DTM 
+		  FROM CM_MEMO 
+		<where> 
+		<if test="#{userId} != null and #{userId}  != ''"> 
+		AND USER_ID = #{userId} 
+		</if> 
+		<if test="#{memoSeq} != null and #{memoSeq}  != ''"> 
+		AND MEMO_SEQ = #{memoSeq} 
+		</if> 
+		</where> 
+		ORDER BY USER_ID DESC, MEMO_SEQ DESC
+	</select> 
+
+	<!-- memo 상세 조회 --> 
+	<select id="selectMemo" parameterType="Map" resultType="camelMap"> 
+		/* MemoMapper.selectMemo*/ 
+		SELECT 
+			USER_ID 
+			, MEMO_SEQ 
+			, MEMO_CONT 
+			, DEL_YN 
+			, REG_DTM 
+		  FROM CM_MEMO 
+		<where> 
+		<if test="#{userId} != null and #{userId}  != ''"> 
+		AND USER_ID = #{userId} 
+		</if> 
+		<if test="#{memoSeq} != null and #{memoSeq}  != ''"> 
+		AND MEMO_SEQ = #{memoSeq} 
+		</if> 
+		</where> 
+	</select> 
+
+	<!-- memo 등록 처리 --> 
+	<insert id="insertMemo" parameterType="Map"  > 
+		/* MemoMapper.insertMemo */ 
+		INSERT INTO CM_MEMO ( 
+			USER_ID 
+			, MEMO_SEQ 
+			, MEMO_CONT 
+			, DEL_YN 
+			, REG_DTM 
+		) VALUES ( 
+			#{userId} 
+			, #{memoSeq} 
+			, #{memoCont} 
+			, #{delYn} 
+			, SYSDATE 
+		) 
+	</insert> 
+
+	<!-- memo 수정 처리 --> 
+	<update id="updateMemo" parameterType="Map"  > 
+		/* MemoMapper.updateMemo */ 
+		UPDATE CM_MEMO 
+		SET 
+			USER_ID = #{userId} 
+			, MEMO_SEQ = #{memoSeq} 
+			, MEMO_CONT = #{memoCont} 
+			, DEL_YN = #{delYn} 
+			, REG_DTM = #{regDtm} 
+		WHERE USER_ID = #{userId} 
+		  AND MEMO_SEQ = #{memoSeq} 
+	</update> 
+
+	<!-- memo 삭제 처리 --> 
+	<delete id="deleteMemo" parameterType="Map"  > 
+		/* MemoMapper.deleteMemo */ 
+		DELETE FROM CM_MEMO 
+		WHERE USER_ID = #{userId} 
+		  AND MEMO_SEQ = #{memoSeq} 
+	</delete> 
+
+</mapper>

@@ -1,0 +1,209 @@
+<!--
+	파일정보 : sample3List.html
+	파일명 : sample현황
+	업무명 : jobContent 현황 등록 폼
+	생성자 : DEV
+	생성일 : 1900.01.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//검색 영역 처리
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//INPUT 설정
+				//fnCodeSelectBox("EXM010", "areaCd", 2, "" ); //
+				//fnCodeSelectBox("EXM040", "sExamKind", 1, "${paramMap.sExamKind}" ); //
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheet 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+				 	//임의 세팅 필요한 경우
+				 	$("#text1").val(rowData["cols1"]);
+				 	$("#text2").val(rowData["cols2"]);
+				 	$("#text3").val(rowData["cols3"]);
+				 	$("#text3").val(rowData["cols4"]);
+
+				 	//수정버튼
+				 	$("#btnUpt").attr("class", "btn style08");
+				 	$("#btnCan").attr("class", "btn style08");
+
+				});
+
+				//초기버튼 설정
+				$("#procFrm button").prop("disabled", true);
+				$("#btnIns").attr("disabled", false);
+
+			});
+
+			//현황 조회
+			var fnSearch = function(){
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				//com.fnIbsSearch("/sample/selectSampleList.do", param); //param, sheetId 생략 가능
+				var DATA = [
+				    {"cols1": "홍길동", "cols2": "11111", "cols3": "test1", "cols4": "10", "cols5": "20230101"},
+				    {"cols1": "임꺽정", "cols2": "22222", "cols3": "test2", "cols4": "20", "cols5": "20230301"}
+				];
+				sheet.addRow({"next":sheet.getFirstRow(), "init":{"cols1": "홍길동", "cols2": "11111", "cols3": "test1", "cols4": "10", "cols5": "20230101"}});
+			};
+
+
+			//신규버튼
+			var fnIns = function(){
+				$("#procFrm")[0].reset();
+
+				$("#procFrm input").prop("disabled", false);
+				$("#procFrm").prop("disabled", false);
+
+				//버튼활성화
+				$("#btnCan").attr("disabled", false);
+				$("#btnSave").attr("disabled", false);
+				$("#btnCan").attr("class", "btn style08");
+			};
+
+			//수정버튼
+			var fnUpt = function(){
+
+				//입력폼 활성화 처리
+				$("#procFrm input").prop("disabled", false);
+				$("#procFrm").prop("disabled", false);
+
+				//기본값 비활성화 처리
+				//$("#keyVal").attr("disabled", true);
+
+			};
+
+			//취소버튼
+			var fnCan = function(){
+				//선택 row 또는 키 값이 있을경우, 비활성화 후 정보 세팅
+
+				//버튼처리
+			 	$("#btnUpt").attr("class", "btn style06");
+			 	$("#btnCan").attr("class", "btn style06");
+			 	$("#procFrm button").prop("disabled", true);
+				$("#btnIns").attr("disabled", false);
+
+			};
+
+			//저장버튼
+			var fnSave = function(){
+				//신규, 수정 확인
+				var msg = "저장";
+				if(confirm(msg + " 하시겠습니까?")){
+
+
+				}
+			};
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div th:insert="~{/fragments/subTitle}"></div>
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:250px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" >
+								<input type="search" name="sMembNm" id="sMembNm" style="width:150px;"  maxlength="40" >
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+
+				<div class="layer-flex mt20">
+					<!-- 내용 좌측 부분 -->
+					<div class="" style="width:49%">
+						<div class="mt10">
+					    	<div id="sheetDiv" style="width:100%;height:500px"></div>
+						</div>
+					</div>
+					<!-- 내용 좌측 부분 끝 -->
+					<!-- 내용 우측 부분 -->
+					<div class="" style="width:49%">
+						<form name="procFrm" id="procFrm" method="post" onSubmit="return false">
+						<!-- 상단 부분 -->
+						<section class="area">
+							<div class="fr">
+								<button id="btnIns" onclick="javascript:fnIns();" class="btn style08">신규</button>
+								<button id="btnUpt" onclick="javascript:fnUpt();" class="btn style06">수정</button>
+								<button id="btnCan" onclick="javascript:fnCan();" class="btn style06">취소</button>
+								<button id="btnSave" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+						<!-- 상단 부분 끝 -->
+						<table class="tbl mt10" >
+							<colgroup>
+								<col style="width:100px;">
+								<col style="">
+								<col style="width:100px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>내용1</th>
+									<td colspan="3">
+										<input type="search" name="text1" id="text1" title="내용1" style="width:200px;" disabled>
+									</td>
+								</tr>
+								<tr>
+									<th>내용2</th>
+									<td colspan="3">
+										<input type="search" name="text2" id="text2" title="내용2" style="width:200px;" disabled>
+									</td>
+								</tr>
+								<tr>
+									<th>내용3</th>
+									<td colspan="3">
+										<input type="search" name="text3" id="text3" title="내용3" style="width:200px;" disabled>
+									</td>
+								</tr>
+								<tr>
+									<th>내용4</th>
+									<td colspan="3">
+										<input type="search" name="text4" id="text4" title="내용4" style="width:200px;" disabled>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						</form>
+					</div>
+					<!-- 내용 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

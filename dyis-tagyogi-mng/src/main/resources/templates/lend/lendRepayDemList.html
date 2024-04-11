@@ -1,0 +1,183 @@
+<!--
+	파일정보 : lend/lendList.html
+	파일명 : lend현황
+	업무명 : 대출독촉 현황
+	생성자 : 김대성
+	생성일 : 2023-07-27
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//초기화
+				$("#sRepayPreStaDt").val(com.fnDateGet(/*[[${today}]]*/, -60)); //시작일설정
+				$("#sRepayPreEndDt").val(com.fnDateGet(/*[[${today}]]*/, 60)); //종료일설정
+
+
+				//코드값 처리
+				com.fnCodeSelectBox("LD01", "sLendType", 2, ""); //대출종류 전체
+				com.fnCodeSelectBox("LD04", "sLendStat", 2, ""); //대출상태 전체
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//대출현황 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+
+					if(obj.col === "notiPubDt" || obj.col === "demPubDt1" || obj.col === "demPubDt2" || obj.col === "demPubDt3"){
+					//	alert(rowData.demPubDt1);
+						fnReport(rowData, obj.col);
+					}
+				});
+
+				//sheetDiv 더블클릭 처리
+				sheet.bind("onDblClick", function(obj){ //더블클릭
+					if(obj.kind === "Filter") return;
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					if(obj.col !== "notiPubDt" || obj.col !== "demPubDt1" || obj.col !== "demPubDt2" || obj.col !== "demPubDt3"){
+						menuCd = "1040207";
+						param = {menuCd:menuCd, paramMap:{
+												contrNo:rowData.contrNo
+												, lendNo:rowData.lendNo
+												, lendType:rowData.lendType
+												, atthType:/*[[${menuInfo.atthType}]]*/ } };
+						parent.menuOpen(param);
+					}
+				});
+			});
+
+
+			var fnSearch = function(){
+				
+				param = JSON.stringify($("#serchFrm").serializeObject());
+				com.fnIbsSearch("/lend/selectLendList.do", param); //param, sheetId 생략 가능
+
+			};
+
+			//검색 초기화
+			var fnReset = function(){
+				com.fnSerchInit("#serchFrm");
+				$("#sRepayPreStaDt").val(com.fnDateGet(/*[[${today}]]*/, -60)); //시작일설정
+				$("#sRepayPreEndDt").val(com.fnDateGet(/*[[${today}]]*/, 60)); //종료일설정
+
+				fnSearch();
+			};
+
+			var fnReport = function(rowData, col){
+			//	alert(col);
+			//	console.log(rowData);
+				var ozName = "";
+				var rtnProc = "lend";
+				var dem = "";
+				var pubDt = /*[[${today}]]*/;
+
+				ozName = "LD_대출금_상환공문";
+				if(col === "notiPubDt"){
+					ozName = "LD_대출금_상환일_예고통지서";
+				}else if(col === "demPubDt1"){
+					dem = "1차";
+				}else if(col === "demPubDt2"){
+					dem = "2차";
+				}else if(col === "demPubDt3"){
+					dem = "3차";
+				}
+
+			    var nameArr = new Array("memb_no", "bas_dt", "pub_dt", "purpose", "st_yn","conf_cd", "conf_no","lend_no","dem");
+			    var valueArr = new Array(rowData.membNo, com.fnDateFormat(rowData.basDt), pubDt, rowData.purpose, "Y", rowData.confCd, rowData.confNo, rowData.lendNo, dem);
+
+			        //오즈파일명, 변수명,     변수값,  출력수, pdf저장여부, 결과처리여부
+			    ozLoad(ozName, nameArr, valueArr, 1, "pdf", rtnProc);
+			};
+
+			/*]]>*/
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="lendNo" id="lendNo" value=""/>
+				<input type="hidden" name="membNo" id="membNo" value=""/>
+				<input type="hidden" name="sSerchType" id="sSerchType" value="D"> <!--sSerchType R:신청, I:발급, G:현황, C:해제, E:만기, F:보증료현황 D:독촉현황 -->
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>조합원명</dt>
+							<dd style="width:250px;">
+								<input type="search" name="sMembNo" id="sMembNo" style="width:60px;" maxlength="4" onkeyup="com.fnOnlyNum(this);">
+								<input type="search" name="sMembNm" id="sMembNm" style="width:150px;" maxlength="40">
+								<button type="button" class="btn icoSearch" onclick="com.fnMembInfo()">검색</button>
+							</dd>
+							<dt>대출상태</dt>
+							<dd style="width:150px;">
+								<select name="sLendStat" id="sLendStat" style="width:100px;"></select>
+							</dd>
+						</dl>
+					</div>
+					<div class="row">
+						<dl>
+							<dt>상환기한</dt>
+							<dd style="width:260px;">
+								<input type="search" name="sRepayPreStaDt" id="sRepayPreStaDt" title="상환시작일" maxlength="10" style="width:100px" value="" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sRepayPreStaDt', 'yyyy-mm-dd','sRepayPreEndDt', 1)" />
+	                        	<input type="search" name="sRepayPreEndDt" id="sRepayPreEndDt" title="상환종료일" maxlength="10" style="width:100px" value=""onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+	                        	<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'sRepayPreEndDt', 'yyyy-mm-dd', 'sRepayPreStaDt', 2)" />
+	                     	
+							</dd>
+							<dt>대출종류</dt>
+							<dd style="width:200px;">
+								<select name="sLendType" id="sLendType" style="width:150px;"></select>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnReset();" class="btn reset">초기화</button>
+					</div>
+				</section>
+				</form>
+				<!-- 검색 부분 끝 -->
+				<div class="layer-flex mt10">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width: 100%">
+						<!-- 그리드 상단 부분 -->
+						<!-- 그리드 상단 부분 끝 -->
+						<div class="">
+							<section class="area">
+								<h4 class="title fl">대출현황</h4>
+
+								<div class="fr">
+									<button type="button" onclick="javascript:fnExcel();" class="btn small style04">엑셀</button>
+								</div>
+							</section>
+							<div class="mt5">
+					    		<div id="sheetDiv" style="width:100%;height:550px"></div>
+					    	</div>
+						</div>
+					</div>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.memb.repository.MembStatMapper">
+
+	<!-- 조합원현황 장르별 구분 조회 -->
+	<select id="selectMembStatDesc" parameterType="Map" resultType="camelMap">
+		/* MembStatMapper.selectMembStatDesc */
+
+		SELECT M.MAIN_BUSS_CD
+             , F_GET_CD_NM('MB02', M.MAIN_BUSS_CD) MAIN_BUSS_NM
+             <if test='sAllYn != "Y"'>
+			 , SUM(B.MEMB_CNT) ALL_CNT
+			 </if>
+			 <if test='sAllYn == "Y"'>
+			 , COUNT(M.MEMB_NO) ALL_CNT
+			 </if>
+             , SUM(B.INVEST_NUM) INVEST_NUM
+          FROM MB_MASTER M
+             , (
+                 SELECT MEMB_NO
+                      , (CASE WHEN INVEST_NUM > 0 OR INVEST_VIEW_YN = 'Y' THEN 1 ELSE 0 END) MEMB_CNT
+                      , INVEST_NUM
+                  FROM (
+                         SELECT MEMB_NO
+                              , SUM(INVEST_NUM) INVEST_NUM
+                              , INVEST_VIEW_YN
+                           FROM (
+                                  SELECT MEMB_NO
+                                       , SUM(INVEST_NUM) INVEST_NUM
+                                       , 'N' INVEST_VIEW_YN
+                                    FROM IV_MASTER
+                                   WHERE INVEST_CD IN ('10','11')
+                                     AND INVEST_NUM &gt; 0
+                            		<if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+									 AND INVEST_DT &gt;= REPLACE(#{sMembStatStaDt}, '-', '')
+									</if>
+									<if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+									 AND INVEST_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+									</if>
+                                   GROUP BY MEMB_NO
+
+                                   UNION ALL
+
+                                  SELECT TRANS_MEMB_NO MEMB_NO
+                                       , SUM(TRANS_NUM) * -1 INVEST_NUM
+                                       , 'N' INVEST_VIEW_YN
+                                    FROM IV_TRANS
+                                   	<where>
+										<if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+										  AND TRANS_DT &gt;= REPLACE(#{sMembStatStaDt}, '-', '')
+										</if>
+										<if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+										  AND TRANS_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+										</if>
+									</where>
+                                   GROUP BY TRANS_MEMB_NO
+
+                                   UNION ALL
+
+                                  SELECT TAKE_MEMB_NO MEMB_NO
+                                       , SUM(TRANS_NUM) INVEST_NUM
+                                       , 'N' INVEST_VIEW_YN
+                                    FROM IV_TRANS
+                                   	<where>
+										<if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+										  AND TRANS_DT &gt;= REPLACE(#{sMembStatStaDt}, '-', '')
+										</if>
+										<if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+										  AND TRANS_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+										</if>
+									</where>
+                                   GROUP BY TAKE_MEMB_NO
+
+                                   UNION ALL
+
+                                  SELECT MEMB_NO
+                                       , 0 INVEST_NUM
+                                       , INVEST_VIEW_YN
+                                    FROM MB_MASTER
+                                   WHERE INVEST_VIEW_YN = 'Y'
+                                    <if test='sAllYn != "Y"'>
+									  AND MEMB_STAT != '90'
+									</if>
+							        <if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+									  AND JOIN_DT &gt;= REPLACE(#{sMembStatStaDt}, '-', '')
+									</if>
+									<if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+									  AND JOIN_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+									</if>
+                                )
+                          GROUP BY MEMB_NO, INVEST_VIEW_YN
+                       )
+               ) B
+         WHERE B.MEMB_NO(+) = M.MEMB_NO
+           AND M.MAIN_BUSS_CD IS NOT NULL
+           	<if test="sFromNum != null and sFromNum != ''">
+		   AND INVEST_NUM &gt;= REPLACE(#{sFromNum}, '-', '')
+		    </if>
+		    <if test="sToNum != null and sToNum != ''">
+		   AND INVEST_NUM &lt;= REPLACE(#{sToNum}, '-', '')
+		    </if>
+         GROUP BY M.MAIN_BUSS_CD
+         ORDER BY M.MAIN_BUSS_CD
+	</select>
+
+	<!-- 조합원현황 리스트 조회 -->
+	<select id="selectMembStatList" parameterType="Map" resultType="camelMap">
+		/* MembStatMapper.selectMembStatList */
+
+		SELECT M.MEMB_NO
+             , M.MEMB_NM
+             , M.CEO_NM
+             , M.TEL_NO
+             , SUM(B.INVEST_NUM) INVEST_NUM
+          FROM MB_MASTER M
+             , (
+                 SELECT MEMB_NO
+                      , (CASE WHEN INVEST_NUM > 0 THEN 1 ELSE 0 END) MEMB_CNT
+                      , INVEST_NUM
+                  FROM (
+                         SELECT MEMB_NO
+                              , SUM(INVEST_NUM) INVEST_NUM
+                           FROM (
+                                  SELECT MEMB_NO
+                                       , SUM(INVEST_NUM) INVEST_NUM
+                                    FROM IV_MASTER
+                                   WHERE INVEST_CD IN ('10','11')
+                                     AND INVEST_NUM &gt; 0
+                                    <if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+									 AND INVEST_DT &gt;= REPLACE(#{membStatStaDt}, '-', '')
+									</if>
+									<if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+									 AND INVEST_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+									</if>
+                                   GROUP BY MEMB_NO
+
+                                   UNION ALL
+
+                                  SELECT TRANS_MEMB_NO MEMB_NO
+                                       , SUM(TRANS_NUM) * -1 INVEST_NUM
+                                    FROM IV_TRANS
+                                   <where>
+									<if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+									  AND TRANS_DT &gt;= REPLACE(#{sMembStatStaDt}, '-', '')
+									</if>
+									<if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+									  AND TRANS_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+									</if>
+									</where>
+                                   GROUP BY TRANS_MEMB_NO
+
+                                   UNION ALL
+
+                                  SELECT TAKE_MEMB_NO MEMB_NO
+                                       , SUM(TRANS_NUM) INVEST_NUM
+                                    FROM IV_TRANS
+                                   <where>
+									<if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+									  AND TRANS_DT &gt;= REPLACE(#{sMembStatStaDt}, '-', '')
+									</if>
+									<if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+									  AND TRANS_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+									</if>
+									</where>
+                                   GROUP BY TAKE_MEMB_NO
+
+                                   UNION ALL
+
+                                  SELECT MEMB_NO
+                                       , 0 INVEST_NUM
+                                    FROM MB_MASTER
+                                   WHERE INVEST_VIEW_YN = 'Y'
+                                     <if test='sAllYn != "Y"'>
+                                     AND MEMB_STAT != '90'
+                                     </if>
+                                     <if test="sMembStatStaDt != null and sMembStatStaDt != ''">
+									 AND JOIN_DT &gt;= REPLACE(#{sMembStatStaDt}, '-', '')
+									 </if>
+									 <if test="sMembStatEndDt != null and sMembStatEndDt != ''">
+									 AND JOIN_DT &lt;= REPLACE(#{sMembStatEndDt}, '-', '')
+									 </if>
+                                )
+                          GROUP BY MEMB_NO
+                       )
+               ) B
+         WHERE B.MEMB_NO = M.MEMB_NO
+           AND M.MAIN_BUSS_CD IS NOT NULL
+           	<if test="sMainBussCd != null and sMainBussCd != ''">
+		   AND M.MAIN_BUSS_CD = #{sMainBussCd}
+			</if>
+           	<if test="sFromNum != null and sFromNum != ''">
+		   AND INVEST_NUM &gt;= REPLACE(#{sFromNum}, '-', '')
+			</if>
+			<if test="sToNum != null and sToNum != ''">
+		   AND INVEST_NUM &lt;= REPLACE(#{sToNum}, '-', '')
+			</if>
+         GROUP BY M.MEMB_NO, M.MEMB_NM, M.CEO_NM, M.TEL_NO
+         <if test='sAllYn != "Y"'>
+         HAVING SUM(B.MEMB_CNT) > 0 OR MAX(INVEST_VIEW_YN) = 'Y'
+         </if>
+         ORDER BY M.MEMB_NO
+	</select>
+
+	<!-- 콘텐츠공제조합 출자좌수 조회(조합원현황) -->
+	<select id="selectKocfcInvtNum" parameterType="Map" resultType="camelMap">
+		/* MembStatMapper.selectKocfcInvtNum */
+
+		SELECT F_GET_PATTERN( F_GET_BAS_INVEST_NUM(0, NVL(REPLACE(#{sMembStatEndDt}, '-', ''), SYSDATE) ), 'AMT') KOCFC_INVEST_NUM
+ 		  FROM DUAL
+	</select>
+
+</mapper>

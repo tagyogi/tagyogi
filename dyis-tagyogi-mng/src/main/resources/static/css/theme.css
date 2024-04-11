@@ -1,0 +1,59 @@
+@charset "utf-8";
+:root {
+	--color-theme-main: #134aa9;
+	/*--color-news: #59b200;
+	--color-goods: #ff6600;
+	--color-basic2: #4d8eff;
+	--color-red: #d96067; */
+}
+
+/************************ 테마 변경 - 제일 하단에 위치 ***************************/
+
+/** theme2 : 그린 #3F7C35*********************/
+/*body.theme1 .container .lnbArea {background-color: var(--color-theme-main);}*/
+
+body.theme2 .container .lnbArea {background-color: #3F7C35;}
+body.theme2 #rightSidebar {border: 2px solid #3F7C35;}
+body.theme2 #rightSidebar ul.right-box > li > p {background-color: #3F7C35;}
+
+
+/** theme3 : 브라운 #8F5A37*********************/
+body.theme3 .container .lnbArea {background-color: #8F5A37;}
+body.theme3 #rightSidebar {border: 2px solid #8F5A37;}
+body.theme3 #rightSidebar ul.right-box > li > p {background-color: #8F5A37;}
+
+
+/*테마 적용 공통*/
+.IBCellHeader {
+	background-color: #ededed;
+	border-color: #aaa;
+}
+
+.IBSolidRow {
+	background-color: #f9f8f8 !important;
+}
+.IBInfoRow, .IBInfoRow * {
+	background: #eee !important;
+}
+
+.IBColorAlternate {
+	background-color: white;
+}
+.IBColorDefault {
+	background-color: #fff !important;
+}
+
+.IBColorReadOnly {
+	background-color: rgba(255,255,255,1);
+}
+.IBHeaderText {
+	color: #333;
+	font-weight: 700;
+}
+.IBColorChangedCell {
+	background-color: #FAFAFA;
+}
+
+.IBColorHoveredCellHeader {
+	background-color: rgba(221,221,221,1);
+}

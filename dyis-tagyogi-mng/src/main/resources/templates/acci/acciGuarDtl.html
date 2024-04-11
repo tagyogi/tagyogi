@@ -1,0 +1,687 @@
+<!--
+	파일정보 : acciGuar/acciGuarIns.html
+	파일명 : acciGuar
+	업무명 : 보증사고상세 상세
+	생성자 : 최진호
+	생성일 : 2023-04-12
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<th:block th:layout="comjs">
+			<script th:src="@{/js/guarCom.js}"></script>
+		</th:block>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "AC07", gridNoList : "30105:30106:50106:50105:50107:50108:50109:50110"}
+			var docCds = ["AC", "AI","PI","GP","LP","CP","AN"]; //AC 사고개요, AI 사고조사, PI 재산정보,  GP공제금지급정보,  LP법적절차, CP 공제금배상(회수), AN 사고정상화
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+
+				//코드값 처리
+				//com.fnCodeSelectBox("AC07", "sAccStatCdNm", 1, ""); //선택
+				//com.fnCodeSelectBox("CM01", "payWay", 1, ""); //선택
+				//com.fnCodeSelectBox("CM02", "payBank", 1, ""); //선택
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#myUploadAC")); //기본
+				com.fnIbsUpload($("#myUploadAI")); //사고조사
+				com.fnIbsUpload($("#myUploadPI")); //재산조사
+				com.fnIbsUpload($("#myUploadGP")); //공제금지급
+				com.fnIbsUpload($("#myUploadLP")); //법적절차
+				com.fnIbsUpload($("#myUploadCP")); //공제금회수
+				com.fnIbsUpload($("#myUploadAN")); //사고정상화
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				gridOptList[2].Cfg.SearchMode = 2; // CLOB 행높이 조절을 위한 옵션 제외
+				gridOptList[4].Cfg.SearchMode = 2; // CLOB 행높이 조절을 위한 옵션 제외
+				gridOptList[5].Cfg.SearchMode = 2; // CLOB 행높이 조절을 위한 옵션 제외
+				gridOptList[7].Cfg.SearchMode = 2; // CLOB 행높이 조절을 위한 옵션 제외
+				
+				$.each(gridOptList[4].Cols, function(idx, item){
+					if(item.Name === "divNm" || item.Name === "chk" || item.Name === "bizNo" ){ //
+						item.Visible = "0"      
+					}
+					if(item.Name === "curSt" || item.Name === "preSt"){
+						//공통코드는 13개지만 asis 이미지 기준 7개만 있음(데이터도 그외는 없음)
+						item.Format = mctpCss
+					}
+				});
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheetSure", el: "sheetDivSure", options: gridOptList[0] });
+			    IBSheet.create({ id: "sheetMort", el: "sheetDivMort", options: gridOptList[1] });
+			    IBSheet.create({ id: "sheetEnq", el: "sheetDivEnq", options: gridOptList[2] });
+			    IBSheet.create({ id: "sheetDdc", el: "sheetDivDdc", options: gridOptList[3] }); //공제금지급
+			    IBSheet.create({ id: "sheetPrp", el: "sheetDivPrp", options: gridOptList[4] }); //재산조사
+			    IBSheet.create({ id: "sheetLaw", el: "sheetDivLaw", options: gridOptList[5] }); //법적절차
+			    IBSheet.create({ id: "sheetRcv", el: "sheetDivRcv", options: gridOptList[6] });
+			    IBSheet.create({ id: "sheetNor", el: "sheetDivNor", options: gridOptList[7] });
+			    
+			    //$("#offsetAmt").hide();
+			    //$("#balAmt").hide();
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //정보 조회
+				};
+				
+			});
+
+			var fnSearch = function(){
+				//상세정보 조회
+			    var membNo = /*[[${paramMap.membNo}]]*/;
+			    var guarNo = /*[[${paramMap.guarNo}]]*/;
+			    var contrNo = /*[[${paramMap.contrNo}]]*/;
+			    var accNo = /*[[${paramMap.accNo}]]*/;
+
+			    var param = {membNo : membNo, guarNo : guarNo, contrNo : contrNo, accNo : accNo};
+				obj = {url:"/acciGuar/selectAcciGuar.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+
+			//상세정보 조회 콜백
+			var fnSearchCallBack = function(resData){
+				//console.log(resData);
+
+				guarType = resData.guar.guarType;
+
+				var typeValue = guarType;
+				if(guarType === "31")	typeValue = "13";
+				if(guarType === "32")	typeValue = "12";
+				if(guarType === "33" || guarType === "34")	typeValue = "15";
+
+				com.fnSetKeyVal(resData.contr, "areaGuarContr");
+
+				$("#ele_limitAmt").text(resData.contr["limitAmt"+typeValue]);	//한도금액
+				$("#ele_useAmt").text(resData.contr["useAmt"+typeValue]);		//사용액
+				$("#ele_remainAmt").text(resData.contr["remainAmt"+typeValue]);	//가능액
+				$("#ele_guarBegDt").text(resData.guar["guarBegDt"]);	        //보증기간
+				$("#ele_guarExpDt").text(resData.guar["guarExpDt"]);	        //보증기간
+				$("#ele_orderNm").text(resData.guar["orderNm"]);	            //피공제기관
+				$("#ele_guarAmt").text(resData.guar["guarAmt"]);	            //보증금액
+
+				fnGuarContrViewSet(resData.guar.guarType, resData); //주계약정보 화면설정(상세) guar/comGuarDtl
+				com.fnSetKeyVal(resData.guar, "areaGuar"); //보증정보
+				com.fnSetKeyVal(resData.data); 			   //청구정보
+				com.fnSetKeyVal(resData.memb, "areaMemb"); //조합원정보
+
+				//사고관리대상 체크박스
+				if(resData.data.managementYn === "Y"){
+					$("#managementYn").prop("checked", true);
+				}
+				//동적 첨부파일 (다건)
+
+				docCds.forEach((itemDoc, idxDoc) => {
+				//	console.log(resData.fileList);
+				//	alert(resData.fileList);
+					var setFile = [];
+					resData.fileList.forEach((item, idx) => {
+
+						if(itemDoc === item.docCd){
+							setFile[setFile.length] = item;
+						}
+					});
+	           		com.fnIbsUploadView($("#myUpload" + itemDoc), setFile);
+			    });
+
+				sheetSure.loadSearchData(resData.suretyList); //보증인정보
+				sheetMort.loadSearchData(resData.mortList); //담보정보
+				sheetEnq.loadSearchData(resData.enqList); //사고정보
+				sheetDdc.loadSearchData(resData.ddcList); //공제금지급정보
+				sheetPrp.loadSearchData(resData.prpList); //재산조사정보
+				sheetLaw.loadSearchData(resData.lawList); //법적절차정보
+				sheetRcv.loadSearchData(resData.rcvList); //회수정보
+				sheetNor.loadSearchData(resData.norList); //사고정상화정보
+				
+				//20231220 KSM 잔액부분 표출 위하여 합계 계산
+				var feeAmt = 0;		//법적절차 비용
+				var rcvAmt = 0;		//회수금액
+				var offsetAmt = 0;  //상계금액
+				var balAmt = 0;		//잔액
+				var payAmt = 0;		//실지급금액
+				
+				//공제금지급 잔액 합계
+				var ddcRows = sheetDdc.getDataRows();
+				for(var i=0; i<ddcRows.length; i++){
+					ddcRow = ddcRows[i];
+					
+					payAmt += ddcRow.payAmt;
+					offsetAmt += ddcRow.offsetAmt;
+				}
+				balAmt = payAmt - offsetAmt;
+				
+				//법적절차 비용 합계
+				var lawRows = sheetLaw.getDataRows();
+				for(var i=0; i<lawRows.length; i++) {
+					lawRow = lawRows[i];
+					
+					feeAmt += lawRow.feeAmt;
+				}
+				
+				//회수처리 비용 합계
+				var rcvRows = sheetRcv.getDataRows();
+				for(var i=0; i<rcvRows.length; i++) {
+					rcvRow = rcvRows[i];
+					
+					rcvAmt += rcvRow.rcvAmt;
+				}
+				var totBalAmt = balAmt + feeAmt - rcvAmt;
+				$("#totBalAmt").text(com.addComma(totBalAmt) + "원");
+				
+				if(offsetAmt !== "" || offsetAmt !== undefined) {
+					$("#offsetAmt").text(com.addComma(offsetAmt) + "원");
+				} else {
+					$("#offsetAmt").text("0원");
+				}
+				
+				if(balAmt !== "" || balAmt !== undefined) {
+					$("#balAmt").text(com.addComma(balAmt) + "원");
+				} else {
+					$("#balAmt").text("0원");
+				}
+				
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#ele_membNm").text()}
+				com.fnSetTabMembTag(tabObj);
+			};
+
+			//엑셀 다운로드
+			var fnExcel = function(type){
+				
+				if(type === "prp"){ //재산조사
+					com.fnExcelToJs(sheetPrp, gridOptList[4].Cols, /*[[${menuInfo.menuNm + "_재산조사_" + today}]]*/);
+				}else if(type === "enq"){ //사고조사
+					com.fnExcelToJs(sheetEnq, gridOptList[2].Cols, /*[[${menuInfo.menuNm + "_사고조사_" + today}]]*/);
+				}else if(type === "ddc"){ //공제금지급
+					com.fnExcelToJs(sheetDdc, gridOptList[3].Cols, /*[[${menuInfo.menuNm + "_공제금지급_" + today}]]*/);
+				}else if(type === "law"){ //법적절차
+					com.fnExcelToJs(sheetLaw, gridOptList[5].Cols, /*[[${menuInfo.menuNm + "_법적절차_" + today}]]*/);
+				}else if(type === "rcv"){ //회수처리
+					com.fnExcelToJs(sheetRcv, gridOptList[6].Cols, /*[[${menuInfo.menuNm + "_회수처리_" + today}]]*/);
+					
+				}else if(type === "nor"){ //사고정상화
+					com.fnExcelToJs(sheetPrp, gridOptList[7].Cols, /*[[${menuInfo.menuNm + "_사고정상화_" + today}]]*/);
+					
+				}else{
+					com.fnExcelToJs(sheet, gridOptList[0].Cols, /*[[${menuInfo.menuNm + "_" + today}]]*/);
+				}
+				
+				
+			};
+
+			//탭공통
+			$(document).ready(function(){
+				$('#first-tab-group > div').hide();
+				$('#tab1').show();
+		        $('.tabBasic a').click(function(e) {
+		            e.preventDefault();
+		            var $this = $(this),
+		                tabgroup = '#' + $this.parents('.tabBasic').data('tabgroup'),
+		                tabfn =  $this.parents('.tabBasic').data('tabfunction'),
+		                others = $this.closest('li').siblings().children('a'),
+		                target = $this.attr('href');
+
+			//		console.log(tabgroup);
+		            others.removeClass('active');
+		            $this.addClass('active');
+		            $(tabgroup).children('div').hide();
+		            $(target).show();
+
+		        });
+			});
+
+			//수정
+			var fnUpt = function(){
+				param = {menuCd:"1050109", paramMap:{membNo:$("#membNo").val()
+										, guarNo:$("#accGuarNo").val()
+										, contrNo:$("#accContrNo").val()
+										, atthNo:$("#atthNo").val()
+										, atthType:$("#atthType").val()
+										, accNo:$("#accNo").val()
+										, docNo:$("#accDocNo").val()
+										}
+				};
+				parent.menuOpen(param);
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/);
+			};
+
+			/*]]>*/
+
+		</script>
+	<div class="contentsArea">
+		<div class="contentsTop">
+			<div th:insert="~{/fragments/subTitle}"></div>
+		</div><!-- //contentsTop -->
+		<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+		<input type="hidden" name="accNo" id="accNo" value="">
+		<input type="hidden" name="atthNo" id="atthNo" value="">
+		<input type="hidden" name="membNo" id="membNo" value="">
+		<input type="hidden" name="accContrNo" id="accContrNo" value="">
+		<input type="hidden" name="accGuarNo" id="accGuarNo" value="">
+
+		<div class="contents flex">
+			<!--탭메뉴 시작-->
+			<section class="area mt5">
+				<div class="tabBasicWrap">
+					<ul class="tabBasic" data-tabgroup="first-tab-group">
+						<li><a href="#tab1" class="active">사고개요</a></li>
+						<li><a href="#tab2" class="">재산조사/사고조사</a></li>
+						<li><a href="#tab3" class="">공제금지급/법적절차/회수처리</a></li>
+						<li><a href="#tab4" class="">사고정상화</a></li>
+					</ul>
+				</div>
+			</section>
+			<div id="first-tab-group">
+				<div id="tab1">
+					<div class="layer-flex">
+						<!-- 그리드 좌측 부분 -->
+						<div class="" style="width:49%">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">청구정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="width:250px;">
+									<col style="width:100px;">
+									<col style="width:250px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>사고관리대상</th>
+										<td >
+											<input type="checkbox" name ="managementYn" id ="managementYn"  onClick="return false">
+										</td>
+										<th>진행상태</th>
+										<td >
+											<span id="ele_accStatCdNm"></span>
+										</td>
+
+									</tr>
+									<tr>
+										<th>사고증권번호</th>
+										<td >
+											<input type="text" name="accDocNo" id="accDocNo" style="width:140px;" readonly />
+										</td>
+										<th>보증기간</th>
+										<td >
+											<span id="ele_guarBegDt"></span> ~ <span id="ele_guarExpDt"></span>
+										</td>
+									</tr>
+									<tr>
+										<th>피공제기관</th>
+										<td >
+											<span id="ele_orderNm"></span>
+										</td>
+										<th>보증금액</th>
+										<td >
+											<span id="ele_guarAmt"></span>
+										</td>
+									</tr>
+									<tr>
+										<th>청구일자</th>
+										<td >
+											<span id="ele_claimDt"></span>
+										</td>
+										<th>청구액/기청구액</th>
+										<td >
+											<span id="ele_claimAmt"></span>&nbsp;/&nbsp;<span id="ele_sumClaimAmt"></span>
+										</td>
+									</tr>
+									<tr>
+										<th>담당자명</th>
+										<td >
+											<span id="ele_accReqNm"></span>
+										</td>
+										<th>연락처</th>
+										<td >
+											<span id="ele_accReqTel"></span>
+										</td>
+									</tr>
+									<tr>
+										<th>청구내용</th>
+										<td colspan="3">
+											<textarea type="search" name="claimCont" id="claimCont" title="청구내용" style="width:550px; height:80px;" readonly ></textarea>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">공제금지급정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:90px;">
+									<col style="width:250px;">
+									<col style="width:100px;">
+									<col style="width:250px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>지급방법</th>
+										<td >
+											<span id="ele_payWayNm"></span>
+										</td>
+										<th>예금주</th>
+										<td >
+											<span id="ele_payNm"></span>
+										</td>
+									</tr>
+									<tr>
+										<th>지급은행</th>
+										<td >
+											<span id="ele_payBankNm"></span>
+										</td>
+										<th>지급계좌</th>
+										<td >
+											<span id="ele_payAcct"></span>
+										</td>
+									</tr>
+									<tr>
+										<th>공제금지급금액</th>
+										<td >
+											<span id="ele_totPayAmt"></span>
+										</td>
+										<th>출자금상계금액</th>
+										<td >
+											<span id="ele_investAmt"></span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							<div id="areaMemb" >
+								<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+							</div>
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">보증인정보</h4>
+									</div>
+								</section>
+								<div id="sheetDivSure" style="width:100%;height:130px"></div>
+							</div>
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">담보정보</h4>
+									</div>
+								</section>
+								<div id="sheetDivMort" style="width:100%;height:130px"></div>
+							</div>
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:com.fnDtlFileUpload('myUploadAC', 'AC10', $('#atthNo').val(), $('#accNo').val(), '', 'AC');" class="btn small style07">파일저장</button>
+		                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUploadAC'));" class="btn small style08">전체다운</button>
+		                        </div>
+							</section>
+							<div id="myUploadAC" style="height:150px;"></div>
+						</div>
+						<!-- 그리드 우측 부분 시작 -->
+						<!--여긴 영역 감싼 버전으로 -->
+						<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+						<div class="" style="width:49%">
+							<!-- 보증정보 구간 -->
+							<div id="areaGuar" >
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">보증발급정보</h4>
+									</div>
+								</section>
+								<table class="tbl">
+									<colgroup>
+										<col style="width:70px;">
+										<col style="width:100px">
+										<col style="width:70px;">
+										<col style="width:100px">
+										<col style="width:75px;">
+										<col style="width:100px">
+									</colgroup>
+									<tbody>
+										<tr>
+											<th>신청일자</th>
+											<td  id="ele_reqDt"></td>
+											<th>신청유형</th>
+											<td  id="ele_guarReqCdNm"></td>
+											<th>변경유형</th>
+											<td  id="ele_guarClassCdNm"></td>
+										</tr>
+										<tr>
+											<th>발급형태</th>
+											<td  id="ele_guarIssueCdNm"></td>
+											<th>발급일자</th>
+											<td  id="ele_guarPubDt"></td>
+											<th>보증상태</th>
+											<td  id="ele_guarStatNm"></td>
+										</tr>
+										<tr>
+											<th>보증서번호</th>
+											<td  id="ele_docNo1"></td>
+											<th>최초보증서</th>
+											<td  id="ele_initDocNo"></td>
+											<th>이전보증서</th>
+											<td  id="ele_befDocNo"></td>
+										</tr>
+									</tbody>
+								</table>
+								<th:block th:include="guar/comGuarContrDtl"></th:block> <!--약정정보 -->
+								<th:block th:include="guar/comGuarDtl"></th:block> <!--보증약정정보 -->
+							</div>
+							<!-- 보증정보 구간 끝-->
+						</div>
+						<!-- END 컨텐츠 영역 -->
+					</div>
+				</div>
+
+				<!-- 두번째 탭 -->
+				<div id="tab2">
+					<div class="layer-flex">
+						<!-- 그리드 좌측 부분 -->
+						<div class="" style="width:49%">
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">재산조사</h4>
+									</div>
+									<div class="fr">
+										<button onclick="javascript:fnExcel('prp');" class="btn small style04">엑셀</button>
+									</div>
+								</section>
+								<div id="sheetDivPrp" style="width:100%;height:150px"></div>
+							</div>
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">사고조사</h4>
+									</div>
+									<div class="fr">
+										<button onclick="javascript:fnExcel('enq');" class="btn small style04">엑셀</button>
+									</div>
+								</section>
+								<div id="sheetDivEnq" style="width:100%;height:450px"></div>
+							</div>
+						</div>
+						<!-- 그리드 우측 부분 시작 -->
+						<!--여긴 영역 감싼 버전으로 -->
+						<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+						<div class="" style="width:49%">
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+									</div>
+									<div class="fr">
+										<button type="button" onclick="javascript:com.fnDtlFileUpload('myUploadPI', 'AC10', $('#atthNo').val(), $('#accNo').val(), '', 'PI');" class="btn small style07">파일저장</button>
+			                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUploadPI'));" class="btn small style08">전체다운</button>
+			                        </div>
+								</section>
+								<div id="myUploadPI" style="height:150px;"></div>
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+									</div>
+									<div class="fr">
+										<button type="button" onclick="javascript:com.fnDtlFileUpload('myUploadAI', 'AC10', $('#atthNo').val(), $('#accNo').val(), '', 'AI');" class="btn small style07">파일저장</button>
+			                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUploadAI'));" class="btn small style08">전체다운</button>
+			                        </div>
+								</section>
+								<div id="myUploadAI" style="height:450px;"></div>
+							</div>
+						</div>
+						<!-- END 컨텐츠 영역 -->
+					</div>
+				</div>
+
+				<!-- 세번째 탭 -->
+				<div id="tab3">
+					<div class="layer-flex-mt20">
+						<div class="" style="width:100%">
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title" style="display:inline-block;">공제금지급</h4>
+										<div style="display:inline-block;">
+											(상계금액 :<span id="offsetAmt"></span>
+										</div>
+										<div style="display:inline-block; margin-left:10px;">
+											잔액 : <span id="balAmt"></span>)
+										</div>
+									</div>
+									<div class="fr">
+										<button onclick="javascript:fnExcel('ddc');" class="btn small style04">엑셀</button>
+									</div>
+								</section>
+								<div id="sheetDivDdc" style="width:100%;height:200px"></div>
+								<!--
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+									</div>
+									<div class="fr">
+										<button type="button" onclick="javascript:com.fnDtlFileUpload('myUploadGP', 'AC10', $('#atthNo').val(), $('#accNo').val(), '', 'GP');" class="btn small style07">파일저장</button>
+			                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUploadGP'));" class="btn small style08">전체다운</button>
+			                        </div>
+								</section>
+								<div id="myUploadGP" style="height:150px;"></div> -->
+							</div>
+						</div>
+					</div>
+					<div class="layer-flex">
+						<!-- 그리드 좌측 부분 -->
+						<div class="" style="width:49%">
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">법적절차(지급처리)</h4>
+									</div>
+									<div class="fr">
+										<button onclick="javascript:fnExcel('law');" class="btn small style04">엑셀</button>
+									</div>
+								</section>
+								<div id="sheetDivLaw" style="width:100%;height:450px"></div>
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+									</div>
+									<div class="fr">
+										<button type="button" onclick="javascript:com.fnDtlFileUpload('myUploadLP', 'AC10', $('#atthNo').val(), $('#accNo').val(), '', 'LP');" class="btn small style07">파일저장</button>
+			                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUploadLP'));" class="btn small style08">전체다운</button>
+			                        </div>
+								</section>
+								<div id="myUploadLP" style="height:150px;"></div>
+							</div>
+						</div>
+						<!-- 그리드 우측 부분 시작 -->
+						<!--여긴 영역 감싼 버전으로 -->
+						<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+						<div class="" style="width:49%">
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">회수처리</h4>
+									</div>
+									<div class="fr">
+										<button onclick="javascript:fnExcel('rcv');" class="btn small style04">엑셀</button>
+									</div>
+								</section>
+								<div id="sheetDivRcv" style="width:100%;height:450px"></div>
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+									</div>
+									<div class="fr">
+										<button type="button" onclick="javascript:com.fnDtlFileUpload('myUploadCP', 'AC10', $('#atthNo').val(), $('#accNo').val(), '', 'CP');" class="btn small style07">파일저장</button>
+			                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUploadCP'));" class="btn small style08">전체다운</button>
+			                        </div>
+								</section>
+								<div id="myUploadCP" style="height:150px;"></div>
+							</div>
+						</div>
+						<!-- END 컨텐츠 영역 -->
+					</div>
+					<div class="mt20 alignC">
+						<span style="color:#ff6600; font-weight:bold; font-size:14px;">잔액 : </span><span id="totBalAmt" style="font-weight:bold; font-size:14px;"></span>
+					</div>
+				</div>
+
+				<!-- 네번째 탭 -->
+				<div id="tab4">
+					<div class="layer-flex">
+						<!-- 그리드 좌측 부분 -->
+						<div class="" style="width:100%">
+							<div class="wrapBox">
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">사고정상화</h4>
+									</div>
+									<div class="fr">
+										<button onclick="javascript:fnExcel('nor');" class="btn small style04">엑셀</button>
+									</div>
+								</section>
+								<div id="sheetDivNor" style="width:100%;height:450px"></div>
+								<section class="area mt5">
+									<div class="fl">
+										<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+									</div>
+									<div class="fr">
+										<button type="button" onclick="javascript:com.fnDtlFileUpload('myUploadAN', 'AC10', $('#atthNo').val(), $('#accNo').val(), '', 'AN');" class="btn small style07">파일저장</button>
+			                           	<button type="button" onclick="javascript:com.fnIbsFileDownAll($('#myUploadAN'));" class="btn small style08">전체다운</button>
+			                        </div>
+								</section>
+								<div id="myUploadAN" style="height:150px;"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="layer-flex mt50">
+				<!-- 처리 버튼 영역 -->
+				<div class="" style="width:100%">
+					<section class="area">
+						<div class="fc">
+							<button type="button" onclick="javascript:fnUpt();" id="btn_upt" class="btn style08" >수정</button>
+							<button type="button" th:onclick="javascript:parent.closeMenu([[${menuInfo.menuIdx}]], [[${menuInfo.refMenuIdx}]])" class="btn style06" >닫기</button>
+						</div>
+					</section>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div>
+		</div>
+		</form>
+	</div>
+	</body>
+</html>

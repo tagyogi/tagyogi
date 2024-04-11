@@ -1,0 +1,70 @@
+<!--
+	파일정보 : iniPayReq.html
+	파일명 : 뱅크페이 결제 
+	업무명 : 뱅크페이 결제 
+	생성자 : bsg
+	생성일 : 2023.05.09
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<body>
+		<!-- 이니시스 시작 -->
+		<th:block th:if="${!#strings.equals(active, 'dev')}"> <!-- 이니시스 개발 -->
+		<script language="javascript" type="text/javascript" src="https://stgstdpay.inicis.com/stdjs/INIStdPay.js" charset="UTF-8"></script>
+		</th:block>
+		<th:block th:if="${#strings.equals(active, 'prd')}"> <!-- 이니시스 운영 -->
+		<script language="javascript" type="text/javascript" src="https://stdpay.inicis.com/stdjs/INIStdPay.js" charset="UTF-8"></script>
+		</th:block>
+		<!-- 이니시스 끝 -->
+		
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			INIStdPay.pay("payIniFrm");
+			
+			/*>*/ 
+		</script>
+		<form name="payIniFrm" id="payIniFrm" method="post" >
+		<!-- ***************************기본 옵션*************************** -->
+        <input type="hidden" name="version"     	id="version"     		value="1.0" /> <!-- 전문버전 -->
+        <input type="hidden" name="gopaymethod"     id="gopaymethod"     	value="Card" /> <!-- 요청결제수단 -->
+        <input type="hidden" name="mid"     		id="mid"   				th:value="${mid}" /> <!-- 상점아이디 -->
+        <input type="hidden" name="oid"     		id="oid"     			th:value="${oid}" /> <!-- 주문번호 -->
+        <input type="hidden" name="price"     		id="price"     			th:value="${price}" /> <!-- 결재금액 -->
+        <input type="hidden" name="timestamp"     	id="timestamp"     		th:value="${timestamp}" /> <!-- 타임스탬프 -->
+        <input type="hidden" name="signature"     	id="signature"     		th:value="${signature}" /> <!-- singnature -->
+        <input type="hidden" name="mKey"     		id="mKey"     			th:value="${mKey}" /> <!-- mKey -->
+        <input type="hidden" name="goodname"     	id="goodname"     		th:value="${goodname}" /> <!-- 상품명 -->
+        <input type="hidden" name="buyername"     	id="buyername"     		th:value="${buyername}" /> <!-- 구매자명 -->
+        <input type="hidden" name="buyertel"     	id="buyertel"     		th:value="${buyertel}" /> <!-- 구매자 모바일번호 -->
+        <input type="hidden" name="buyeremail"     	id="buyeremail"     	th:value="${buyeremail}" /> <!-- 구매자 이메일 -->
+        <input type="hidden" name="returnUrl" 		id="returnUrl"			th:value="${siteDomain}+'pay/iniPayRes.do'" />
+        <input type="hidden" name="closeUrl"     	id="closeUrl"     		th:value="${siteDomain}+'pay/iniPayClose.do'" /> <!-- 닫기Url -->
+        <input type="hidden" name="currency"     	id="currency"     		value="WON" /> <!-- 통화구분 -->
+        
+        <!-- ***************************선택옵션*************************** -->
+        <input type="hidden" name="merchantData"    id="merchantData"     	th:value="${merchantData}" /> <!-- 가맹점데이터 -->
+        <input type="hidden" name="languageView"    id="languageView"     	value="ko" /> <!-- 초기언어표시 -->
+		<input type="hidden" name="payViewType"     id="payViewType"     	value="overlay" /> <!-- 결제창 표시방법 -->
+		
+		
+        <input type="hidden" name="offerPeriod"     id="offerPeriod"     	value="" /> <!-- 제공기간 -->
+        <input type="hidden" name="acceptmethod"    id="acceptmethod"     	value="" /> <!-- 결제수단별 추가옵션값 -->
+		<input type="hidden" name="tax"     		id="tax"     			value="" /> <!-- 부가세 -->
+        <input type="hidden" name="taxfree"    		id="taxfree"     		value="" /> <!-- 비과세 -->
+        <input type="hidden" name="parentemail"     id="parentemail"     	value="" /> <!-- 보호자 이메일 -->
+        
+        <!-- 표시 옵션 -->
+        <input type="hidden" name="charset"     	id="charset"     		value="" /> <!-- 결과인코딩 -->
+		<input type="hidden" name="popupUrl"     	id="popupUrl"     		value="" /> <!-- 팝업Url -->
+		
+		<!-- ***************************표시 옵션*************************** -->
+		<input type="hidden" name="quotabase"     	id="quotabase"     		value="" /> <!-- 할부개월 -->
+		<input type="hidden" name="ini_onlycardcode"id="ini_onlycardcode"	value="" />
+		<input type="hidden" name="ini_cardcode"    id="ini_cardcode"     	value="" />
+		<input type="hidden" name="ansim_quota"     id="ansim_quota"     	value="" />
+		<input type="hidden" name="vbankRegNo"     	id="vbankRegNo"     	value="" /> <!-- 표시 옵션 -->
+		<input type="hidden" name="acceptmethod" 	id="acceptmethod"		value="HPP(1):below1000:va_receipt" style="width:150px;">
+		</form>
+	</body>
+</html>

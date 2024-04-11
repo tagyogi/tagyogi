@@ -1,0 +1,421 @@
+<!--
+	파일정보 : membDesc/membDescIns.html
+	파일명 : membDesc
+	업무명 : 기재변경관리 등록, 수정
+	생성자 : 김상민1
+	생성일 : 2023-04-27
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB14", gridNoList : "10101"}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+
+				//변경정보 체크박스 클릭 이벤트
+				$("#ceoNmChgYn, #membNmChgYn, #addrChgYn").click(function(){
+					//변경일자 값 처리
+					var today = /*[[${today}]]*/;
+					if($(this).is(":checked")){
+						$(this).closest('tr').find('input[type=text]').eq(0).val(today);
+					}else{
+						$(this).closest('tr').find('input[type=text]').eq(0).val("");
+						$(this).closest('tr').find('input[type=text]').eq(2).val("");
+					}
+
+					//변경일자 readonly 처리
+					$(this).closest('tr').find('input[type=text]').eq(0).attr("readonly", !$(this).is(":checked"));
+
+					//변경후사항 구분 처리(대표자,업체명 or 주소)
+					if($(this).attr('id') === 'addrChgYn'){	//주소
+						$(this).closest('tr').find('button').attr("disabled", !$(this).is(":checked"));	//주소검색 버튼 체크 가능여부
+						if(!$(this).is(":checked")){
+							//주소 초기화
+							$("#chgDoroCd, #chgDoroNm, #chgDoroBunho, #chgDoroDong, #chgDoroBdNo, #chgPostNo, #chgAddrFullDoro, #chgDoroDtl, #chgAddr1, #chgAddr2").val("");
+						}
+					}else{	//대표자,업체명
+						$(this).closest('tr').find('input[type=text]').eq(2).attr("readonly", !$(this).is(":checked"));
+					}
+				});
+
+				//코드값 처리
+				com.fnCodeSelectBox("MB14", "procStat");
+
+				//동적 첨부파일 (다건)
+				com.fnIbsUpload($("#docFile"));
+
+				$("#sMembNo").focus();
+			});
+
+			//조합원조회 콜백
+			var fnMembInfoSet = function(resData){
+				//console.log(resData);
+				var keyList = Object.getOwnPropertyNames(resData);
+				for(var key in keyList ){
+					var k = keyList[key].replace(" ", "");
+
+					//조합원 정보
+					$("#ele_"+k).text(resData[k]);
+					if(k === 'membNo') 	{
+						$("#sMembNo").val(resData[k]);
+						$("#membNo").val(resData[k]);
+					}
+					if(k === 'membNm') 	$("#sMembNm").val(resData[k]);
+
+					//변경정보
+					if(k === 'ceoNm')	$("#befCeoNm").val(resData[k]);
+					if(k === 'membNm')	$("#befMembNm").val(resData[k]);
+					if(k === 'addrFull')	$("#befAddr").val(resData[k]);
+			 	}
+
+			 	//조합원 기재변경 이력 조회
+				var selectParam = {sMembNo: resData.membNo};
+				obj = {url:"/membDesc/selectMembDescList.do", param:selectParam, callBack:fnSelectMembDescListCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+				
+				//알림톡세팅
+				var setParam = {membNo: $("#sMembNo").val(), setTalk:"Y"}
+				com.fnSetPersList(setParam);
+				
+			}
+
+			//조합원 기재변경 이력 조회 콜백
+			var fnSelectMembDescListCallBack = function(resData){
+				sheet.loadSearchData(resData.data);
+			}
+			
+			//처리완료 알림톡정보 UI표출
+			var fnSetAlramInfo = function(val){
+				if(val === "30") $("#alarmBox").show();
+				else{
+					$("#talkpers").val('').trigger('change');
+					$("#alarmBox").hide();
+				} 
+			}
+
+			//저장
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["membNo", "procStat", "reqNm"];
+
+				//대표자 체크(체크 되어있으면 필수체크에 추가)
+				if($("#ceoNmChgYn").is(":checked"))		valChks.push(...["ceoNmChgDt", "chgCeoNm"]);
+
+				//업체명 체크(체크 되어있으면 필수체크에 추가)
+				if($("#membNmChgYn").is(":checked")) 	valChks.push(...["membNmChgDt", "chgMembNm"]);
+
+			    //주소 체크(체크 되어있으면 필수체크에 추가)
+			    if($("#addrChgYn").is(":checked")) 		valChks.push(...["addrChgDt", "chgDoroAddr"]);
+
+				if(com.fnValChk(valChks)){
+					if(confirm("저장 처리 하시겠습니까?")){
+						obj = {url:"/membDesc/insertMembDesc.do", formId:"saveFrm", fileId:"docFile", callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						com.fnAjaxMulti(obj);
+					}
+				}
+			};
+
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				//if ($("#ceoNmChgYn").is(":checked") && $("#procStat").val() === "30") {
+			    //   if(confirm("대표자정보가 수정되었습니다.\n조합원관리로 이동하시겠습니까?")) {
+			    //       //parent.$("#g_memb_no").val($("#memb_no").val());
+			    //       //parent.$("#goMemberList").val("Y");
+			    //   }
+			    //}
+			    
+			    if(resData.resultCode === 0){
+					
+					if($("#procStat").val() === "30"){ //처리완료일때 
+						
+						// 체크된 체크박스의 id를 배열로 저장
+						var checkedChkboxes = ["ceoNmChgYn", "membNmChgYn", "addrChgYn"].filter(function(id) {
+						  return $("#" + id).prop("checked");
+						});
+						
+						// 체크된 체크박스의 title 속성을 ','로 join하여 문자열로 만듦
+						var resultString = checkedChkboxes.map(function(id) {
+						  return $("#" + id).attr("title");
+						}).join(',');
+						
+						//저장성공시 알림톡발송						
+						/*
+						param1조합원의 param2변경 신청사항이 처리완료되었습니다.
+						*/
+						var paramsArray = [
+						  $("#sMembNm").val()      //조합원명
+						  ,resultString            //변경사항들
+						];
+						
+						// 배열을 콜론으로 구분된 문자열로 합치기
+						var paramVal = paramsArray.join(':');
+						param = {msgSeq:"2", membNo:$("#sMembNo").val(), param:paramVal, telNo:$("#talkTel").val(), telNm:$("#talkNm").val(), msgYn: "N"}
+						com.fnSendTalkMsg(param);
+					}
+					
+					parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+				}
+			    
+			};
+
+			//주소 검색 콜백
+			var fnAddrCallBack = function(resData){
+				//console.log(resData);
+				$("#chgPostNo").val(resData.zipNo); //우편
+				$("#chgDoroCd").val(resData.rnMgtSn); //도로코드
+				$("#chgDoroNm").val(resData.roadAddrPart1); //도로명
+				$("#chgDoroBunho").val(resData.doroBunho); //도로번지
+				$("#chgDoroDong").val(resData.emdNm); //주소동
+				$("#chgDoroBdNo").val(resData.doroBdNo); //주소번지
+
+				$("#chgAddr1").val(resData.jibunAddr);//지번주소
+
+				$("#chgAddrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+			}
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<div class="collapseCtrl">
+						<!--<button type="type" class="btn-collapse down active"><span></span></button>
+						<button type="type" class="btn-collapse close"><span></span></button>-->
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="membNo" id="membNo" value="" title="조합원번호"/>
+    		<input type="hidden" name="atthType" id="atthType" th:value="${menuInfo.atthType}"/>	<!-- 메뉴관리 > 관련첨부코드 -->
+    		<input type="hidden" name="atthNo" id="atthNo"/>
+			<div class="contents flex">
+				<div class="layer-flex collapseArea Collapsedown">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<!--조합원조회 -->
+						<th:block th:include="com/comMembSearch"></th:block> <!--조합원조회 -->
+
+						<!-- 조합원 기재변경 이력 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">조합원 기재변경 이력</h4>
+							</div>
+						</section>
+						<div id="sheetDiv" style="width:100%;height:200px"></div>
+
+						<!-- 변경정보 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">변경정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:60px;">
+								<col style="width:40px;">
+								<col style="width:140px;">
+								<col style="width:300px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th colspan="2">변경구분</th>
+									<th rowspan="2">변경일자</th>
+									<th rowspan="2">변경전사항</th>
+									<th rowspan="2">변경후사항</th>
+								</tr>
+								<tr>
+									<th>내용</th>
+									<th>체크</th>
+								</tr>
+								<tr>
+									<th>대표자</th>
+									<td style="text-align: center;"><input type="checkBox" name="ceoNmChgYn" id="ceoNmChgYn" value="Y" title="대표자"></td>
+									<td>
+										<input type="text" name="ceoNmChgDt" id="ceoNmChgDt" value="" title="대표자 변경일자" maxlength="10" style="width:100px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" readonly="readonly" />
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'ceoNmChgDt', 'yyyy-mm-dd')" />
+									</td>
+									<td><input type="text" name="befCeoNm" id="befCeoNm" size="25" value="" readonly="readonly" style="width:150px" /></td>
+									<td><input type="text" name="chgCeoNm" id="chgCeoNm" size="25" value="" readonly="readonly" style="width:150px" title="대표자 변경후사항"/></td>
+								</tr>
+								<tr>
+									<th>업체명</th>
+									<td style="text-align: center;"><input type="checkBox" name="membNmChgYn" id="membNmChgYn" value="Y" title="업체명"></td>
+									<td>
+										<input type="text" name="membNmChgDt" id="membNmChgDt" value="" title="업체명 변경일자" maxlength="10" style="width:100px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" readonly="readonly"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'membNmChgDt', 'yyyy-mm-dd')" />
+									</td>
+									<td><input type="text" name="befMembNm" id="befMembNm" size="25" value="" readonly="readonly" style="width:150px"/></td>
+									<td><input type="text" name="chgMembNm" id="chgMembNm" size="25" value="" readonly="readonly" style="width:150px" title="업체명 변경후사항"/></td>
+								</tr>
+								<tr>
+									<th>주소</th>
+									<td style="text-align: center;"><input type="checkBox" name="addrChgYn" id="addrChgYn" value="Y" title="주소"></td>
+									<td>
+										<input type="text" name="addrChgDt" id="addrChgDt" value="" title="주소 변경일자" maxlength="10" style="width:100px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" readonly="readonly"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'addrChgDt', 'yyyy-mm-dd')" />
+									</td>
+									<td><input type="text" name="befAddr" id="befAddr"  value="" readonly="readonly" size="40" />
+									<td>
+				                        <input type="hidden" name="chgDoroCd" id="chgDoroCd" title="" />
+										<input type="hidden" name="chgDoroNm" id="chgDoroNm" title="" />
+										<input type="hidden" name="chgDoroBunho" id="chgDoroBunho" title="" />
+										<input type="hidden" name="chgDoroDong" id="chgDoroDong" title="" />
+										<input type="hidden" name="chgDoroBdNo" id="chgDoroBdNo" title="" />
+
+										<!--<input type="text" name="chgPostNo" id="chgPostNo" title="우편번호" style="width:70px" readonly/>
+										<button type="button" class="btn icoSearch" onclick="com.fnAddrSerch();">주소검색</button>
+										<input type="text" name="chgAddrFullDoro" id="chgAddrFullDoro" title="도로주소" style="width:400px;" readonly/>
+										<input type="text" name="chgDoroDtl" id="chgDoroDtl" title="도로상세" style="width:200px;" />-->
+
+										<ul>
+											<li>
+												<label><input type="radio" name="chgAddrDiv" value="DR" class="input1" checked="checked"><span>도로</span></label>
+												<input type="search" name="chgPostNo" id="chgPostNo" title="우편번호" style="width:60px" readonly/>
+												<button type="button" class="btn icoSearch" onclick="com.fnAddrSerch();">주소검색</button>
+												<input type="search" name="chgAddrFullDoro" id="chgAddrFullDoro" title="도로주소" style="width:220px;" readonly/>
+												<input type="search" name="chgDoroDtl" id="chgDoroDtl" title="도로상세" style="width:130px;" maxlength="50" />
+											</li>
+											<li class="mt3">
+												<!--지번주소-->
+												<label><input type="radio" name="chgAddrDiv" value="JB" class="input1" ><span>지번</span></label>
+												<!--<input type="text" name="addrFull" id="addrFull" title="지번주소" style="width:400px;" readonly/>-->
+												<input type="text" name="chgAddr1" id="chgAddr1" title="" style="width:315px;" readonly/>
+												<input type="text" name="chgAddr2" id="chgAddr2" title="" style="width:130px;" maxlength="50"/>
+											</li>
+										</ul>
+
+									</td>
+								</tr>
+								<tr>
+									<th>기타</th>
+									<td colspan="4"><input type="text" name="remark" id="remark" size="75" value="" maxlength="50" /></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<div class="wrapBox">
+							<section class="area">
+								<div class="fl">
+									<h4 class="title">신청정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>신청일자</th>
+										<td>
+											<input type="text" name="reqDt" id="reqDt" th:value="${today}" title="신청일자" maxlength="10" style="width:90px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'reqDt', 'yyyy-mm-dd')" />
+										</td>
+										<th><span class="reqMark">*</span>신청자</th>
+										<td><input type="text" name="reqNm" id="reqNm" value="" title="신청자" style="width:150px" maxlength="20"/></td>
+									</tr>
+								</tbody>
+							</table>
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">승인정보</h4>
+								</div>
+							</section>
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="width:140px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th><span class="reqMark">*</span>처리상태</th>
+										<td><select name="procStat" id="procStat" style="width:100px" title="처리상태" onchange="fnSetAlramInfo(this.value);"></select></td>
+										<th>처리일자</th>
+										<td>
+											<input type="text" name="procDt" id="procDt" th:value="${today}" title="처리일자" maxlength="10" style="width:90px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+											<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'procDt', 'yyyy-mm-dd')" />
+										</td>
+										<th>처리자</th>
+										<td><input type="text" name="procNm" id="procNm" th:value="${session.userNm}" readonly="readonly" style="width:100px"/></td>
+									</tr>
+									<tr>
+										<th>처리사유</th>
+										<td colspan="5"><input type="text" name="procReason" id="procReason" size="75" value="" style="width:470px;" maxlength="50"/></td>
+									</tr>
+								</tbody>
+							</table>
+							
+							<!--알림톡정보 : s-->
+							<div id="alarmBox" class="wrapBox mt10" style="display:none;">
+								<th:block th:include="com/comAlarmTalk"></th:block> <!--알람톡정보 -->
+								<!--<th:block th:include="com/comAlarmTalk :: type('invtSeprt')"></th:block> -->
+							</div><!-- //wrapbox-->
+							<!--알림톡정보 : e-->
+
+							<section class="area mt10">
+								<div class="fl">
+									<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+								</div>
+								<div class="fr">
+			                           <button type="button" onclick="javascript:com.fnIbsFileAdd($('#docFile'));" class="btn small style08">추가</button>
+			                           <button type="button" onclick="javascript:com.fnIbsFileDel($('#docFile'));" class="btn small style08">삭제</button>
+			                    </div>
+							</section>
+							<div id="docFile" style="height:140px;"></div>
+						</div>
+					</div>
+					<!-- 그리드 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+
+				<!-- 처리 버튼 영역 -->
+				<div class="layer-flex mt50">
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">저장</button>
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- 처리 버튼 영역 끝-->
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

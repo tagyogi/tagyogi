@@ -1,0 +1,388 @@
+<!--
+	파일정보 : membCons/membConsIns.html
+	파일명 : membCons
+	업무명 : 공제가입상담현황 수정
+	생성자 : 김상민1
+	생성일 : 2023-05-04
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "MB02:MB31:MB30", gridNoList : "10114"}
+
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//코드값 처리
+				com.fnCodeSelectBox("MB02", "mainBussCd", 1, "");		//장르
+				com.fnCodeSelectBox("MB31", "joinStat", 1, "");			//가입의사
+				com.fnCodeSelectBox("MB30", "creditGrade", 1, "");		//신용등급
+
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+				$.each(gridOptList[0].Cols, function(idx, item){
+					if(item.Name==="delChk")	item.Visible = 1;	//보이게
+					item.CanEdit = 1;	//수정가능하게
+				});
+				IBSheet.create({ id: "sheet", el: "sheetDiv", options: gridOptList[0] });
+
+			    //시트 생성 이후
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+
+				//sheet 원클릭 처리
+				sheet.bind("onAfterClick" , function(obj) { //원클릭
+					if(obj.kind === "Filter") return;
+					//삭제상태변경
+					if(obj.col === "delChk")	com.fnIbsStatusChg(this, "D");
+				});
+			});
+
+			//검색
+			var fnSearch = function(){
+				//화면 처리 (공제가입상담 업제정보 조회)
+				var selectParam = { counsNo : /*[[${paramMap.counsNo}]]*/, atthType : /*[[${menuInfo.atthType}]]*/ };
+				obj = {url:"/membCons/selectMembCons.do", param:selectParam, callBack:fnSelectCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+
+			//공제가입상담 업제정보 조회 콜백
+			var fnSelectCallBack = function(resData){
+				//console.log(resData);
+				com.fnSetKeyVal(resData.data);				//업체개요 + 신용평가 + 담당자
+				sheet.loadSearchData(resData.consDtlList);	//진행내용
+				
+				//동적 첨부파일 (다건)
+				com.fnIbsUploadView($("#docFile"), resData.fileList);
+			
+				//메뉴탭 조합원명세팅
+				let tabObj = {target: $("#compNm").val()}
+				com.fnSetTabMembTag(tabObj);
+				
+			}
+
+			//수정
+			var fnSave = function(){
+				//필수체크
+				var valChks = ["compNm", "persNm", "persTelNo"];
+
+				if(com.fnValChk(valChks)){
+					//진행내용 필수사항 체크
+					if(sheet.getSaveJson().Message && sheet.getSaveJson().Message === "RequiredError"){
+						alert("진행내용 필수사항을 확인해주세요.")
+						return;
+					}
+
+					if(confirm("저장 처리 하시겠습니까?")){
+						//param = {업체정보 + 신용평가 + 담당자, 진행내용}
+						//var param = { membCons: $("#saveFrm").serializeObject(), membConsDtl: sheet.getSaveJson() };
+						//obj = {url:"/membCons/updateMembCons.do", param:param, callBack:fnSaveCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+						//com.fnAjaxDef(obj);
+						
+						var param = $("#saveFrm").serializeObject();
+						param.membConsDtl = sheet.getSaveJson(); 
+				    
+						obj = {url:"/membCons/updateMembCons.do"
+								, callBack:fnSaveCallBack
+								, jParam:param
+								, fileId:"docFile"
+								, msgYn:"Y"
+								, loadYn:"Y"
+								, sessYn:"Y" };
+						com.fnAjaxMulti(obj);
+						
+					}
+				}
+			};
+
+			//수정 콜백
+			var fnSaveCallBack = function(resData){
+				//alert("저장완료");
+				parent.closeMenu(/*[[${menuInfo.menuIdx}]]*/, /*[[${menuInfo.refMenuIdx}]]*/);
+			};
+
+			//업체명으로 기등록정보조회
+			var fnGetCompByNm = function() {
+			    if(window.event.keyCode === 13) {
+			        if($("#compNm").val() === "") {
+			            alert("업체명을 입력해 주십시오.");
+			            return;
+			        }
+
+			        //공제가입상담 업체정보 조회
+					var selectParam = { sCompNm : $("#compNm").val() };
+					obj = {url:"/membCons/selectMembConsList.do", param:selectParam, callBack:fnSelectNmCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+			    }
+			}
+
+			//공제가입상담 업체정보 조회 콜백
+			var fnSelectNmCallBack = function(resData){
+				var data = resData.data;
+				//console.log(data);
+				if(data.length === 0) {	//검색 없을때 팝업
+                    fnOpenSearchPopup();
+                } else if(data.length === 1) {	//한개면
+                	if(confirm("해당 업체명으로 등록된 비슷한 정보가 존재합니다.\n해당 업체의 수정페이지로 이동하시겠습니까?")) {
+                		fnView(data[0].counsNo);
+                    }
+                } else {	//그 이상이면
+                	if(confirm("해당 업체명으로 등록된 비슷한 정보가 2건이상 존재합니다.\n해당 업체 정보를 조회하시겠습니까?")) {
+						fnOpenSearchPopup();
+                    }
+                }
+			}
+
+			//공제가입 상담 조회 팝업
+			var fnOpenSearchPopup = function(){
+				com.dialpopupOpen("조합원검색", "/index/pageCall.do?menuCd=1070702", "800", "500"); //menuPage=/memb/popupSearchCons
+			}
+
+			//사업자번호로 등록정보조회
+			var fnGetCompByBizNo = function() {
+			    var bizNo = $("#bizNo").val().replace(/\-/g,"");
+
+			    if(bizNo.length === 10) {
+					//공제가입상담 업체정보 조회
+					var selectParam = { sBizNo : bizNo };
+					obj = {url:"/membCons/selectMembConsList.do", param:selectParam, callBack:fnSelectBizCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxDef(obj);
+			    }
+			}
+
+			//사업자번호로 등록정보조회 콜백
+			var fnSelectBizCallBack = function(resData){
+				var data = resData.data;
+				if(data.length !== 0){
+					if(confirm("해당 사업자등록번호로 등록된 업체 정보가 존재합니다.\n해당 업체의 수정페이지로 이동하시겠습니까?")) {
+                    	fnView(data[0].counsNo);
+                    }
+				}
+			}
+
+			//수정페이지로 이동
+			var fnView = function(counsNo){
+				param = { menuCd:"1010404", paramMap:{counsNo: counsNo} };
+				parent.menuOpen(param);
+			};
+
+			//주소 검색 콜백
+			var fnAddrCallBack = function(resData){
+				//console.log(resData);
+				$("#postNo").val(resData.zipNo); //우편
+				$("#doroCd").val(resData.rnMgtSn); //도로코드
+				$("#doroNm").val(resData.roadAddrPart1); //도로명
+				$("#doroBunho").val(resData.doroBunho); //도로번지
+				$("#doroDong").val(resData.emdNm); //주소동
+				$("#doroBdNo").val(resData.doroBdNo); //주소번지
+
+				$("#addrFullDoro").val(resData.roadAddrPart1 + "(" + resData.emdNm + " " + resData.doroBdNo + ")"); //주소번지
+			}
+
+			//행 추가
+			var fnRowAdd = function(sheet){
+				initData = { counsNo : /*[[${paramMap.counsNo}]]*/ };
+				com.fnIbsRowAdd("pre", initData, sheet);
+			};
+
+			/*]]>*/
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="counsNo" id="counsNo" value="">
+			<input type="hidden" name="atthType" id="atthType" th:value="${paramMap.atthType}"/>
+			<input type="hidden" name="atthNo" id="atthNo" />
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">업체정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:100px;">
+								<col style="width:250px;">
+								<col style="width:100px;">
+								<col style="width:250px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th><span class="reqMark">*</span>업체명</th>
+									<td>
+										<input type="text" name="compNm" id="compNm" size="25" maxlength="40" value="" style="width:85%"  onkeypress="fnGetCompByNm();" title="업체명"/>
+									</td>
+									<th>대표자</th>
+									<td><input type="text" name="ceoNm" id="ceoNm" size="8" maxlength="15" value="" style="width:140px;"/></td>
+								</tr>
+								<tr>
+									<th>사업자번호</th>
+									<td><input type="text" name="bizNo" id="bizNo" size="12" maxlength="12" onkeyup="com.fnOnlyNum(this);com.makeBizNo(this); fnGetCompByBizNo();" value="" style="width:120px;"/></td>
+									<th>법인번호</th>
+									<td><input type="text" name="lawNo" id="lawNo" size="12" maxlength="14" onkeyup="com.fnOnlyNum(this);com.makeJuminNo(this);" value="" style="width:120px;"/></td>
+								</tr>
+
+								<tr>
+									<th>전화번호</th>
+									<td><input type="text" name="telNo" id="telNo" size="13" maxlength="13" value="" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)" style="width:120px;"/></td>
+									<th>장르</th>
+									<td><select name="mainBussCd" id="mainBussCd" style="width:140px;" title="장르"></select></td>
+
+								</tr>
+								<tr>
+									<th>설립일</th>
+									<td>
+										<input type="text" name="bussStartDt" id="bussStartDt" value="" maxlength="10" title="사업게시일" style="width:95px" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'bussStartDt', 'yyyy-mm-dd')" />
+									</td>
+									<th>가입의사</th>
+									<td><select name="joinStat" id="joinStat" style="width:120px;" title="공제가입의사"></select></td>
+								</tr>
+								<tr>
+									<th>총자산</th>
+									<td><input type="text" name="assetAmt" id="assetAmt" size="17" maxlength="19" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:140px;"/> 원</td>
+									<th>매출액</th>
+									<td><input type="text" name="yearSaleAmt" id="yearSaleAmt" size="17" maxlength="19" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" value="" style="width:140px;"/> 원</td>
+
+								</tr>
+								<tr>
+									<th>주소</th>
+									<td colspan="3">
+										<input type="hidden" name="doroCd" id="doroCd" title="" />
+										<input type="hidden" name="doroNm" id="doroNm" title="" />
+										<input type="hidden" name="doroBunho" id="doroBunho" title="" />
+										<input type="hidden" name="doroDong" id="doroDong" title="" />
+										<input type="hidden" name="doroBdNo" id="doroBdNo" title="" />
+
+										<input type="text" name="postNo" id="postNo" title="우편번호" style="width:70px" readonly/>
+										<button type="button" class="btn icoSearch" onclick="com.fnAddrSerch();">주소검색</button>
+										<input type="text" name="addrFullDoro" id="addrFullDoro" title="도로주소" style="width:400px;" readonly/>
+										<input type="search" name="doroDtl" id="doroDtl" title="도로상세" style="width:200px;" maxlength="50" />
+									</td>
+								</tr>
+								<tr>
+									<th>기타/<br>특이사항</th>
+									<td colspan="3"><textarea name="counsCont" id="counsCont" rows="5"></textarea></td>
+								</tr>
+							</tbody>
+						</table>
+
+						<!-- 신용평가 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">신용평가</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:100px;">
+								<col style="width:250px;">
+								<col style="width:100px;">
+								<col style="width:250px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>신용등급</th>
+									<td><select name="creditGrade" id="creditGrade" style="width:140px;" title="신용등급"></select></td>
+									<th>기타</th>
+									<td><input type="text" name="creditEtc" id="creditEtc" value="" maxlength="5" title="기타" style="width:150px"/></td>	<!-- varchar2(10byte) -->
+								</tr>
+							</tbody>
+						</table>
+
+						<!-- 담당자 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">담당자</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:100px;">
+								<col style="width:250px;">
+								<col style="width:100px;">
+								<col style="width:250px;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th><span class="reqMark">*</span>담당자</th>
+									<td><input type="text" name="persNm" id="persNm" value="" maxlength="10" title="담당자" style="width:150px"/></td>
+									<th><span class="reqMark">*</span>연락처</th>
+									<td><input type="text" name="persTelNo" id="persTelNo" value="" title="연락처" style="width:150px" size="13" maxlength="13" onkeyup="com.fnOnlyNum(this);com.makeTelNo(this)"/></td>
+								</tr>
+							</tbody>
+						</table>
+
+
+					</div>
+
+					<!-- 그리드 우측 부분 시작 -->
+					<!--여긴 영역 감싼 버전으로 -->
+					<!--fixScroll 스크롤 넣으면 안쪽영역으로 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<!-- 신용평가 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">진행내용</h4>
+							</div>
+							<div class="fr">
+								<button type="button" onclick="javascript:fnRowAdd(sheet);" class="btn small style08">행추가</button>
+								<button type="button" onclick="javascript:com.fnIbsRowDel(sheet);" class="btn small style08">행삭제</button>
+							</div>
+						</section>
+						<div id="sheetDiv" style="width:100%; height:350px;"></div>
+						<section class="area mt10">
+							<div class="fl">
+								<h4 class="title">첨부파일<span style="font-size: 11px; color: #ff6600">(첨부할 파일을 끌어다 놓으시거나, 마우스 오른쪽버튼 -> '추가'로 첨부바랍니다.)</span></h4>
+							</div>
+							<div class="fr">
+                           		<button type="button" onclick="javascript:com.fnIbsFileAdd($('#docFile'));" class="btn small style08">추가</button>
+                           		<button type="button" onclick="javascript:com.fnIbsFileDel($('#docFile'));" class="btn small style08">삭제</button>
+                    		</div>
+						</section>
+						<div id="docFile" style="height:140px;"></div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnSave();" class="btn style07">수정</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

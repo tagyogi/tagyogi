@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head th:fragment="main-head">
+	<meta charset="euc-kr">
+    <meta name="Keywords" content="한국콘텐츠공제조합">
+    <meta name="title" content="한국콘텐츠공제조합">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=euc-kr">
+
+	<link rel="preload" href="/fonts/Noto-San/NotoKR/NotoKR-Regular/notokr-regular.woff2" as="font" crossorigin/>
+	<link rel="stylesheet" href="/css/font.css" />
+	<link rel="stylesheet" href="/css/common.css" />
+	<link rel="stylesheet" href="/css/style.css" />
+	<link rel="stylesheet" href="/css/jquery-ui.min.css" />
+
+	<link rel="stylesheet" href="/ibsheet8/css/default/main.css" />
+	<link rel="stylesheet" href="/ibsheet8/css/compatible/light/main.css" />
+	<link rel="stylesheet" href="/ibsheet8/Main/compare.css" />
+	<link rel="stylesheet" href="/ibsheet8/Main/ibupload.css" />
+	<link rel="stylesheet" href="/ibsheet8/Main/jquery.contextMenu.min.css" />
+
+	<script src="/ibsheet8/vendors/jquery-3.4.1.js"></script>
+	<script src="/ibsheet8/vendors/jquery.ellipsis.js"></script>
+	<script src="/ibsheet8/vendors/jquery-ui.min.js"></script>
+	<!--
+	<script src="/js/jquery.dynatree.js"></script>
+	-->
+
+	<script src="/ibsheet8/ibsheet.js"></script>
+	<script src="/ibsheet8/ibleaders.js"></script>
+	<script src="/ibsheet8/locale/ko.js"></script>
+
+	<script src="/ibsheet8/plugins/ibsheet-excel.js"></script>
+	<script src="/ibsheet8/plugins/ibsheet-dialog.js"></script>
+	<script src="/ibsheet8/plugins/ibsheet-common.js"></script>
+
+	<script src="/ibsheet8/ibupload.js"></script>
+	<script src="/ibsheet8/ibuploadinfo.js"></script>
+	<script src="/ibsheet8/jquery.contextMenu.min.js"></script>
+
+	<script src="/js/exceljs.min.js"></script>
+	<script src="/js/oz.js"></script>
+	<script src="/js/ozws.js"></script>
+
+	<!-- 공통함수 -->
+	<script src="/js/validateUtil.js"></script>
+	<script src="/js/common.js"></script>
+	<script src="/js/calendar.js"></script>
+	<script src="/js/crypto-js.min.js"></script>
+
+	<script>
+
+		//테마설정
+	    // Local Storage
+	    var cssKey = window.localStorage.getItem('mainTheme');
+		
+		if (cssKey === "" || cssKey === null || cssKey === undefined) window.localStorage.setItem('mainTheme', "theme1")
+	    
+	    // 읽어온 키값을 사용하여 동적으로 CSS 파일로드
+	    if (cssKey !== "theme1") {
+	        var link = document.createElement('link');
+	        link.id = 'themeCss';
+	        link.rel = 'stylesheet';
+	        link.href = '/css/theme.css'; // CSS 파일 경로를 설정합니다.
+	        document.head.appendChild(link);
+	        //document.documentElement.style.setProperty('--color-theme-main', 'green  ');
+	    }else{
+			var getLinks = document.querySelector('#themeCss');
+			if(getLinks > 0) getLinks.remove();
+		}
+
+	    $(document).ready(function(){
+			if (cssKey === "theme1" || cssKey === "" || cssKey === undefined) $("#themeCss").remove();
+			$('body').addClass(cssKey);
+		});
+
+	</script>
+
+	<script th:inline="javascript">
+			/*<![CDATA[*/
+			$(document).ready(function(){
+				//오른쪽 접기
+				$('.btn-collapse.down').click(function(){
+					//버튼활성화
+					$(this).siblings('.btn-collapse').removeClass('active');
+					$(this).toggleClass('active');
+					//콘텐츠영역활성화
+					if($('.collapseArea').hasClass('CollapseClose')) $('.collapseArea').removeClass('CollapseClose');
+					$('.collapseArea').toggleClass('Collapsedown');
+				});
+				//block으로 내리기
+				$('.btn-collapse.close').click(function(){
+					//버튼활성화
+					$(this).siblings('.btn-collapse').removeClass('active');
+					$(this).toggleClass('active');
+
+					//콘텐츠영역활성화
+					if($('.collapseArea').hasClass('Collapsedown')) $('.collapseArea').removeClass('Collapsedown');
+					$('.collapseArea').toggleClass('CollapseClose');
+				});
+
+				//프레임리로드
+				$('.reLoadFrm').click(function(){
+					let reLoadFrm = window.frames.name;
+					top.document[reLoadFrm].location.reload();
+				});
+
+				//외부영역 클릭 시 달력 닫기
+				$(document).click(function(e){
+					if($(e.target).parents("#calendar").length < 1 && !$(e.target).hasClass("calendar-box")){
+						$("#calendar").hide();
+					}
+				});
+
+			});
+
+			/*]]>*/
+
+		</script>
+
+		<!--출자 공통함수-->
+		<script th:src="@{/js/invtCom.js}"></script>
+</head>
+</html>

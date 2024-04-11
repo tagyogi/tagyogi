@@ -1,0 +1,29 @@
+<!--
+	파일정보 : bankPayAuth.html
+	파일명 : 뱅크페이 결제 인증 확인 처리
+	업무명 : 뱅크페이 결제 인증 확인 처리(팝업 호출 부분 3단계)
+	생성자 : bsg
+	생성일 : 2023.05.09
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<body OnLoad="unload_me();">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			function unload_me()
+			{
+				if(/*[[${payAuthMap.authMsg}]]*/ !== ""){
+					alert(/*[[${payAuthMap.authMsg}]]*/);	
+				}else{
+					top.opener.paramSet(/*[[${payAuthMap.hd_pi}]]*/, /*[[${payAuthMap.hd_ep_type}]]*/);
+					top.opener.proceed();
+			
+			 		parent.close();
+				}
+			}
+			
+			/*>*/ 
+		</script>
+	</body>
+</html>

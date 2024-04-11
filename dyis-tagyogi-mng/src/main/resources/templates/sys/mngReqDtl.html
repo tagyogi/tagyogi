@@ -1,0 +1,205 @@
+<!--
+	파일정보 : mngReq/mngReqDtl.html
+	파일명 : mngReq
+	업무명 : 보안요청관리 상세
+	생성자 : 변성균
+	생성일 : 2023-12-11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var rowData = "";
+			
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				
+				//화면 처리
+				//코드값 처리
+				com.fnCodeSelectBox("MR01", "reqType", 1, "10"); //요청유형
+				com.fnCodeSelectBox("MR02", "reqWork", 1, ""); //요청업무
+				com.fnCodeSelectBox("MR03", "reqStat", 1, "10"); //진행상태
+
+				//동적 첨부파일 생성(동적)
+				com.fnIbsUpload($("#myUpload")); 
+
+				//에디터 호출
+				//com.fnCkeditorSet("#editor");	
+				
+				//정보조회
+				rowData = parent.sheet.getFocusedRow(); //생성된 행 정보 가져오기
+				
+				var param = {reqYm:rowData.reqYm, reqSeq:rowData.reqSeq, atthType:/*[[${menuInfo.atthType}]]*/};
+				var obj = {url:"/mngReq/selectMngReq.do", param:param, callBack:fnDtlCallBack, msgYn:"N", loadYn:"N"};
+				com.fnAjaxDef(obj);
+				
+			});
+			
+			//상세정보 콜백
+			var fnDtlCallBack = function(resData){
+				com.fnSetKeyVal(resData.data);
+				$("#ele_reqCont").html(resData.data.reqCont);
+				//동적 첨부파일 (다건)
+            	com.fnIbsUploadView($("#myUpload"), resData.fileList); 
+			}
+			
+			//수정페이지호출
+			var fnMod = function(){
+				parent.com.dialpopupOpen("유지보수요청수정", "/index/pageCall.do?menuCd=1070228", "1000", "800");	// sys/mngReqUpt
+				parent.com.dialpopupClose();
+			}
+			
+			//삭제처리
+			var fnDel = function(){
+				if(confirm("삭제 하시겠습니까?")){
+					var param = {reqYm:rowData.reqYm, reqSeq:rowData.reqSeq};
+					var obj = {url:"/mngReq/deleteMngReq.do", param:param, callBack:fnDelCallBack, msgYn:"Y", loadYn:"N", sessYn:"N"};
+					com.fnAjaxDef(obj);	
+				}
+			}
+			
+			var fnDelCallBack = function(){
+				parent.fnSearch();
+				com.dialpopupClose();
+				
+			}
+			
+			//수정처리
+			var fnProc = function(type){
+				if(confirm("수정 하시겠습니까?")){
+					var param = {reqYm:$("#reqYm").val(), reqSeq:$("#reqSeq").val(), reqStat:type, procCont:$("#procCont").val()};
+					var obj = {url:"/mngReq/updateMngReqProc.do", param:param, callBack:fnProcCallBack, msgYn:"Y", loadYn:"N", sessYn:"N"};
+					com.fnAjaxDef(obj);	
+				}
+			}
+			
+			var fnProcCallBack = function(){
+				parent.fnSearch();
+				com.dialpopupClose();
+			}
+			/*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="reqYm" id="reqYm"/>
+			<input type="hidden" name="reqSeq" id="reqSeq"/>
+			<div class="contents flex">
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<table class="tbl">
+							<colgroup>
+								<col style="width:15%;">
+								<col style="width:18%;">
+								<col style="width:15%;">
+								<col style="width:18%;">
+								<col style="width:15%;">
+								<col style="width:20%;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>제목</th>
+									<td colspan="5"><span id="ele_reqTitl"></span></td>
+								</tr>
+								<tr>
+									<th>요청일</th>
+									<td><span id="ele_reqDtm"></span></td>
+									<th>요청자</th>
+									<td><span id="ele_reqNm"></span></td>
+									<th>연락처</th>
+									<td><span id="ele_reqTelNo"></span></td>
+								</tr>
+								<tr>
+									<th>요청유형</th>
+									<td><span id="ele_reqTypeNm"></span></td>
+									<th>요청업무</th>
+									<td><span id="ele_reqWorkNm"></span></td>
+									<th>처리상태</th>
+									<td><span id="ele_reqStatNm"></span></td>
+								</tr>
+								<tr>
+									<th colspan="6">요청내용</th>
+								</tr>
+								<tr>
+									<td colspan="6" >
+										<div style="min-height:240px;" id="ele_reqCont">
+											
+										</div>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div id="myUpload" style="height:100px;"></div>
+				
+				
+				<div class="layer-flex">
+					<!-- 그리드 좌측 부분 -->
+					<div class="" style="width:100%">
+						<table class="tbl">
+							<colgroup>
+								<col style="width:15%;">
+								<col style="width:18%;">
+								<col style="width:15%;">
+								<col style="width:18%;">
+								<col style="width:15%;">
+								<col style="width:20%;">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>접수일</th>
+									<td><span id="ele_acptDt"></span></td>
+									<th>처리일</th>
+									<td colspan="3"><span id="ele_procDt"></span></td>
+								</tr>
+								<tr>
+									<th>처리자</th>
+									<td><span id="ele_procNm"></span></td>
+									<th>연락처</th>
+									<td colspan="3"><span id="ele_procTelNo"></span></td>
+								</tr>
+								<tr>
+									<th colspan="6">처리내용</th>
+								</tr>
+								<tr>
+									<td colspan="6" >
+										<textarea name="procCont" id="procCont" row="5" cols="100" style="min-height:120px;overflow:auto"></textarea>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="layer-flex mt20">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:com.dialpopupClose();" class="btn style08">닫기</button>
+								<button type="button" onclick="javascript:fnProc('20');" class="btn style05" th:if="${#strings.equals(session.userId, 'admin')}">접수</button>
+								<button type="button" onclick="javascript:fnProc('30');" class="btn style05" th:if="${#strings.equals(session.userId, 'admin')}">진행중</button>
+								<button type="button" onclick="javascript:fnProc('40');" class="btn style05" th:if="${#strings.equals(session.userId, 'admin')}">처리완료</button>
+								<button type="button" onclick="javascript:fnProc('41');" class="btn style05" th:if="${#strings.equals(session.userId, 'admin')}">보류</button>
+								<button type="button" onclick="javascript:fnProc('45');" class="btn style05" th:if="${#strings.equals(session.userId, 'admin')}">보류(불가)</button>
+								
+								<button type="button" onclick="javascript:fnDel();" class="btn style03" th:if="${#strings.equals(session.userId, 'admin')}">삭제</button>
+								
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+						
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

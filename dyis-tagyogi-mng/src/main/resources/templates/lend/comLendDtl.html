@@ -1,0 +1,238 @@
+<!--
+	파일정보 : lend/comLendDtl.html
+	파일명 : comLendDtl
+	업무명 : 대출상세정보 공통
+	생성자 : 김대성
+	생성일 : 2023-06-29
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var fnLendContrViewSet = function(lendType){
+				
+				if(lendType === "11"){
+					$("#ele_concl").css("display", "");
+					if(typeof sheetConcl === "undefined"){
+						gridOptList[1].Cols[0].Visible = 0; //삭제버튼비활성화
+						IBSheet.create({ id: "sheetConcl", el: "sheetDivConcl", options: gridOptList[1] }); //계약체결명세현황
+					} 
+					
+				}else if(lendType === "13"){
+					$("#ele_note").css("display", "");
+					if(typeof sheetNote === "undefined"){
+						gridOptList[2].Cols[0].Visible = 0; //삭제버튼비활성화
+						IBSheet.create({ id: "sheetNote", el: "sheetDivNote", options: gridOptList[2] }); //어음담보명세현황
+					} 
+				
+				}else if(lendType === "14"){
+					$("#ele_bond").css("display", "");
+					if(typeof sheetBond === "undefined"){
+						gridOptList[3].Cols[0].Visible = 0; //삭제버튼비활성화
+						IBSheet.create({ id: "sheetBond", el: "sheetDivBond", options: gridOptList[3] }); //매출채권명세현황
+					} 
+				
+				}else if(lendType === "15"){
+					$("#ele_claim").css("display", "");
+					$("#ele_bond").css("display", "");
+					
+					if(typeof sheetClaim === "undefined"){
+						gridOptList[4].Cols[0].Visible = 0; //삭제버튼비활성화
+						IBSheet.create({ id: "sheetClaim", el: "sheetDivClaim", options: gridOptList[4] }); //보험청구권현황
+					} 
+					if(typeof sheetBond === "undefined"){
+						gridOptList[3].Cols[0].Visible = 0; //삭제버튼비활성화
+						IBSheet.create({ id: "sheetBond", el: "sheetDivBond", options: gridOptList[3] }); //매출채권명세현황
+					} 
+			    
+				}
+			};
+			
+			
+			//화면 초기화 처리 호출 (입금방법, 자산구분, 보증종류, 보증약정서식종류 )(샘플현황)
+			$(document).ready(function(){
+				
+			});
+			
+			/*]]>*/
+		    
+		    
+            
+		</script>
+		<!--상세 정보, 이자정보 -->
+		<!-- 콘텐츠 시작 -->
+		<div id="areaLend">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">대출상품정보</h4>
+				</div>
+			</section>
+			<table class="tbl">
+				<colgroup>
+					<col style="width:80px;">
+					<col style="width:80px;">
+					<col style="width:200px;">
+					<col style="width:160px;">
+					<col style="">
+				</colgroup>
+				<tbody>
+					<tr>
+						<th colspan="2">대출상품</th>
+						<td >
+							<span id="ele_lendTypeNm"></span>
+						</td>
+						<th>대출상태</th>
+						<td>
+							<span id="ele_lendStatNm"></span>
+						</td>
+						
+					</tr>
+					
+					<tr>
+						<th colspan="2">대출일자</th>
+						<td>
+							<span id="ele_lendDt"></span>
+						</td>
+						<th>상환기한</th>
+						<td>
+							<span id="ele_repayPreDt"></span>
+						</td>
+					</tr>
+					<tr>
+						<th colspan="2">대출금액</th>
+						<td>
+							<span id="ele_lendAmt"></span>
+						</td>
+						<th>대체금액</th>
+						<td>
+							<span id="ele_repLendAmt"></span>
+						</td>
+					</tr>
+					<tr>
+						<th colspan="2">지급대상금액(A)</th>
+						<td>
+							<span id="ele_payAmt"></span>
+						</td>
+						<th>이자율</th>
+						<td>
+							<span id="ele_interPer"></span>&nbsp;%
+						</td>
+					</tr>
+					
+					<!-- 어음할인 -->
+					<tr class="ele_lendType13" style="display:none">
+						<th rowspan="4">공제 또는</br>환급금액</th>
+						<th>대출이자</th>
+						<td>
+							<span id="ele_interAmt"></span>
+						</td>
+						<th>수수료</th>
+						<td>
+							<span id="ele_commAmt"></span>
+						</td>
+					</tr>
+					<tr class="ele_lendType13" style="display:none">
+						<th>공증료</th>
+						<td>
+							<span id="ele_notarAmt"></span>
+						</td>
+						<th>국민주택채권매입비</th>
+						<td>
+							<span id="ele_purcAmt"></span>
+						</td>
+					</tr>
+					<tr class="ele_lendType13" style="display:none">
+						<th>상계금액</th>
+						<td>
+							<span id="ele_offsetAmt"></span>
+						</td>
+						<th>연체이자</th>
+						<td>
+							<span id="ele_delayAmt"></span>
+						</td>
+					</tr>
+					<tr class="ele_lendType13" style="display:none">
+						<th>환급이자</th>
+						<td>
+							<span id="ele_retAmt"></span>
+						</td>
+						<th>소계(B)</th>
+						<td>
+							<span id="ele_totAmt"></span>
+						</td>
+					</tr>
+					<tr class="ele_lendType13" style="display:none">
+						<th colspan="2">차감지급액</th>
+						<td colspan="3">
+							<span id="ele_payAmt"></span>
+						</td>
+					</tr>
+					<!-- 어음할인 끝-->
+					
+					<tr class="ele_lendType14" style="display:none">
+						<th colspan="2">대출이자(B)</th>
+						<td>
+							<span id="ele_interAmt"></span>
+						</td>
+						<th>차감지급액(A-B)</th>
+						<td>
+							<span id="ele_payAmt"></span>
+						</td>
+					</tr>
+					<tr>
+						<th colspan="2">출금은행</th>
+						<td>
+							<span id="ele_outBankNm"></span>
+						</td>
+						<th>출금계좌</th>
+						<td colspan="3">
+							<span id="ele_outAcct"></span>
+						</td>
+					</tr>
+					<tr>
+						<th colspan="2">비고</th>
+						<td colspan="3">
+							<span id="ele_lendRemark"></span>
+						</td>
+					</tr>
+					
+				</tbody>
+			</table>
+		</div>
+		<!-- 대출상품별 상세 추가 부분 -->
+		<div id="ele_concl" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">계약체결명세현황</h4>
+				</div>
+			</section>
+			<div id="sheetDivConcl" style="width:100%;height:200px"></div>
+		</div>
+		<div id="ele_note" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">담보명세현황</h4>
+				</div>
+			</section>
+			<div id="sheetDivNote" style="width:100%;height:200px"></div>
+		</div>
+		<div id="ele_claim" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">매출채권보험청구권현황</h4>
+				</div>
+			</section>
+			<div id="sheetDivClaim" style="width:100%;height:200px"></div>
+		</div>
+		<div id="ele_bond" style="display:none">
+			<section class="area mt5">
+				<div class="fl">
+					<h4 class="title">양도 매출채권 및 대출신청 명세</h4>
+				</div>
+			</section>
+			<div id="sheetDivBond" style="width:100%;height:200px"></div>
+		</div>
+		
+	</body>
+</html>

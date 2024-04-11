@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+		
+	<div id="rightSidebar" th:fragment="main-right">
+	    <button type="button" id="sideBarBtn">펼치기</button>
+	    <ul>
+	        <li id="comStatus">
+	            <p>민원신청현황</p>
+	            <div>
+	                <button type="button">새로고침</button><span>(최초갱신시각 16:38)</span>
+	                <ul>
+	                    <li><span>60일 경과미수수료</span><small>579건</small></li>
+	                    <li><span>60일 경과미수수료</span><small>579건</small></li>
+	                    <li><span>60일 경과미수수료</span><small>579건</small></li>
+	                    <li><span>60일 경과미수수료</span><small>579건</small></li>
+	                    <li><span>60일 경과미수수료</span><small>579건</small></li>
+	                </ul>
+	            </div>
+	        </li>
+	        <li id="myMemo">
+	            <p>업무메모장</p>
+	            <div>
+	                <ul>
+	                    <li></li>
+	                </ul>
+	                <textarea name="myMemo" id="" cols="30" rows="12"></textarea>
+	                <div class="mt10">
+	                    <a href="javascript:;" class="btn style05">지우기</a>
+	                    <a href="javascript:;" class="btn style05">저장</a>
+	                </div>
+	            </div>
+	        </li>
+	    </ul>
+	</div> <!-- // rightSidebar -->
+   	
+</html>

@@ -1,0 +1,261 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : membBussList
+	파일명 : membBussList
+	업무명 : 마이페이지 - 업무거래현황
+	생성자 : 변성균
+	생성일 : 2023.06.21
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+			
+			
+			//내용조회
+			var param = {};
+			obj = {url:"/memb/selectMembBussList.do", param:param, callBack:fnSerchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+			
+		});
+		
+		var fnSerchCallBack = function(resData){
+			console.log(resData);
+			
+			//조합원정보
+			com.fnSetKeyVal(resData.memb);
+			
+			//출자정보
+			$("#ele_investAmt").text(com.addComma(resData.memb.investAmt));
+			$("#ele_mortAmt").text(com.addComma(resData.memb.mortAmt));
+			$("#ele_assignAmt").text(com.addComma(resData.memb.assignAmt));
+			
+			//출자증권현황
+			if(resData.invtList.length === 0) $("#ele_invtList").append('<tr><td colspan=7">출자증권 정보가 없습니다..</td></tr>');
+			
+			$.each(resData.invtList, function(index, item) {
+				var html  = '<tr>';
+					html += '<td class="alignC">'+ com.fnDateFormat(item.investDt)+ '</td>'; //출자일자
+					html += '<td class="alignC">'+ item.billTypeNm+ '</td>'; //권종
+					html += '<td class="alignC">'+ item.billNo +'</td>'; //증권번호
+					html += '<td class="alignC">'+ com.addComma(item.billAmt) +'</td>'; //증권금액
+					html += '<td class="alignC">'+ item.mortYnNm +'</td>'; //담보여부
+					
+					if(item.assignYn === "Y") html += '<td class="alignC">배정</td>'; //배정여부
+					else html += '<td class="alignC"></td>'; //배정여부
+					
+					html += '<td class="alignL"></td>'; //비고
+					html += '</tr>';
+					
+				$("#ele_invtList").append(html);
+				
+			});
+			
+			//보증약정정보
+			if(resData.guarContrList.length === 0) $("#ele_guarContrList").append('<tr><td colspan=6">보증약정 정보가 없습니다..</td></tr>');
+			
+			$.each(resData.guarContrList, function(index, item) {
+				var html  = '<tr>';
+					html += '<td class="alignC">'+ item.contrTypeNm + '</td>'; //약정구분
+					html += '<td class="alignC">'+ item.contrTermDt + '</td>'; //약정기간com.fnDateFormat(
+					html += '<td class="alignR">'+ item.contrNum +'좌</td>'; //약정좌수
+					html += '<td class="alignC">'+ item.contrStatNm +'</td>'; //약정상태
+					html += '<td class="alignC">'+ item.guarTypesNm +'</td>'; //상품종류
+					html += '<td class="alignR">'+ item.sumDoubleNum +'배수</td>'; //한도배수
+					html += '</tr>';
+					
+				$("#ele_guarContrList").append(html);
+			});
+			
+			//대출약정정보
+			if(resData.lendContrList.length === 0) $("#ele_lendContrList").append('<tr><td colspan=6">대출약정 정보가 없습니다..</td></tr>');
+			
+			$.each(resData.lendContrList, function(index, item) {
+				var html  = '<tr>';
+					html += '<td class="alignC">'+ item.contrTypeNm + '</td>'; //약정구분
+					html += '<td class="alignC">'+ item.contrTermDt + '</td>'; //약정기간com.fnDateFormat(
+					html += '<td class="alignR">'+ item.contrNum +'좌</td>'; //약정좌수
+					html += '<td class="alignC">'+ item.contrStatNm +'</td>'; //약정상태
+					html += '<td class="alignC">'+ item.lendTypesNm +'</td>'; //상품종류
+					html += '<td class="alignR">'+ item.sumDoubleNum +'배수</td>'; //한도배수
+					html += '</tr>';
+					
+				$("#ele_lendContrList").append(html);
+			});
+			
+			
+		}
+		
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+                        
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article>
+									<p class="title-dept1">조합원정보</p>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll">
+                                            <table>
+                                                <caption>조합원정보</caption>
+                                                <colgroup>
+                                                    <col width="12%">
+                                                    <col width="21%">
+                                                    <col width="12%">
+                                                    <col width="21%">
+                                                    <col width="12%">
+                                                    <col width="*">
+                                                </colgroup>
+                                                <tbody>
+													<tr>
+                                                        <th>조합원명</th>
+                                                        <td colspan="3"><span id="ele_membNo"></span>&nbsp;/&nbsp;<span id="ele_membNm"></span></td>
+                                                        <th>대표자</th>
+                                                        <td><span id="ele_ceoNm"></span></td>
+                                                    </tr>	
+                                                    <tr>
+                                                        <th>사업자번호</th>
+                                                        <td><span id="ele_bizNo"></span></td>
+                                                        <th>법인번호</th>
+                                                        <td><span id="ele_lawNo"></span></td>
+                                                        <th>주장르</th>
+                                                        <td><span id="ele_mainBussNm"></span></td>
+                                                    </tr>
+                                                    <tr>
+														<th>전화번호</th>
+                                                        <td><span id="ele_telNo"></span></td>
+                                                        <th>협회/단체</th>
+                                                        <td colspan="3"><span id="ele_belong"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>주소</th>
+                                                        <td colspan="5"><span id="ele_addrFull"></span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                
+                                <article>
+                                    <p class="title-dept1">출자정보</p>
+                                    <div class="table-wrap info">
+                                        <div class="table-scroll">
+                                            <table width="100%">
+                                                <tbody>
+                                                    <tr>
+                                                        <th width="12%">출자좌수</th>
+                                                        <td width="21%"><span id="ele_investNum"></span></td>
+                                                        <th width="12%">담보좌수</th>
+                                                        <td width="21%"><span id="ele_mortNum"></span></td>
+                                                        <th width="12%">배정좌수</th>
+                                                        <td width="*"<span id="ele_assignNum"></span>0</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>출자금액</th>
+                                                        <td><span id="ele_investAmt"></span></td>
+                                                        <th>담보금액</th>
+                                                        <td><span id="ele_mortAmt"></span></td>
+                                                        <th>배정금액</th>
+                                                        <td><span id="ele_assignAmt"></span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <article>
+                                    <p class="title-dept1">출자증권정보</p>
+                                    <div class="table-wrap board">
+                                        <div class="table-scroll">
+                                            <table class="border">
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th width="12%" scope="col">출자일자</th>
+                                                        <th width="12%" scope="col">권종</th>
+                                                        <th width="12%" scope="col">증권번호</th>
+                                                        <th width="12%" scope="col">증권금액</th>
+                                                        <th width="12%" scope="col">담보여부</th>
+                                                        <th width="12%" scope="col">배정여부</th>
+                                                        <th width="28%" scope="col">비고</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ele_invtList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <article>
+                                    <p class="title-dept1">보증약정정보</p>
+                                    <div class="table-wrap board">
+                                        <div class="table-scroll">
+                                            <table class="border">
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th width="12%" scope="col">약정구분</th>
+                                                        <th width="24%" scope="col">약정기간</th>
+                                                        <th width="12%" scope="col">약정좌수</th>
+                                                        <th width="12%" scope="col">약정상태</th>
+                                                        <th width="28%" scope="col">상품종류</th>
+                                                        <th width="12%" scope="col">한도배수</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ele_guarContrList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                <article>
+                                    <p class="title-dept1">대출약정정보</p>
+                                    <div class="table-wrap board">
+                                        <div class="table-scroll">
+                                            <table class="border">
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th width="12%" scope="col">약정구분</th>
+                                                        <th width="24%" scope="col">약정기간</th>
+                                                        <th width="12%" scope="col">약정좌수</th>
+                                                        <th width="12%" scope="col">약정상태</th>
+                                                        <th width="28%" scope="col">상품종류</th>
+                                                        <th width="12%" scope="col">한도배수</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ele_lendContrList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

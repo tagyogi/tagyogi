@@ -1,0 +1,713 @@
+<!--
+	파일정보 : lend/lendInterPayIns.html
+	파일명 : lendInterPayIns
+	업무명 : 대출이자납입
+	생성자 : 김대성
+	생성일 : 2023-06-29
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var codeList = /*[[${codeList}]]*/; //공통코드
+			var gridColList = /*[[${gridColList}]]*/; //그리드옵션
+			var gridOptList = []; //그리드옵션
+			//var initParam = {codeList : "LD01:LD04:CM01:CM02", gridNoList : "40309:40306:40307:40325"}
+			
+			var today = /*[[${today}]]*/; //오늘일자
+			var lendInter; //이자현황
+			var procYn = false; //납부산정여부
+			var delayRate; //연체이율
+			//초기화 조회 콜백
+			$(document).ready(function(){
+				//화면 처리
+				
+				//코드값 처리
+				com.fnCodeSelectBox("CM01", "payWay", 1, ""); //선택
+					
+				//조합계좌설정
+				com.fnSetBankAccList("selBank", 1);	
+				
+				//IBsheet 초기화
+				com.fnIbsInit(/*[[${menuInfo.workGrid}]]*/);
+				
+				gridOptList[1].Cfg.HeaderCheck = 1; //헤더체크
+				gridOptList[0].Cfg.CanEdit = 1; //이자납입현항 수정 가능
+				
+				//그리드 옵션추가 (납입목록)
+				$.each(gridOptList[1].Cols, function(idx, item){
+					let name =  item.Name;
+					
+					if(name === "SEQ" || name === "payAcct" ) return;
+					if(name === "delChk"){
+						item.Visible = 1;
+					}else{
+						item.CanEdit = 1;	//수정가능하게
+					}
+					
+					//입출금계좌 (조합원계좌)
+					var getEnum = com.fnBankIbSelectBox();
+					if(name === "payBankVal"){ 
+						item.Enum = getEnum.enumNm;
+						item.EnumKeys = getEnum.enumKeys;
+						item.OnChange = fnCtrlbankAcct;//계좌세팅
+					}
+					
+				});
+				
+				//그리드 옵션추가 (이자정보) 40309
+				$.each(gridOptList[0].Cols, function(idx, item){
+					let name =  item.Name;
+					if(name === "interPayAmt" ){
+						item.Visible = 1;
+					}
+					if(name === "interAmt"){
+						item.CanEdit = 1;
+					}
+					if(name.indexOf("delay") > -1){
+						item.Visible = 0;
+					}
+				});
+				
+				//연체 그리드 
+				$.each(gridOptList[2].Cols, function(idx, item){
+					item.OnChange = fnInterDelayCalc;//연체이자계산
+				});
+				
+				//납입상세
+				gridOptList[3].Cfg.CanEdit = 1; //이자납입현항 수정 가능
+				$.each(gridOptList[3].Cols, function(idx, item){
+					let name =  item.Name;
+					if(name === "SEQ" || name === "payAcct" ) return;
+					if(name === "delChk"){
+						item.Visible = 1;
+					}else{
+						item.CanEdit = 1;	//수정가능하게
+					}
+				});
+				
+				//초기 데이터 설정 (id : 시트 객체 ID, el : 시트를 생성할 DIV객체 ID, options : 초기화 구문 변수, data : DATA)
+			    IBSheet.create({ id: "sheetInter", el: "sheetDivInter", options: gridOptList[0] }); //이자정보
+			    IBSheet.create({ id: "sheetInPay", el: "sheetDivInPay", options: gridOptList[1] }); //납입목록
+			    IBSheet.create({ id: "sheetDelay", el: "sheetDivDelay", options: gridOptList[2] }); //연체정보
+			    IBSheet.create({ id: "sheetInHit", el: "sheetDivInHit", options: gridOptList[3] }); //이자납부이력(납입상세)
+			    IBSheet.create({ id: "sheetChgHist", el: "sheetDivChgHist", options: gridOptList[4] }); //수정이력
+			    
+			    //시트 생성 이후 
+			    IBSheet.onRenderFirstFinishAll = function(obj){
+					fnSearch(); //조회 호출
+				};
+			    
+			   
+			    //sheetInter 데이터 로드 후
+				sheetInter.bind("onDataLoad" , function(obj) { //원클릭
+					sheetInter.getDataRows().forEach((item, idx) => {
+						var getRow = sheetInter.getRowById(item.id);
+						if(item.interAmt === item.totPayAmt){
+							sheetInter.setAttribute( getRow, "interPayAmt", "CanEdit", 0); //납부완료 된경우 납부금액 비활성화
+						}
+					});
+				});
+				
+				
+				//sheetDiv 원클릭 처리
+				sheetInPay.bind("onAfterClick" , function(obj) { //원클릭
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					
+					if(obj.col !==""){
+						var param = {paySeq : rowData.paySeq, lendNo : rowData.lendNo};
+						com.fnIbsSearch("/lendInter/selectLendInterHistList.do", param, sheetInHit); //param, sheetId 생략 가능
+					}
+					
+					//삭제
+					if(obj.col === "delChk") com.fnIbsStatusChg(sheetInPay, "D");
+					
+				});
+				
+				//sheetInter 원클릭 처리
+				sheetInter.bind("onAfterClick" , function(obj) { //원클릭
+					sheetInHit.removeAll();
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					
+					if(obj.col !==""){
+						var param = {interSeq : rowData.interSeq, lendNo : rowData.lendNo};
+						com.fnIbsSearch("/lendInter/selectLendInterHistList.do", param, sheetInHit); //param, sheetId 생략 가능
+					}
+				});
+				
+				//납입상세 이벤트
+				sheetInHit.bind("onAfterClick" , function(obj) { //원클릭
+					rowData = this.getFocusedRow(); //생성된 행 정보 가져오기
+					
+					//삭제
+					if(obj.col === "delChk") com.fnIbsStatusChg(sheetInPay, "D");
+				});
+				
+				
+				
+				
+			});
+			
+			//sheetDelay 연체 그리드 수정시 이벤느
+			var fnInterDelayCalc = function(evtParam){
+				//연체 이자 계산
+				if(evtParam.col === "interAmt" || evtParam.col === "interRate" || evtParam.col === "interBegDt" || evtParam.col === "interEndDt"){
+					//let rowId = evtParam.row.id;
+					let interAmt = evtParam.row.interAmt;
+					let interRate = evtParam.row.interRate;
+					let interBegDt = com.fnDateGet(evtParam.row.interBegDt, 0);
+					let interEndDt = com.fnDateGet(evtParam.row.interEndDt, 0);
+					let delayDays = com.fnDateTerm(interBegDt, interEndDt);
+					
+					let delayAmt = Math.floor(interAmt * interRate / 100 / 365 * delayDays / 10)  * 10;
+					sheetDelay.setValue(sheetDelay.getRowById(evtParam.row.id), "delayDays", delayDays);
+					sheetDelay.setValue(sheetDelay.getRowById(evtParam.row.id), "delayAmt", delayAmt);
+					sheetDelay.setValue(sheetDelay.getRowById(evtParam.row.id), "payAmt", delayAmt);
+					 		
+				}
+			}
+			
+			//입출금은행,계좌 (조합원계좌) sheetInPay
+			var fnCtrlbankAcct = function(evtParam){
+				var rowId = evtParam.row.id;
+				//var rowIdx = evtParam.sheet.getRowIndex(rowId);
+				var payBank = sheetInPay.getValue(sheetInPay.getRowById(rowId), "payBankVal");
+				var bankCd  = payBank.split(",")[0];
+				var bankNm  = payBank.split(",")[1];
+				
+				sheetInPay.setValue(sheetInPay.getRowById(rowId), "payBank", bankCd);
+				sheetInPay.setValue(sheetInPay.getRowById(rowId), "payAcct", bankNm);
+				
+			}
+			
+			//상세검색
+			var fnSearch = function(){
+				
+				//상세정보 조회
+			    var lendNo = /*[[${paramMap.lendNo}]]*/;
+			    $("#lendNo").val(lendNo);
+			    
+			    var param = {lendNo : lendNo };
+				obj = {url:"/lendInter/selectLendInter.do", param:param, callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			};
+			
+			//상세검색콜백
+			var fnSearchCallBack = function(resData){
+				//console.log(resData);
+				com.fnSetKeyVal(resData.lend, "areaLend");
+				com.fnSetKeyVal(resData.memb);
+				//finalGrade
+								
+				//시트값 설정
+				lendInter = resData.data;
+				//console.log(lendInter);
+				sheetInter.loadSearchData(lendInter);
+				sheetInPay.loadSearchData(resData.pay);
+				sheetChgHist.loadSearchData(resData.chgList);
+				
+				$("#payMan").val(resData.memb.membNm);
+				$("#finalGrade").val(resData.contr.finalGrade);
+				
+				//연체 이자 산정 처리
+				fnGetRate();
+			};
+			
+			//산정 처리 여부 초기화
+			var fnProcInit = function(){
+				procYn = false;
+			}
+			
+			//이율 조회
+			var fnGetRate = function(){
+				var param = { membNo : $("#membNo").val(), appDt : $("#payDt").val(), finalGrade : $("#finalGrade").val() };
+				obj = {url:"/membRateLend/selectLendRate.do", param:param, callBack:fnGetRateCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+				
+			};
+			
+			//이율 조회 콜백
+			var fnGetRateCallBack = function(res){
+				//console.log(res);
+				delayRate = res.data.delayRate; //연체율
+				if(delayRate === null) delayRate = 18;
+				
+				fnInterDelaySet(); //이자연체정보
+				
+			};
+			
+			//이자연체 정보 설정 (재산정)
+			var fnInterDelaySet = function(){
+				//연체이자정보 초기화
+				sheetDelay.removeAll(); //초기화
+				
+				var payDt = $("#payDt").val().replace(/\-/g,""); //입금일자
+				
+				//이자납입현황
+				sheetInter.getDataRows().forEach((item, idx) => {
+					
+					if(item.payStat == "90" || item.interDefaultAmt == 0){ //납부 완료 건 패스
+						return;
+					}
+					
+					const noPayAmt = Number(item.interDefaultAmt); //미납액 추출
+					const interEndDt = com.fnDateGet(item.interEndDt, 0); //이자 산정종료일
+					const delayStaDt = com.fnDateGet(item.delayStaDt, 0).replace(/\-/g,""); //연체 이자 납입기간 추출
+					const lastDelayPayDt = com.fnDateGet(item.lastDelayPayDt, 1); //마지막 연체 납부일자
+					
+					if(delayStaDt < lastDelayPayDt) delayStaDt = lastDelayPayDt; //최근 연체 납부일자 있을경우 시작일 설정
+					
+					var setDelayBegDt = ""; //연체시작일
+					var setDelayEndDt = ""; //연체종료일
+					var setDelayAmt = 0; //연체금액
+					var setDelayRate = ""; //연체이율
+					
+				//	console.log(1);
+					//연체 발생
+					
+					if(Number(interEndDt.replace(/\-/g,"")) < Number(payDt)){
+						//연체시작일보다 납입일이 크면 *연체시작일이 영업일 기준이므로 주말 일경우 납입기간일로 다시 설정
+						
+						setDelayBegDt = com.fnDateGet(interEndDt, 1); //연체시작일 산정 (금요일 경우 다음 영업일까지 납부 가능 그 이후 연체로 처리 그럼 연체 시작일은?)
+						if(lastDelayPayDt !== "")  setDelayBegDt = lastDelayPayDt;
+						
+						setDelayEndDt = com.fnDateGet(payDt, -1); //연체종료일
+						
+						setDelayDays = Number(com.fnDateTerm(setDelayBegDt, setDelayEndDt));
+						if(setDelayBegDt === setDelayEndDt) setDelayDays = 1;
+						
+						//연체 이자액 계산
+						//setDelayAmt = Math.floor(noPayAmt/365*Number(delayRate)/100*setDelayDays/10)*10; //연체이자액
+						setDelayAmt = Math.floor((noPayAmt/365*Number(delayRate)/100*setDelayDays/10))*10; //연체이자액
+						
+					}
+					//alert(setDelayAmt);
+					if(setDelayAmt === 0) return;
+					
+					addRowCnt = sheetDelay.getTotalRowCount()+1;
+					initData = {
+						lendNo		: item.lendNo
+						, interSeq	: item.interSeq
+						, interAmt	: noPayAmt
+						, interRate	: delayRate
+						, interBegDt: setDelayBegDt
+						, interEndDt: setDelayEndDt
+						, delayDays: setDelayDays
+						, delayAmt	: setDelayAmt
+					};
+					com.fnIbsRowAdd("pre", initData, sheetDelay);
+					
+					
+				});
+				
+				procYn = false;
+			}
+			
+			//납부산정
+			var fnInterProc = function(delayYn){
+				
+				//이자 납입 계산 
+				if($("#payDt").val() === ""){
+					alert("입금일자를 입력하십시오.");
+					$("#payDt").focus();
+					return;
+				}
+				
+				if($("#payAmt").val() === ""){
+					alert("납입금액을 입력하십시오.");
+					$("#payAmt").focus();
+					return;
+				}
+				
+				
+				
+				sheetInter.loadSearchData(lendInter); //초기화
+				fnInterDelaySet();
+				
+				
+				//납입정보
+				var payDt = $("#payDt").val().replace(/\-/g,""); //입금일자
+				var payAmt = Number($("#payAmt").val().replace(/\,/g,"")); //납입금액
+				var remainAmt = payAmt; //납입금액 잔여
+				
+				//연체 이자부터 처리
+				//연체이자행추가
+				if(delayYn){
+					sheetDelay.getDataRows().forEach((item, idx) => {
+						var getRow = sheetDelay.getRowById(item.id);
+						
+						var delayAmt = item.delayAmt; //연체금액
+						var payAmt = "";//납부금액
+						//잔여금액 확인
+						if(remainAmt >= delayAmt){
+							payAmt = delayAmt;
+							remainAmt = remainAmt - delayAmt;	
+						}else{
+							payAmt = remainAmt; //잔액 만큼만 
+							remainAmt = 0;
+						}
+							
+						sheetDelay.setString( getRow, "payAmt", payAmt); //납부금액
+						sheetDelay.setString( getRow, "remainAmt", delayAmt - payAmt); //연체잔액
+							
+					});
+				}
+				
+				
+				if(remainAmt !== 0) {
+					//이자납입현황
+					//alert(payAmt);
+					sheetInter.getDataRows().forEach((item, idx) => {
+						var getRow = sheetInter.getRowById(item.id);
+						
+						if(item.payStat === "90" || item.interDefaultAmt === 0 || remainAmt === 0){ //납부 완료 건 패스
+							return;
+						}
+						
+						noPayAmt = Number(item.interDefaultAmt); //미납액 추출
+						
+						//잔여금액 확인
+						if(remainAmt >= noPayAmt){
+							payAmt = noPayAmt;
+							remainAmt = remainAmt - noPayAmt;	
+						}else{
+							payAmt = remainAmt; //잔액 만큼만 
+							remainAmt = 0;
+						}
+						
+						sheetInter.setString( getRow, "payDt", com.fnDateFormat(payDt)); //납부일
+						//sheetInter.setString( getRow, "totPayAmt", payAmt); //납부금액
+						sheetInter.setString( getRow, "interPayAmt", payAmt); //납부금액
+						sheetInter.setString( getRow, "interDefaultAmt", noPayAmt - payAmt); //연체잔액
+						
+					});
+				}
+				
+				procYn = true;
+			};
+			
+			//저장
+			var fnSave = function(){
+				
+				if(!procYn){
+					alert("납부산정 처리 후 진행 가능합니다.");
+					return;
+				}
+				
+				//필수체크
+				var valChks = ["payDt", "payAmt", "payWay", "payBank"];
+				if(com.fnValChk(valChks)){
+				
+					if(confirm("납부 처리 하시겠습니까?")){
+						var param = $("#saveFrm").serializeObject();
+						param.inter = sheetInter.getSaveJson(); //이자정보
+						param.delay = sheetDelay.getSaveJson(); //납입정보
+						
+						obj = {url:"/lendInter/insertLendInterProc.do", callBack:fnSaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+						com.fnAjaxMulti(obj);
+					}
+				}
+				
+			};
+			
+			//저장콜백
+			var fnSaveCallBack = function(resData){
+				fnSearch(); //조회 호출
+				//let reLoadFrm = window.frames.name;
+				//top.document[reLoadFrm].location.reload();
+				
+			};
+			
+			//납입정보 수정
+			var fnPaySave = function(){
+				if($("#histReason").val() === ""){
+					alert("수정사유를 입력하십시오");
+					$("#histReason").focus();
+					return;
+				}
+				if(confirm("삭제 대상은 납부상세 정보도 함께 삭제 됩니다. 수정 하시겠습니까?")){
+					var param = $("#saveFrm").serializeObject();
+					param.interPay = sheetInPay.getSaveJson(); //납입정보
+					
+					obj = {url:"/lendInter/updateLendInterPayProc.do", callBack:fnPaySaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+					com.fnAjaxMulti(obj);
+				}
+			}
+			
+			//저장콜백
+			var fnPaySaveCallBack = function(resData){
+				fnSearch(); //조회 호출
+				$("#histReason").val("");
+			};
+			
+			//행 추가(연체이자)
+			var fnRowAddDelay = function(){
+				rowData = sheetDelay.getFocusedRow(); //생성된 행 정보 가져오기
+				initData = {seq:sheetDelay.getTotalRowCount()+1 };
+				com.fnIbsRowAdd("pre", initData, sheetDelay);
+
+			};
+			
+			//납입상세정보 수정
+			var fnPayDtlSave = function(){
+				if($("#histReason").val() === ""){
+					alert("수정사유를 입력하십시오");
+					$("#histReason").focus();
+					return;
+				}
+				
+				if(confirm("수정 하시겠습니까?")){
+					var param = $("#serchFrm").serializeObject();
+					param.interPayDtl = sheetInHit.getSaveJson(); //납입정보
+					
+					obj = {url:"/lendInter/updateLendInterDtlProc.do", callBack:fnPayDtlSaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+					com.fnAjaxMulti(obj);
+				}
+			}
+			
+			//저장콜백
+			var fnPayDtlSaveCallBack = function(resData){
+				//sheetInHit.removeAll();
+				rowData = sheetInter.getFocusedRow(); //생성된 행 정보 가져오기
+				
+				var param = {interSeq : rowData.interSeq, lendNo : rowData.lendNo};
+				com.fnIbsSearch("/lendInter/selectLendInterHistList.do", param, sheetInHit); //param, sheetId 생략 가능
+				
+				var param = {lendNo : rowData.lendNo};
+				com.fnIbsSearch("/lendInter/selectLendInterList.do", param, sheetInter); //param, sheetId 생략 가능
+				$("#histReason").val("");
+				
+			};
+			
+			//이자정보 수정
+			var fnInterSave = function(){
+				if($("#histReason").val() === ""){
+					alert("수정사유를 입력하십시오");
+					$("#histReason").focus();
+					return;
+				}
+				if(confirm("수정 하시겠습니까?")){
+					var param = $("#serchFrm").serializeObject();
+					param.interList = sheetInter.getSaveJson(); //납입정보
+					
+					obj = {url:"/lendInter/updateLendInter.do", callBack:fnInterSaveCallBack, jParam:param, msgYn:"Y", loadYn:"Y", sessYn:"Y" };
+					com.fnAjaxMulti(obj);
+				}
+			}
+			
+			//저장콜백
+			var fnInterSaveCallBack = function(resData){
+				var param = {lendNo : rowData.lendNo};
+				com.fnIbsSearch("/lendInter/selectLendInterList.do", param, sheetInter); //param, sheetId 생략 가능
+				$("#histReason").val("");
+			};
+			
+			/*]]>*/
+		</script>
+		
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+				
+				<!--title 버튼 영역-->
+				<div class="topBtnsWrap">
+					<!--오른쪽접기화면 컨트롤 버튼-->
+					<div class="collapseCtrl">
+						<button type="type" class="btn-collapse down"><span></span></button>
+						<button type="type" class="reLoadFrm"></button>
+					</div>
+				</div>
+			</div><!-- //contentsTop -->
+			<form name="saveFrm" id="saveFrm" method="post" onSubmit="return false;" action="">
+			<input type="hidden" name="lendNo" id="lendNo" />
+			<input type="hidden" name="membNo" id="membNo" /> <!--조합원번호 -->
+			<input type="hidden" name="finalGrade" id="finalGrade" /> <!--신용등급 -->
+			<div class="contents flex">
+				<div class="layer-flex collapseArea">
+					<!-- 그리드 좌측 부분 -->
+					<div class="collapseBox" style="width:49%">
+						<th:block th:include="com/comMemb"></th:block> <!--조합원조회 -->
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">대출정보</h4>
+							</div>
+						</section>
+						<div id="areaLend">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:80px;">
+									<col style="width:150px;">
+									<col style="width:80px;">
+									<col style="width:150px;">
+									<col style="width:80px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>대출번호</th>
+										<td ><span id="ele_lendNo" ></td>
+										<th>대출종류</th>
+										<td ><span id="ele_lendTypeNm" ></td>
+										<th>대출구분</th>
+										<td ><span id="ele_lendNm" ></td>
+									</tr>
+									<tr>
+										<th>대출일자</th>
+										<td ><span id="ele_lendDt" ></td>
+										<th>상환기한</th>
+										<td ><span id="ele_repayPreDt" ></td>
+										<th>대출상태</th>
+										<td ><span id="ele_lendStatNm" ></td>
+									</tr>
+									<tr>
+										<th>대출금액</th>
+										<td ><span id="ele_lendAmt" ></td>
+										<th>상환금액</th>
+										<td ><span id="ele_totRepayAmt" ></td>
+										<th>대출잔액</th>
+										<td ><span id="ele_remainLendAmt" ></td>
+									</tr>
+									<tr>
+										<th>비고</th>
+										<td colspan="5"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">납입정보</h4>
+							</div>
+						</section>
+						<table class="tbl">
+							<colgroup>
+								<col style="width:80px;">
+								<col style="width:150px;">
+								<col style="width:80px;">
+								<col style="width:150px;">
+								<col style="width:80px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>입금일자</th>
+									<td >
+										<input type="search" name="payDt" id="payDt" title="입금일자" th:value="${today}" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);" onblur="com.fnDateValiChk(this);fnGetRate();" style="width:100px" maxlength="10"/>
+										<img src="../images/icon_calendar.png" class="calendar-box" onclick="calendar(this, 'payDt', 'yyyy-mm-dd','','')" />
+									</td>
+									<th>납입금액</th>
+									<td >
+										<input type="search" id="payAmt" name="payAmt" style="width:130px" title="납입금액" onkeyup="com.fnOnlyNum(this);com.makeComma(this);" onBlur="fnProcInit();" maxlength="15"  >
+									</td>
+									<th>입금구분</th>
+									<td >
+										<select name="payWay" id="payWay" title="입금구분" style="width:100px" >
+									</td>
+								</tr>
+								<tr>
+									<th>입금은행</th>
+									<td>
+										<select name="selBank" id="selBank" title="입금은행" style="width:130px" onchange="com.fnBankChange(this.value, 'pay');">
+											<optoin value=""></option>
+										</select>
+										<input type="hidden" name="payBank" id="payBank" title="입금은행"/>
+									</td>
+									<th>계좌번호</th>
+									<td>
+										<input type="search" name="payAcct" id="payAcct" style="width:140px" title="입금계좌" readonly="readonly" />
+									</td>
+									<th>입금자</th>
+									<td >
+										<input type="search" id="payMan" name="payMan" style="width:100px" title="입금자" maxlength="20">
+									</td>
+								</tr>
+								<tr>
+									<th>비고</th>
+									<td colspan="5">
+										<input type="search" name="remark" id="remark" style="width:100%" title="비고" maxlength="100">
+									</td>
+								</tr>
+								<tr>
+									<th>수정사유</th>
+									<td colspan="5">
+										<textarea name="histReason" id="histReason" title="수정사유" cols="100" rows="2"></textarea>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">납입목록</h4>
+								</div>
+								<div class="fr">
+									<button type="button" onclick="javascript:fnPaySave();" class="btn small style03">수정</button>
+								</div>
+							</section>
+							<div id="sheetDivInPay" style="width:100%;height:320px"></div>
+						</div>
+						
+						<div class="wrapBox">
+							<section class="area mt5">
+								<div class="fl">
+									<h4 class="title">수정이력</h4>
+								</div>
+							</section>
+							<div id="sheetDivChgHist" style="width:100%;height:200px"></div>
+						</div>
+					
+					</div>
+					<!-- 그리드 우측 부분 시작 -->
+					<div class="collapseBox fixable" style="width:49%">
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">이자정보</h4>
+							</div>
+							<div class="fr">
+								<button type="button" onclick="javascript:fnInterSave();" class="btn small style03">수정</button>
+							</div>
+						</section>
+						<div id="sheetDivInter" style="width:100%;height:360px"></div>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">납입상세목록</h4>
+							</div>
+							<div class="fr">
+								<button type="button" onclick="javascript:fnPayDtlSave();" class="btn small style03">수정</button>
+							</div>
+						</section>
+						<div id="sheetDivInHit" style="width:100%;height:160px"></div>
+						<section class="area mt5">
+							<div class="fl">
+								<h4 class="title">연체이자정보 (* 납부금액이 0원 인 대상은 등록 제외 됩니다.)</h4>
+							</div>
+							<div class="fr">
+								<button type="button" onclick="javascript:fnRowAddDelay();" class="btn small style08">행추가</button>
+								<button type="button" onclick="javascript:com.fnIbsRowDel(sheetDelay);" class="btn small style08">행삭제</button>
+							</div>
+						</section>
+						<div id="sheetDivDelay" style="width:100%;height:200px"></div>
+					</div>
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				
+				<div class="layer-flex mt50">
+					<!-- 처리 버튼 영역 -->
+					<div class="" style="width:100%">	
+						<section class="area">
+							<div class="fc">
+								<button type="button" onclick="javascript:fnInterProc(true);" class="btn style01">납부산정</button>
+								<button type="button" onclick="javascript:fnInterProc(false);" class="btn style01">납부산정(연체제외)</button>
+								<button type="button" onclick="javascript:fnSave();" class="btn style03">납입처리</button>
+							</div>
+						</section>
+					</div>
+					<!-- 처리 버튼 영역 끝-->
+				</div>
+			</div><!-- //contents -->
+			</form>
+		</div><!-- //contentsArea -->
+	</body>
+</html>

@@ -1,0 +1,146 @@
+<!--
+	파일정보 : bankPayReq.html
+	파일명 : 뱅크페이 결제요청 페이지 호출
+	업무명 : 뱅크페이 결제요청 페이지 호출 (팝업 호출 부분 2단계)
+	생성자 : bsg
+	생성일 : 2023.05.09
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	<body OnLoad="onLoadProc();">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			var cnt = 0;
+			var timeout = 600;
+			var k_timeout = 1;
+			var processed = false;
+			var goon = false;
+			var childwin = null;
+			
+			function popupIsClosed()
+			{
+				if(childwin) {
+					if(childwin.closed) {
+						if( !goon ) {
+							if( !processed ) {
+								processed = true;
+								self.setTimeout("popupIsClosed()", 2000);
+							}// else popError("인증처리 중 문제가 발생하였습니다.(1)");
+						}
+					} else {
+						cnt++;
+						if(cnt > timeout) {
+							popError("작업시간이 초과되었습니다.");
+						} else {
+							self.setTimeout("popupIsClosed()", 1000);
+						}
+					}
+				} else if ( childwin === null ) {
+					cnt++;
+					if ( cnt > k_timeout ) {
+						popError("팝업창이 차단되었습니다. 팝업 차단을 해제해 주십시오.");
+					} else {
+						self.setTimeout("popupIsClosed()", 1000);
+					}
+					
+				} else {
+					popError("인증처리 중 문제가 발생하였습니다.(2)");
+				}
+			}
+
+			function popError(arg)
+			{
+				//if( childwin ) {
+				//	childwin.close();
+				//}
+				//alert(arg);
+			}
+
+			function onLoadProc() 
+			{			
+				leftPosition = (screen.width-720)/2-10;
+				topPosition = (screen.height-600)/2-50;
+				childwin = window.open('about:blank','BANKPAYPOPUP', 'top='+topPosition+',left='+leftPosition+',height=600,width=720,status=no,dependent=no,scrollbars=no,resizable=no');
+				
+				document.postForm.target = 'BANKPAYPOPUP';
+				document.postForm.submit();
+				popupIsClosed();
+			}
+		
+			
+			function paramSet(hd_pi, hd_ep_type)
+			{
+				var frm = document.frmRet;
+				frm.hd_pi.value = hd_pi;
+				frm.hd_ep_type.value = hd_ep_type;
+			}
+
+			function proceed() {
+				var frm = document.frmRet;
+				goon = true;
+				frm.submit();
+			}
+			
+			
+			/*>*/ 
+		</script>
+		<form name="postForm" th:action="@{${payMap.bankpayURL}}" method="POST" accept-charset="euc-kr">
+			<input type="hidden" name="hd_msg_code"   	value="0200">
+			<input type="hidden" name="hd_msg_type" 	value="EFT">
+			<input type="hidden" name="hd_approve_no"   th:value="${payMap.hd_approve_no}"> 
+			<input type="hidden" name="hd_serial_no"    th:value="${payMap.hd_serial_no}">
+			<input type="hidden" name="hd_firm_name"    th:value="${payMap.hd_firm_name}">
+			<input type="hidden" name="hd_item_name"    th:value="${payMap.hd_item_name}">
+			<input type="hidden" name="tx_amount"    	th:value="${payMap.tx_amount}">
+			<!-- 현금영수증 관련 파라미터 -->
+			<input type="hidden" name="tx_bill_yn"      th:value="${payMap.tx_bill_yn}">
+			<input type="hidden" name="tx_vat_yn"      	th:value="${payMap.tx_vat_yn}">
+			<input type="hidden" name="tx_bill_vat"     th:value="${payMap.tx_bill_vat}">
+			<input type="hidden" name="tx_svc_charge"   th:value="${payMap.tx_svc_charge}">
+			<input type="hidden" name="tx_bill_tax"     th:value="${payMap.tx_bill_tax}">
+			<input type="hidden" name="tx_bill_deduction"  	th:value="${payMap.tx_bill_deduction}">
+			
+			<input type="hidden" name="tx_age_check"   	th:value="${payMap.tx_age_check}">
+			
+			<input type="hidden" name="sbp_service_use" th:value="${payMap.sbp_service_use}">
+			<input type="hidden" name="sbp_tab_first"   th:value="${payMap.sbp_tab_first}">
+			<input type="hidden" name="termURL"      	th:value="${payMap.termUrl}">
+			
+			<input type="hidden" name="tx_guarantee"	th:value="${payMap.tx_guarantee}">
+ 			<input type="hidden" name="tx_user_key"		th:value="${payMap.tx_user_key}">
+ 			<input type="hidden" name="hd_default_institution"	th:value="${payMap.hd_default_institution}">
+ 			<input type="hidden" name="guarNoArr"		th:value="${payMap.guarNoArr}">
+		</form>
+		
+		
+		<form name="frmRet" method=post th:action="@{${payMap.returnURL}}">
+			<!-- 암호화된 결제정보 파라미터 -->
+			<input type="hidden" name="hd_pi"      		value="">
+			<input type="hidden" name="hd_ep_type"      value="">
+			
+			<input type="hidden" name="hd_msg_code"   	th:value="${payMap.hd_msg_code}">
+			<input type="hidden" name="hd_msg_type" 	th:value="${payMap.hd_msg_type}">
+			
+			<input type="hidden" name="hd_approve_no"   th:value="${payMap.hd_approve_no}">
+			<input type="hidden" name="hd_serial_no"    th:value="${payMap.hd_serial_no}">
+			<input type="hidden" name="hd_firm_name"    th:value="${payMap.hd_firm_name}">
+			<input type="hidden" name="hd_item_name"    th:value="${payMap.hd_item_name}">
+			<input type="hidden" name="tx_amount"    	th:value="${payMap.tx_amount}">
+			<!-- 현금영수증 관련 파라미터 -->
+			<input type="hidden" name="tx_bill_yn"      th:value="${payMap.tx_bill_yn}">
+			<input type="hidden" name="tx_vat_yn"      	th:value="${payMap.tx_vat_yn}">
+			<input type="hidden" name="tx_bill_vat"     th:value="${payMap.tx_bill_vat}">
+			<input type="hidden" name="tx_svc_charge"   th:value="${payMap.tx_svc_charge}">
+			<input type="hidden" name="tx_bill_tax"     th:value="${payMap.tx_bill_tax}">
+			<input type="hidden" name="tx_bill_deduction"  	th:value="${payMap.tx_bill_deduction}">
+			
+			<input type="hidden" name="tx_age_check"   	th:value="${payMap.tx_age_check}">
+			
+			<input type="hidden" name="tx_guarantee"	th:value="${payMap.tx_guarantee}">
+			<input type="hidden" name="tx_user_key"		th:value="${payMap.tx_user_key}">
+			<input type="hidden" name="guarNoArr"		th:value="${payMap.guarNoArr}">
+		</form>
+		
+	</body>
+</html>

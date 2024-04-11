@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ddc.biz.com.repository.ContrMortMapper">
+
+	<!-- 약정담보정보 정보 조회 -->
+	<select id="selectContrMortList" parameterType="Map" resultType="camelMap">
+		/* ContrMortMapper.selectContrMortList */
+		SELECT 'GR' MORT_TYPE
+		     , '보증' MORT_TYPE_NM
+		     , A.CONTR_NO
+		     , A.MORT_SEQ
+		     , A.SURE_CD
+		     , A.MEMB_NO
+		     , A.SURE_NO
+		     , A.SURE_NM
+		     , A.MORT_YN
+		     , A.MORT_RELATION
+		     , A.MORT_DT
+		     , A.MORT_CAN_DT
+		     , A.MORT_CASE
+		     , (CASE WHEN A.MORT_CASE = '10' THEN A.MORT_COLL_AMT ELSE A.DEP_AMT END) MORT_AMT
+		     , A.CAN_RESN_CD
+		     , A.CAN_RESN_NM
+		     , B.MEMB_NO CONTR_MEMB_NO
+		     , F_GET_MEMB_NM(B.MEMB_NO) CONTR_MEMB_NM
+		     , F_GET_CDS_ABBR('GR01', B.GUAR_TYPES, 2) TYPE_NM
+		  FROM GR_MORT A
+		     , GR_CONTRACT B
+		 WHERE A.CONTR_NO = B.CONTR_NO
+		 <if test="sMembNo != null and sMembNo  != ''">
+		 AND B.MEMB_NO = #{sMembNo}
+		 </if>
+		 <if test="sMembNm != null and sMembNm  != ''">
+		 AND F_GET_MEMB_NM(B.MEMB_NO) LIKE '%' || #{sMembNm} || '%'
+		 </if>
+		 <if test="sMortStaDt != null and sMortStaDt  != ''">
+		 AND MORT_DT &gt; REPLACE(#{sMortStaDt}, '-')
+		 </if>
+		 <if test="sMortEndDt != null and sMortEndDt  != ''">
+		 AND MORT_DT &lt; REPLACE(#{sMortEndDt}, '-')
+		 </if>
+		 <!-- 보증상품 -->
+		 <if test="sGuarType != null and sGuarType  != ''">
+		   AND
+		   		<foreach collection="sGuarType" item="item" index="index" open="(" separator="OR" close=")">
+		        INSTR(B.GUAR_TYPES, #{item}) &gt; 0
+		    	</foreach>
+		 </if>
+		 <if test="sWorkType != null and sWorkType  != ''">
+		 AND 'GR' = #{sWorkType}
+		 </if>
+		 UNION ALL
+		 SELECT 'LD' MORT_TYPE
+		 	 , '대출' MORT_TYPE_NM
+		     , A.CONTR_NO
+		     , A.MORT_SEQ
+		     , A.SURE_CD
+		     , A.MEMB_NO
+		     , A.SURE_NO
+		     , A.SURE_NM
+		     , A.MORT_YN
+		     , A.MORT_RELATION
+		     , A.MORT_DT
+		     , A.MORT_CAN_DT
+		     , A.MORT_CASE
+		     , (CASE WHEN A.MORT_CASE = '10' THEN A.MORT_COLL_AMT ELSE A.DEP_AMT END) MORT_AMT
+		     , A.CAN_RESN_CD
+		     , A.CAN_RESN_NM
+		     , B.MEMB_NO CONTR_MEMB_NO
+		     , F_GET_MEMB_NM(B.MEMB_NO) CONTR_MEMB_NM
+		     , F_GET_CDS_ABBR('LD01', B.LEND_TYPES, 2) TYPE_NM
+		  FROM LD_MORT A
+		     , LD_CONTRACT B
+		 WHERE A.CONTR_NO = B.CONTR_NO
+		 <if test="sMembNo != null and sMembNo  != ''">
+		 AND B.MEMB_NO = #{sMembNo}
+		 </if>
+		 <if test="sMembNm != null and sMembNm  != ''">
+		 AND F_GET_MEMB_NM(B.MEMB_NO) LIKE '%' || #{sMembNm} || '%'
+		 </if>
+		 <if test="sMortStaDt != null and sMortStaDt  != ''">
+		 AND MORT_DT &gt; REPLACE(#{sMortStaDt}, '-')
+		 </if>
+		 <if test="sMortEndDt != null and sMortEndDt  != ''">
+		 AND MORT_DT &lt; REPLACE(#{sMortEndDt}, '-')
+		 </if>
+		 <!-- 대출상품 -->
+		 <if test="sLendType != null and sLendType  != ''">
+		 	AND
+		   		<foreach collection="sLendType" item="item" index="index"  open="(" separator="OR" close=")">
+		        INSTR(B.LEND_TYPES, #{item}) &gt; 0
+		    	</foreach>
+		 </if>
+		 <if test="sWorkType != null and sWorkType  != ''">
+		 AND 'LD' = #{sWorkType}
+		 </if>
+		 ORDER BY MORT_DT DESC
+	</select>
+
+
+</mapper>

@@ -1,0 +1,823 @@
+<!--
+	시스템구분 : 홈페이지
+	파일정보 : guarSureSign.html
+	파일명 : guarSureSign.html
+	업무명 : 연대보증입보동의서명처리
+	생성자 : 변성균
+	생성일 : 2023.08.11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/ //공통코드
+
+		//변수
+		var contrNo = /*[[${paramMap.contrNo}]]*/;
+	    var sureCd = /*[[${paramMap.sureCd}]]*/;
+	    var sureSeq = /*[[${paramMap.sureSeq}]]*/;
+	    var membDiv = /*[[${paramMap.membDiv}]]*/;
+
+	    var memb = "";
+	    var contr = "";
+	    var sure = "";
+
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+
+			//상세정보 조회
+		    var param = {contrNo : contrNo, sureCd : sureCd, sureSeq: sureSeq};
+			obj = {url:"/guarSure/selectGuarSure.do", param:param, callBack:fnSerchCallBack, msgYn:"N", sessYn:"N", loadYn:"Y"};
+			com.fnAjaxDef(obj);
+
+		});
+
+		var fnSerchCallBack = function(resData){
+			//console.log(resData);
+
+			memb = resData.memb;
+			contr = resData.contr;
+			sure = resData.sure;
+
+			com.fnSetKeyVal(resData.memb);
+			com.fnSetKeyVal(resData.contr);
+			com.fnSetKeyVal(resData.sure);
+
+		}
+		//화면이동
+		var fnNext = function(){
+
+			if(sureCd === "10" || sureCd === "20" || (sureCd === "40" && membDiv === "P")){
+				// 개인 동의서
+				if(!$("#colChkInfo_ag").is(":checked") || !$("#schChkInfo_ag").is(":checked") || !$("#ofChkInfo_ag").is(":checked")
+					|| !$("#colChkUnq_ag").is(":checked") || !$("#schChkUnq_ag").is(":checked") || !$("#ofChkUnq_ag").is(":checked")
+				) {
+					alert("개인(신용)정보 동의서에 동의하지 않을경우 전자서명이 불가능합니다.");
+			        if(		!$("#colChkInfo_ag").is(":checked")) $("#colChkInfo_ag").focus();
+			        else if(!$("#schChkInfo_ag").is(":checked")) $("#schChkInfo_ag").focus();
+			        else if(!$("#ofChkInfo_ag" ).is(":checked")) $("#ofChkInfo_ag").focus();
+			        else if(!$("#colChkUnq_ag" ).is(":checked")) $("#colChkUnq_ag").focus();
+			        else if(!$("#schChkUnq_ag" ).is(":checked")) $("#schChkUnq_ag").focus();
+			        else if(!$("#ofChkUnq_ag"  ).is(":checked")) $("#ofChkUnq_ag").focus();
+			        return;
+				}
+			}else{
+				// 기업 동의서
+				if(!$("#colChk_ag").is(":checked") || !$("#schChk_ag").is(":checked") || !$("#ofChk_ag").is(":checked") ) {
+					alert("기업(신용)정보 동의서에 동의하지 않을경우 입보동의가 불가능합니다.");
+			        if(!$("#colChk_ag").is(":checked")) $("#colChk_ag").focus();
+			        else if(!$("#schChk_ag").is(":checked")) $("#schChk_ag").focus();
+			        else if(!$("#ofChk_ag").is(":checked")) $("#ofChk_ag").focus();
+			        return;
+			    }
+			}
+
+			$("#ele_agree").css("display", "none");
+			$("#ele_sign").css("display", "block");
+		}
+
+
+		//서명 처리
+		var fnCertSign = function(){
+
+			if(!$("#suretyOfChk_ag").is(":checked") || !$("#suretyOfrdChk_ag").is(":checked") ) {
+				alert("연대보증입보동의에 동의하지 않을경우 입보동의가 불가능합니다.");
+
+		        if(!$("#suretyOfChk_ag").is(":checked")) $("#suretyOfChk_ag").focus();
+		        else if(!$("#suretyOfrdChk_ag").is(":checked")) $("#suretyOfrdChk_ag").focus();
+		        return;
+		    }
+
+			if(sureCd === '10' || sureCd === '20' || (sureCd === '40' && membDiv === 'P') ){ //개인
+				idn = sure.juminNo;
+				idn = "8410091784010";
+
+			}else{ //사업자
+				idn = sure.bizNo;
+			}
+
+			var obj = {idn :idn, plan : fnGetCertPlain, loginYn:"Y"}
+			com.fnCertSign(obj);
+		}
+
+		//서명 콜백
+		var fnCertSingCallBack = function(){
+			$("#contrNo").val(contrNo);
+			$("#sureCd").val(sureCd);
+			$("#sureSeq").val(sureSeq);
+			$("#userNm").val(sure.sureNm);
+
+
+			var param = $("#saveFrm").serializeObject();
+			obj = {url:"/guarSure/updateGuarSureSign.do", callBack:fnSaveCallBack, param:param, msgYn:"Y", sessYn:"N", loadYn:"Y" };
+			com.fnAjaxDef(obj);
+		}
+
+		//처리 콜백
+		var fnSaveCallBack = function(resData){
+			fnPage(/*[[${paramMap.returnPage}]]*/);
+		}
+
+		//전자서명값
+		var fnGetCertPlain = function(){
+			var reTxt 		= ""; // 결과값
+
+			var today 		= /*[[today]]*/
+			var membDiv	= $("#membDiv").val();		// 조합원구분
+
+			// 동의여부
+			var colChk		= $("input[name='colChk']").val();
+			var schChk		= $("input[name='schChk']").val();
+			var ofChk		= $("input[name='ofChk']").val();
+
+			var colChkInfo		= $("input[name='colChkInfo']").val();
+			var colChkUnq		= $("input[name='colChkUnq']").val();
+			var schChkInfo		= $("input[name='schChkInfo']").val();
+			var schChkUnq		= $("input[name='schChkUnq']").val();
+			var ofChkInfo		= $("input[name='ofChkInfo']").val();
+			var ofChkUnq		= $("input[name='ofChkUnq']").val();
+
+			var suretyOfChk		= $("input:radio[name='suretyOfChk']:checked").val();
+			var suretyOfrdChk	= $("input:radio[name='suretyOfrdChk']:checked").val();
+
+			if(sureCd === '10' || sureCd === '20' || (sureCd === '40' && membDiv === 'P') ){
+				// 개인
+				if( colChkInfo !== "Y" || colChkUnq !== "Y" || schChkInfo !== "Y" || schChkUnq !== "Y" || ofChkInfo !== "Y" || ofChkUnq !== "Y" ){
+					alert("잘못된 접근입니다.");
+					return "";
+				}
+			}else{
+				// 기업
+				if(colChk !== "Y" || schChk !== "Y" || ofChk !== "Y" ){
+					alert("잘못된 접근입니다.");
+					return "";
+				}
+			}
+			if(suretyOfChk !== "Y" || suretyOfrdChk !== "Y" ){
+				alert("잘못된 접근입니다.");
+				return "";
+			}
+
+
+			var oTxt = "";
+			oTxt += "서명일자 : "							+ today + "\n";
+			oTxt += "보증인명 : "							+ "${suretyData.SURE_NM}\n";
+			oTxt += "보증인전화번호 : "						+ "${suretyData.TEL_NO}\n";
+			oTxt += "보증인휴대폰 : "						+ "${suretyData.CELL_NO}\n";
+			oTxt += "약정번호 : "							+ "${contrData.CONTR_NO}\n";
+			oTxt += "약정구분 : "							+ "${contrData.CONTR_TYPE_NM}\n";
+
+			if(sureCd === '10' || sureCd === '20' || (sureCd === '40' && membDiv === 'P') ){
+				// 개인
+				oTxt += "개인정보 수집ㆍ이용 동의 : "		+ colChkInfo + "\n";
+				oTxt += "개인정보 조회 및 제공 동의 : "		+ schChkInfo + "\n";
+				oTxt += "개인정보 제공 동의 : "				+ ofChkInfo + "\n";
+
+				oTxt += "고유식별정보 수집ㆍ이용 동의 : "	+ colChkUnq + "\n";
+				oTxt += "고유식별정보 조회 및 제공 동의 : "	+ schChkUnq + "\n";
+				oTxt += "고유식별정보 제공 동의 : "			+ ofChkUnq + "\n";
+			}else{
+				// 기업
+				oTxt += "기업정보 수집ㆍ이용 동의 : "		+ colChk + "\n";
+				oTxt += "기업정보 조회 및 제공 동의 : "		+ schChk + "\n";
+				oTxt += "기업정보 제공 동의 : "				+ ofChk + "\n";
+			}
+			oTxt += "연대보증입보동의 : "				+ suretyOfChk + "\n";
+			oTxt += "연대보증설명확인 : "				+ suretyOfrdChk + "\n";
+
+			return oTxt;
+		}
+
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="saveFrm" id="saveFrm" onSubmit="return false">
+						<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+						<input type="hidden" name="contrNo" id="contrNo" value=""/>
+                        <input type="hidden" name="sureCd" id="sureCd" value=""/>
+                        <input type="hidden" name="sureSeq" id="sureSeq" value=""/>
+                        <input type="hidden" name="signedCont" id="signedCont" value=""/>
+                        <input type="hidden" name="userNm" id="userNm" value=""/>
+                        <section id="content" class="content">
+							<!--개인정보 수집 동의 부분 -->
+							<div id="ele_agree">
+								<th:block th:if="${#strings.equals(paramMap.sureCd, '10') || #strings.equals(paramMap.sureCd, '20') || #strings.equals(paramMap.sureCd, '40') and #strings.equals(paramMap.membDiv, 'P')}">
+									<div class="raw-html-embed">
+										<div class="nop">
+			                                <article>
+			                                    <ul class="dot-list">
+			                                        <li class="title-dept1">개인(신용)정보 수집∙이용․제공(조회) 동의서</li>
+			                                        <li class="txt-dept1">한국콘텐츠공제조합(이하 「조합」이라 한다)과의 거래와 관련하여 귀 조합이 본인의 개인(신용)정보를 수집ㆍ이용ㆍ조회하거나
+				제3자에게 제공하고자 하는 경우에는 개인정보보호법 제15조, 제17조, 제18조, 제24조, 제24조의2, 신용정보의이용및보호에관한법률 제32조, 제33조 및
+				제34조에 따라 본인의 동의를 얻어야 합니다. 이에 본인은 귀 조합이 아래의 내용과 같이 본인의 개인(신용)정보를 수집ㆍ이용ㆍ조회 또는 제공하는 것에 동의합니다.</li>
+												</ul>
+			                                </article>
+			                            </div>
+			                        </div>
+			                        <div class="table-wrap board">
+
+	                                    <table class="border">
+											<colgroup>
+												<col style="width:10%">
+												<col style="width:15%">
+												<col style="width:50%">
+												<col style="width:25%">
+											</colgroup>
+	                                        <tbody>
+	                                            <tr>
+													<th colspan="4" class="tal">1. 수집•이용에 관한 사항</th>
+												</tr>
+												<tr>
+													<td rowspan="4">필수정보</td>
+													<td>수집ㆍ이용 목적</td>
+													<td colspan="2" class="tal">조합과의 보증 및 융자 거래(이하 「업무거래」라 한다)를 위한 약정 체결시 연대보증 및 채권회수를 위한 제반업무(이하 「채권관리」라 한다)</td>
+												</tr>
+												<tr>
+													<td>수집ㆍ이용할 개인(신용)정보 항목</td>
+													<td colspan="2"  class="tal">
+														• 성명, <strong>고유식별정보</strong>, 주소, 개인인감증명서(또는 본인서명사실확인서), 기타 약정 및 채권관리에 필요한 항목
+														<br>&nbsp;-&nbsp;<strong>고유식별정보 : 주민등록번호(외국인인 경우, 외국인등록번호)</strong>
+														<br>• 아래 “2.조회 및 제공에 관한 사항”에서 조회(제공)할 필수적 개인(신용)정보 항목
+														<br>※ 본 동의 이전에 발생한 개인(신용)정보도 포함합니다.
+													</td>
+												</tr>
+												<tr>
+													<td>보유ㆍ이용 기간</td>
+													<td colspan="2"  class="tal">
+														<strong>위 개인(신용)정보는 수집․이용에 관한 동의일로부터 수집․이용 목적 달성 및 거래 종료일까지 보유ㆍ이용됩니다.
+														 단, 거래 종료일 후에는 보증사고 조사, 채권관리, 분쟁해결, 민원처리, 법령상 의무이행 및 조합의 리스크 관리 업무만을 위하여 보유ㆍ이용됩니다.</strong>
+													</td>
+												</tr>
+												<tr>
+													<td>거부권 및 거부시 불이익</td>
+													<td colspan="2"   class="tal">
+														귀하는 위 사항에 대해 동의를 거부할 수 있습니다. 다만, 위 개인(신용)정보의 수집ㆍ이용에 관한 동의는 조합과의 업무거래를 위하여 필수적이므로,
+														위 사항에 동의하셔야만 조합과 업무거래가 가능합니다.
+													</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 본인의 개인(신용)정보를 수집․이용하는 것에 동의합니다.</td>
+													<td>
+														<label for="colChkInfo_ag">
+															<input type="radio"	id="colChkInfo_ag" name="colChkInfo" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="colChkInfo_no">
+															<input type="radio"	id="colChkInfo_no" name="colChkInfo" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 본인의 고유식별정보를 수집․이용하는 것에 동의합니다.</td>
+													<td>
+														<label for="colChkUnq_ag">
+															<input type="radio"	id="colChkUnq_ag" name="colChkUnq" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="colChkUnq_no">
+															<input type="radio"	id="colChkUnq_no" name="colChkUnq" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<th colspan="4" class="tal">2. 조회 및 제공에 관한 사항</th>
+												</tr>
+												<tr>
+													<td rowspan="5">필수정보</td>
+													<td>조회(제공) 기관</td>
+													<td colspan="2" class="tal">
+														<strong>신용정보의이용및보호에관한법률에 따른 신용정보집중기관 또는 신용정보회사</strong>
+													</td>
+												</tr>
+												<tr>
+													<td>조회(제공)할 개인(신용)정보 항목</td>
+													<td colspan="2" class="tal">
+														• 연체 등 채무불이행정보, 공공기관 보유정보 등 신용정보집중기관 또는 신용정보회사가 제공하는 항목의 조회 및 제공
+														<br>• 신용도판단 및 채권관리를 위해 식별정보(성명, 고유식별정보 등), 연체 등 채무불이행정보 등을 신용정보집중기관 또는 신용정보회사에 제공
+													</td>
+												</tr>
+												<tr>
+													<td>조회(제공) 목적</td>
+													<td colspan="2" class="tal">
+														<strong>약정 체결ㆍ개인신용도 판단 및 채권관리를 위한 개인(신용)정보 조회 및 제공</strong>
+													</td>
+												</tr>
+												<tr>
+													<td>조회(제공)동의 효력기간</td>
+													<td colspan="2" class="tal">
+														<strong>약정 체결ㆍ개인신용도 판단 및 채권관리와 관련하여 신용정보집중기관 또는 신용정보회사에 귀하의 개인(신용)정보를 조회(제공)함을 목적으로 하며,
+															우리 조합의 조회 결과 약정 체결이 되는 경우 해당 약정기간 동안 발생한 업무거래의 종료일까지 조회 동의의 효력이 지속됩니다.</strong>
+														<br><strong>※ 조합의 조회 결과 귀하가 신청한 약정 체결이 거절된 경우 그 시점부터 동의의 효력은 소멸합니다.</strong>
+													</td>
+												</tr>
+												<tr>
+													<td>거부권 및 거부시 불이익</td>
+													<td colspan="2" class="tal">
+														귀하는 위 사항에 대해 동의를 거부할 수 있습니다. 다만, 위 개인(신용)정보의 조회(제공)에 관한 동의는 조합과의 업무거래를 위하여 필수적이므로,
+														위 사항에 동의하셔야만 조합과 업무거래가 가능합니다.
+													</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 본인의 개인(신용)정보를 조회(제공)하는 것에 동의합니다.</td>
+													<td>
+														<label for="schChkInfo_ag">
+															<input type="radio" id="schChkInfo_ag" name="schChkInfo" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="schChkInfo_no">
+															<input type="radio"	id="schChkInfo_no" name="schChkInfo" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 본인의 고유식별정보를 조회(제공)하는 것에 동의합니다. </td>
+													<td>
+														<label for="schChkUnq_ag">
+															<input type="radio" id="schChkUnq_ag" name="schChkUnq" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="schChkUnq_no">
+															<input type="radio"	id="schChkUnq_no" name="schChkUnq" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<th colspan="4" class="tal">3. 제공에 관한 사항</th>
+												</tr>
+												<tr>
+													<td rowspan="5">필수정보</td>
+													<td>제공받는 자</td>
+													<td colspan="2" class="tal">
+														￭ 신용정보집중기관 및 신용조회회사에 대한 제공
+														<br>&nbsp;* 신용정보집중기관 [전국은행연합회 등]
+														<br>&nbsp;* 신용조회회사 [한국기업데이타(주), NICE신용평가정보㈜ 등]
+														￭ 수탁업체에 대한 제공
+														<br>&nbsp;* 재무자료(재무제표 등) 입력을 위한 대행기관 : 한국기업데이터(주)
+														<br>&nbsp;* 우리 조합은 수탁업체에게 개인(신용)정보를 제공할 경우, 업무수행에 필요한 최소한의 정보만을 제공하며, 수탁업체의 추가․변경 및 제공 목적의
+																	세부적 내용은 우리 조합 홈페이지 [www.kocfc.or.kr]에서 확인하실 수 있습니다.
+													</td>
+												</tr>
+												<tr>
+													<td>제공할 개인(신용)정보 항목</td>
+													<td colspan="2" class="tal">
+														￭ 신용정보집중기관 및 신용조회회사에게 제공되는 개인(신용)신용정보의 항목
+														<br>&nbsp;* 개인식별정보, 신용거래정보, 신용능력정보, 신용평가를 위한 정보
+														<br>￭ 수탁업체에 대한 제공되는 개인(신용)신용정보의 항목
+														<br>&nbsp;* 수집․이용에 동의한 정보 중 위탁업무 목적달성을 위해 필요한 정보에 한함
+														<br>※ 본 동의 이전에 수집된 개인(신용)정보도 포함됩니다.
+													</td>
+												</tr>
+												<tr>
+													<td>제공 목정</td>
+													<td colspan="2" class="tal">
+														<strong>• 관련 법령에 따른 의무수행 및 업무협조</strong>
+														<br><strong>• 채권관리를 위하여 수탁업체에 정보제공</strong>
+														<br><strong>• 업무안내 등에 대한 우편물 발송 등 편의 제공</strong>
+													</td>
+												</tr>
+												<tr>
+													<td>제공기간</td>
+													<td colspan="2" class="tal">
+														<strong>해당 사항의 목적 달성시까지</strong>
+													</td>
+												</tr>
+												<tr>
+													<td>거부권 및 거부시 불이익</td>
+													<td colspan="2" class="tal">
+														귀하는 위 사항에 대해 동의를 거부할 수 있습니다. 다만, 위 개인(신용)정보의 제공에 관한 동의는 조합과의 업무거래를 위하여 필수적이므로,
+														위 사항에 동의하셔야만 조합과 업무거래가 가능합니다.
+													</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 본인의 개인(신용)정보를 제공하는 것에 동의합니다.</td>
+													<td>
+														<label for="ofChkInfo_ag">
+															<input type="radio" id="ofChkInfo_ag" name="ofChkInfo" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="ofChkInfo_no">
+															<input type="radio" id="ofChkInfo_no" name="ofChkInfo" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 본인의 고유식별정보를 제공하는 것에 동의합니다. </td>
+													<td>
+														<label for="ofChkUnq_ag">
+															<input type="radio" id="ofChkUnq_ag" name="ofChkUnq" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="ofChkUnq_no">
+															<input type="radio" id="ofChkUnq_no" name="ofChkUnq" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+	                                        </tbody>
+	                                    </table>
+	                                </div>
+								</th:block>
+								<th:block th:if="${#strings.equals(paramMap.sureCd, '30') || #strings.equals(paramMap.sureCd, '40') and !#strings.equals(paramMap.membDiv, 'P')}">
+									<div class="raw-html-embed">
+										<div class="nop">
+			                                <article>
+			                                    <ul class="dot-list">
+			                                        <li class="title-dept1">기업(신용)정보 수집ㆍ이용.제공(조회) 동의서</li>
+			                                        <li class="txt-dept1">한국콘텐츠공제조합(이하 「조합」이라 한다)과의 거래와 관련하여 귀 조합이 당사의
+					기업(신용)정보를 수집ㆍ이용ㆍ조회하거나 제3자에게 제공하고자 하는 것에 동의합니다.</li>
+												</ul>
+			                                </article>
+			                            </div>
+			                        </div>
+			                        <div class="table-wrap board">
+	                                    <table class="border">
+	                                        <colgroup>
+	                                        	<col style="width:10%">
+												<col style="width:15%">
+												<col style="width:55%">
+												<col style="width:25%">
+											</colgroup>
+	                                        <tbody>
+	                                            <tr>
+													<th colspan="4" class="tal">1. 수집•이용에 관한 사항</th>
+												</tr>
+												<tr>
+													<td rowspan="4">필수정보</td>
+													<td>수집ㆍ이용 목적</td>
+													<td colspan="2">조합과의 보증•융자 거래(이하 「업무거래」라 한다) 및 채권회수를 위한 제반업무(이하
+														「채권관리」라 한다)를 위한 귀사의 정보 수집•이용</td>
+												</tr>
+												<tr>
+													<td>수집ㆍ이용할기업(신용)정보</td>
+													<td colspan="2">• 상호, 법인등록번호, 사업자등록번호, 사업장 주소, 법인인감증명서 등 약정에 필요한
+														서류, 임원 및 주주정보, 전화번호 등 연락처, 개별 업무거래 및 채권관리에 필요한 항목으로 귀사가 제공한 정보 <br>•
+														아래 “2.조회 및 제공에 관한 사항”에서 조회(제공)할 항목
+													</td>
+												</tr>
+												<tr>
+													<td>보유ㆍ이용 기간</td>
+													<td colspan="2">위 기업(신용)정보는 수집•이용에 관한 동의일로부터 수집•이용 목적 달성 및 거래
+														종료일까지 보유ㆍ이용됩니다. 단,거래 종료일 후에는 보증사고 조사, 채권관리, 분쟁해결, 민원처리, 법령상 의무이행 및
+														조합의 리스크 관리 업무만을 위하여 보유ㆍ이용됩니다.</td>
+												</tr>
+												<tr>
+													<td>거부권 및 거부시 불이익</td>
+													<td colspan="2">귀사는 위 사항에 대해 동의를 거부할 수 있습니다. 다만, 위 기업(신용)정보의
+														수집ㆍ이용에 관한 동의는 조합과의 업무거래를 위하여 필수적이므로, 위 사항에 동의하셔야만 조합과 업무거래가 가능합니다.</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 당사의 기업(신용)정보를 수집•이용하는 것에 동의합니다.</td>
+													<td>
+														<label for="colChk_ag">
+															<input type="radio"	id="colChk_ag" name="colChk" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="colChk_no">
+															<input type="radio"	id="colChk_no" name="colChk" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+
+												<tr>
+													<th colspan="4" class="tal">2. 조회 및 제공에 관한 사항</th>
+												</tr>
+												<tr>
+													<td rowspan="5">필수정보</td>
+													<td>조회(제공) 기관</td>
+													<td colspan="2">신용정보의이용및보호에관한법률에 따른 신용정보집중기관 또는 신용정보회사</td>
+												</tr>
+												<tr>
+													<td>조회(제공)할 항목</td>
+													<td colspan="2">• 식별정보(상호, 법인등록번호, 사업자번호 등), 신용공여정보, 연체 등
+														채무불이행정보, 공공기관 보유정보 등 신용정보집중기관 또는 신용정보회사가 제공하는 항목 <br>• 신용도판단 및
+														채권관리를 위해 상호, 법인등록번호 등을 신용정보집중기관 또는 신용정보회사에 제공
+													</td>
+												</tr>
+												<tr>
+													<td>조회(제공) 목적</td>
+													<td colspan="2">약정 체결•신용도 판단 및 채권관리를 위한 기업(신용)정보의 조회 및 제공</td>
+												</tr>
+												<tr>
+													<td>조회(제공)동의 효력기간</td>
+													<td colspan="2">약정 체결•신용도 판단 및 채권관리와 관련하여 신용정보집중기관 또는 신용정보회사에
+														귀사의 기업(신용)정보를 조회(제공)함을 목적으로 하며, 우리 조합의 조회 결과 약정 체결이 되는 경우 해당 약정기간 동안
+														발생한 업무거래의 종료일까지 조회 동의의 효력이 지속됩니다. <br>※ 조합의 조회 결과 귀사가 신청한 약정
+														체결이 거절된 경우 그 시점부터 동의의 효력은 소멸합니다.
+													</td>
+												</tr>
+												<tr>
+													<td>거부권 및 거부시 불이익</td>
+													<td colspan="2">귀사는 위 사항에 대해 동의를 거부할 수 있습니다. 다만, 위 기업(신용)정보의
+														조회(제공)에 관한 동의는 조합과의 업무거래를 위하여 필수적이므로, 위 사항에 동의하셔야만 조합과 업무거래가 가능합니다.
+													</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 당사의 기업(신용)정보를 조회(제공)하는 것에 동의합니다.</td>
+													<td>
+														<label for="schChk_ag">
+															<input type="radio" id="schChk_ag" name="schChk" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="schChk_no">
+															<input type="radio"	id="schChk_no" name="schChk" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+
+												<tr>
+													<th colspan="4" class="tal">3. 제공에 관한 사항</th>
+												</tr>
+												<tr>
+													<td rowspan="5">필수정보</td>
+													<td>제공받는 자</td>
+													<td colspan="2">￭ 신용정보집중기관 및 신용조회회사에 대한 제공 <br>&nbsp;&nbsp;*
+														신용정보집중기관 [전국은행연합회 등] <br>&nbsp;&nbsp;* 신용조회회사 [한국기업데이타(주),
+														NICE신용평가정보㈜ 등] <br>￭ 수탁업체에 대한 제공 <br>&nbsp;&nbsp;*
+														재무자료(재무제표 등) 입력을 위한 대행기관 : 한국기업데이터(주) <br>&nbsp;&nbsp;* 우리 조합은
+														수탁업체에게 개인(신용)정보를 제공할 경우, 업무수행에 필요한 최소한의 정보만을 제공하며, 수탁업체의 추가•변경 및 제공
+														목적의 세부적 내용은 우리 조합 홈페이지 [www.kocfc.or.kr]에서 확인하실 수 있습니다.
+													</td>
+												</tr>
+												<tr>
+													<td>제공할 항목</td>
+													<td colspan="2">• 식별정보(상호, 법인등록번호, 사업자번호 등), 신용거래정보(보증 및 융자 잔액,
+														보증 및 융자 한도거래상황, 담보현황 등), 신용도판단정보(연체융자원리금 및 보증대급금 등) <br>• 조합의
+														수탁업체에는 제공목적 달성을 위하여 필요한 최소한의 항목 <br>※ 본 동의 이전에 수집된 기업(신용)정보도
+														포함됩니다.
+													</td>
+												</tr>
+												<tr>
+													<td>제공 목적</td>
+													<td colspan="2">• 관련 법령에 따른 의무수행 및 업무협조 <br>• 채권관리를 위하여
+														수탁업체에 정보제공 <br>• 업무안내 등에 대한 우편물 발송 등 귀사에 편의 제공
+													</td>
+												</tr>
+												<tr>
+													<td>제공기간</td>
+													<td colspan="2">해당 사항의 목적 달성시까지</td>
+												</tr>
+												<tr>
+													<td>거부권 및 거부 시 불이익</td>
+													<td colspan="2">귀사는 위 사항에 대해 동의를 거부할 수 있습니다. 다만, 위 기업(신용)정보의 제공에
+														관한 동의는 조합과의 업무거래를 위하여 필수적이므로, 위 사항에 동의하셔야만 조합과 업무거래가 가능합니다.</td>
+												</tr>
+												<tr>
+													<td colspan="3">￭ 조합이 위와 같이 당사의 기업(신용)정보를 제공하는 것에 동의합니다.</td>
+													<td>
+														<label for="ofChk_ag">
+															<input type="radio" id="ofChk_ag" name="ofChk" value="Y">&nbsp;동의함
+														</label>
+														&nbsp;&nbsp;
+														<label for="ofChk_no">
+															<input type="radio" id="ofChk_no" name="ofChk" value="N">&nbsp;동의하지 않음
+														</label>
+													</td>
+												</tr>
+	                                        </tbody>
+	                                    </table>
+	                                </div>
+								</th:block>
+								<div class="btn-wrap flex-box jc-end gap-10 m-col">
+	                                <button id="insBtn" type="button" class="sub-btn2 btn-color blue onlyPc" onclick="fnNext()">다음</button>
+	                                <button type="button" class="sub-btn2 btn-black" th:onclick="fnPage([[${paramMap.returnPage}]])">목록</button>
+	                            </div>
+                            </div>
+
+							<!-- 서명 처리 부분 -->
+							<div id="ele_sign" style="display:none">
+								<div class="raw-html-embed">
+									<div class="nop">
+		                                <article>
+		                                    <ul class="dot-list">
+		                                        <li class="title-dept1">연대보증입보동의</li>
+		                                        <li class="txt-dept1">&nbsp;&nbsp;약정인은 귀조합과 다음의 각조항에 따라 이 약정을 체결하고 조합으로부터 콘텐츠산업진흥법령, 조합정관 및
+							제규정(이하 “ 관련법규”라 합니다)에 의하여 각종 보증을 받음(이하 “업무거래”라 합니다)에 따라 부담하는 조합에 대한 채무를
+							성실히 이행하겠으며, 연대보증인은 약정인의 채무를 약정인과 연대하여 이해할 것을 확약합니다.</li>
+												<li class="txt-dept1"><b>&nbsp;약정인 및 연대보증인은 이 약정서의 각 조항과 중요내용 및 업무거래 제공 동의·활용 부분을 충분히 이해하고 이 약정서에 기명날인하여 제출합니다.</b></li>
+											</ul>
+					                        <div class="table-wrap board mt20">
+			                                    <table class="border">
+			                                        <tbody>
+														<colgroup>
+															<col style="width: 50%;">
+															<col style="width: auto;">
+														</colgroup>
+			                                            <tr>
+															<th colspan="3" class="tal">약정서 중요내용 및 업무거래 제공 동의·활용</th>
+														</tr>
+														<tr>
+															<td colspan="3" class="tal">
+																1. 보증사고의 발생으로 피공제자(보증채권자)에게 보증금이 지급되는 경우 조합은 약정인과 연대보증인에게 구상권을 행사하고,
+																일정한 사유가 발생하는 경우에는 미리 구상권을 행사할수 있습니다.
+																<br>2. 연대보증인은 조합이 약정인에 우선하여 연대보증인에게 채무변제를 요구할 수 있고 연대보증인의 재산에 대하여 먼저 법적조치를 할 수 있으며,
+																연대보증인이 2인이상 있는 때에도 연대보증채무액을 균등분할하여 변제할 것을 주장할 수 없음을 분명히 알고 약정인이 부담하는 모든 채무를
+																약정인과 연대하여 이행하겠습니다.
+																<br>3. 조합은 연대보증인이 약정인에게 연대보증을 함으로써 조합에 대하여 현재 또는 장래의 채무를 부담하려는 경우
+																민법 제436조의2에 따라 약정인의 채무관련 신용정보를 연대보증인이게 알려 드리며, 아래 내용을 확인하시어
+																연대보증 등 채무부담여부를 신중하게 결정하시기 바랍니다.
+															</td>
+														</tr>
+														<tr>
+															<td colspan="2" class="tal">
+																<strong>4. 약정인은 귀 조합과 업무거래를 하기 위하여 당사의 업무거래내역을 연대보증인에게 제공함을 동의합니다.</strong>
+															</td>
+															<td>
+																<label for="suretyOfChk_ag">
+																	<input type="radio" id="suretyOfChk_ag" name="suretyOfChk" value="Y">&nbsp;동의함
+																</label>
+																&nbsp;&nbsp;
+																<label for="suretyOfChk_no">
+																	<input type="radio"	id="suretyOfChk_no" name="suretyOfChk" value="N">&nbsp;동의하지 않음
+																</label>
+															</td>
+														</tr>
+														<tr>
+															<td colspan="2" class="tal">
+																<strong>5. 연대보증인은 약정인의 업무거래내역을 설명 듣고 제공 받았음을 확인합니다.</strong>
+															</td>
+															<td>
+																<label for="suretyOfrdChk_ag">
+																	<input type="radio" id="suretyOfrdChk_ag" name="suretyOfrdChk" value="Y">&nbsp;동의함
+																</label>
+																&nbsp;&nbsp;
+																<label for="suretyOfrdChk_no">
+																	<input type="radio"	id="suretyOfrdChk_no" name="suretyOfrdChk" value="N">&nbsp;동의하지 않음
+																</label>
+															</td>
+														</tr>
+			                                        </tbody>
+			                                    </table>
+			                                </div>
+		                                </article>
+		                            </div>
+		                        </div>
+                                <div class="raw-html-embed mb10">
+									<div class="nop">
+		                                <article>
+	                                        <p class="title-dept1">약정신청자정보</p>
+					                        <div class="table-wrap board" id="ele_membArea">
+			                                    <table class="border">
+			                                        <tbody>
+														<colgroup>
+															<col style="width:12%">
+															<col style="width:21%">
+															<col style="width:12%">
+															<col style="width:21%">
+															<col style="width:12%">
+															<col style="width:21%">
+														</colgroup>
+			                                            <tr>
+															<th >조합원</th>
+															<td  class="tal"><span id="ele_membNm"></span></td>
+															<th >대표자</th>
+															<td class="tal"><span id="ele_ceoNm"></span></td>
+															<th >주장르</th>
+															<td  class="tal"><span id="ele_mainBussNm"></span></td>
+														</tr>
+														<tr>
+															<th>사업자번호</th>
+															<td class="tal"><span id="ele_bizNo"></span><util:format type="bizNo" value="${membData.BIZ_NO}" /></td>
+															<th>전화번호</th>
+															<td class="tal"><span id="ele_telNo"></span></td>
+															<th>팩스번호</th>
+															<td class="tal"><span id="ele_faxNo"></span></td>
+														</tr>
+														<tr>
+															<th>출자좌수</th>
+															<td class="tal"><span id="ele_investNum"></span> 좌</td>
+															<th>담보좌수</th>
+															<td class="tal"><span id="ele_mortNum"></span> 좌</td>
+															<th>신용도</th>
+															<td class="tal"><span id="ele_finalGrade"></span></td>
+														</tr>
+			                                        </tbody>
+			                                    </table>
+
+			                                </div>
+		                                </article>
+		                            </div>
+		                        </div>
+                                <div class="raw-html-embed">
+									<div class="nop">
+		                                <article>
+	                                        <p class="title-dept1">약정신청 정보</p>
+					                        <div class="table-wrap board" id="ele_contrArea">
+			                                    <table class="border">
+			                                        <tbody>
+														<colgroup>
+															<col style="width:12%">
+															<col style="width:21%">
+															<col style="width:12%">
+															<col style="width:21%">
+															<col style="width:12%">
+															<col style="width:21%">
+														</colgroup>
+			                                            <tr>
+															<th >약정구분</th>
+															<td  class="tal"><span id="ele_contrTypeNm"></span></td>
+															<th >처리상태</th>
+															<td  class="tal"><span id="ele_procStatNm"></span></td>
+														</tr>
+														<tr>
+															<th>약정일자</th>
+															<td class="tal"><span id="ele_contrDt"></span></td>
+															<th>약정기간</th>
+															<td class="tal"><span id="ele_contrBegDt"></span>&nbsp;~&nbsp;<span id="ele_contrExpDt"></span></td>
+														</tr>
+														<tr>
+															<th>약정좌수</th>
+															<td><span id="ele_contrNum"></span></td>
+															<th>약정금액</th>
+															<td><span id="ele_limitAmt"></span></td>
+														</tr>
+														<tr>
+															<td colspan="44"><span id="ele_limitAmt"></span>
+																&nbsp;※ 약정금액에 신용도에 따른 배수율이 적용되어 약정한도금액이 산정됩니다.
+															</td>
+														</tr>
+			                                        </tbody>
+			                                    </table>
+
+			                                </div>
+		                                </article>
+		                            </div>
+		                        </div>
+                                <div class="raw-html-embed">
+									<div class="nop">
+		                                <article>
+	                                        <p class="title-dept1">보증인정보</p>
+					                        <div class="table-wrap board" id="ele_sureArea">
+			                                    <table class="border">
+			                                        <tbody>
+														<colgroup>
+															<col style="width:12%">
+															<col style="width:21%">
+															<col style="width:12%">
+															<col style="width:21%">
+															<col style="width:12%">
+															<col style="width:21%">
+														</colgroup>
+			                                           <tr>
+															<th>보증인구분</th>
+															<td class="tal"><span id="ele_sureCdNm"></span></td>
+															<th>보증인명</th>
+															<td colspan="3" class="tal"><span id="ele_sureNm"></span></td>
+														</tr>
+
+														<tr id="div_membArea" style="display:none">
+															<th>조합원번호</th>
+															<td colspan="3"><span id="ele_membNo"></span></td>
+														</tr>
+														<tr id="div_bizArea" style="display:none">
+															<th>사업자번호</th>
+															<td colspan="3"><span id="ele_bizNo"></span></td>
+														</tr>
+														<tr>
+															<th>관계</th>
+															<td class="tal"><span id="ele_sureRelation"></span></td>
+															<th>설정일자</th>
+															<td colspan="3" class="tal"><span id="ele_sureDt"></span></td>
+														</tr>
+			                                        </tbody>
+			                                    </table>
+
+			                                </div>
+		                                </article>
+		                            </div>
+		                        </div>
+								<div class="btn-wrap flex-box jc-end gap-10 m-col">
+	                                <button id="insBtn" type="button" class="sub-btn2 btn-color blue onlyPc" onclick="fnCertSign()">서명</button>
+	                                <button type="button" class="sub-btn2 btn-black" th:onclick="fnPage([[${paramMap.returnPage}]])">목록</button>
+	                            </div>
+							</div>
+                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

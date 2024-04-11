@@ -1,0 +1,451 @@
+<!--
+	파일정보 : sampleG2b.html
+	파일명 : 조달청연계 테스트
+	업무명 : 조달청연계 테스트
+	생성자 : DEV
+	생성일 : 1900.01.01
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/subLayout">
+	<body>
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			
+			//유형변경
+			var fnReqType = function(val){
+				if(val === "unicon"){
+					$("#publicNo").val("00021125102");
+					$("#bizNo").val("1168200034");
+				}else{
+					$("#publicNo").val("20191000008"); // 20190829134
+					$("#bizNo").val("");
+				}
+			}
+			
+			//조달청 조회
+			var fnSearch = function(){
+
+				var valChks = ["publicNo"];
+
+				if($("#guarType").val() === "12"){
+					valChks.push("bizNo");
+				}
+
+				if(com.fnValChk(valChks)){
+					obj = {url:"/guarElect/serchG2b.do", formId:"serchFrm", callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxPost(obj);
+				}
+			}
+			
+			//조달청 조회
+			var fnSearch2 = function(){
+
+				var valChks = ["publicNo"];
+
+				if($("#guarType").val() === "12"){
+					valChks.push("bizNo");
+				}
+
+				if(com.fnValChk(valChks)){
+					obj = {url:"/guarElect/serchG2bDirect.do", formId:"serchFrm", callBack:fnSearchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+					com.fnAjaxPost(obj);
+				}
+			}
+
+
+
+			//인증서검증 콜백
+			var fnSearchCallBack = function(resData){
+				if(resData.resultCode !== "0"){
+					alert(resData.resultMsg);
+				}else{
+					$("#ele_g2bInfo").empty();
+					//console.log(resData.g2b.data);
+					var g2bInfo = resData.data;
+					$.each( g2bInfo, function( key, value ){ 
+						
+						$("#ele_g2bInfo").append(key + " : " + value + "</br>");
+					});
+				}
+			}
+
+			var g2bXml = {
+				"gb:Intdnt":{
+					"gb:LineList":
+					{
+						"gb:LineItem":[
+						{
+							"cc:Line.Number.Value":{"cc:Numeric.Content":1} //일련번호 LineSeqNumber
+							,"cc:Bidding.Classification.Code":
+							{
+								"cc:Code.Name":"" //입찰분류 LineBidClassName
+								,"cc:Code.Content":"01" //입찰분류 LineBidClass
+							}
+							,"cc:Item.SequenceNumber.Value":{"cc:Numeric.Content":1} //물품순번 LineItemSeqNumber
+							,"cc:Item.Classification.Identifier":{"cc:Identifier.Content":11111501} //G2B분류번호 LineG2BClass
+							,"cc:Item.Classification.Name":{"cc:Text.Content":"흙"} //G2B분류명 LineG2BClassName
+							,"cc:PPS.Item.Identifier":{"cc:Identifier.Content":""} //정부물품분류번호 LinePPSIde
+							,"cc:Product.Name":{"cc:Text.Content":"흙"} //품명 LinePPSIdeName
+						}
+						,{
+							"cc:Item.Classification.Name":{"cc:Text.Content":"석고"}
+							,"cc:PPS.Item.Identifier":{"cc:Identifier.Content":""}
+							,"cc:Line.Number.Value":{"cc:Numeric.Content":2}
+							,"cc:Bidding.Classification.Code":{"cc:Code.Name":"","cc:Code.Content":"02"}
+							,"cc:Item.SequenceNumber.Value":{"cc:Numeric.Content":2}
+							,"cc:Item.Classification.Identifier":{"cc:Identifier.Content":11111601}
+							,"cc:Product.Name":{"cc:Text.Content":"석고"}
+						}]
+					}
+					,"gb:Header.Details": // 헤더정보
+					{
+						"cc:Message.Sender.Identifier":{"cc:Identifier.Content":"c000000000007"} //송신자ID SenderID
+						,"cc:Message.Receiver.Identifier":{"cc:Identifier.Content":"z105822157200"} //수신자ID ReceiverID
+						,"cc:Message.Function.Code":{"cc:Code.Content":9} //문서기능 MsgFunction
+						,"cc:Message.Type.Identifier":{"cc:Identifier.Content":"INTDNT"} //문서코드 MsgIdentifier
+						,"cc:Message.Name":{"cc:Text.Content":"통합입찰정보통보서"} //문서명 DocName
+						,"cc:Message.Version.Text":{"cc:Text.Content":1.2} //전자문서버전 DocVersion
+						,"cc:Document.Number.Text":{"cc:Text.Content":"20230428-1"} //문서번호 DocNumber
+						,"cc:Document.ManagementNumber.Text":{"cc:Text.Content":"c000000000007.20230428093931.4390A.20200800111"} //문서관리번호 DocManageNumber
+						,"cc:Document.ReferenceNumber.Text":{"cc:Text.Content":"z105822157200.20230428093930.7120A."} //참조번호 DocReferNumber
+						,"cc:Document.Title.Name":{"cc:Text.Content":"통합입찰정보통보서 XML로 만든 문서입니다."} //문서개요 DocTitle
+					}
+
+					,"gb:Bidding.Details": //입찰 세부정보
+					{
+						"cc:Bidding.UnionNumber.Text":{"cc:Text.Content":20200800089} //통합공고번호 BidUnionNum
+						,"cc:Bidding.NotifyNumber.Text":{"cc:Text.Content":20200800111} //입찰공고번호 BidNotiNumber
+						,"cc:Bidding.NotifySequenceNumber.Text":{"cc:Text.Content":"00"} //입찰공고차수 BidNotiSeqNum
+						,"cc:Notify.Information.Code": //공고구분
+
+						{
+							"cc:Code.Name":"입찰공고" //공고구분설명 BidNotiName
+							,"cc:Code.Content":"01" //공고구분 BidNotiCode
+						}
+
+						,"cc:Bidding.Type.Code": //업무구분
+						{
+							"cc:Code.Name":"용역" //업무구분설명 BidTypeName
+							,"cc:Code.Content":5 //업무구분 BidTypeCode
+						}
+						,"cc:Bidding.Name":{"cc:Text.Content":"kwang보증테스트"} //입찰건명(공고명) BidName
+						,"cc:Bidding.Foreign.Name": //입찰영문건명
+						{
+							"cc:Text.Content":"" //입찰영문건명 BidNameEng
+							,"cc:Language.Code":""
+						}
+
+						,"cc:International.Bid.Indicator":{"cc:Indicator.Content":1} //국제입찰구분 BidInternaFlag
+						,"cc:Notify.Date":{"cc:DateTime.Content":20200814} //공고일자 BidNotifyDate
+						,"cc:Notify.DateTime":{"cc:DateTime.Content":173141} //공고시간 BidNotifyTime
+						,"cc:Bidding.Qualification.Text": //입찰자격 BidQualification
+						{
+							"cc:Text.Content":"* 국가종합전자조달시스템 입찰참가자격등록규정 조달청 고시 제2013-1호(2013.01.14 개정)에 의하여 반드시 물품분류번호\r\n  (6자리 000000 또는 8자리 00000000)로 입찰참가 등록한 업체\r\n\r\n* 입찰보증금 납부와 관련하여 입찰참가자는 반드시 본 건 입찰공고의 제5항의 내용을 숙지\r\n  하시기 바랍니다. 공동수급체의 경우 대표사는 반드시 구성원사(조합의 경우 지정조합원사)의\r\n  입찰 보증금 미납사실 및 부정당업자 제재이력을 확인하여 제5항에 따른 입찰보증금을 납부\r\n  하여야 합니다.\r\n\r\n* 본 입찰은「지문인식 신원확인 입찰」이 적용되므로 개인인증서를 보유한 대표자 또는    \r\n  입찰대리인은 국가종합전자조달시스템전자입찰특별유의서제10조 제1항 제5호에 따라 미리    \r\n  지문정보를 등록하여야 전자입찰서 제출이 가능합니다. 다만, 지문인식신원확인 입찰이     \r\n  곤란한 자는 국가종합전자조달시스템 전자입찰특별유의서 제10조 제1항 제6호 및 제7호의  \r\n  절차에 따라 예외적으로 개인인증서에 의한 전자 입찰서 제출이 가능합니다."
+						}
+						,"gb:BiddingPeriod.Details": //입찰 세부정보-입찰기간
+						{
+							"cc:Bidding.Start.Date":{"cc:DateTime.Content":20200819} //입찰시작일자 BidStartDate
+							,"cc:Bidding.Start.DateTime":{"cc:DateTime.Content":100000} //입찰시작시간 BidStartTime
+							,"cc:Bidding.End.Date":{"cc:DateTime.Content":20200825} //입찰마감일자 BidEndDate
+							,"cc:Bidding.End.DateTime":{"cc:DateTime.Content":100000} //입찰마감시간 BidEndTime
+						}
+						,"gb:BidOpening.Details": //입찰 세부정보-개찰정보
+						{
+							"cc:Bidding.Opening.Date":{"cc:DateTime.Content":20200825} //개찰일자 BidOpenDate
+							,"cc:Bidding.Opening.DateTime":{"cc:DateTime.Content":110000} //개찰시간 BidOpenTime
+							,"cc:Bidding.OpeningPlace.Text":{"cc:Text.Content":"국가종합전자조달시스템(나라장터)"} //개찰장소 BidOpenPlace
+						}
+
+						,"gb:TimeLimit.Details": //입찰 세부정보-관련서류제출기한
+						{
+							"cc:BidGuaranteeReceipt.End.DateTime":{"cc:DateTime.Content":"2020-08-25 10:00:00"}
+							,"cc:RegistrationIssue.End.DateTime":{"cc:DateTime.Content":"2020-08-25 10:00:00"} //입찰참가등록마감일시 BidRegEndDate
+							,"cc:PQTest.Application.DateTime":{"cc:DateTime.Content":""} //PQ신청서마감일시 BidPQEndDate
+							,"cc:Cooperation.SupplyApplication.DateTime":{"cc:DateTime.Content":""} //공동수급협정서마감일시 BidCooperEndDate
+						}
+						,"gb:DemandOrganization.Details": //입찰 세부정보-발주정보
+						{
+							"cc:Organization.Name":{"cc:Text.Content":"조달청"} //발주기관명 ConOrgName
+							,"cc:Organization.Identifier":{"cc:Identifier.Content":1230000} //발주기관(공고기관)코드 ConG2BID
+							,"cc:Organization.Additional.Identifier":{"cc:Identifier.Content":1148300603} //사업자등록번호 ConCorpNum
+							,"cc:Creditor.Name":{"cc:Text.Content":"조달청장"} //채권자명 ConOrdCEO
+						}
+						,"gb:RealOrganization.Details": //입찰 세부정보-실공공기관정보
+						{
+							"cc:Organization.Identifier":{"cc:Identifier.Content":"ZY00480"}
+							,"cc:Organization.Name":{"cc:Text.Content":"파라리얼리티&#53933; 주식회사"} //실공공기관(수요기관)명  RealOrgName
+						}
+
+					}
+
+					,"gb:LimitationConstruction.Details": //공사정보
+					{
+						"cc:Area.Limitation.Code":
+						{
+							"cc:Code.Name":"" //지역제한 LimitArea
+							,"cc:Code.Content":""
+						}
+						,"cc:License.Limitation.Code":
+						{
+							"cc:Code.Name":"" //면허제한 LimitLicense
+							,"cc:Code.Content":""
+						}
+						,"cc:Construction.Area.Text":{"cc:Text.Content":""} //공사현장 ConArea
+						,"cc:Cooperation.Supply.Indicator":{"cc:Indicator.Content":"N"} //공동수급여부 ConCooperFlag
+						,"cc:Construction.Type.Code":{"cc:Code.Name":"","cc:Code.Content":""}
+
+					}
+					,"gb:NoticeBid.Details": //입찰공고정보
+					{
+						"cc:Bidding.Means.Code":
+						{
+							"cc:Code.Name":"전자입찰"
+							,"cc:Code.Content":"01" //입찰방식 BidMeansCode
+						}
+						,"cc:SuccessfulBidding.Means.Text":{"cc:Text.Content":"공고서참조"} //낙찰방법 BidSuccessCode
+						,"cc:Contract.Means.Code":
+						{
+							"cc:Code.Name":"일반(총액)협상에의한계약"
+							,"cc:Code.Content":1107 //계약방법 BidContractCode
+						}
+						,"gb:CostConstruction.Details":
+						{
+							"cc:Budget.Amount": //공사예정금액(예산액) ConBudgetAmount
+							{
+								"cc:AmountCurrency.Identification.Code":""
+								,"cc:Amount.Content":0
+							}
+							,"cc:Estimated.Amount": //추정가격 ConEstiAmount
+							{
+								"cc:AmountCurrency.Identification.Code":""
+								,"cc:Amount.Content":181818
+							}
+							,"cc:Construction.Basis.Amount": //기초금액 ConBasisAmount
+							{
+								"cc:AmountCurrency.Identification.Code":""
+								,"cc:Amount.Content":""
+							}
+							,"cc:Supplier.GovernmentSupply.Amount": //도급자관급금액 ConSupplierAmount
+							{
+								"cc:AmountCurrency.Identification.Code":""
+								,"cc:Amount.Content":0
+							}
+							,"cc:Government.Supply.Amount": //관급자관급금액 ConGovAmount
+							{
+								"cc:AmountCurrency.Identification.Code":""
+								,"cc:Amount.Content":0
+							}
+							,"cc:VAT.Amount": //부가세 ConVATAmount
+							{
+								"cc:AmountCurrency.Identification.Code":""
+								,"cc:Amount.Content":""
+							}
+							,"cc:Construction.Etc.Amount": //기타금액 ConEtcAmout
+							{
+								"cc:AmountCurrency.Identification.Code":""
+								,"cc:Amount.Content":""
+							}
+
+						}
+						,"cc:URL.Link.Text":{"cc:Text.Content":"www.g2b.go.kr"} //링크URL LinkURL
+						,"cc:URL.Notify.Text":{"cc:Text.Content":"www.g2b.go.kr"} //공고URL NotiURL
+						,"cc:URL.EnglishNotify.Text":{"cc:Text.Content":"","cc:Language.Code":""} //영문공고서URL NotiEngURL
+						,"cc:Bidding.ParticipationFee.Amount":
+						{
+							"cc:AmountCurrency.Identification.Code":""
+							,"cc:Amount.Content":0 //입찰참가수수료 BidPartiAmount
+						}
+						,"cc:Rebidding.Permission.Indicator":
+						{
+							"cc:Indicator.Format.Text":""
+							,"cc:Indicator.Content":"N" //재입찰허용여부 ReBidFlag
+						}
+					}
+					,"gb:SiteExplanation.DetailsType": //현장설명정보
+					{
+						"cc:Explanation.Date":
+						{
+							"cc:DateTime.Content":20200824 //현장설명일자 SiteExplanDate
+							,"cc:Code.Name":""
+						}
+						,"cc:Explanation.DateTime":{"cc:DateTime.Content":173729} //현장설명일시 SiteExplanTime
+						,"cc:Explanation.Place.Text":{"cc:Text.Content":""} //현장설명장소 SiteExplanPlace
+					}
+					,"xmlns:xsi":"http://www.w3.org/2001/XMLSchema-instance"
+					,"xmlns:gb":"http://www.g2b.go.kr/schema/intdnt"
+					,"xmlns:cc":"http://www.g2b.go.kr/schema/CC"
+					,"gb:OtherInformation.Details": //기타정보
+					{
+						"cc:General.Note.Text":{"cc:Text.Content":""} //비고 Bigo
+						,"cc:Official.Seal.Graphic":
+						{
+							"cc:Graphic.Content":"" //관인 OffGraphic
+							,"cc:Graphic.Format.Text":""
+						}
+						,"cc:User.Identifier":{"cc:Identifier.Content":"c999999990000"} //수신처ID ReceiveID
+						,"cc:User.Type.Identifier":{"cc:Identifier.Content":"G2B"} //수신처Type ReceiveType
+						,"cc:Employee.Name":{"cc:Text.Content":"박광림"} //담당자명 EmpName
+						,"cc:Telephone.Number.Text":{"cc:Text.Content":"070-4056-7229"} //담당자전화번호 EmpPhone
+					}
+				}
+			}
+
+			
+			//응답처리
+			var fnG2bRecv = function(){
+				obj = {url:"/guarElect/recvGuarElectG2b.do", callBack:fnG2bRecvCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+			
+			//응답처리 콜백
+			var fnG2bRecvCallBack = function(resData){
+				//console.log(resData);
+				//alert(resData.paramMap.resultMsg);
+				$("#ele_recvList").text(resData.paramMap.resultMsg);
+			}
+			
+			//전송처리
+			var fnG2bSend = function(){
+				param = {guarNo:$("#guarNo").val()}
+				obj = {url:"/guarElect/sendGuarElect.do", param:param, callBack:fnG2bSendCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);
+			}
+			
+			//전송처리 콜백
+			var fnG2bSendCallBack = function(resData){
+				console.log(resData);
+				alert(resData.paramMap.resultMsg);
+				//$("#ele_recvList").text(resData.paramMap.resultMsg);
+			}
+			
+			
+			$(document).ready(function() {
+				//fnSearchCallBack();
+			
+			});
+			
+			
+			
+			/*]]>*/
+
+
+
+		</script>
+
+		<!-- 콘텐츠 시작 -->
+		<div class="contentsArea">
+			<div class="contentsTop">
+				<div th:insert="~{/fragments/subTitle}"></div>
+			</div><!-- //contentsTop -->
+
+			<div class="contents flex">
+				<!-- 검색 부분 -->
+				<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<section class="searchArea mt10">
+					<div class="row">
+						<dl>
+							<dt>유형</dt>
+							<dd style="width:100px;">
+								<select name="guarType" id="guarType" style="width:90px" onchange="fnReqType(this.value);">
+									<option value="14">선금급</option>
+									<option value="13">하자</option>
+									<option value="12">계약</option>
+									<option value="11">입찰</option>
+								</select>
+							</dd>
+							<dt >참조번호</dt>
+							<dd style="width:160px;">
+								<input type="text" name="publicNo" id="publicNo" title="참조번호" style="width:150px" value="00021125102"/>
+							</dd>
+							<dt >사업자번호(계약)</dt>
+							<dd style="width:150px;">
+								<input type="text" name="bizNo" id="bizNo" title="사업자번호" style="width:150px" value="1168200034"/>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+					<div class="row">
+						<dl>
+							<dt >보증번호</dt>
+							<dd style="width:160px;">
+								<input type="text" name="guarNo" id="guarNo" title="보증번호" style="width:150px" value="G20231402527"/>
+							</dd>
+						</dl>
+					</div><!-- //row -->
+					<div class="searchBtn">
+						<button type="button" onclick="javascript:fnSearch();" class="btn search">조회</button>
+						<button type="button" onclick="javascript:fnSearch2();" class="btn search">조회(조달청)</button>
+					</div>
+				</section>
+				<!-- 검색 부분 끝 -->
+
+				<div class="layer-flex mt20">
+					<!-- 내용 좌측 부분 -->
+					<div class="" style="width:49%">
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">조달청</h4>
+							</div>
+							<div class="fr">
+								<button id="btnIns" onclick="javascript:fnG2b();" class="btn style08">버튼</button>
+							</div>
+						</section>
+						<!-- 상단 부분 끝 -->
+						<table class="tbl mt10" >
+							<colgroup>
+								<col style="width:130px;">
+								<col style="">
+							</colgroup>
+							<tbody>
+								<tr>
+									<td>
+										<textare id="ele_g2bInfo" rows="50" cols="80"></textare>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<!-- 내용 좌측 부분 끝 -->
+					<!-- 내용 우측 부분 -->
+					<div class="" style="width:49%">
+						<form name="procFrm" id="procFrm" method="post" onSubmit="return false">
+						<!-- 상단 부분 -->
+						<section class="area">
+							<div class="fl">
+								<h4 class="title">응답</h4>
+							</div>
+							<div class="fr">
+								<button id="btnIns" onclick="javascript:fnG2bSend();" class="btn style08">전송</button>
+								<button id="btnIns" onclick="javascript:fnG2bRecv();" class="btn style08">응답처리</button>
+							</div>
+						</section>
+						<!-- 상단 부분 끝 -->
+						<table class="tbl mt10" >
+							<colgroup>
+								<col style="width:100px;">
+								<col style="">
+							</colgroup>
+							<!-- 상단 부분 끝 -->
+							<table class="tbl mt10" >
+								<colgroup>
+									<col style="width:130px;">
+									<col style="">
+								</colgroup>
+								<tbody>
+									<tr>
+										<td>
+											<span id="ele_recvList"></span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</table>
+						</form>
+					</div>
+					<!-- 내용 우측 부분 끝 -->
+					<!-- END 컨텐츠 영역 -->
+				</div>
+				</form>
+			</div><!-- //contents -->
+		</div><!-- //contentsArea -->
+	</body>
+</html>

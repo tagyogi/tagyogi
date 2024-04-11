@@ -1,0 +1,363 @@
+<!--
+	시스템구분 : 홈페이지 
+	파일정보 : guarContrList.html
+	파일명 : guarContrList.html
+	업무명 : 보증약정신청현황
+	생성자 : 변성균
+	생성일 : 2023.08.11
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xml:lang="ko">
+	
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		var codeList = /*[[${codeList}]]*/ 
+		var contrList = "";
+		//화면 초기화 처리 호출
+		$(document).ready(function(){
+			//lnb 세팅함수
+			fnPageLnbSet(/*[[${menuInfo}]]*/); //lnb세팅
+			
+			$("#sContrStaDt").val(com.fnDateGet(/*[[${today}]]*/, -730)); //발급일자 시작일설정
+			$("#sContrEndDt").val(com.fnDateGet(/*[[${today}]]*/, 30)); //발급일자 종료알 설정
+			
+			com.fnCodeSelectBox("CM07", "sContrStat", 2, "10");		//약정상태
+			
+			fnSerch();
+			
+			
+		});
+		
+		var fnSerch = function(){
+			obj = {url:"/guarContr/selectGuarContrList.do", formId:"serchFrm", callBack:fnSerchCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxPost(obj);
+		}
+		
+		var fnSerchCallBack = function(resData){
+			//console.log(resData);
+			contrList = resData.data;
+			$("#ele_contrList").empty();
+			
+			let totCnt = resData.data.length;
+			
+			if(totCnt === 0) $("#ele_contrList").append('<tr><td colspan=6">정보가 없습니다.</td></tr>');
+			
+			$.each(resData.data, function(index, item) {
+				var paramTag  = 'data-contrNo="'+item.contrNo+'" data-contrStat="'+item.contrStat+'"';
+					
+				let html  = '<tr '+paramTag+'>';
+					html += '<td class="alignC">'+ totCnt  + '</td>'; //번호
+					html += '<td class="alignC">'; 
+					html += '<span style="display:block;">' + com.fnNvlChk(com.fnDateFormat(item.reqDt), com.fnDateFormat(item.contrDt)) + '</span>';//신청일
+					html += '<span style="display:block;"> / ' + com.fnNvlChk(item.guarTypesNm, "미정") + '</span>';//상품종류
+					html += '</td>';
+					
+					html += '<td class="alignC">'
+					html += '<span style="display:block;">' + com.fnNvlChk(item.contrTermDt) + '</span>';//약정기간
+					html += '<span style="display:block;"> / ' + com.fnNvlChk(item.contrNum) + '</span>';//약정좌수
+					html += '</td>';
+					
+					html += '<td class="alignC">'
+					html += '<span style="display:block;">' + com.fnNvlChk(item.sumDoubleNum) + '</span>';//약정배수
+					html += '<span style="display:block;"> / ' + com.fnNvlChk(item.sumLimitAmt) + '</span>';//약정한도액	
+					html += '</td>';						
+						
+					html += '<td class="alignC">'+ com.fnNvlChk(item.procStatNm) +'</td>'; //처리상태
+					
+					let procStat = item.procStat;
+					if(procStat === "10"){ //접수
+						html += '<td class="alignC"><button type="button" class="btn-color sub-btn"><a href="javascript:fnDel(\''+item.contrNo+'\');">삭제</a></button></td>'; //
+					}else if(procStat === "30"){ //심사완료
+						html += '<td class="alignC"><button type="button" class="btn-color sub-btn"><a href="javascript:fnSubmit(\''+item.contrNo+'\');">제출</a></button></td>'; //
+					}else{
+						html += '<td class="alignC"></td>'; //
+					}
+					html += '</tr>';
+				
+				totCnt--;
+				$("#ele_contrList").append(html);
+			});
+			
+			//리스트 클릭 이벤트(tr 이벤트 걸면 버튼 or 체크박스 누를떄 같이 눌러서 따로 정의)
+			$("#ele_contrList").find('tr ').on("click", function(){
+				var noData = $(this).closest('tr').data('noData'.toLowerCase());
+				if(noData === "Y")	return;
+				
+				if($(this).find('button').length === 0) {	//버튼이 없으면
+					//data는 소문자로 변환됨. 가독성을 위해 toLowerCase사용
+					let contrNo = $(this).closest('tr').data('contrNo'.toLowerCase());
+					let contrStat = $(this).closest('tr').data('contrStat'.toLowerCase());
+					if(contrStat == 10){
+						fnContrLimit(contrNo);
+					}
+				}
+			});
+			
+			//최초 한도 조회
+			let contrNo = /*[[${session.guarContrNo}]]*/;
+			fnContrLimit(contrNo);
+		}
+		
+		//한도조회 
+		var fnContrLimit = function(contrNo){
+			param = {contrNo:contrNo};
+			obj = {url:"/guarContr/selectGuarLimitUseSum.do", param:param, callBack:fnContrLimitCallBack, msgYn:"N", sessYn:"Y", loadYn:"Y"};
+			com.fnAjaxDef(obj);	
+		}
+		//한도조회 콜백
+		var fnContrLimitCallBack = function(resData){
+			let contrLimit = resData.contrLimit;
+			let remainAmt = 0;
+			let doubleNumTot = 0;
+			let limitAmtTot = 0;
+			let useAmtTot = 0;
+			let remainAmtTot = 0;
+			
+			for(i = 11; i <= 15; i ++){
+				$("#ele_doubleNum"+ i).text(com.addComma(contrLimit["doubleNum"+i]));	
+				$("#ele_limitAmt"+ i).text(com.addComma(contrLimit["limitAmt"+i]));
+				$("#ele_useAmt"+ i).text(com.addComma(contrLimit["useAmt"+i]));
+				
+				remainAmt =  Number(contrLimit["limitAmt"+i]) - Number(contrLimit["useAmt"+i]);
+				$("#ele_remainAmt"+ i).text(com.addComma(remainAmt));
+				
+				if(i < 14){ //이행
+					doubleNumTot += contrLimit["doubleNum"+i];
+					limitAmtTot += contrLimit["limitAmt"+i];
+					useAmtTot += contrLimit["useAmt"+i];
+					remainAmtTot += Number(contrLimit["limitAmt"+i]) - Number(contrLimit["useAmt"+i]);
+				}else{ //지급
+					if( i == 14 ){ //선급시작
+						$("#ele_doubleNumTot1").text(com.addComma(doubleNumTot));	
+						$("#ele_limitAmtTot1").text(com.addComma(limitAmtTot));
+						$("#ele_useAmtTot1").text(com.addComma(useAmtTot));
+						$("#ele_remainAmtTot1").text(com.addComma(remainAmtTot));
+						
+						doubleNumTot = 0;
+						limitAmtTot = 0;
+						useAmtTot = 0;
+						remainAmtTot = 0;
+					}
+					doubleNumTot += contrLimit["doubleNum"+i];
+					limitAmtTot += contrLimit["limitAmt"+i];
+					useAmtTot += contrLimit["useAmt"+i];
+					remainAmtTot += Number(contrLimit["limitAmt"+i]) - Number(contrLimit["useAmt"+i]);
+					
+				}
+			}
+			
+			$("#ele_doubleNumTot2").text(com.addComma(doubleNumTot));	
+			$("#ele_limitAmtTot2").text(com.addComma(limitAmtTot));
+			$("#ele_useAmtTot2").text(com.addComma(useAmtTot));
+			$("#ele_remainAmtTot2").text(com.addComma(remainAmtTot));
+			
+		}
+		
+		
+		//삭제
+		var fnDel = function(contrNo){
+			if(confirm("약정신청내역을 삭제 하시겠습니까?")){
+				param = {contrNo:contrNo};
+				obj = {url:"/guarContr/deleteGuarContr.do", param:param, callBack:fnDelCallBack, msgYn:"Y", sessYn:"Y", loadYn:"Y"};
+				com.fnAjaxDef(obj);	
+			}
+		}
+		
+		//삭제 콜백
+		var fnDelCallBack = function(resData){
+			fnSerch();
+		}
+			
+		//제출
+		var fnSubmit = function(contrNo){
+			param = {contrNo:contrNo};
+			fnPage("2030110", param);
+		}
+			
+		
+		/*]]>*/
+	</script>
+        <div class="main-top sub">
+			<ul class="inner">
+                <li class="move1"></li>
+                <li class="move2"></li>
+                <li class="move3"></li>
+                <li class="move4"></li>
+                <li class="move5"></li>
+            </ul>
+        </div>
+        <div class="content-wrap">
+            <div class="inner">
+                <div class="content-box flex-box jc-between">
+                    <!-- 업무 안내 영역 -->
+                    <div id="lnb" class="lnb-wrap">
+                        <h3 class="ko-bold h3-txt"></h3>
+                        
+                    </div>
+
+                    <!-- 업무 안내 영역 끝 -->
+                    <div class="content-main">
+						<!-- 경로 영역 시작 -->
+                        <div th:insert="~{/fragments/subTitle}"></div>
+                        <!-- 경로 영역 끝 -->
+                        <form name="serchFrm" id="serchFrm" onSubmit="return false">
+							<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+                        <section id="content" class="content">
+                            <!-- 여기서부터 content -->
+                            <div>
+                                <article>
+                                    <form action="" method="get" name="search">
+										<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+										<div class="search-wrap txt-border-wrap">
+                                            <table class="block">
+                                                <colgroup>
+                                                    <col style="width:11%;">
+                                                    <col style="width:45%;">
+                                                    <col style="width:11%;">
+                                                    <col style="width:16%;">
+                                                    <col style="width:27%;">
+                                                </colgroup>
+                                                <tbody>
+													<tr>
+                                                        <th>약정일자</th>
+                                                        <td>
+                                                            <div class="flex-box al-center gap-5">
+                                                                <div class="flex-box al-center">
+                                                                    <input type="text" name="sContrStaDt" id="sContrStaDt" value="" maxlength="10" class="w-100" title="약정시작일 입력" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+                                                                	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sContrStaDt', 'yyyy-mm-dd','sContrEndDt', 1, '')" />
+                                                                </div>
+                                                                ~
+                                                                <div class="flex-box al-center">
+                                                                    <input type="text" name="sContrEndDt" id="sContrEndDt" maxlength="10" value="" class="w-100" title="약정종료일 입력" placeholder="YYYY-MM-DD" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this)" onblur="com.fnDateValiChk(this);" autocomplete="off"/>
+                                                                	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'sContrEndDt', 'yyyy-mm-dd', 'sContrStaDt', 2, '')" />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <th>약정상태</th>
+                                                        <td>
+															<select name="sContrStat" id="sContrStat" class=" w-100"></select>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <div class="alignR btn-position">
+												<button class="sub-btn btn-color blue m-w-100 onlyPc" onClick="fnPage('2030109')">신청</button>
+												<button class="sub-btn btn-black m-w-100" onClick="fnSerch()">검색</button>
+											</div>
+                                        </div>
+                                    </form>
+                                </article>
+                                <article>
+                                    <div class="table-wrap board">
+                                        <div class="table-scroll v2">
+                                            <table class="border">
+												<colgroup>
+                                                    <col style="width:17%;">
+                                                    <col style="width:8%;">
+                                                    <col style="width:25%;">
+                                                    <col style="width:25%;">
+                                                    <col style="width:25%;">
+                                                </colgroup>
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th scope="col">상품</th>
+                                                        <th scope="col">배수</th>
+                                                        <th scope="col">한도액</th>
+                                                        <th scope="col">사용액</th>
+                                                        <th scope="col">사용가능액</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+													<tr>
+                                                        <td scope="col">입찰</td>
+                                                        <td scope="col"><span id="ele_doubleNum11"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_limitAmt11"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_useAmt11"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_remainAmt11"></span></td>
+                                                    </tr>
+													<tr>
+                                                        <td scope="col">계약(인허가)</td>
+                                                        <td scope="col"><span id="ele_doubleNum12"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_limitAmt12"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_useAmt12"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_remainAmt12"></span></td>
+                                                    </tr>
+													<tr>
+                                                        <td scope="col">하자(성능)</td>
+                                                        <td scope="col"><span id="ele_doubleNum13"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_limitAmt13"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_useAmt13"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_remainAmt13"></span></td>
+                                                    </tr>
+													<tr style="background-color: #f5f5dd;">
+                                                        <td scope="col">이행합계</td>
+                                                        <td scope="col"><span id="ele_doubleNumTot1"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_limitAmtTot1"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_useAmtTot1"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_remainAmtTot1"></span></td>
+                                                    </tr>
+													<tr>
+                                                        <td scope="col">선급금</td>
+                                                        <td scope="col"><span id="ele_doubleNum14"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_limitAmt14"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_useAmt14"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_remainAmt14"></span></td>
+                                                    </tr>
+													<tr>
+                                                        <td scope="col">지급(상품,지급의지급)</td>
+                                                        <td scope="col"><span id="ele_doubleNum15"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_limitAmt15"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_useAmt15"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_remainAmt15"></span></td>
+                                                    </tr>
+													<tr style="background-color: #f5f5dd;">
+                                                        <td scope="col">지급합계</td>
+                                                        <td scope="col"><span id="ele_doubleNumTot2"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_limitAmtTot2"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_useAmtTot2"></span></td>
+                                                        <td scope="col" class="alignR"><span id="ele_remainAmtTot2"></span></td>
+                                                    </tr>
+                                            	</tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div>* 발급받으신 보증의 해제 또는 추가출자를 통해 사용가능액 추가 확보가 가능합니다.</div>
+                                    <div>* 보증의 해제를 위해서는 보증만기도래현황 메뉴를 참고 부탁 드립니다.</div>
+                                </article>
+                                
+                                <article>
+                                    <div class="table-wrap board">
+                                        <div class="table-scroll v2">
+                                            <table class="border">
+												<colgroup>
+                                                    <col style="width:4%;">
+                                                    <col style="width:20%;">
+                                                    <col style="width:18%;">
+                                                    <col style="width:18%;">
+                                                    <col style="width:6%;">
+                                                    <col style="width:6%;">
+                                                </colgroup>
+                                                <thead class="back-gray">
+                                                    <tr>
+                                                        <th scope="col">순번</th>
+                                                        <th scope="col">신청일/상품종류</th>
+                                                        <th scope="col">약정기간/약정좌수</th>
+                                                        <th scope="col">약정배수/약정한도액</th>
+                                                        <th scope="col">처리상태</th>
+                                                        <th scope="col">처리</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ele_contrList"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                                
+                            </div>
+                        </section>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</html>

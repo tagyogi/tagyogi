@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="ddc.biz.com.repository.ComConfMapper"> 
+
+	<!-- 민원발급 정보 조회(출자용) --> 
+	<select id="selectComConfInvtList" parameterType="Map" resultType="camelMap"> 
+		/* ComConfMapper.selectComConfInvtList */ 
+		SELECT 
+		    C.CONF_CD
+            , F_GET_CD_NM('CM11', C.CONF_CD) CONF_NM
+            , C.CONF_NO
+            , C.CONF_YEAR
+            , C.CONF_SEQ
+            , C.MEMB_NO
+            , M.MEMB_NM
+            , M.CEO_NM
+            , M.BELONG
+            , F_GET_PATTERN(M.LAW_NO, 'CRP') LAW_NO
+            , F_GET_PATTERN(M.BIZ_NO, 'BIZ') BIZ_NO
+            , F_GET_CD_NM('MB02', M.MAIN_BUSS_CD) MAIN_BUSS_CD_NM
+            , C.REQ_DT
+            , C.REQ_NM
+            , C.REQ_CNT
+            , C.BAS_DT
+            , NVL(C.PURPOSE, ' ') PURPOSE
+            , C.GIVE_PLACE
+            , C.PUB_DT
+            , C.PROC_STAT
+            , F_GET_CD_NM('CM12', C.PROC_STAT) PROC_STAT_NM 
+            , C.PROC_DT
+            , C.PROC_NM
+            , C.PROC_REASON
+          FROM CM_CONF C
+               , MB_MASTER M
+         WHERE M.MEMB_NO = C.MEMB_NO
+		   <if test="sProcStat != null and sProcStat  != ''"> 
+           AND C.PROC_STAT = #{sProcStat}
+           </if>
+		   <if test="sConfCd != null and sConfCd  != ''"> 
+           AND C.CONF_CD = #{sConfCd}
+           </if>
+           <if test="sPubStaDt != null and sPubStaDt  != ''"> 
+           AND C.PUB_DT &gt;= REPLACE(#{sPubStaDt}, '-', '')
+           </if>
+           <if test="sPubEndDt != null and sPubEndDt  != ''">
+           AND C.PUB_DT &lt;= REPLACE(#{sPubEndDt}, '-', '')
+           </if> 
+		   <if test="sMembNm != null and sMembNm  != ''">
+           AND M.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+           </if>
+           <if test="sMembNo != null and sMembNo  != ''">
+           AND C.MEMB_NO = #{sMembNo}
+           </if>
+           <if test="sCeoNm != null and sCeoNm  != ''">
+           AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+           </if>
+           <if test="sReqStaDt != null and sReqStaDt  != ''"> 
+           AND C.REQ_DT &gt;= REPLACE(#{sReqStaDt}, '-', '')
+           </if>
+           <if test="sReqEndDt != null and sReqEndDt  != ''">
+           AND C.REQ_DT &lt;= REPLACE(#{sReqEndDt}, '-', '')
+           </if> 
+         ORDER BY REQ_DT DESC
+	</select> 
+	
+	<!-- 민원발급 정보 조회(융자용) --> 
+	<select id="selectComConfList" parameterType="Map" resultType="camelMap"> 
+		/* ComConfMapper.selectComConfList */ 
+		SELECT 
+		    C.CONF_CD
+            , F_GET_CD_NM('CM11', C.CONF_CD) CONF_NM
+            , C.CONF_NO
+            , C.CONF_YEAR
+            , C.CONF_SEQ
+            , C.MEMB_NO
+            , M.MEMB_NM
+            , M.CEO_NM
+            , M.BELONG
+            , F_GET_CD_NM('MB02', M.MAIN_BUSS_CD) MAIN_BUSS_CD_NM
+            , F_GET_PATTERN(M.LAW_NO, 'CRP') LAW_NO
+            , F_GET_PATTERN(M.BIZ_NO, 'BIZ') BIZ_NO
+            , C.REQ_DT
+            , C.REQ_NM
+            , C.REQ_CNT
+            , C.BAS_DT
+            , NVL(C.PURPOSE, ' ') PURPOSE
+            , C.GIVE_PLACE
+            , C.PUB_DT
+            , C.PROC_STAT
+            , F_GET_CD_NM('CM12', C.PROC_STAT) PROC_STAT_NM 
+            , C.PROC_DT
+            , C.PROC_NM
+            , C.PROC_REASON
+            , C.LEND_NO
+            , L.LEND_DT
+            , L.LEND_AMT
+            , L.REPAY_DT
+            , R.REPAY_AMT
+			, (L.LEND_AMT - NVL(R.REPAY_AMT,0)) REMAIN_AMT
+            , L.REPAY_PRE_DT
+          FROM CM_CONF C
+               , MB_MASTER M
+               , LD_MASTER L
+               , (
+			      SELECT LEND_NO
+			           , SUM(REPAY_AMT) + SUM(NVL(REP_REPAY_AMT, 0)) REPAY_AMT
+			        FROM LD_REPAY
+			       GROUP BY LEND_NO
+			    ) R
+         WHERE C.MEMB_NO = M.MEMB_NO
+           AND C.LEND_NO = L.LEND_NO(+)
+           AND L.LEND_NO = R.LEND_NO(+)
+		   <if test="sProcStat != null and sProcStat  != ''"> 
+           AND C.PROC_STAT = #{sProcStat}
+           </if>
+		   <if test="sConfCd != null and sConfCd  != ''"> 
+           AND C.CONF_CD = #{sConfCd}
+           </if>
+           <if test="sPubStaDt != null and sPubStaDt  != ''"> 
+           AND C.PUB_DT &gt;= REPLACE(#{sPubStaDt}, '-', '')
+           </if>
+           <if test="sPubEndDt != null and sPubEndDt  != ''">
+           AND C.PUB_DT &lt;= REPLACE(#{sPubEndDt}, '-', '')
+           </if> 
+		   <if test="sMembNm != null and sMembNm  != ''">
+           AND M.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+           </if>
+           <if test="sMembNo != null and sMembNo  != ''">
+           AND C.MEMB_NO = #{sMembNo}
+           </if>
+           <if test="sCeoNm != null and sCeoNm  != ''">
+           AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+           </if>
+           <if test="sReqStaDt != null and sReqStaDt  != ''"> 
+           AND C.REQ_DT &gt;= REPLACE(#{sReqStaDt}, '-', '')
+           </if>
+           <if test="sReqEndDt != null and sReqEndDt  != ''">
+           AND C.REQ_DT &lt;= REPLACE(#{sReqEndDt}, '-', '')
+           </if> 
+         ORDER BY REQ_DT DESC
+	</select> 
+	
+	<!-- 민원발급 정보 조회(보증용) --> 
+	<select id="selectComConfGuarList" parameterType="Map" resultType="camelMap"> 
+		/* ComConfMapper.selectComConfGuarList */ 
+		SELECT 
+		    C.CONF_CD
+            , F_GET_CD_NM('CM11', C.CONF_CD) CONF_NM
+            , C.CONF_NO
+            , C.CONF_YEAR
+            , C.CONF_SEQ
+            , C.MEMB_NO
+            , M.MEMB_NM
+            , M.CEO_NM
+            , M.BELONG
+            , F_GET_CD_NM('MB02', M.MAIN_BUSS_CD) MAIN_BUSS_CD_NM
+            , F_GET_PATTERN(M.LAW_NO, 'CRP') LAW_NO
+            , F_GET_PATTERN(M.BIZ_NO, 'BIZ') BIZ_NO
+            , C.REQ_DT
+            , C.REQ_NM
+            , C.REQ_CNT
+            , C.BAS_DT
+            , NVL(C.PURPOSE, ' ') PURPOSE
+            , C.GIVE_PLACE
+            , C.PUB_DT
+            , C.PROC_STAT
+            , F_GET_CD_NM('CM12', C.PROC_STAT) PROC_STAT_NM 
+            , C.PROC_DT
+            , C.PROC_NM
+            , C.PROC_REASON
+            , C.REF_VAL
+            , G.CONTR_NO
+          FROM CM_CONF C
+               , MB_MASTER M
+               , (SELECT CONTR_NO, MEMB_NO FROM GR_CONTRACT ) G
+         WHERE C.MEMB_NO = M.MEMB_NO
+          AND C.MEMB_NO = G.MEMB_NO
+		   <if test="sProcStat != null and sProcStat  != ''"> 
+           AND C.PROC_STAT = #{sProcStat}
+           </if>
+		   <if test="sConfCd != null and sConfCd  != ''"> 
+           AND C.CONF_CD = #{sConfCd}
+           </if>
+           <if test="sPubStaDt != null and sPubStaDt  != ''"> 
+           AND C.PUB_DT &gt;= REPLACE(#{sPubStaDt}, '-', '')
+           </if>
+           <if test="sPubEndDt != null and sPubEndDt  != ''">
+           AND C.PUB_DT &lt;= REPLACE(#{sPubEndDt}, '-', '')
+           </if> 
+		   <if test="sMembNm != null and sMembNm  != ''">
+           AND M.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+           </if>
+           <if test="sMembNo != null and sMembNo  != ''">
+           AND C.MEMB_NO = #{sMembNo}
+           </if>
+           <if test="sCeoNm != null and sCeoNm  != ''">
+           AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+           </if>
+           <if test="sReqStaDt != null and sReqStaDt  != ''"> 
+           AND C.REQ_DT &gt;= REPLACE(#{sReqStaDt}, '-', '')
+           </if>
+           <if test="sReqEndDt != null and sReqEndDt  != ''">
+           AND C.REQ_DT &lt;= REPLACE(#{sReqEndDt}, '-', '')
+           </if> 
+         ORDER BY REQ_DT DESC
+	</select>
+
+	<!-- 민원발급 신청 처리 --> 
+	<insert id="insertComConf" parameterType="Map"  > 
+		/* ComConfMapper.insertComConf */ 
+		<selectKey resultType="java.lang.String" keyProperty="confSeq" order="BEFORE">
+          SELECT NVL(MAX(CONF_SEQ), 0) + 1 MAX_SEQ
+            FROM CM_CONF
+           WHERE CONF_YEAR = SUBSTR(#{reqDt}, 0, 4)
+             AND CONF_CD = #{confCd}
+	    </selectKey>
+		INSERT INTO CM_CONF ( 
+			CONF_CD 
+			, CONF_NO
+			, CONF_YEAR
+			, CONF_SEQ 
+			, MEMB_NO 
+			, REQ_DT 
+			, REQ_NM 
+			, REQ_CNT 
+			, BAS_DT 
+			, PURPOSE
+			, GIVE_PLACE 
+			, PUB_DT 
+			, PROC_STAT 
+			, PROC_DT 
+			, PROC_NM
+			, PROC_REASON 
+			, SIGNED_CONT
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+			, LEND_NO 
+			, REF_VAL
+		) VALUES ( 
+			#{confCd} 
+			, SUBSTR(#{reqDt}, 0, 4)||'-'||TRIM(TO_CHAR(#{confSeq}, '0000'))
+			, SUBSTR(#{reqDt}, 0, 4)
+			, #{confSeq} 
+			, #{membNo} 
+			, REPLACE(#{reqDt}, '-') 
+			, #{reqNm} 
+			, #{reqCnt} 
+			, REPLACE(#{basDt}, '-') 
+			, #{purpose}
+			, #{givePlace} 
+			, REPLACE(#{pubDt}, '-') 
+			, #{procStat} 
+			, REPLACE(#{procDt}, '-') 
+			, #{procNm}
+			, #{procReason} 
+			, #{signedCont} 
+			, SYSDATE 
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+			, #{lendNo} 
+			, #{refVal}
+		) 
+	</insert> 
+
+	<!-- 민원발급 수정 처리 --> 
+	<update id="updateComConf" parameterType="Map"  > 
+		/* ComConfMapper.updateComConf */ 
+		UPDATE CM_CONF 
+		SET 
+			 REQ_DT = REPLACE(#{reqDt}, '-', '') 
+			, REQ_NM = #{reqNm} 
+			, REQ_CNT = #{reqCnt} 
+			, BAS_DT = REPLACE(#{basDt}, '-', '') 
+			, PURPOSE = #{purpose} 
+			, GIVE_PLACE = #{givePlace} 
+			, PUB_DT = REPLACE(#{pubDt}, '-', '') 
+			, PROC_STAT = #{procStat} 
+			, PROC_DT = REPLACE(#{procDt}, '-', '') 
+			, PROC_NM = #{procNm} 
+			, PROC_REASON = #{procReason} 
+			, SIGNED_CONT = #{signedCont}
+			, REF_VAL =  #{refVal}
+		WHERE CONF_NO = #{confNo}	
+		
+	</update> 
+
+	<!-- 민원발급 삭제 처리 --> 
+	<delete id="deleteComConf" parameterType="Map"  > 
+		/* ComConfMapper.deleteComConf */ 
+		DELETE FROM CM_CONF 
+	</delete> 
+
+	<!-- 증명서발급완료처리 --> 
+	<update id="updateConfProcStat" parameterType="Map"  > 
+		/* ComConfMapper.updateConfProcStat */ 
+		UPDATE CM_CONF 
+		SET PROC_STAT = #{procStat} 
+			, MOD_DTM = SYSDATE
+	        , MOD_NM = #{userNm}
+		WHERE CONF_NO = #{conf_no} /*oz파라미터와 형식 맞춤*/
+			AND CONF_CD = #{conf_cd}	
+		
+	</update> 
+	
+	<!-- ======================================================= --> 
+	<!-- 홈페이지 민원발급 정보 조회 --> 
+	<select id="selectHomeComConfList" parameterType="Map" resultType="camelMap"> 
+		/* ComConfMapper.selectHomeComConfList */ 
+		SELECT AAA.*
+		FROM (SELECT ROW_NUMBER() OVER (ORDER BY REQ_DT DESC, CONF_NO DESC) AS RN2
+					, AA.*
+			FROM (SELECT ROW_NUMBER() OVER (ORDER BY REQ_DT, CONF_NO) AS RN
+						, A.* 
+				FROM (SELECT 
+					    C.CONF_CD
+			            , F_GET_CD_NM('CM11', C.CONF_CD) CONF_NM
+			            , C.CONF_NO
+			            , C.CONF_YEAR
+			            , C.CONF_SEQ
+			            , C.MEMB_NO
+			            , M.MEMB_NM
+			            , M.CEO_NM
+			            , M.BELONG
+			            , F_GET_CD_NM('MB02', M.MAIN_BUSS_CD) MAIN_BUSS_CD_NM
+			            , F_GET_PATTERN(M.LAW_NO, 'CRP') LAW_NO
+			            , F_GET_PATTERN(M.BIZ_NO, 'BIZ') BIZ_NO
+			            , F_GET_PATTERN(C.REQ_DT, 'DT') AS REQ_DT
+			            , C.REQ_NM
+			            , C.REQ_CNT
+			            , C.BAS_DT
+			            , NVL(C.PURPOSE, ' ') PURPOSE
+			            , C.GIVE_PLACE
+			            , F_GET_PATTERN(C.PUB_DT, 'DT') AS PUB_DT
+			            , C.PROC_STAT
+			            , F_GET_CD_NM('CM12', C.PROC_STAT) PROC_STAT_NM 
+			            , C.PROC_DT
+			            , C.PROC_NM
+			            , C.PROC_REASON
+			            , C.LEND_NO
+			            , L.LEND_DT
+			            , L.LEND_AMT
+			            , L.REPAY_DT
+			            , L.REPAY_AMT
+			            , L.LEND_AMT - NVL(L.REPAY_AMT, 0) - NVL(L.REP_REPAY_AMT, 0) REMAIN_AMT
+			            , L.REPAY_PRE_DT
+			          FROM CM_CONF C
+			               , MB_MASTER M
+			               , LD_MASTER L
+			         WHERE M.MEMB_NO = C.MEMB_NO
+			           AND C.LEND_NO = L.LEND_NO(+)
+					   <if test="sProcStat != null and sProcStat  != ''"> 
+			           AND C.PROC_STAT = #{sProcStat}
+			           </if>
+					   <if test="sConfCd != null and sConfCd  != ''"> 
+			           AND C.CONF_CD = #{sConfCd}
+			           </if>
+			           <if test="sReqStaDt != null and sReqStaDt  != ''"> 
+			           AND C.REQ_DT &gt;= REPLACE(#{sReqStaDt}, '-', '')
+			           </if>
+			           <if test="sReqEndDt != null and sReqEndDt  != ''">
+			           AND C.REQ_DT &lt;= REPLACE(#{sReqEndDt}, '-', '')
+			           </if> 
+					   <if test="sMembNm != null and sMembNm  != ''">
+			           AND M.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+			           </if>
+			           <if test="sMembNo != null and sMembNo  != ''">
+			           AND C.MEMB_NO = #{sMembNo}
+			           </if>
+			           <if test="sCeoNm != null and sCeoNm  != ''">
+			           AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+			           </if>
+			     )A
+			)AA 
+		)AAA 
+		WHERE RN2 BETWEEN #{pageUtil.startNo} AND #{pageUtil.endNo}
+	</select> 
+	
+	<!-- 홈페이지 민원발급 정보 총 페이지 수 --> 
+	<select id="totalPage" parameterType="Map" resultType="int"> 
+		/* ComConfMapper.totalPage */ 
+		SELECT COUNT(*)
+		FROM (SELECT 
+			    C.*
+	            , M.*
+	            , L.*
+	          FROM CM_CONF C
+	               , MB_MASTER M
+	               , LD_MASTER L
+	         WHERE M.MEMB_NO = C.MEMB_NO
+	           AND C.LEND_NO = L.LEND_NO(+)
+			   <if test="sProcStat != null and sProcStat  != ''"> 
+	           AND C.PROC_STAT = #{sProcStat}
+	           </if>
+			   <if test="sConfCd != null and sConfCd  != ''"> 
+	           AND C.CONF_CD = #{sConfCd}
+	           </if>
+	           <if test="sReqStaDt != null and sReqStaDt  != ''"> 
+	           AND C.REQ_DT &gt;= REPLACE(#{sReqStaDt}, '-', '')
+	           </if>
+	           <if test="sReqEndDt != null and sReqEndDt  != ''">
+	           AND C.REQ_DT &lt;= REPLACE(#{sReqEndDt}, '-', '')
+	           </if> 
+			   <if test="sMembNm != null and sMembNm  != ''">
+	           AND M.MEMB_NM LIKE '%' || #{sMembNm} || '%'
+	           </if>
+	           <if test="sMembNo != null and sMembNo  != ''">
+	           AND C.MEMB_NO = #{sMembNo}
+	           </if>
+	           <if test="sCeoNm != null and sCeoNm  != ''">
+	           AND M.CEO_NM LIKE '%' || #{sCeoNm} || '%'
+	           </if>
+	     )
+	</select> 
+	
+	<!-- 증명서발급날짜 저장 --> 
+	<update id="updateComConfPubDt" parameterType="Map"  > 
+		/* ComConfMapper.updateComConfPubDt */ 
+		UPDATE CM_CONF 
+		SET PUB_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		WHERE CONF_NO = #{confNo}
+		AND CONF_CD = #{confCd}	
+		
+	</update> 
+	
+	<!-- 홈페이지 민원발급 삭제 처리 --> 
+	<delete id="deleteHomeComConf" parameterType="Map"  > 
+		/* ComConfMapper.deleteHomeComConf */ 
+		DELETE FROM CM_CONF 
+			WHERE CONF_NO = #{confNo}  
+			AND CONF_CD = #{confCd}
+	</delete> 
+</mapper>

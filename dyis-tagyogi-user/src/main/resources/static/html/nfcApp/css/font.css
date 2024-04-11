@@ -1,0 +1,58 @@
+/* 맑은 고딕*/
+@font-face {
+    font-family: "Malgun Gothic";
+    font-style: normal;
+    font-weight: normal;
+    src: url("../fonts/malgunGothic/malgun.eot") format("eot"),
+        url("../fonts/malgunGothic/malgun.woff") format("woff"),
+        url("../fonts/malgunGothic/malgun.ttf") format("truetype"),
+        url("../fonts/malgunGothic/malgun.otf") format("opentype");
+}
+
+/* pretendard */
+@font-face {
+    font-family: "preBold";
+    src: url("../fonts/pretendard/Pretendard-Bold.woff") format("woff"),
+        url("../fonts/pretendard/Pretendard-Bold.woff2") format("woff2");
+}
+@font-face {
+    font-family: "preSemiBold";
+    src: url("../fonts/pretendard/Pretendard-SemiBold.woff") format("woff"),
+        url("../fonts/pretendard/Pretendard-SemiBold.woff2") format("woff2");
+}
+@font-face {
+    font-family: "preMedium";
+    src: url("../fonts/pretendard/Pretendard-Medium.woff") format("woff"),
+        url("../fonts/pretendard/Pretendard-Medium.woff2") format("woff2");
+}
+@font-face {
+    font-family: "preRegular";
+    src: url("../fonts/pretendard/Pretendard-Regular.woff") format("woff"),
+        url("../fonts/pretendard/Pretendard-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "preLight";
+    src: url("../fonts/pretendard/Pretendard-Light.woff") format("woff"),
+        url("../fonts/pretendard/Pretendard-Light.woff2") format("woff2");
+}
+
+.pre-light {
+    font-family: "preLight";
+    color: #323232;
+}
+.pre-regular {
+    font-family: "preRegular";
+    color: #323232;
+}
+.pre-medium {
+    font-family: "preMedium";
+    color: #323232;
+}
+.pre-bold {
+    font-family: "preBold";
+    color: #323232;
+}
+.pre-semiBold {
+    font-family: "preSemiBold";
+    color: #323232;
+}

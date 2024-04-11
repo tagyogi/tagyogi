@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="ROLLINGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<prudent>true</prudent>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>/home/kocfc/logs/admin/%d{yyyy-MM-dd}.log</fileNamePattern>
+		</rollingPolicy>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>ERROR</level>
+		</filter>
+
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="org.springframework" level="INFO">
+		<appender-ref ref="CONSOLE"/>
+		<appender-ref ref="ROLLINGFILE"/>
+	</logger>
+
+	<logger name="org.springframework.web" level="DEBUG">
+		<appender-ref ref="CONSOLE"/>
+		<appender-ref ref="ROLLINGFILE"/>
+	</logger>
+
+	<logger name="org.springframework.jdbc.core.JdbcTemplate" level="DEBUG">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<logger name="org.springframework.jdbc.core.StatementCreatorUtils" level="DEBUG">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ROLLINGFILE" />
+    </root>
+</configuration>

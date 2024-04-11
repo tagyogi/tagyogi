@@ -1,0 +1,200 @@
+
+<!-- 
+	fileName : sample/sampleList.html
+	content : 샘플현황
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="/layout/basicLayout" xml:lang="ko">
+	<body>
+		<script th:inline="javascript">
+			var codeList = {}; //사용코드관리
+			
+			/*<![CDATA[*/
+			
+			//화면 초기화
+			$(document).ready(function(){
+				//권한 처리
+				//common.fnUsrAuthPrcs("M");
+				
+				//즐겨찾기 활성화
+				<!--/* common.fnMenuFavChk([[${paramMap.favYn}]]); */-->
+				
+				//sheet용 코드
+				//var itemCRD008 = common.fnCodeSheetSet("CRD008", 1);
+				
+				//jqGrid 설정 common.js jqGrid 변수 및 기본 값 설정 jqGridInit
+				//그리드 생성 
+				var jqGridCols = [
+						{ label: '상태', name: 'status', key: true, hidden:true },
+			            { label: '메뉴ID', name: 'menuId', key: true, width: 60, align:'center'},
+			            { label: '상위메뉴ID', name: 'parMenuId', key: true, width: 60, align:'center', editrules:{required:true} },
+			            { label: '메뉴단계', name: 'menuStep', width: 120, editable:true, editrules:{required:true}  },
+			            { label: '메뉴명', name: 'menuNm', width: 100, align:'center', editable:true },
+			            { label: '메뉴약어', name: 'menuAbrNm', width: 100, align:'center', editable:true },
+			            { label: '메뉴페이지', name: 'menuPgNm', width: 100, align:'center', editable:true },
+			            { label: '정렬순번', name: 'ordSn', width: 100, align:'center', editable:true },
+			            { label: '사용여부', name: 'userYn', width: 30, align:'center', formatter:'checkbox', editable:true, edittype:'checkbox', editoptions: { value:"1:0" } },
+			            { label: '비고', name: 'rmk', width: 150, align:'left', editable:true }
+			        ];
+			    //console.log(jqGridCols);
+			    //그리드생성 호출
+			    com.fnGridCreate($("#jqGrid"), jqGridCols);   
+			    
+			    //초기 조회
+				fnSearch();
+				
+		    }); //ready 끝
+		    
+		    //그리드 이벤트 (더블클릭)
+		    function  fnGridDbClickRow(row, col, ct){
+				//alert("fnGridDbClickRow :" + row + " /" +col);
+			};
+			
+			//그리드 이벤트 (셀클릭)
+		    function  fnGridCellSelect(row, col, ct){
+				//alert("fnGridCellSelect :" + row + " /" +col);
+			};
+			
+			//현황조회
+		    function  fnSearch(){
+				$("#jqGrid")[0].grid.beginReq();
+				com.fnAjaxPost("/menu/menuList.do", "searchForm", fnSearchCallBack);
+			};
+			
+			//현황조회 콜백
+			function fnSearchCallBack(resData){
+				//console.log(resData);
+				$("#jqGrid").clearGridData();
+		    	$("#jqGrid")[0].addJSONData(resData.rows);
+		    	$("#jqGrid")[0].grid.endReq();
+			};
+			
+			//grid 행추가
+			function fnGridRowAdd(){
+				$("#jqGrid").jqGrid('saveRow',gridSelectRow); //에디터 비활성화
+				var rowData = {status:"C"};
+				var rowCnt = $("#jqGrid").getGridParam("reccount");
+				$("#jqGrid").jqGrid("addRowData", rowCnt+1, rowData, "first");
+			};
+			
+			//grid 행삭제
+			function fnGridRowDel(){
+				var rowid = $("#jqGrid").getGridParam("selrow");
+				if(rowid === null){
+					alert("삭제할 행을 선택 하십시오.");
+					return;
+				}
+				var rowData = $("#jqGrid").jqGrid("getRowData", rowid);
+				if(rowData.status === "C"){
+					$("#jqGrid").delRowData(rowid);
+				}else{
+					alert("추가된 행만 삭제 가능하니다.")
+				}
+			};
+		    
+		    
+		    //저장처리
+		    function fnSave(){
+				$("#jqGrid").jqGrid('saveRow',gridSelectRow); //에디터 비활성화
+					
+				var rowDatas = [];
+				var allRowData = $("#jqGrid").getRowData();
+				//alert(allRowData.length);
+				for(var i = 0; i < allRowData.length; i++){
+					
+		        	rowData = allRowData[i]
+		        	//console.log(rowData)
+		        	if(rowData.status === "C" || rowData.status === "U" ){
+		        		rowDatas[rowDatas.length] = rowData;
+		        	}
+		        }
+				//console.log(rowDatas)
+				if(rowDatas.length === 0){
+					alert("변경된 내역이 없습니다.");
+					return;
+				}
+				if(confirm("변경내역을 저장하시겠습니까?")){
+					var param = {data : rowDatas};
+					com.fnAjaxDef("/menu/menuSave.do", param, fnSearch); //저장 호출	
+				}
+			};
+			
+			
+		    
+		    /*]]>*/
+		</script>
+		
+		<div class="contentsTop">
+            <h2 id="menuTitle">제목자리</h2>
+            <ul class="function_menu_area">
+                <li><button type="button" class="button btnMid gray_gradation">변경등록</button></li>
+                <li><button type="button" class="button btnMid gray_gradation">기재변경</button></li>
+                <li><button type="button" class="button btnMid gray_gradation">입력</button></li>
+                <li><button type="button" class="button btnMid gray_gradation">수정</button></li>
+                <li><button type="button" class="button btnMid gray_gradation">삭제</button></li>
+                <li><button type="button" class="button btnMid gray_gradation">상세보기</button></li>
+            </ul>
+            <ul class="page_menu_area">
+                <!-- <li><button type="button" class="btn_bookmark">bookmark</button></li> -->
+                <li><button type="button" class="btn_print">print</button></li>
+                <li><button type="button" class="btn_excel">excel</button></li>
+                <li><button type="button" class="btn_refresh">refresh</button></li>
+                <!-- <li><button type="button" class="btn_delete">delete</button></li> -->
+            </ul>
+        </div><!-- //contentsTop -->
+        
+        <div class="contents flex" style="position:absolute; top:50px;display:block; height: 84vh;">
+			<form name="searchForm" id="searchForm" method="POST" onSubmit="return false;">
+			<input type="hidden" th:name="_csrf" th:value="${_csrf?.token}"/>
+			<!-- STAR 컨텐츠 영역 -->
+			<section class="searchArea mt10">
+				<div class="row">
+					<dl>
+						<dt>메뉴명</dt>
+						<dd style="width: 260px;">
+							<input type="text" name="sMenuNm" id="sMenuNm" style="width: 257px;">
+						</dd>
+					</dl>
+					<dl>
+						<dt>사용여부</dt>
+						<dd>
+							<select name="sUseYn" id="sUseYn" style="width:120px;">
+								<option value="" selected>전체</option>
+								<option value="1">사용</option>
+								<option value="0">미사용</option>
+							</select>
+						</dd>
+					</dl>
+				</div><!-- //row -->
+				<div class="searchBtn">
+					<a href="javascript:;" class="btn search" id="btn_search">조회</a>
+				</div>
+			</section><!-- //searchArea -->
+			</form>
+			
+			<section class="area">
+				<div class="fl">
+					<span class="text">전체</span>
+					<span class="text">05</span>
+					<span class="text">건</span>
+				</div>
+				<div class="fr">
+					<a href="javascript:fnGridRowAdd();" class="btn style08">행추가</a>
+					<a href="javascript:fnGridRowDel();" class="btn style08">행삭제</a>
+					<a href="javascript:fnSave();" class="btn style05">저장</a>
+				</div>
+			</section><!-- //area -->
+
+			<div class="lblGrid " ><!-- 해더고정 케이스 " scrolly "  클레스 추가 및 높이 지정 style="height:200px;" -->
+				<div class="lblGrid_body">
+					<div class="mt10">
+						<table id="jqGrid"></table>
+					</div>
+				</div><!-- //lblGrid_body -->
+			</div><!-- //lblGrid -->
+
+			<!-- END 컨텐츠 영역 -->
+			</div><!-- //contents -->
+        </div>
+		
+	</body</html>

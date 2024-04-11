@@ -1,0 +1,237 @@
+<!--
+	시스템 : 홈페이지
+	파일정보 : serchG2bContr.html
+	파일명 : serchG2bContr
+	업무명 : G2B계약검색
+	생성자 : 권다슬
+	생성일 : 2023-07-13
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xml:lang="ko">
+<head>
+	<meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/content.css">
+    <script src="/js/jquery-1.10.2.min.js"></script>
+	<script src="/js/jquery-3.3.1.min.js"></script>
+	<script src="/js/jquery-ui-1.10.3.js"></script>
+	<script src="/js/jquery.modal.js"></script>
+	<script src="/js/main.js"></script>
+	<script src="/js/common.js"></script>
+</head>
+
+	
+	<script th:inline="javascript">
+		
+	    /*]]>*/
+	</script>
+	<body>
+		<form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+			<input type="hidden" name="guarType" id="guarType" />
+			<input type="hidden" name="publicNo" id="publicNo" value=""/>
+			<input type="hidden" name="membNo" id="membNo" value=""/>
+			<input type="hidden" name="bizNo" id="bizNo" value=""/>
+		</form>
+		
+
+
+		<div class="popWrap">
+			<!-- 경로 영역 시작 -->
+	        <form name="serchFrm" id="serchFrm" method="post" onSubmit="return false">
+				<input type="hidden" name="guarType" id="guarType" />
+				<input type="hidden" name="publicNo" id="publicNo" value=""/>
+				<input type="hidden" name="membNo" id="membNo" value=""/>
+				<input type="hidden" name="bizNo" id="bizNo" value=""/>
+	            <!-- 경로 영역 끝 -->
+	            <section id="content" class="content">
+	                <!-- 여기서부터 content -->
+	                <div>
+	                    <!-- 계약기관정보 -->
+						<h4 class="dot-dept1 noMg">계약기관정보</h4>
+						<div class="table-wrap info auto">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="width:200px;">
+									<col style="width:100px;">
+									<col style="width:200px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>계약기관명</th>
+										<td colspan="3"><span id="ele_conNm"></span></td>
+									</tr>
+									<tr>
+										<th>채권자명</th>
+										<td><span id="ele_conCeoNm"></span></td>
+						                <th>사업자번호</th>
+						                <td><span id="ele_conBizNo"></span></td>
+						            </tr>
+						            <tr>
+										<th>담당자명</th>
+										<td><span id="ele_conEmpNm"></span></td>
+						                <th>부서명</th>
+						                <td><span id="ele_conEmpDept"></span></td>
+						            </tr>
+						            <tr>
+										<th>전화번호</th>
+										<td><span id="ele_conEmpTelNo"></span></td>
+						                <th>팩스번호</th>
+						                <td><span id="ele_conEmpFaxNo"></span></td>
+						            </tr>
+								</tbody>     
+							</table>
+							
+						</div>
+				
+						<!-- 수요기관정보 -->
+						<h4 class="dot-dept1 noMg">수요기관정보</h4>
+						<div class="table-wrap info auto">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="width:200px;">
+									<col style="width:100px;">
+									<col style="width:200px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>계약기관명</th>
+										<td colspan="3"><span id="ele_orgNm"></span></td>
+									</tr>
+									<tr>
+										<th>채권자명</th>
+										<td><span id="ele_orgCeoNm"></span></td>
+						                <th>사업자번호</th>
+						                <td><span id="ele_orgBizNo"></span></td>
+						            </tr>
+						            <tr>
+										<th>담당자명</th>
+										<td><span id="ele_orgEmpNm"></span></td>
+						                <th>부서명</th>
+						                <td><span id="ele_orgEmpDept"></span></td>
+						            </tr>
+						            <tr>
+										<th>전화번호</th>
+										<td><span id="ele_orgEmpTelNo"></span></td>
+						                <th>팩스번호</th>
+						                <td><span id="ele_orgEmpFaxNo"></span></td>
+						            </tr>
+								</tbody>     
+							</table>
+						</div>
+						
+						<!-- 도급업체정보 -->
+						<h4 class="dot-dept1 noMg">도급업체정보</h4>
+						<div class="table-wrap info auto">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="width:200px;">
+									<col style="width:100px;">
+									<col style="width:200px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>기관명(회사명)</th>
+										<td><span id="ele_supNm"></span></td>
+										<th>대표자명</th>
+										<td><span id="ele_supCeoNm"></span></td>
+						                
+									</tr>
+									<tr>
+										<th>사업자번호</th>
+						                <td><span id="ele_supBizNo"></span></td>
+						                <th>법인번호</th>
+						                <td><span id="ele_supLawNo"></span></td>
+						            </tr>
+						            <tr>
+										<th>담당자명</th>
+										<td><span id="ele_supEmpNm"></span></td>
+						                <th>부서명</th>
+						                <td><span id="ele_supEmpDept"></span></td>
+						            </tr>
+						            <tr>
+										<th>전화번호</th>
+										<td><span id="ele_supEmpTelNo"></span></td>
+						                <th>팩스번호</th>
+						                <td><span id="ele_supEmpFaxNo"></span></td>
+						            </tr>
+						            <tr>
+										<th>공동도급여부</th>
+										<td><span id="ele_supCoopCd"></span></td>
+						                <th>지분율</th>
+						                <td><span id="ele_supCoopRate"></span></td>
+						            </tr>
+								</tbody>     
+							</table>
+						</div>
+						
+						<!-- 계약정보 -->
+						<h4 class="dot-dept1 noMg">계약정보</h4>
+						<div class="table-wrap info auto">
+							<table class="tbl">
+								<colgroup>
+									<col style="width:100px;">
+									<col style="width:200px;">
+									<col style="width:100px;">
+									<col style="width:200px;">
+								</colgroup>
+								<tbody>
+									<tr>
+										<th>계약건명</th>
+										<td colspan="3"><span id="ele_servNm"></span></td>
+									</tr>
+									<tr>
+										<th>계약참조번호</th>
+										<td><span id="ele_contrRefNo"></span></td>
+										<th>계약일자</th>
+										<td><span id="ele_contrDt"></span></td>
+									</tr>
+									<tr>
+										<th>착수일자</th>
+										<td><span id="ele_contrStaDt"></span></td>
+						                <th>완성일자</th>
+						                <td><span id="ele_contrEndDt"></span></td>
+						            </tr>
+						            <tr>
+										<th>계약금액</th>
+										<td><span id="ele_contrAmt"></span></td>
+						                <th>보증금율</th>
+						                <td><span id="ele_guarRate"></span></td>
+						            </tr>
+						            <tr>
+										<th>업무구분</th>
+										<td><span id="ele_contrClsNm"></span></td>
+						                <th>계약방법</th>
+						                <td><span id="ele_contrMeanNm"></span></td>
+						            </tr>
+						            <tr>
+										<th>공동계약여부</th>
+										<td><span id="ele_coopCoopNm"></span></td>
+						                <th>장기계속구분</th>
+						                <td><span id="ele_coontrContinueNm"></span></td>
+						            </tr>
+								</tbody>     
+							</table>
+						</div>
+				
+						<!--하단 버튼 영역-->
+						<div class="alignR mt20" >
+							<button type="button" onclick="javascript:fnElectApply();" class="sub-btn2 btn-color">적용</button>
+							<button type="button" onclick="javascript:com.dialpopupClose();" class="sub-btn2 btn-color red">취소</button>
+	                    </div>
+	                    
+	                </div>
+	            </section>
+	        </form>
+	    </div>
+		
+
+	</body>
+</html>

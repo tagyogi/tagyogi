@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="Generator" content="EditPlus®">
+    <meta name="Keywords" content="한국콘텐츠공제조합">
+    <meta name="title" content="한국콘텐츠공제조합">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>한국콘텐츠공제조합</title>
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <!--<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">-->
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/jquery-ui-1.10.3.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            //lnb 화면확인용 스크립트
+            //대메뉴 클릭
+            $('.lnbArea .lnb dt').click(function() {
+                $(this).parents('.lnb').toggleClass('active');
+            });
+
+            //중메뉴 클릭시 
+            $('.lnbArea .lnb dd > a').click(function() {
+                var dep2 = $(this).parents('.lnb dd');
+
+                if ($(dep2).hasClass('has')) { //3depth있는 메뉴시
+                    $(dep2).toggleClass('active');
+                } else { //3depth 없는 메뉴시
+                    $('.lnbArea .lnb dd a').removeClass('active');
+                    $(this).toggleClass('active');
+                }
+            });
+
+            //3depth 클릭시
+            $('.lnbArea .lnb .dep3 a').click(function() {
+                $('.lnbArea .lnb dd a').removeClass('active');
+                $(this).toggleClass('active');
+            });
+
+            // 다이얼로그 샘플 팝업
+            $('#dialog').dialog({
+                autoOpen: true,
+                title: '팝업 타이틀',
+                modal: true,
+                width: '1100',
+                height: '400'
+            });
+
+        });
+
+        /*$("#dialog").dialog({
+            title: "",
+            classes: {
+                "ui-dialog": "bgGray"
+            },
+            resizable: true,
+            width: 650,
+            height: 700,
+            modal: true,
+            close: function(event, ui) {
+                dialogClose();
+            },
+            beforeClose: function(event, ui) {
+                $("#popFrm").attr("src", "")
+            }
+        }).focus();*/
+
+        function dialogClose() {
+            $("#dialog").dialog("close");
+            $("#dialog").dialog('destroy');
+        }
+    </script>
+    <script>
+        //datepicker 화면확인용 임시시크립트
+        $(function($) {
+            try {
+                $.datepicker.regional['ko'] = {
+                    closeText: '\ub2eb\uae30',
+                    prevText: '\uc774\uc804',
+                    nextText: '\ub2e4\uc74c',
+                    changeMonth: true, // 월을 바꿀수 있는 셀렉트 박스를 표시한다. 
+                    changeYear: true, // 년을 바꿀 수 있는 셀렉트 박스를 표시한다.
+                    yearRange: 'c-100:c+10', // 년도 선택 셀렉트박스를 현재 년도에서 이전, 이후로 얼마의 범위를 표시할것인가
+                    currentText: '\uc624\ub298',
+                    monthNames: ['1\uc6d4', '2\uc6d4', '3\uc6d4', '4\uc6d4', '5\uc6d4', '6\uc6d4', '7\uc6d4', '8\uc6d4', '9\uc6d4', '10\uc6d4', '11\uc6d4', '12\uc6d4'],
+                    monthNamesShort: ['1\uc6d4', '2\uc6d4', '3\uc6d4', '4\uc6d4', '5\uc6d4', '6\uc6d4', '7\uc6d4', '8\uc6d4', '9\uc6d4', '10\uc6d4', '11\uc6d4', '12\uc6d4'],
+                    dayNames: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    dayNamesShort: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    dayNamesMin: ['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'],
+                    weekHeader: 'Wk',
+                    dateFormat: 'yy-mm-dd',
+                    firstDay: 0,
+                    showMonthAfterYear: true,
+                    yearSuffix: '\ub144',
+                    showOn: 'button',
+                    buttonImage: '../images/icon_calendar.png', //이미지 url
+                    buttonImageOnly: true
+                };
+                $.datepicker.setDefaults($.datepicker.regional['ko']);
+
+                $(".date").datepicker().css("margin-right", "2px").bind("focus", function() {
+                    $(this).select();
+                });
+                $(".ui-datepicker-trigger").css("cursor", "pointer");
+            } catch (e) {}
+        });
+    </script>
+</head>
+
+<body>
+        
+
+	<div class="contentsArea">
+		<div class="contents">
+			<!-- STAR 컨텐츠 영역 -->
+
+			<section class="searchArea">
+				<div class="row">
+					<dl>
+						<dt>처리상태</dt>
+						<dd>
+							<select name="" style="width:100px;">
+								<option value="" selected>전체</option>
+								<option value="">선택2</option>
+							</select>
+						</dd>
+					</dl>
+					<dl>
+						<dt>시험년도</dt>
+						<dd>
+							<div class="date-box">
+								<input type="text" name="" class="date" style="width:100px;">
+							</div>
+						</dd>
+					</dl>
+					<dl>
+						<dt>날짜</dt>
+						<dd>
+							<ul class="date-wrap">
+								<li class="date-box"><input type="text" name="" class="date" style="width:100px;"></li>
+								<li class="dash">~</li>
+								<li class="date-box"><input type="text" name="" class="date" style="width:100px;"></li>
+							</ul>
+							
+						</dd>
+					</dl>
+					<dl>
+						<dt>회차</dt>
+						<dd>
+							<select name="" style="width:60px;">
+								<option value="" selected>1</option>
+								<option value="">선택2</option>
+							</select>
+						</dd>
+					</dl>
+					<dl>
+						<dt>지역</dt>
+						<dd>
+							<select name="" style="width:60px;">
+								<option value="" selected>1</option>
+								<option value="">선택2</option>
+							</select>
+						</dd>
+					</dl>
+				</div>
+				<a href="javascript:;" class="btn search">조회</a>
+			</section><!-- //searchArea -->
+
+			<!--버튼 색깔 : .style01~08-->
+			<section class="area mt20">
+				<div class="fr">
+					<a href="javascript:;" class="btn style01">등록</a>
+					<a href="javascript:;" class="btn style02">등록</a>
+					<a href="javascript:;" class="btn style03">등록</a>
+					<a href="javascript:;" class="btn style04">등록</a>
+					<a href="javascript:;" class="btn style05">등록</a>
+					<a href="javascript:;" class="btn style06">등록</a>
+					<a href="javascript:;" class="btn style07">등록</a>
+					<a href="javascript:;" class="btn style08">등록</a>
+				</div>
+			</section>
+
+			<!--버튼 border : .line .style01~07-->
+			<section class="area mt5">
+				<div class="fr">
+					<a href="javascript:;" class="btn line style01">등록</a>
+					<a href="javascript:;" class="btn line style02">등록</a>
+					<a href="javascript:;" class="btn line style03">등록</a>
+					<a href="javascript:;" class="btn line style04">등록</a>
+					<a href="javascript:;" class="btn line style05">등록</a>
+					<a href="javascript:;" class="btn line style06">등록</a>
+					<a href="javascript:;" class="btn line style07">등록</a>
+					<a href="javascript:;" class="btn line style08">등록</a>
+				</div>
+			</section>
+
+			<table class="tbl tac">
+				<colgroup>
+					<col style="width:100px;"/>
+					<col style="" />
+					<col style="" />
+					<col style="width:350px;"/>
+					<col style="" />
+					<col style="width:200px;"/>
+					<col style="width:200px;"/>
+				</colgroup>
+				<thead>
+					<tr>
+						<th>타이틀1</th>
+						<th>타이틀2</th>
+						<th>타이틀3</th>
+						<th>타이틀4</th>
+						<th>타이틀5</th>
+						<th>타이틀6</th>
+						<th>타이틀7</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>1</td>
+						<td>
+							<select name="" style="width: 100%;">
+								<option value="" selected>1</option>
+								<option value="">선택2</option>
+							</select>
+						</td>
+						<td>
+							<select name="" style="width: 100%;">
+								<option value="" selected>1</option>
+								<option value="">선택2</option>
+							</select>
+						</td>
+						<td>
+							<div class="inline">
+								<select name="" style="width: 120px">
+									<option value="" selected>1</option>
+									<option value="">선택2</option>
+								</select>
+								<span class="text">~</span>
+								<select name="" style="width: 120px;">
+									<option value="" selected>1</option>
+									<option value="">선택2</option>
+								</select>
+							</div>
+						</td>
+						<td>내용</td>
+						<td>
+							<a href="javascript:;" class="btn style01">등록</a>
+							<button type="button" class="btn style01">등록버튼</button>
+						</td>
+						<td>
+							<a href="javascript:;" class="btn style01 line ">등록</a>
+
+							<button type="button" class="btn style06 line">취소</button>
+						</td>
+					</tr>
+
+				</tbody>
+			</table><!-- //table -->
+
+
+			<!-- END 컨텐츠 영역 -->
+		</div><!-- //contents -->
+
+	</div><!-- //contentsArea -->
+
+
+</body></html>
