@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="proj.biz.sys.repository.WorkAlrmMapper"> 
+
+	<!-- 알람대상관리 정보 조회 --> 
+	<select id="selectWorkAlrmList" parameterType="Map" resultType="camelMap"> 
+		/* WorkAlrmMapper.selectWorkAlrmList */ 
+		SELECT 
+			ALRM_MTH 
+			, ALRM_NM 
+			, REF_VAL
+			, USE_YN 
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		  FROM CM_WORK_ALRM 
+		<where> 
+		<if test="sAlrmMth != null and sAlrmMth  != ''"> 
+		AND ALRM_MTH LIKE '%' || #{sAlrmMth} || '%' 
+		</if> 
+		<if test="sAlrmNm != null and sAlrmNm  != ''"> 
+		AND ALRM_NM LIKE '%' || #{sAlrmNm} || '%'
+		</if> 
+		</where> 
+		ORDER BY ALRM_MTH
+	</select> 
+
+	<!-- 알람대상관리 상세 조회 --> 
+	<select id="selectWorkAlrm" parameterType="Map" resultType="camelMap"> 
+		/* WorkAlrmMapper.selectWorkAlrm*/ 
+		SELECT 
+			ALRM_MTH 
+			, ALRM_NM 
+			, REF_VAL
+			, USE_YN 
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		  FROM CM_WORK_ALRM 
+		 WHERE INSTR(#{alrmMth}, ALRM_MTH) > 0  
+		   AND USE_YN = '1'
+	</select> 
+
+	<!-- 알람대상관리 등록 처리 --> 
+	<insert id="insertWorkAlrm" parameterType="Map"  > 
+		/* WorkAlrmMapper.insertWorkAlrm */ 
+		INSERT INTO CM_WORK_ALRM ( 
+			ALRM_MTH 
+			, ALRM_NM 
+			, REF_VAL 
+			, USE_YN 
+			, REMARK 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		) VALUES ( 
+			#{alrmMth} 
+			, #{alrmNm} 
+			, #{refVal} 
+			, #{useYn} 
+			, #{remark} 
+			, SYSDATE 
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 알람대상관리 수정 처리 --> 
+	<update id="updateWorkAlrm" parameterType="Map"  > 
+		/* WorkAlrmMapper.updateWorkAlrm */ 
+		UPDATE CM_WORK_ALRM 
+		SET 
+			ALRM_NM 	= #{alrmNm} 
+			, REF_VAL 	= #{refVal} 
+			, USE_YN 	= #{useYn} 
+			, REMARK 	= #{remark}  
+			, MOD_DTM 	= SYSDATE 
+			, MOD_NM 	= #{userNm} 
+		WHERE ALRM_MTH = #{alrmMth} 
+	</update> 
+
+	<!-- 알람대상관리 삭제 처리 --> 
+	<delete id="deleteWorkAlrm" parameterType="Map"  > 
+		/* WorkAlrmMapper.deleteWorkAlrm */ 
+		DELETE FROM CM_WORK_ALRM 
+		WHERE ALRM_MTH = #{alrmMth} 
+	</delete> 
+	
+	
+	<!-- 알림여부 사용자 일괄 업데이트 --> 
+	<update id="updateWorkAlrmEmpl" parameterType="Map"  > 
+		/* WorkAlrmMapper.updateWorkAlrmEmpl */ 
+		UPDATE CM_EMPLOYEE
+		   SET ALRM_YN = 'Y' 
+		 WHERE USER_STAT = '10'
+		   AND ALRM_YN != 'Y'
+	</update> 
+
+	<!-- 알림여부 사용자 확인 처리 --> 
+	<update id="updateWorkAlrmEmplChk" parameterType="Map"  > 
+		/* WorkAlrmMapper.updateWorkAlrmEmplChk */ 
+		UPDATE CM_EMPLOYEE
+		   SET ALRM_YN = 'N' 
+		 WHERE USER_ID = #{userId}
+	</update> 
+	
+</mapper>

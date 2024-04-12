@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
 });//document==
 
-const addClassOn = (target) => {
+const aprojlassOn = (target) => {
     target.classList.add("on");
 } 
 const removeClassOn = (target) => {

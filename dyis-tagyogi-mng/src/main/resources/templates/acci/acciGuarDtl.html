@@ -59,7 +59,7 @@
 			    IBSheet.create({ id: "sheetSure", el: "sheetDivSure", options: gridOptList[0] });
 			    IBSheet.create({ id: "sheetMort", el: "sheetDivMort", options: gridOptList[1] });
 			    IBSheet.create({ id: "sheetEnq", el: "sheetDivEnq", options: gridOptList[2] });
-			    IBSheet.create({ id: "sheetDdc", el: "sheetDivDdc", options: gridOptList[3] }); //공제금지급
+			    IBSheet.create({ id: "sheetproj", el: "sheetDivproj", options: gridOptList[3] }); //공제금지급
 			    IBSheet.create({ id: "sheetPrp", el: "sheetDivPrp", options: gridOptList[4] }); //재산조사
 			    IBSheet.create({ id: "sheetLaw", el: "sheetDivLaw", options: gridOptList[5] }); //법적절차
 			    IBSheet.create({ id: "sheetRcv", el: "sheetDivRcv", options: gridOptList[6] });
@@ -135,7 +135,7 @@
 				sheetSure.loadSearchData(resData.suretyList); //보증인정보
 				sheetMort.loadSearchData(resData.mortList); //담보정보
 				sheetEnq.loadSearchData(resData.enqList); //사고정보
-				sheetDdc.loadSearchData(resData.ddcList); //공제금지급정보
+				sheetproj.loadSearchData(resData.projList); //공제금지급정보
 				sheetPrp.loadSearchData(resData.prpList); //재산조사정보
 				sheetLaw.loadSearchData(resData.lawList); //법적절차정보
 				sheetRcv.loadSearchData(resData.rcvList); //회수정보
@@ -149,12 +149,12 @@
 				var payAmt = 0;		//실지급금액
 				
 				//공제금지급 잔액 합계
-				var ddcRows = sheetDdc.getDataRows();
-				for(var i=0; i<ddcRows.length; i++){
-					ddcRow = ddcRows[i];
+				var projRows = sheetproj.getDataRows();
+				for(var i=0; i<projRows.length; i++){
+					projRow = projRows[i];
 					
-					payAmt += ddcRow.payAmt;
-					offsetAmt += ddcRow.offsetAmt;
+					payAmt += projRow.payAmt;
+					offsetAmt += projRow.offsetAmt;
 				}
 				balAmt = payAmt - offsetAmt;
 				
@@ -174,16 +174,16 @@
 					rcvAmt += rcvRow.rcvAmt;
 				}
 				var totBalAmt = balAmt + feeAmt - rcvAmt;
-				$("#totBalAmt").text(com.addComma(totBalAmt) + "원");
+				$("#totBalAmt").text(com.aprojomma(totBalAmt) + "원");
 				
 				if(offsetAmt !== "" || offsetAmt !== undefined) {
-					$("#offsetAmt").text(com.addComma(offsetAmt) + "원");
+					$("#offsetAmt").text(com.aprojomma(offsetAmt) + "원");
 				} else {
 					$("#offsetAmt").text("0원");
 				}
 				
 				if(balAmt !== "" || balAmt !== undefined) {
-					$("#balAmt").text(com.addComma(balAmt) + "원");
+					$("#balAmt").text(com.aprojomma(balAmt) + "원");
 				} else {
 					$("#balAmt").text("0원");
 				}
@@ -200,8 +200,8 @@
 					com.fnExcelToJs(sheetPrp, gridOptList[4].Cols, /*[[${menuInfo.menuNm + "_재산조사_" + today}]]*/);
 				}else if(type === "enq"){ //사고조사
 					com.fnExcelToJs(sheetEnq, gridOptList[2].Cols, /*[[${menuInfo.menuNm + "_사고조사_" + today}]]*/);
-				}else if(type === "ddc"){ //공제금지급
-					com.fnExcelToJs(sheetDdc, gridOptList[3].Cols, /*[[${menuInfo.menuNm + "_공제금지급_" + today}]]*/);
+				}else if(type === "proj"){ //공제금지급
+					com.fnExcelToJs(sheetproj, gridOptList[3].Cols, /*[[${menuInfo.menuNm + "_공제금지급_" + today}]]*/);
 				}else if(type === "law"){ //법적절차
 					com.fnExcelToJs(sheetLaw, gridOptList[5].Cols, /*[[${menuInfo.menuNm + "_법적절차_" + today}]]*/);
 				}else if(type === "rcv"){ //회수처리
@@ -231,7 +231,7 @@
 
 			//		console.log(tabgroup);
 		            others.removeClass('active');
-		            $this.addClass('active');
+		            $this.aprojlass('active');
 		            $(tabgroup).children('div').hide();
 		            $(target).show();
 
@@ -562,10 +562,10 @@
 										</div>
 									</div>
 									<div class="fr">
-										<button onclick="javascript:fnExcel('ddc');" class="btn small style04">엑셀</button>
+										<button onclick="javascript:fnExcel('proj');" class="btn small style04">엑셀</button>
 									</div>
 								</section>
-								<div id="sheetDivDdc" style="width:100%;height:200px"></div>
+								<div id="sheetDivproj" style="width:100%;height:200px"></div>
 								<!--
 								<section class="area mt5">
 									<div class="fl">

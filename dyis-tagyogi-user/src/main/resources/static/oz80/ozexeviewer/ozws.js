@@ -1543,7 +1543,7 @@ var OZUtil = {
 		if (OZMap) {
 			
 			// CallFunction이 호출 시, 해당 요청을 queue에 등록한다.
-			OZUtil.addCallFunctionListener(OZViewerID, fname, args, callback);
+			OZUtil.aprojallFunctionListener(OZViewerID, fname, args, callback);
 			
 			// callfuntion이 처리중이 아닌 경우, 해당 요청을 실행한다.
 			if( false == OZMap[3] )
@@ -1609,7 +1609,7 @@ var OZUtil = {
 		}
 	},
 	
-	addCallFunctionListener: function (OZViewerID, fname, args, callback)
+	aprojallFunctionListener: function (OZViewerID, fname, args, callback)
 	{
 		var EXEVeiwerCallFunctions = OZUtil.EXEVeiwerCallFunctionsForViewerID[OZViewerID];
 		if(EXEVeiwerCallFunctions == undefined)

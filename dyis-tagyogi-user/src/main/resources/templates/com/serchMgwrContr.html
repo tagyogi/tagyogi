@@ -122,7 +122,7 @@
 				$("#ele_contrDt").text(com.fnDateFormat(data.contrDt)); //계약일자
 				$("#ele_contrStaDt").text(com.fnDateFormat(data.contrStaDt)); //착수일자
 				$("#ele_contrEndDt").text(com.fnDateFormat(data.contrEndDt)); //완성일자
-				$("#ele_contrAmt").text(com.addComma(data.contrAmt)); //계약금액
+				$("#ele_contrAmt").text(com.aprojomma(data.contrAmt)); //계약금액
 				$("#ele_guarRate").text(data.guarRate); //보증금율
 				$("#ele_contrClsNm").text(data.contrClsNm); //업무구분
 				$("#ele_contrMeanNm").text(data.contrMeanNm); //계약방법
@@ -137,7 +137,7 @@
 
 				if(data.bidMeanCd === "01") $("#ele_bidMeanCd").text("전자입찰"); //입찰방식
 				if(data.bidMeanCd === "02") $("#ele_bidMeanCd").text("수기(일반)입찰"); //입찰방식
-				$("#ele_etcAmt").text(com.addComma(data.etcAmt)); //
+				$("#ele_etcAmt").text(com.aprojomma(data.etcAmt)); //
 
 				//url a태그
 				$("#ele_linkURLArea").html('<a href="https://'+data.urlLink+'" target="_blank">'+ data.urlLink +'</a>');

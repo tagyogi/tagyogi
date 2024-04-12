@@ -2116,7 +2116,7 @@ com.makeComma = function(obj){
 }
 
 //콤마세팅
-com.addComma = function(num){
+com.aprojomma = function(num){
 	if(num == null) return "";
     num = num.toString();
     num = num.replace(/,/g, "");
@@ -2256,8 +2256,8 @@ com.fnFaceDealCallBack = function(resData){
 		var fAmt = resData.data.faceAmt;
 		var dAmt = resData.data.dealAmt;
 
-		$('#faceAmt').val(com.addComma(fAmt));
-		$('#dealAmt').val(com.addComma(dAmt));
+		$('#faceAmt').val(com.aprojomma(fAmt));
+		$('#dealAmt').val(com.aprojomma(dAmt));
 
 	//});
 
@@ -2278,7 +2278,7 @@ com.fnCalcByNum = function() {
 	var dealAmt = Number(com.rmComma($("#dealAmt").val()));
 	var investNum = Number(com.rmComma($("#investNum").val()));
 
-	$("#investAmt").val(com.addComma(dealAmt * investNum));
+	$("#investAmt").val(com.aprojomma(dealAmt * investNum));
 }
 /****************************************************************
  * 홈페이지 관련
@@ -2442,7 +2442,7 @@ com.fnBrdPagecallback = function(resData){
 	if (brdNo === 3) {
 
 		$("#brdList").empty();
-		$("#brdList").addClass('photo-wrap');
+		$("#brdList").aprojlass('photo-wrap');
 
 		if( String(data) === ''){
 			var html = '<div class="no-brd back-gray">게시물이 존재하지 않습니다.</div>';
@@ -2571,11 +2571,11 @@ com.fnBrdDtlViewCallback = function(resData){
 		//비밀글 여부
 		if(resData.data.prevPw !== '' && resData.data.prevPw !== null){
 			$('#ele_prevSubj').attr('onClick',"chkpop('" + resData.data.brdNo + "','" + resData.data.prevSeq + "','" + menuCd + "','" + resData.data.prevPw + "'); return false;");
-			$('.page-right-icon').addClass('on');
+			$('.page-right-icon').aprojlass('on');
 			$('.page-right-icon').attr('onClick',"chkpop('" + resData.data.brdNo + "','" + resData.data.prevSeq  + "','" + menuCd + "','" + resData.data.prevPw + "'); return false;");
 		}else{
 			$('#ele_prevSubj').attr('onClick',"com.fnBrdDtlPage('" + resData.data.brdNo + "','" + resData.data.prevSeq + "','" + menuCd + "'); return false;");
-			$('.page-right-icon').addClass('on');
+			$('.page-right-icon').aprojlass('on');
 			$('.page-right-icon').attr('onClick',"com.fnBrdDtlPage('" + resData.data.brdNo + "','" + resData.data.prevSeq  + "','" + menuCd + "'); return false;");
 		}
 	}else{//이전글 없음
@@ -2588,11 +2588,11 @@ com.fnBrdDtlViewCallback = function(resData){
 		//비밀글 여부
 		if(resData.data.nextPw !== '' && resData.data.nextPw !== null){
 			$('#ele_nextSubj').attr('onClick',"chkpop('" + resData.data.brdNo + "','" + resData.data.nextSeq + "','" + menuCd + "','" + resData.data.nextPw + "'); return false;");
-			$('.page-left-icon').addClass('on');
+			$('.page-left-icon').aprojlass('on');
 			$('.page-left-icon').attr('onClick',"chkpop('" + resData.data.brdNo + "','" + resData.data.nextSeq + "','" + menuCd + "','" + resData.data.nextPw + "'); return false;");
 		}else{
 			$('#ele_nextSubj').attr('onClick',"com.fnBrdDtlPage('" + resData.data.brdNo + "','" + resData.data.nextSeq + "','" + menuCd + "'); return false;");
-			$('.page-left-icon').addClass('on');
+			$('.page-left-icon').aprojlass('on');
 			$('.page-left-icon').attr('onClick',"com.fnBrdDtlPage('" + resData.data.brdNo + "','" + resData.data.nextSeq + "','" + menuCd + "'); return false;");
 		}
 	}else{//다음글 없음
@@ -2604,7 +2604,7 @@ com.fnBrdDtlViewCallback = function(resData){
 	//질문과답변 상세
 	if(menuCd === '20202'){
 		$("#brdCont").empty();
-		$("#brdCont").addClass('qna-detail');
+		$("#brdCont").aprojlass('qna-detail');
 
 		var html  = '<span class="qna-title active">질문</span>';
 			html += '<div class="txt-border-wrap">'+ resData.data.brdCont + '</div>';

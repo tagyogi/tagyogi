@@ -62,7 +62,7 @@ $.jgrid.regional["fi"] = {
 		delrule : "Delete rule"
 	},
 	edit: {
-	    addCaption: "Uusi rivi",
+	    aprojaption: "Uusi rivi",
 	    editCaption: "Muokkaa rivi&auml;",
 	    bSubmit: "OK",
 	    bCancel: "Peru",

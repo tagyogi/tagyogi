@@ -42,7 +42,7 @@
 					html += '<td class="alignC" id="">'+ Number(index + 1) + '</td>'; //순번
 					html += '<td class="alignC">'+ item.billTypeNm +'</td>'; //권종
 					html += '<td class="alignC">'+ com.fnDateFormat(item.investDt) + '</td>'; //출자일자
-					html += '<td class="alignR">'+ com.addComma(item.billAmt) +'원</td>'; //증권금액
+					html += '<td class="alignR">'+ com.aprojomma(item.billAmt) +'원</td>'; //증권금액
 					html += '<td class="alignC">'+ item.mortYnNm +'</td>'; //처리상태
 					html += '</tr>';
 					

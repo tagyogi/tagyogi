@@ -145,8 +145,8 @@
 						html += '<td class="alignC">'+ com.fnDateFormat(item.guarApprDt) +'</td>'; //처리일자
 
 						html += '<td class="alignR">';
-						html += '<span style="display:block;">' + com.addComma(item.guarAmt) + '</span>';//보증금액
-						html += '<span style="display:block;">/' + com.addComma(item.commAmt) + '</span>';//보증료
+						html += '<span style="display:block;">' + com.aprojomma(item.guarAmt) + '</span>';//보증금액
+						html += '<span style="display:block;">/' + com.aprojomma(item.commAmt) + '</span>';//보증료
 						html += '</td>';
 
 						html += '<td class="alignC">';	//처리상태
@@ -177,16 +177,16 @@
 						html += '<td class="alignC">'+ com.fnDateFormat(item.guarApprDt) +'</td>'; //처리일자
 						
 						html += '<td class="alignR">'
-						html += '<span style="display:block;">' + com.addComma(item.guarAmt) + '</span>';//보증금액
+						html += '<span style="display:block;">' + com.aprojomma(item.guarAmt) + '</span>';//보증금액
 						html += '</td>';
 
 						html += '<td class="alignR">'
-						html += '<span style="display:block;">' + com.addComma(item.guarPrfAmt) + '</span>';//보증실적
+						html += '<span style="display:block;">' + com.aprojomma(item.guarPrfAmt) + '</span>';//보증실적
 						html += '</td>';
 
 						html += '<td class="alignR">'
-						html += '<span style="display:block;">' + com.addComma(item.commAmt) + '</span>';//보증금액
-						html += '<span style="display:block;">/' + com.addComma(item.remainCommAmt) + '</span>';//잔여보증료
+						html += '<span style="display:block;">' + com.aprojomma(item.commAmt) + '</span>';//보증금액
+						html += '<span style="display:block;">/' + com.aprojomma(item.remainCommAmt) + '</span>';//잔여보증료
 						html += '</td>';
 
 						html += '<td class="alignC">';	//보증상태
@@ -199,7 +199,7 @@
 						//엑셀 다운로드 정보 숨김
 						html += '<td class="alignC" style="display:none;">'+ item.docNo + '</td>'; //보증서번호
 						html += '<td class="alignC" style="display:none;">'+ com.fnDateFormat(item.guarBegDt) + '~' + com.fnDateFormat(item.guarExpDt) + '</td>'; //보증기간
-						html += '<td class="alignR" style="display:none;">'+ com.addComma(item.commAmt) + '</td>'; //보증료
+						html += '<td class="alignR" style="display:none;">'+ com.aprojomma(item.commAmt) + '</td>'; //보증료
 						html += '<td class="alignC" style="display:none;">'+ com.fnNvlChk(item.reqNm) + '</td>'; //신청자
 					}
 					
@@ -220,7 +220,7 @@
 						html += '</td>';
 						
 						html += '<td class="alignR">'
-						html += '<span style="display:block;">' + com.addComma(item.guarAmt) + '</span>';//보증금액
+						html += '<span style="display:block;">' + com.aprojomma(item.guarAmt) + '</span>';//보증금액
 						
 						html += '</td>';
 
@@ -234,7 +234,7 @@
 						//엑셀 다운로드 정보 숨김
 						html += '<td class="alignC" style="display:none;">'+ item.docNo + '</td>'; //보증서번호
 						html += '<td class="alignC" style="display:none;">'+ com.fnDateFormat(item.guarBegDt) + '~' + com.fnDateFormat(item.guarExpDt) + '</td>'; //보증기간
-						html += '<td class="alignR" style="display:none;">'+ com.addComma(item.commAmt) + '</td>'; //보증료
+						html += '<td class="alignR" style="display:none;">'+ com.aprojomma(item.commAmt) + '</td>'; //보증료
 						html += '<td class="alignC" style="display:none;">'+ com.fnNvlChk(item.reqNm) + '</td>'; //신청자
 					}
 
@@ -245,8 +245,8 @@
 						html += '</td>';
 						html += '<td class="alignL" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">'+ item.orderNm + '</td>'; //피공제기관
 						html += '<td class="alignC">'+ com.fnDateFormat(item.guarApprDt) +'</td>'; //처리일자
-						html += '<td class="alignR">'+ com.addComma(item.guarAmt) + '</td>'; //보증금액
-						html += '<td class="alignR">'+ com.addComma(item.commAmt) + '</td>'; //보증료
+						html += '<td class="alignR">'+ com.aprojomma(item.guarAmt) + '</td>'; //보증금액
+						html += '<td class="alignR">'+ com.aprojomma(item.commAmt) + '</td>'; //보증료
 						html += '<td class="alignC">'+ item.procStatNm + '</td>'; //처리상태
 					}
 					html += '</tr>';

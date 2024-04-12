@@ -64,8 +64,8 @@
 
 						html = "<tr>";
 						html += "<td align='center''>"+ com.fnDateFormat(appDt, '-') +"</td>";		//적용일자
-						html += "<td align='right'>"+ com.addComma(rowData[i].faceAmt) +"</td>";	//액면가
-						html += "<td align='right'>"+ com.addComma(rowData[i].dealAmt) +"</td>";	//좌당지분액
+						html += "<td align='right'>"+ com.aprojomma(rowData[i].faceAmt) +"</td>";	//액면가
+						html += "<td align='right'>"+ com.aprojomma(rowData[i].dealAmt) +"</td>";	//좌당지분액
 						html += "</tr>";
 
 						$("#invtList").append(html);

@@ -39,8 +39,8 @@
 			$(".upt").removeClass('hide');
 			if(resData.invt !== null && resData.invt !== ''){
 				com.fnSetKeyVal(resData.invt); //출자정보
-				$("#insBtn, #bank").addClass('hide');//신청버튼 숨김
-				$(".upt").addClass("hide");//input 숨김
+				$("#insBtn, #bank").aprojlass('hide');//신청버튼 숨김
+				$(".upt").aprojlass("hide");//input 숨김
 				
 				//처리상태가 접수중일땐 수정,삭제 버튼 보임
 				if(resData.invt.procStat == "10"){
@@ -101,7 +101,7 @@
 			$("#mod").val("mod");
 			$("#mod").attr("title","수정");
 			$(".upt").removeClass("hide");
-			$("td span[id^='ele']").addClass("hide");
+			$("td span[id^='ele']").aprojlass("hide");
 			
 			$("#uptBtn").attr("onclick", "fnSave()");//추가출자 수정
 			$("#delBtn").attr("onclick", "fnInvtCancel()");//취소버튼
@@ -117,7 +117,7 @@
 		
 		//추가출자 취소
 		var fnInvtCancel = function(){
-			$(".upt").addClass("hide");
+			$(".upt").aprojlass("hide");
 			$("td span[id^='ele']").removeClass("hide");
 			
 			$("#uptBtn").attr("onclick", "fnInvtUptPage()");//추가출자 수정페이지
@@ -275,7 +275,7 @@
 	                                            </table>
 	                                        </div>
 	                                    </div>
-	                                    <p id="bank" class="mt10 hide"> 입금계좌 : 기업은행, 935-005619-04-058 (한국콘텐츠공제조합)</p>
+	                                    <p id="bank" class="mt10 hide"> 입금계좌 : 기업은행, 935-005619-04-058 (동양정보서비스)</p>
 	                                </article>
 	                                <div class="btn-wrap flex-box jc-end gap-10 m-col">
 	                                    <button id="insBtn" type="button" class="sub-btn2 btn-color blue hide onlyPc" onclick="fnSave()">신청</button>

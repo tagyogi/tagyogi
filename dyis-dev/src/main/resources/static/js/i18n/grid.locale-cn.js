@@ -64,7 +64,7 @@ $.jgrid.regional["cn"] = {
 		delrule : "删除条件"		
     },
     edit : {
-        addCaption: "添加记录",
+        aprojaption: "添加记录",
         editCaption: "编辑记录",
         bSubmit: "提交",
         bCancel: "取消",

@@ -178,7 +178,7 @@
   }
 
   // Classes and attributes
-  function addClass(className) {
+  function aprojlass(className) {
     if (typeof className === 'undefined') {
       return this;
     }
@@ -806,7 +806,7 @@
   }
 
   var Methods = {
-    addClass: addClass,
+    aprojlass: aprojlass,
     removeClass: removeClass,
     hasClass: hasClass,
     toggleClass: toggleClass,
@@ -1618,7 +1618,7 @@
         if (isVisible) {
           swiper.visibleSlides.push(slide);
           swiper.visibleSlidesIndexes.push(i);
-          slides.eq(i).addClass(params.slideVisibleClass);
+          slides.eq(i).aprojlass(params.slideVisibleClass);
         }
       }
       slide.progress = rtl ? -slideProgress : slideProgress;
@@ -1688,51 +1688,51 @@
     }
 
     // Active classes
-    activeSlide.addClass(params.slideActiveClass);
+    activeSlide.aprojlass(params.slideActiveClass);
 
     if (params.loop) {
       // Duplicate to all looped slides
       if (activeSlide.hasClass(params.slideDuplicateClass)) {
         $wrapperEl
           .children(("." + (params.slideClass) + ":not(." + (params.slideDuplicateClass) + ")[data-swiper-slide-index=\"" + realIndex + "\"]"))
-          .addClass(params.slideDuplicateActiveClass);
+          .aprojlass(params.slideDuplicateActiveClass);
       } else {
         $wrapperEl
           .children(("." + (params.slideClass) + "." + (params.slideDuplicateClass) + "[data-swiper-slide-index=\"" + realIndex + "\"]"))
-          .addClass(params.slideDuplicateActiveClass);
+          .aprojlass(params.slideDuplicateActiveClass);
       }
     }
     // Next Slide
-    var nextSlide = activeSlide.nextAll(("." + (params.slideClass))).eq(0).addClass(params.slideNextClass);
+    var nextSlide = activeSlide.nextAll(("." + (params.slideClass))).eq(0).aprojlass(params.slideNextClass);
     if (params.loop && nextSlide.length === 0) {
       nextSlide = slides.eq(0);
-      nextSlide.addClass(params.slideNextClass);
+      nextSlide.aprojlass(params.slideNextClass);
     }
     // Prev Slide
-    var prevSlide = activeSlide.prevAll(("." + (params.slideClass))).eq(0).addClass(params.slidePrevClass);
+    var prevSlide = activeSlide.prevAll(("." + (params.slideClass))).eq(0).aprojlass(params.slidePrevClass);
     if (params.loop && prevSlide.length === 0) {
       prevSlide = slides.eq(-1);
-      prevSlide.addClass(params.slidePrevClass);
+      prevSlide.aprojlass(params.slidePrevClass);
     }
     if (params.loop) {
       // Duplicate to all looped slides
       if (nextSlide.hasClass(params.slideDuplicateClass)) {
         $wrapperEl
           .children(("." + (params.slideClass) + ":not(." + (params.slideDuplicateClass) + ")[data-swiper-slide-index=\"" + (nextSlide.attr('data-swiper-slide-index')) + "\"]"))
-          .addClass(params.slideDuplicateNextClass);
+          .aprojlass(params.slideDuplicateNextClass);
       } else {
         $wrapperEl
           .children(("." + (params.slideClass) + "." + (params.slideDuplicateClass) + "[data-swiper-slide-index=\"" + (nextSlide.attr('data-swiper-slide-index')) + "\"]"))
-          .addClass(params.slideDuplicateNextClass);
+          .aprojlass(params.slideDuplicateNextClass);
       }
       if (prevSlide.hasClass(params.slideDuplicateClass)) {
         $wrapperEl
           .children(("." + (params.slideClass) + ":not(." + (params.slideDuplicateClass) + ")[data-swiper-slide-index=\"" + (prevSlide.attr('data-swiper-slide-index')) + "\"]"))
-          .addClass(params.slideDuplicatePrevClass);
+          .aprojlass(params.slideDuplicatePrevClass);
       } else {
         $wrapperEl
           .children(("." + (params.slideClass) + "." + (params.slideDuplicateClass) + "[data-swiper-slide-index=\"" + (prevSlide.attr('data-swiper-slide-index')) + "\"]"))
-          .addClass(params.slideDuplicatePrevClass);
+          .aprojlass(params.slideDuplicatePrevClass);
       }
     }
   }
@@ -2275,7 +2275,7 @@
       var blankSlidesNum = params.slidesPerGroup - (slides.length % params.slidesPerGroup);
       if (blankSlidesNum !== params.slidesPerGroup) {
         for (var i = 0; i < blankSlidesNum; i += 1) {
-          var blankNode = $(doc.createElement('div')).addClass(((params.slideClass) + " " + (params.slideBlankClass)));
+          var blankNode = $(doc.createElement('div')).aprojlass(((params.slideClass) + " " + (params.slideBlankClass)));
           $wrapperEl.append(blankNode);
         }
         slides = $wrapperEl.children(("." + (params.slideClass)));
@@ -2299,10 +2299,10 @@
       slide.attr('data-swiper-slide-index', index);
     });
     for (var i$1 = 0; i$1 < appendSlides.length; i$1 += 1) {
-      $wrapperEl.append($(appendSlides[i$1].cloneNode(true)).addClass(params.slideDuplicateClass));
+      $wrapperEl.append($(appendSlides[i$1].cloneNode(true)).aprojlass(params.slideDuplicateClass));
     }
     for (var i$2 = prependSlides.length - 1; i$2 >= 0; i$2 -= 1) {
-      $wrapperEl.prepend($(prependSlides[i$2].cloneNode(true)).addClass(params.slideDuplicateClass));
+      $wrapperEl.prepend($(prependSlides[i$2].cloneNode(true)).aprojlass(params.slideDuplicateClass));
     }
   }
 
@@ -3415,7 +3415,7 @@
 
   var breakpoints = { setBreakpoint: setBreakpoint, getBreakpoint: getBreakpoint };
 
-  function addClasses () {
+  function aprojlasses () {
     var swiper = this;
     var classNames = swiper.classNames;
     var params = swiper.params;
@@ -3456,7 +3456,7 @@
       classNames.push(params.containerModifierClass + suffix);
     });
 
-    $el.addClass(classNames.join(' '));
+    $el.aprojlass(classNames.join(' '));
   }
 
   function removeClasses () {
@@ -3467,7 +3467,7 @@
     $el.removeClass(classNames.join(' '));
   }
 
-  var classes = { addClasses: addClasses, removeClasses: removeClasses };
+  var classes = { aprojlasses: aprojlasses, removeClasses: removeClasses };
 
   function loadImage (imageEl, src, srcset, sizes, checkForComplete, callback) {
     var image;
@@ -4003,10 +4003,10 @@
 
       swiper.$el
         .removeClass(("" + (swiper.params.containerModifierClass) + currentDirection + " wp8-" + currentDirection))
-        .addClass(("" + (swiper.params.containerModifierClass) + newDirection));
+        .aprojlass(("" + (swiper.params.containerModifierClass) + newDirection));
 
       if ((Browser.isIE || Browser.isEdge) && (Support.pointerEvents || Support.prefixedPointerEvents)) {
-        swiper.$el.addClass(((swiper.params.containerModifierClass) + "wp8-" + newDirection));
+        swiper.$el.aprojlass(((swiper.params.containerModifierClass) + "wp8-" + newDirection));
       }
 
       swiper.params.direction = newDirection;
@@ -4037,7 +4037,7 @@
       }
 
       // Add Classes
-      swiper.addClasses();
+      swiper.aprojlasses();
 
       // Create loop
       if (swiper.params.loop) {
@@ -4940,19 +4940,19 @@
 
       if ($prevEl && $prevEl.length > 0) {
         if (swiper.isBeginning) {
-          $prevEl.addClass(params.disabledClass);
+          $prevEl.aprojlass(params.disabledClass);
         } else {
           $prevEl.removeClass(params.disabledClass);
         }
-        $prevEl[swiper.params.watchOverflow && swiper.isLocked ? 'addClass' : 'removeClass'](params.lockClass);
+        $prevEl[swiper.params.watchOverflow && swiper.isLocked ? 'aprojlass' : 'removeClass'](params.lockClass);
       }
       if ($nextEl && $nextEl.length > 0) {
         if (swiper.isEnd) {
-          $nextEl.addClass(params.disabledClass);
+          $nextEl.aprojlass(params.disabledClass);
         } else {
           $nextEl.removeClass(params.disabledClass);
         }
-        $nextEl[swiper.params.watchOverflow && swiper.isLocked ? 'addClass' : 'removeClass'](params.lockClass);
+        $nextEl[swiper.params.watchOverflow && swiper.isLocked ? 'aprojlass' : 'removeClass'](params.lockClass);
       }
     },
     onPrevClick: function onPrevClick(e) {
@@ -5153,47 +5153,47 @@
             var $bullet = $(bullet);
             var bulletIndex = $bullet.index();
             if (bulletIndex === current) {
-              $bullet.addClass(params.bulletActiveClass);
+              $bullet.aprojlass(params.bulletActiveClass);
             }
             if (params.dynamicBullets) {
               if (bulletIndex >= firstIndex && bulletIndex <= lastIndex) {
-                $bullet.addClass(((params.bulletActiveClass) + "-main"));
+                $bullet.aprojlass(((params.bulletActiveClass) + "-main"));
               }
               if (bulletIndex === firstIndex) {
                 $bullet
                   .prev()
-                  .addClass(((params.bulletActiveClass) + "-prev"))
+                  .aprojlass(((params.bulletActiveClass) + "-prev"))
                   .prev()
-                  .addClass(((params.bulletActiveClass) + "-prev-prev"));
+                  .aprojlass(((params.bulletActiveClass) + "-prev-prev"));
               }
               if (bulletIndex === lastIndex) {
                 $bullet
                   .next()
-                  .addClass(((params.bulletActiveClass) + "-next"))
+                  .aprojlass(((params.bulletActiveClass) + "-next"))
                   .next()
-                  .addClass(((params.bulletActiveClass) + "-next-next"));
+                  .aprojlass(((params.bulletActiveClass) + "-next-next"));
               }
             }
           });
         } else {
           var $bullet = bullets.eq(current);
-          $bullet.addClass(params.bulletActiveClass);
+          $bullet.aprojlass(params.bulletActiveClass);
           if (params.dynamicBullets) {
             var $firstDisplayedBullet = bullets.eq(firstIndex);
             var $lastDisplayedBullet = bullets.eq(lastIndex);
             for (var i = firstIndex; i <= lastIndex; i += 1) {
-              bullets.eq(i).addClass(((params.bulletActiveClass) + "-main"));
+              bullets.eq(i).aprojlass(((params.bulletActiveClass) + "-main"));
             }
             $firstDisplayedBullet
               .prev()
-              .addClass(((params.bulletActiveClass) + "-prev"))
+              .aprojlass(((params.bulletActiveClass) + "-prev"))
               .prev()
-              .addClass(((params.bulletActiveClass) + "-prev-prev"));
+              .aprojlass(((params.bulletActiveClass) + "-prev-prev"));
             $lastDisplayedBullet
               .next()
-              .addClass(((params.bulletActiveClass) + "-next"))
+              .aprojlass(((params.bulletActiveClass) + "-next"))
               .next()
-              .addClass(((params.bulletActiveClass) + "-next-next"));
+              .aprojlass(((params.bulletActiveClass) + "-next-next"));
           }
         }
         if (params.dynamicBullets) {
@@ -5230,7 +5230,7 @@
       } else {
         swiper.emit('paginationUpdate', swiper, $el[0]);
       }
-      $el[swiper.params.watchOverflow && swiper.isLocked ? 'addClass' : 'removeClass'](params.lockClass);
+      $el[swiper.params.watchOverflow && swiper.isLocked ? 'aprojlass' : 'removeClass'](params.lockClass);
     },
     render: function render() {
       // Render Container
@@ -5293,20 +5293,20 @@
       }
 
       if (params.type === 'bullets' && params.clickable) {
-        $el.addClass(params.clickableClass);
+        $el.aprojlass(params.clickableClass);
       }
 
-      $el.addClass(params.modifierClass + params.type);
+      $el.aprojlass(params.modifierClass + params.type);
 
       if (params.type === 'bullets' && params.dynamicBullets) {
-        $el.addClass(("" + (params.modifierClass) + (params.type) + "-dynamic"));
+        $el.aprojlass(("" + (params.modifierClass) + (params.type) + "-dynamic"));
         swiper.pagination.dynamicBulletIndex = 0;
         if (params.dynamicMainBullets < 1) {
           params.dynamicMainBullets = 1;
         }
       }
       if (params.type === 'progressbar' && params.progressbarOpposite) {
-        $el.addClass(params.progressbarOppositeClass);
+        $el.aprojlass(params.progressbarOppositeClass);
       }
 
       if (params.clickable) {
@@ -5538,7 +5538,7 @@
         moveDivider: moveDivider,
         dragSize: dragSize,
       });
-      scrollbar.$el[swiper.params.watchOverflow && swiper.isLocked ? 'addClass' : 'removeClass'](swiper.params.scrollbar.lockClass);
+      scrollbar.$el[swiper.params.watchOverflow && swiper.isLocked ? 'aprojlass' : 'removeClass'](swiper.params.scrollbar.lockClass);
     },
     getPointerPosition: function getPointerPosition(e) {
       var swiper = this;
@@ -6183,7 +6183,7 @@
       }
       if (!gesture.$imageEl || gesture.$imageEl.length === 0) { return; }
 
-      gesture.$slideEl.addClass(("" + (params.zoomedSlideClass)));
+      gesture.$slideEl.aprojlass(("" + (params.zoomedSlideClass)));
 
       var touchX;
       var touchY;
@@ -6456,7 +6456,7 @@
 
       $images.each(function (imageIndex, imageEl) {
         var $imageEl = $(imageEl);
-        $imageEl.addClass(params.loadingClass);
+        $imageEl.aprojlass(params.loadingClass);
 
         var background = $imageEl.attr('data-background');
         var src = $imageEl.attr('data-src');
@@ -6483,7 +6483,7 @@
             }
           }
 
-          $imageEl.addClass(params.loadedClass).removeClass(params.loadingClass);
+          $imageEl.aprojlass(params.loadedClass).removeClass(params.loadingClass);
           $slideEl.find(("." + (params.preloaderClass))).remove();
           if (swiper.params.loop && loadInDuplicate) {
             var slideOriginalIndex = $slideEl.attr('data-swiper-slide-index');
@@ -7929,7 +7929,7 @@
         }));
         swiper.thumbs.swiperCreated = true;
       }
-      swiper.thumbs.swiper.$el.addClass(swiper.params.thumbs.thumbsContainerClass);
+      swiper.thumbs.swiper.$el.aprojlass(swiper.params.thumbs.thumbsContainerClass);
       swiper.thumbs.swiper.on('tap', swiper.thumbs.onThumbClick);
     },
     onThumbClick: function onThumbClick() {
@@ -8018,11 +8018,11 @@
       thumbsSwiper.slides.removeClass(thumbActiveClass);
       if (thumbsSwiper.params.loop || thumbsSwiper.params.virtual) {
         for (var i = 0; i < thumbsToActivate; i += 1) {
-          thumbsSwiper.$wrapperEl.children(("[data-swiper-slide-index=\"" + (swiper.realIndex + i) + "\"]")).addClass(thumbActiveClass);
+          thumbsSwiper.$wrapperEl.children(("[data-swiper-slide-index=\"" + (swiper.realIndex + i) + "\"]")).aprojlass(thumbActiveClass);
         }
       } else {
         for (var i$1 = 0; i$1 < thumbsToActivate; i$1 += 1) {
-          thumbsSwiper.slides.eq(swiper.realIndex + i$1).addClass(thumbActiveClass);
+          thumbsSwiper.slides.eq(swiper.realIndex + i$1).aprojlass(thumbActiveClass);
         }
       }
     },

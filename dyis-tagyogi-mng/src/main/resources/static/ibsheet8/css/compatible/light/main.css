@@ -475,7 +475,7 @@ u.IBCLToolSpaceIcon{padding-top:0px;padding-bottom:0px}
 .IBCLToolLine5{border-bottom:2px dotted;padding-top:2px}
 .IBCLToolLine6{border-bottom:1px dashed;padding-top:2px}
 .IBCLToolLine7{border-bottom:2px dashed;padding-top:2px}
-.IBCLToolSave,.IBCLToolReload,.IBCLToolRepaint,.IBCLToolRepaint1,.IBCLToolPrint,.IBCLToolExportPDF,.IBCLToolExport,.IBCLToolImport,.IBCLToolUndo,.IBCLToolUndo1,.IBCLToolRedo,.IBCLToolRedo1,.IBCLToolAdd,.IBCLToolAddChild,.IBCLToolAddCol,.IBCLToolJoin,.IBCLToolSplit,.IBCLToolOutdent,.IBCLToolIndent,.IBCLToolSort,.IBCLToolSort1,.IBCLToolCalc,.IBCLToolCalc1,.IBCLToolExpandAll,.IBCLToolCollapseAll,.IBCLToolColumns,.IBCLToolCfg,.IBCLToolHelp,.IBCLToolDebug,.IBCLResizeSheet,.IBCLResizeSheetRtl{background-image:url(./imgs/Toolbar.png?v120);-background-image:url(./imgs/Toolbar.gif?v120);background-repeat:no-repeat;}
+.IBCLToolSave,.IBCLToolReload,.IBCLToolRepaint,.IBCLToolRepaint1,.IBCLToolPrint,.IBCLToolExportPDF,.IBCLToolExport,.IBCLToolImport,.IBCLToolUndo,.IBCLToolUndo1,.IBCLToolRedo,.IBCLToolRedo1,.IBCLToolAdd,.IBCLToolAprojhild,.IBCLToolAprojol,.IBCLToolJoin,.IBCLToolSplit,.IBCLToolOutdent,.IBCLToolIndent,.IBCLToolSort,.IBCLToolSort1,.IBCLToolCalc,.IBCLToolCalc1,.IBCLToolExpandAll,.IBCLToolCollapseAll,.IBCLToolColumns,.IBCLToolCfg,.IBCLToolHelp,.IBCLToolDebug,.IBCLResizeSheet,.IBCLResizeSheetRtl{background-image:url(./imgs/Toolbar.png?v120);-background-image:url(./imgs/Toolbar.gif?v120);background-repeat:no-repeat;}
 .IBCLToolSave{background-position:center 0px}
  .IBCLToolSaveLeft{background-position:left 0px}
  .IBCLToolSaveRight{background-position:right 0px}
@@ -528,14 +528,14 @@ u.IBCLToolSpaceIcon{padding-top:0px;padding-bottom:0px}
  .IBCLToolAddLeft{background-position:left -1100px}
  .IBCLToolAddRight{background-position:right -1100px}
  .IBCLToolAddBottom{background-position:center -1080px}
-.IBCLToolAddChild{background-position:center -1200px}
- .IBCLToolAddChildLeft{background-position:left -1200px}
- .IBCLToolAddChildRight{background-position:right -1200px}
- .IBCLToolAddChildBottom{background-position:center -1180px}
-.IBCLToolAddCol{background-position:center -2900px}
- .IBCLToolAddColLeft{background-position:left -2900px}
- .IBCLToolAddColRight{background-position:right -2900px}
- .IBCLToolAddColBottom{background-position:center -2880px}
+.IBCLToolAprojhild{background-position:center -1200px}
+ .IBCLToolAprojhildLeft{background-position:left -1200px}
+ .IBCLToolAprojhildRight{background-position:right -1200px}
+ .IBCLToolAprojhildBottom{background-position:center -1180px}
+.IBCLToolAprojol{background-position:center -2900px}
+ .IBCLToolAprojolLeft{background-position:left -2900px}
+ .IBCLToolAprojolRight{background-position:right -2900px}
+ .IBCLToolAprojolBottom{background-position:center -2880px}
 .IBCLToolJoin{background-position:center -1300px}
  .IBCLToolJoinLeft{background-position:left -1300px}
  .IBCLToolJoinRight{background-position:right -1300px}

@@ -171,8 +171,8 @@
 					calSetAssignAmt -= Number(evtParam.sheet.getValue(evtParam.row, "billAmt")); //금액
 				}
 				
-				$("#assignNum").val(com.addComma(calSetAssignNum === 0 ? "" : calSetAssignNum));
-				$("#assignAmt").val(com.addComma(calSetAssignAmt === 0 ? "" : calSetAssignAmt));		
+				$("#assignNum").val(com.aprojomma(calSetAssignNum === 0 ? "" : calSetAssignNum));
+				$("#assignAmt").val(com.aprojomma(calSetAssignAmt === 0 ? "" : calSetAssignAmt));		
 			    
 			}
 			
@@ -201,8 +201,8 @@
 					calCanAssignAmt -= Number(evtParam.sheet.getValue(evtParam.row, "billAmt")); //금액
 				}
 				
-				$("#assignNum").val(com.addComma(calCanAssignNum === 0 ? "" : calCanAssignNum));
-				$("#assignAmt").val(com.addComma(calCanAssignAmt === 0 ? "" : calCanAssignAmt));	
+				$("#assignNum").val(com.aprojomma(calCanAssignNum === 0 ? "" : calCanAssignNum));
+				$("#assignAmt").val(com.aprojomma(calCanAssignAmt === 0 ? "" : calCanAssignAmt));	
 			    
 			}
 			

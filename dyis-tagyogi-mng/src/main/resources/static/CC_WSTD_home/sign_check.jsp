@@ -258,7 +258,7 @@
             SqlMapClient sqlMap = (SqlMapClient)ctx.getBean("sqlMapClient"); 
 
             // 연대보증인 정보조회
-            HashMap suretyData = (HashMap)sqlMap.queryForObject("Contract.getSuretyDetail", param);
+            HashMap<String, Object>suretyData = (HashMap)sqlMap.queryForObject("Contract.getSuretyDetail", param);
             Boolean chkFail = false;
         	if(suretyData == null ){
         		chkFail = true;

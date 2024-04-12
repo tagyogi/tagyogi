@@ -37,7 +37,7 @@
 				$(".memoBtns > button").click(function(){
 
 					$(this).siblings('button').removeClass('on');
-					$(this).addClass('on');
+					$(this).aprojlass('on');
 
 					//저장버튼 컨트롤
 					if($(this).hasClass('ins')) $("#memoBtn").show();
@@ -131,7 +131,7 @@
 
 			/*var fnActiveBtns = function (idx){
 				$(".memoBtns > button").removeClass('on');
-					$(".memoBtns > button").eq(btnIdx).addClass('on');
+					$(".memoBtns > button").eq(btnIdx).aprojlass('on');
 			}*/
 
 			//메모 저장
@@ -168,7 +168,7 @@
 				if(result.sockType === "work"){
 
 					if(result.user.alrmYn === "Y"){
-						$(".alarm").addClass("on");
+						$(".alarm").aprojlass("on");
 
 						var workIds = ["g2bCnt", "nopayCnt","qnaCnt","memCnt","ivtCnt"
 						                ,"bidCnt","ctrCnt","defCnt","payCnt","perCnt","effCnt","pemCnt"
@@ -241,7 +241,7 @@
 				//console.log(resData);
 
 				if(resData.user.alrmYn === "Y"){
-					$(".alarm").addClass("on");
+					$(".alarm").aprojlass("on");
 				}
 
 				var workIds = ["g2bCnt", "nopayCnt","qnaCnt","memCnt","ivtCnt"

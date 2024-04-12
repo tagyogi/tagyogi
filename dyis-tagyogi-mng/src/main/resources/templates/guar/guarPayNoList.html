@@ -81,7 +81,7 @@
 					    });
 
 					    chks = this.getSaveJson(2);
-					    $("#totRemainCommAmt").text(com.addComma(commAmt) +"원 ( " + chks.data.length + " 건)");
+					    $("#totRemainCommAmt").text(com.aprojomma(commAmt) +"원 ( " + chks.data.length + " 건)");
 
 						$("#payNm").val(rowData.membNm);
 					}
@@ -133,11 +133,11 @@
 						guarCom.fnIbsStyleSet(sheet, row); //필드색상정의
 					}
 
-					$("#statTot").html(com.addComma(sheet.getTotalRowCount()) + " <em>건</em>");
-					$("#statMembTot").html(com.addComma(membs.length) + " <em>건</em>");
-					$("#statCommAmt").html(com.addComma(commAmt) + " <em>원</em>");
-					$("#remainCommAmt").html(com.addComma(remainCommAmt) + " <em>원</em>");
-					$("#totRemainCommAmt").html(com.addComma(payCommAmt) + " <em>원</em>");
+					$("#statTot").html(com.aprojomma(sheet.getTotalRowCount()) + " <em>건</em>");
+					$("#statMembTot").html(com.aprojomma(membs.length) + " <em>건</em>");
+					$("#statCommAmt").html(com.aprojomma(commAmt) + " <em>원</em>");
+					$("#remainCommAmt").html(com.aprojomma(remainCommAmt) + " <em>원</em>");
+					$("#totRemainCommAmt").html(com.aprojomma(payCommAmt) + " <em>원</em>");
 				})
 			});
 
@@ -236,11 +236,11 @@
 						commAmt += item.remainCommAmt;
 				    });
 
-				    //$("#totRemainCommAmt").text(com.addComma(commAmt) +"원 ( " + chks.data.length + " 건)");
+				    //$("#totRemainCommAmt").text(com.aprojomma(commAmt) +"원 ( " + chks.data.length + " 건)");
 
-					paramVal = $("#membNm").val()+":"+com.addComma(commAmt);
+					paramVal = $("#membNm").val()+":"+com.aprojomma(commAmt);
 
-					msg = "["+$("#membNm").val()+"] 미수금 : " + com.addComma(commAmt) + "원을 안내 하시겠습니까?";
+					msg = "["+$("#membNm").val()+"] 미수금 : " + com.aprojomma(commAmt) + "원을 안내 하시겠습니까?";
 				}else if(type == "13"){ //3개월 경과 안내
 					paramVal = $("#membNm").val();
 

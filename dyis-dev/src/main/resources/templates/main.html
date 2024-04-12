@@ -148,10 +148,10 @@
 		    	var $gnbMenu = $("#T_" + gnbCode);
 		    	
 		    	$('.topMenu').removeClass('active');
-		    	$('#L_' + gnbCode).addClass('active');
+		    	$('#L_' + gnbCode).aprojlass('active');
 		    	
 		    	$gnbMenu.siblings().removeClass('active');
-		    	$gnbMenu.addClass('active');
+		    	$gnbMenu.aprojlass('active');
 		    	//$gnbMenu.show();
 		    }
 		   
@@ -219,7 +219,7 @@
 		        $("#sub" + menuIdx).show();
 		        
 		        $(".tab").removeClass("active");
-		        $("#tab" + menuIdx).addClass("active");
+		        $("#tab" + menuIdx).aprojlass("active");
 		        
 		        if(menuIdx == 0) {
 		        	$("#subArea").hide();

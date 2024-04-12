@@ -94,8 +94,8 @@
 							}
 						})
 					}
-					$("#interAmt").val(com.addComma(totPayAmt));
-					$("#totInterAmt").val(com.addComma(Number(totPayAmt) + Number(com.rmComma($("#interDelayAmt").val()))));
+					$("#interAmt").val(com.aprojomma(totPayAmt));
+					$("#totInterAmt").val(com.aprojomma(Number(totPayAmt) + Number(com.rmComma($("#interDelayAmt").val()))));
 				
 					fnTotPayCalc();
 				});
@@ -110,8 +110,8 @@
 							}
 						})
 					}
-					$("#interDelayAmt").val(com.addComma(totDelayPayAmt));
-					$("#totInterAmt").val(com.addComma(Number(totDelayPayAmt) + Number(com.rmComma($("#interAmt").val()))));
+					$("#interDelayAmt").val(com.aprojomma(totDelayPayAmt));
+					$("#totInterAmt").val(com.aprojomma(Number(totDelayPayAmt) + Number(com.rmComma($("#interAmt").val()))));
 				
 					fnTotPayCalc();
 				});
@@ -213,8 +213,8 @@
 
 					delayInterAmt = Math.floor((remainLendAmt * delayRate / 100 / 365 * delayDays/10))*10;
 
-					$("#delayInterAmt").val(com.addComma(delayInterAmt));
-				//	$("#delayInterAmt").val(com.addComma(repayDelayAmt - totDelayInterAmt));
+					$("#delayInterAmt").val(com.aprojomma(delayInterAmt));
+				//	$("#delayInterAmt").val(com.aprojomma(repayDelayAmt - totDelayInterAmt));
 				}
 
 			}
@@ -326,11 +326,11 @@
 					return;
 				}
 
-				$("#totRepayAmt").val(com.addComma(totRepayAmt)); //상환금액(a+b)
+				$("#totRepayAmt").val(com.aprojomma(totRepayAmt)); //상환금액(a+b)
 
 				remainLendAmt = lend.remainLendAmt.replace(/\,/g,""); //대출잔액
 				reRemainLendAmt = remainLendAmt - totRepayAmt; //최종 잔여대출금
-				$("#remainAmt").val(com.addComma(reRemainLendAmt)); //상환후잔액
+				$("#remainAmt").val(com.aprojomma(reRemainLendAmt)); //상환후잔액
 
 				fnTotPayCalc();
 
@@ -347,7 +347,7 @@
 				var totInterAmt = Number(interAmt) + Number(interDelayAmt);
 
 
-				$("#totInterAmt").val(com.addComma(totInterAmt));//총이자금액(c+d)
+				$("#totInterAmt").val(com.aprojomma(totInterAmt));//총이자금액(c+d)
 
 				fnTotPayCalc();
 
@@ -384,7 +384,7 @@
 				totRepayAmt = $("#totRepayAmt").val().replace(/\,/g,""); //총상환금액
 				remainLendAmt = lend.remainLendAmt.replace(/\,/g,""); //대출잔액
 				reRemainLendAmt = remainLendAmt - totRepayAmt; //최종 잔여대출금
-				$("#remainAmt").val(com.addComma(reRemainLendAmt));
+				$("#remainAmt").val(com.aprojomma(reRemainLendAmt));
 
 				//alert(remainLendAmt);
 
@@ -437,16 +437,16 @@
 				delaySumRow = sheetDelay.getRowById("FormulaRow");
 
 
-				$("#interAmt").val(com.addComma(interSumRow.interPayAmt));
-				$("#interDelayAmt").val(com.addComma(delaySumRow.payAmt));
-				$("#totInterAmt").val(com.addComma(interSumRow.interPayAmt + delaySumRow.payAmt));
+				$("#interAmt").val(com.aprojomma(interSumRow.interPayAmt));
+				$("#interDelayAmt").val(com.aprojomma(delaySumRow.payAmt));
+				$("#totInterAmt").val(com.aprojomma(interSumRow.interPayAmt + delaySumRow.payAmt));
 				//console.log(sumRow);
 				//연체납입액
 				delayInterAmt = $("#delayInterAmt").val().replace(/\,/g,"");
 
 				//총납입금액 (연체납입액 + 상환금액 + 이자금액 + 이자연체금액)
 				fnTotPayCalc();
-				//$("#totPayAmt").val(com.addComma(Number(delayInterAmt) + Number(totRepayAmt) + Number(interSumRow.payAmt) + Number(delaySumRow.delayAmt)));
+				//$("#totPayAmt").val(com.aprojomma(Number(delayInterAmt) + Number(totRepayAmt) + Number(interSumRow.payAmt) + Number(delaySumRow.delayAmt)));
 
 				procYn = true;
 			};
@@ -458,7 +458,7 @@
 				let totInterAmt = $("#totInterAmt").val().replace(/\,/g,""); //총이자금액(c+d)
 				let totRepayAmt = $("#totRepayAmt").val().replace(/\,/g,""); //상환금액(a+b)
 								
-				$("#totPayAmt").val( com.addComma( Number(delayPayAmt) + Number(totInterAmt) + Number(totRepayAmt) ) );
+				$("#totPayAmt").val( com.aprojomma( Number(delayPayAmt) + Number(totInterAmt) + Number(totRepayAmt) ) );
 			}
 
 			//저장

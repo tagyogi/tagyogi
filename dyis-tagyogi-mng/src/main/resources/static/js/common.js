@@ -223,7 +223,7 @@ com.fnSetTabMembTag = function(obj){
 	else {
 		
 		//header에 class없으면 추가
-		if(!$(top.document).find('.container').hasClass('hasNm')) $(top.document).find('.container').addClass('hasNm');
+		if(!$(top.document).find('.container').hasClass('hasNm')) $(top.document).find('.container').aprojlass('hasNm');
 		
 		//이름추가
 		
@@ -2421,7 +2421,7 @@ com.fnIbsRowDup = function(sheeId, cellId, val){
 * 파라미터로 넘긴 변수명이 전부 undefined 가아니고 공백 아닌경우만 등록후 수정으로 판단 (로우삭제후 추가 및 staus 변경함)
 * 그외 조건들은 단순 등록화면에서 추가 및 추가된(저장전) 행 정보 변경으로 판단
 */
-com.fnIbsAddChgRow = function(obj){
+com.fnIbsAprojhgRow = function(obj){
 	//var param = {sheetId: sheetSure, mapRow: selSureRow, rnVal: obj, ifVal: "sureNm:sureSeq"}
 	//sheetId : 시트아이디 , mapRow : 그리드행, rnVal : 팝업파라미터, ifVal: 필수조건변수명들
 	
@@ -2941,7 +2941,7 @@ com.makeComma = function(obj){
 }
 
 //콤마세팅
-com.addComma = function(num){
+com.aprojomma = function(num){
 	if(num == null) return "";
     num = num.toString();
     num = num.replace(/,/g, "");

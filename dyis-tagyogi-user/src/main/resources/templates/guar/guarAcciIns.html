@@ -88,8 +88,8 @@
                 $("#orderBizNo").val(resData.data.orderBizNo);
 
                 $.each($(".setCommaCls"), function(idx,item){
-					$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
-					$(item).val($(item).val() === null ? "0":com.addComma($(item).val()));
+					$(item).text($(item).text() === null ? "0":com.aprojomma($(item).text()));
+					$(item).val($(item).val() === null ? "0":com.aprojomma($(item).val()));
 				});
 
 				$.each($(".setDateCls"), function(idx,item){

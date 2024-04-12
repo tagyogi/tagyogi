@@ -714,9 +714,9 @@ span.req:before {content:'*'; display:block; position:absolute; left:0; top:0; l
 .cmnChild.on {display: block;}
 .cmnChild > ul > li {position: relative;padding: 15px 100px 15px 5px;border-bottom: 1px solid #ddd;}
 .cmnChild > ul > li .cmnBtn,
-.cmnChild .addCmnChild .cmnBtn {position: absolute; top: 50%; right: 25px; transform: translateY(-50%);}
+.cmnChild .aprojmnChild .cmnBtn {position: absolute; top: 50%; right: 25px; transform: translateY(-50%);}
 
-.cmnChild .addCmnChild {position: relative; padding: 15px 100px 15px 5px;}
+.cmnChild .aprojmnChild {position: relative; padding: 15px 100px 15px 5px;}
 
 /*달력(종료~시작일)*/
 .ele_dt, .cal_dt {position:absolute;display:none;z-index:5;}

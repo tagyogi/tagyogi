@@ -196,10 +196,10 @@
 		    	var $gnbMenu = $("#T_" + gnbCode);
 
 		    	$('.topMenu').removeClass('active');
-		    	$('#L_' + gnbCode).addClass('active');
+		    	$('#L_' + gnbCode).aprojlass('active');
 
 		    	$gnbMenu.siblings().removeClass('active');
-		    	$gnbMenu.addClass('active');
+		    	$gnbMenu.aprojlass('active');
 		    	//$gnbMenu.show();
 		    }
 
@@ -334,7 +334,7 @@
 				if(menuCd !== ""){
 					gnbMenuSelect(menuSeq);
 					$(".dep3 li a ").removeClass("active");
-					$("#"+menuCd).addClass("active");
+					$("#"+menuCd).aprojlass("active");
 				}
 
 				$("#homeArea").hide();
@@ -349,7 +349,7 @@
 				$("#sub" + menuIdx).show();
 
 		        $(".tab").removeClass("active");
-		        $("#tab" + menuIdx).addClass("active");
+		        $("#tab" + menuIdx).aprojlass("active");
 
 		        //메인 화면 표시 여부
 		        if(menuIdx === 0) {

@@ -26,7 +26,7 @@
 	<bankPay>
 		<url>https://pgtest.bankpay.or.kr:7743/StartBankPay.do</url>      
 		<appNo>12001347</appNo>    
-       	<orgNm>한국콘텐츠공제조합</orgNm>
+       	<orgNm>동양정보서비스</orgNm>
    	</bankPay>
    	
    	<iniPay>

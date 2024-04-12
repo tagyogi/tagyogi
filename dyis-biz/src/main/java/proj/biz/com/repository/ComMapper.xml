@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="proj.biz.com.repository.ComMapper">
+
+	<!-- 조합원 정보 조회 -->
+    <select id="selectMembList" parameterType="Map" resultType="camelMap">
+    	/* ComMapper.selectMembList */
+    	SELECT MEMB_NO
+		     , MEMB_NM
+		     , CEO_NM
+		     , F_GET_PATTERN(LAW_NO, 'CRP') LAW_NO
+		     , F_GET_PATTERN(BIZ_NO, 'BIZ') BIZ_NO
+		     , MEMB_DIV
+		     , F_GET_CD_NM('MB07', MEMB_DIV) MEMB_DIV_NM
+		     , MEMB_STAT
+		     , F_GET_CD_NM('MB08', MEMB_STAT) MEMB_STAT_NM
+		     , MEMB_CD
+		     , F_GET_CD_NM('MB24', MEMB_CD) MEMB_CD_NM
+		     , TEL_NO
+		     , FAX_NO
+		     , ADDR_DIV
+		     , F_GET_CD_NM('MB01', ADDR_DIV) ADDR_DIV_NM
+		     , POST_NO
+		     , ADDR1
+		     , ADDR2
+		     , DORO_CD
+		     , DORO_NM
+		     , DORO_BUNHO
+		     , DORO_DONG
+		     , DORO_DTL
+		     , DORO_BD_NO
+		     , CASE WHEN ADDR_DIV = 'JB' THEN '('||POST_NO||') ' || ADDR1||' '||ADDR2
+		            ELSE POST_NO||' '||DORO_NM||' ('||DORO_DONG||' '||DORO_BD_NO||') ' || DORO_DTL
+		            END ADDR_FULL
+		     , F_GET_PATTERN(JOIN_DT, 'DT') JOIN_DT
+		     , LEAVE_DT
+		     , BUSS_ETC
+		     , REQ_NO
+		     , EMP_CNT
+		     , ASSET_AMT
+		     , CAPI_AMT
+		     , YEAR_SALE_AMT
+		     , MAIN_PROD
+		     , BUSS_COND
+		     , F_GET_PATTERN(BUSS_START_DT, 'DT') BUSS_START_DT
+		     , BELONG
+		     , MAIN_BUSS_CD
+		     , F_GET_CD_NM('MB02', MAIN_BUSS_CD) MAIN_BUSS_NM
+		     , SUB_BUSS_CDS
+		     , F_GET_CD_NM('MB02', SUB_BUSS_CDS) SUB_BUSS_CDS_NM
+		     , DEPO_NM
+		     , HOMEPAGE
+		     , BUSS_HOMEPAGE
+		     , BUSS_TEL_NO
+		     , BUSS_FAX_NO
+		     , POST_GET_CD
+		     , F_GET_CD_NM('MB23',POST_GET_CD) POST_GET_NM
+		     , SACT_CD
+		     , F_GET_CD_NM('MB26',SACT_CD) SACT_CD_NM
+		     , SACT_DT
+		     , KED_YN
+		     , REMARK MEMB_REMARK
+		     , SEAL_FILE_NM
+		     , SEAL_FILE_SRC
+		     , SEAL_FILE_PATH
+		     , PERS_SEAL_FILE_NM
+		     , PERS_SEAL_FILE_SRC
+		     , PERS_SEAL_FILE_PATH
+		     , MEMB_CRETOP
+		     , NVL(F_GET_CD_NM('CRET',MEMB_CRETOP), '정상') MEMB_CRETOP_NM
+		     , MEMO
+		     , COMP_EMAIL
+		     , KNOW_CDS
+		     , WEB_KEYWORD
+		     , REC_PERS
+		     , REC_COMP
+		     , ETC_CONT
+		     , INVEST_VIEW_YN
+		     , NVL(CARD_YN, 'N') CARD_YN
+		  FROM MB_MASTER M
+		<where>
+			<if test="sMembNo != null and sMembNo != ''">
+			AND MEMB_NO = #{sMembNo}
+			</if>
+			<if test="sMembNm != null and sMembNm != ''">
+			AND MEMB_NM LIKE '%' || #{sMembNm} || '%'
+			</if>
+			<if test="sLawNo != null and sLawNo != ''">
+			AND LAW_NO LIKE '%' || REPLACE(#{sLawNo}, '-') || '%'
+			</if>
+			<if test="sBizNo != null and sBizNo != ''">
+			AND BIZ_NO LIKE '%' || REPLACE(#{sBizNo}, '-') || '%'
+			</if>
+			<if test="sCeoNm != null and sCeoNm != ''">
+			AND CEO_NM LIKE '%' || #{sCeoNm} || '%'
+			</if>
+		</where>
+		 ORDER BY MEMB_NO DESC
+    </select>
+
+	<!-- 조합원 기본 -->
+	<sql id="membCols">
+		M.MEMB_NO
+	     , MEMB_NM
+	     , CEO_NM
+	     , F_GET_PATTERN(LAW_NO, 'CRP') LAW_NO
+	     , F_GET_PATTERN(BIZ_NO, 'BIZ') BIZ_NO
+	     , MEMB_DIV
+	     , F_GET_CD_NM('MB07', MEMB_DIV) MEMB_DIV_NM
+	     , MEMB_STAT
+	     , F_GET_CD_NM('MB08', MEMB_STAT) MEMB_STAT_NM
+	     , MEMB_CD
+	     , F_GET_CD_NM('MB24', MEMB_CD) MEMB_CD_NM
+	     , TEL_NO
+	     , FAX_NO
+	     , ADDR_DIV
+	     , F_GET_CD_NM('MB01', ADDR_DIV) ADDR_DIV_NM
+	     , POST_NO
+	     , ADDR1
+	     , ADDR2
+	     , DORO_CD
+	     , DORO_NM
+	     , DORO_BUNHO
+	     , DORO_DONG
+	     , DORO_DTL
+	     , DORO_BD_NO
+	     , CASE WHEN ADDR_DIV = 'JB' THEN '('||POST_NO||') ' || ADDR1||' '||ADDR2
+	            ELSE POST_NO||' '||DORO_NM||' ('||DORO_DONG||' '||DORO_BD_NO||') ' || DORO_DTL
+	            END ADDR_FULL
+	     , DORO_NM||' ('||DORO_DONG||' '||DORO_BD_NO||')' ADDR_FULL_DORO
+	     , BUSS_ADDR_DIV
+	     , BUSS_POST_NO
+	     , BUSS_ADDR1
+	     , BUSS_DORO_CD
+	     , BUSS_DORO_NM
+	     , BUSS_DORO_BUNHO
+	     , BUSS_DORO_DONG
+	     , BUSS_DORO_DTL
+	     , BUSS_DORO_BD_NO
+	     , CASE WHEN BUSS_ADDR_DIV = 'JB' THEN '('||BUSS_POST_NO||') ' ||BUSS_ADDR1||' '||BUSS_ADDR2
+	            ELSE BUSS_POST_NO||' '||BUSS_DORO_NM||' '||BUSS_DORO_BUNHO||'('||BUSS_DORO_DONG||' '||BUSS_DORO_BD_NO||') ' || BUSS_DORO_DTL
+	            END BUSS_ADDR_FULL
+	     , BUSS_DORO_NM||' '||BUSS_DORO_BUNHO||'('||BUSS_DORO_DONG||' '||BUSS_DORO_BD_NO||')' BUSS_ADDR_FULL_DORO
+	     , F_GET_PATTERN(JOIN_DT, 'DT') JOIN_DT
+	     , LEAVE_DT
+	     , BANK_CD
+	     , F_GET_CD_NM('CM02', BANK_CD) BANK_NM
+	     , ACCT_NO
+	     , BUSS_ETC
+	     , REQ_NO
+	     , EMP_CNT
+	     , ASSET_AMT
+	     , CAPI_AMT
+	     , YEAR_SALE_AMT
+	     , MAIN_PROD
+	     , BUSS_COND
+	     , F_GET_PATTERN(BUSS_START_DT, 'DT') BUSS_START_DT
+	     , BELONG
+	     , MAIN_BUSS_CD
+	     , F_GET_CD_NM('MB02', MAIN_BUSS_CD) MAIN_BUSS_NM
+	     , SUB_BUSS_CDS
+	     , F_GET_CD_NM('MB02', SUB_BUSS_CDS) SUB_BUSS_CDS_NM
+	     , DEPO_NM
+	     , HOMEPAGE
+	     , BUSS_HOMEPAGE
+	     , BUSS_TEL_NO
+	     , BUSS_FAX_NO
+	     , POST_GET_CD
+	     , F_GET_CD_NM('MB23',POST_GET_CD) POST_GET_CD_NM
+	     , SACT_CD
+	     , F_GET_CD_NM('MB26',SACT_CD) SACT_CD_NM
+	     , SACT_DT
+	     , KED_YN
+	     , REMARK MEMB_REMARK
+	     , SEAL_FILE_NM
+	     , SEAL_FILE_SRC
+	     , SEAL_FILE_PATH
+	     , PERS_SEAL_FILE_NM
+	     , PERS_SEAL_FILE_SRC
+	     , PERS_SEAL_FILE_PATH
+	     , MEMB_CRETOP
+	     , NVL(F_GET_CD_NM('CRET',MEMB_CRETOP), '정상') MEMB_CRETOP_NM
+	     , MEMO
+	     , COMP_EMAIL
+	     , KNOW_CDS
+	     , WEB_KEYWORD
+	     , REC_PERS
+	     , REC_COMP
+	     , ETC_CONT
+	     , USER_ID
+	     , USER_PW
+	     , INVEST_VIEW_YN
+	     , NVL(CARD_YN, 'N') CARD_YN
+	     , DEPT
+	     , CONTR_OVER_YN  /* 한도 직접입력 대상 */
+	     , (SELECT COUNT(*) FROM AC_SEQUEST WHERE MEMB_NO = M.MEMB_NO AND CAN_CD = '1') SEST_CNT
+	     , NVL(F_GET_INVEST_NUM(M.MEMB_NO), 0) INVEST_NUM /*출자좌수, 기간전체기준*/
+	     , NVL(F_GET_INVEST_AMT(M.MEMB_NO), 0) INVEST_AMT /*출자금액, 기간전체기준*/
+
+	     , F_GET_MORT_NUM(M.MEMB_NO) MORT_NUM /*담보좌수*/
+	     , F_GET_MORT_AMT(M.MEMB_NO) MORT_AMT
+	     , F_GET_DEPT_NUM(M.MEMB_NO) DEPT_NUM /*예수좌수*/
+
+	     , NVL(F_GET_ASS_GET_NUM(M.MEMB_NO), 0) ASS_GET_NUM /*배정받은좌수*/
+	     , F_GET_ASS_GET_AMT(M.MEMB_NO) ASS_GET_AMT
+	     , NVL(F_GET_ASS_SET_NUM(M.MEMB_NO), 0) ASS_SET_NUM /*배정부여좌수*/
+	     , F_GET_ASS_SET_AMT(M.MEMB_NO) ASS_SET_AMT
+
+	     , F_GET_BILL_KEEP_NUM(M.MEMB_NO) BILL_KEEP_NUM
+	     , F_GET_CONTR_USE_NUM(M.MEMB_NO) CONTR_USE_NUM /*약정사용좌수 보증,융자 */
+	     , F_GET_CONTR_USE_AMT(M.MEMB_NO) CONTR_USE_AMT /*약정사용금액*/
+	     , (SELECT MAX(CONTR_NO) FROM GR_MASTER WHERE GUAR_STAT = '90' AND MEMB_NO = M.MEMB_NO) GUAR_CONTR_NO /* 보증한도약정번호(정상) */
+	     , (SELECT MAX(CONTR_NO) FROM LD_CONTRACT WHERE CONTR_TYPE = '21' AND CONTR_STAT = '10' AND MEMB_NO = M.MEMB_NO ) LEND_CONTR_NO /* 대출한도약정번호(정상) */
+	     , (SELECT COUNT (*) FROM GR_MORT WHERE MEMB_NO = M.MEMB_NO AND MORT_YN = 'Y' ) MORT_CNT /* 담보개수 */
+	     , NVL(F_GET_BAS_DTM_INVEST_NUM(M.MEMB_NO, #{basDt}, #{investNo}),0) BAS_INVEST_NUM /*출자업무날짜기준 출자좌수*/
+	     , NVL(F_GET_BAS_DTM_INVEST_AMT(M.MEMB_NO, #{basDt}, #{investNo}),0) BAS_INVEST_AMT /*출자업무날짜기준 출자금액*/
+	     , NVL((SELECT SUM(DECODE(PAY_TYPE, 'P', PAY_AMT, PAY_AMT * -1)) FROM IV_DEP_PAY WHERE MEMB_NO = M.MEMB_NO),0) DEP_AMT
+	     /* 사용여부 확인 필요
+	     , F_GET_CONTR_MAX_NUM(M.MEMB_NO) CONTR_MAX_NUM
+	     , F_GET_CONTR_MAX_AMT(M.MEMB_NO) CONTR_MAX_AMT
+	     */
+	</sql>
+
+    <!-- 조합원 정보 조회 -->
+    <select id="selectMemb" parameterType="Map" resultType="camelMap">
+    	/* ComMapper.selectMemb */
+    	SELECT A.*
+    	      , ASS_GET_NUM - ASS_SET_NUM ASSIGN_NUM  /*배정좌수*/
+    	      , MORT_NUM + DEPT_NUM TOT_NUM /*총좌수*/
+    	      , MORT_NUM + DEPT_NUM + ASS_GET_NUM - ASS_SET_NUM - CONTR_USE_NUM REMAIN_NUM /*잔여좌수*/
+    	  FROM
+	    	  (
+	    	SELECT
+	    	     <include refid="membCols" />
+			  FROM MB_MASTER M
+			 WHERE MEMB_NO = #{membNo}
+		) A
+    </select>
+
+    <!-- 조합원 정보 조회(사업자번호) -->
+    <select id="selectMembBizNo" parameterType="Map" resultType="camelMap">
+    	/* ComMapper.selectMembBizNo */
+    	SELECT *
+		  FROM MB_MASTER
+		 WHERE BIZ_NO = #{bizNo}
+    </select>
+
+    <!-- 조합원 정보 조회(인증서) -->
+    <select id="selectMembCert" parameterType="Map" resultType="camelMap">
+    	/* ComMapper.selectMembCert */
+		  SELECT MEMB_NO
+		       , USER_DN
+		       , CERT_SN
+		       , START_DATE
+		       , END_DATE
+		       , F_GET_CRYPT_DEC(USER_NUM) USER_NUM
+		    FROM MB_CERT MC
+		  WHERE (USER_DN, REG_DTM) IN
+		                          (
+		                          SELECT USER_DN, MAX(REG_DTM)
+		                            FROM MB_CERT
+		                            WHERE USER_DN = #{userDn}
+		                              AND SUBSTR(MC.START_DATE, 0, 8) &lt;= TO_CHAR(SYSDATE, 'YYYYMMDD')
+                                      AND SUBSTR(MC.END_DATE, 0, 8) &gt;= TO_CHAR(SYSDATE, 'YYYYMMDD')
+		                            GROUP BY USER_DN
+		                          )
+    </select>
+
+    <!-- 인증서 등록 -->
+	<insert id="insertMembCert" parameterType="Map"  >
+		/* ComMapper.insertMembCert */
+		MERGE
+		 INTO MB_CERT A
+		USING DUAL
+		  ON (
+		  	A.MEMB_NO = #{membNo}
+		  	AND A.USER_DN = #{userDn}
+		  	AND A.CERT_SN = #{certSn}
+		  )
+		 WHEN MATCHED THEN
+		      UPDATE SET
+		      		    START_DATE = #{startDate}
+		        		, END_DATE = #{endDate}
+		        		, USER_NUM = F_GET_CRYPT_ENC(#{userNum})
+		        		, MOD_DTM = SYSDATE
+		 WHEN NOT MATCHED THEN
+		     INSERT (MEMB_NO, USER_DN, CERT_SN, START_DATE, END_DATE, USER_NUM, REG_DTM, MOD_DTM)
+		     VALUES (#{membNo}, #{userDn}, #{certSn}, #{startDate}, #{endDate}, F_GET_CRYPT_ENC(#{userNum}), SYSDATE, SYSDATE)
+	</insert>
+
+	<!-- 공통코드 조회 -->
+    <select id="selectCodeList" parameterType="Map" resultType="camelMap">
+    	/* ComMapper.selectCodeList */
+    	SELECT
+    		CD_TYPE
+	    	, CD
+	    	, CD_NM
+	    	, USE_YN
+	    	, SEQ
+	    	, ETC_CD
+	    	, ETC_DESC
+	    	, REMARK
+	    	, REF_VAL1
+	    	, REG_DTM
+	    	, REG_NM
+	    	, MOD_DTM
+	    	, MOD_NM
+    	  FROM CM_CODE
+         WHERE USE_YN = 'Y'
+           AND CD_TYPE != 'ROOT'
+       <choose>
+        	<when test="codeList.size != 0">
+            AND CD_TYPE IN
+		        <foreach collection="codeList" item="item" index="index" separator="," open="(" close=")">
+		        	#{item}
+		        </foreach>
+            </when>
+        </choose>
+    	ORDER BY SEQ
+    </select>
+
+	<!-- 공통코드 명조회 -->
+    <select id="selectCodeDtlNm" parameterType="Map" resultType="String">
+    	/* ComMapper.selectCodeDtlNm */
+    	SELECT CD_NM
+    	  FROM CM_CODE
+         WHERE CD_TYPE = #{cdType}
+           AND CD = #{cd}
+           AND USE_YN = 'Y'
+    </select>
+
+
+    <!-- 공통코드 정보조회 -->
+    <select id="selectCodeDtl" parameterType="Map" resultType="camelMap">
+    	/* ComMapper.selectCodeDtlNm */
+    	SELECT *
+    	  FROM CM_CODE
+         WHERE CD_TYPE = #{cdType}
+           AND CD_NM = #{cdNm}
+           AND USE_YN = 'Y'
+    </select>
+
+    <!-- 그리드 정보 조회 -->
+    <!-- ResultMap -->
+    <resultMap id="resultMap" type="java.util.HashMap">
+		<result column="COL_NM" property="Header" />
+		<result column="COL_ID" property="Name" />
+		<result column="COL_TYPE" property="Type" />
+		<result column="COL_ALIGN" property="Align" />
+		<result column="COL_WIDTH" property="MinWidth" />
+		<result column="COL_FORMT" property="Format" />
+		<result column="COL_FORMT" property="CustomFormat" />
+		<result column="COL_FORMT_EDIT" property="EditFormat" />
+		<result column="COL_COLOR" property="TextColor" />
+		<result column="COL_REQUR" property="Required" />
+		<result column="COL_VISIBLE" property="Visible" />
+		<result column="COL_EDIT" property="CanEdit" />
+		<result column="COL_ENUM" property="Enum" />
+		<result column="COL_ENUMKEYS" property="EnumKeys" />
+		<result column="COL_RELWIDTH" property="RelWidth" />
+		<result column="COL_MERGE" property="ColMerge" />
+		<result column="COL_CALC" property="FormulaRow" />
+		<result column="GRID_NO" property="gridNo" />
+		<result column="BTN_TEXT" property="ButtonText" />
+		<result column="COL_EXCEL" property="excelYn" />
+	</resultMap>
+    <select id="selectGridDtlList" parameterType="Map" resultMap="resultMap">
+    	/* ComMapper.selectGridDtlList */
+    	SELECT
+    		COL_NM
+    		, COL_ID
+    		, COL_TYPE
+    		, COL_ALIGN
+    		, COL_WIDTH
+    		, COL_FORMT
+    		, COL_FORMT AS COL_FORMT_EDIT
+    		, COL_COLOR
+    		, DECODE(COL_REQUR, 'N', 0, 'Y', 1, COL_REQUR) COL_REQUR
+    		, DECODE(COL_VISIBLE, 'N', 0, 'Y', 1, COL_VISIBLE) COL_VISIBLE
+    		, NVL(DECODE(COL_EDIT, 'N', 0, 'Y', 1, COL_EDIT), 1) COL_EDIT
+    		, (
+	    		SELECT '|'||LISTAGG(CD_NM, '|') WITHIN GROUP(ORDER BY SEQ, CD)
+			     FROM CM_CODE
+			     WHERE CD_TYPE = A.COL_ENUM
+			       AND USE_YN = 'Y'
+    		) AS COL_ENUM
+    		, (
+	    		SELECT '|'||LISTAGG(CD, '|') WITHIN GROUP(ORDER BY SEQ, CD)
+			     FROM CM_CODE
+			     WHERE CD_TYPE = A.COL_ENUM
+			       AND USE_YN = 'Y'
+    		) AS COL_ENUMKEYS
+    		, CASE WHEN NVL(DECODE(COL_VISIBLE, 'N', 0, 'Y', 1, COL_VISIBLE), '1') = '1' THEN 1 ELSE 0 END COL_RELWIDTH
+    		, NVL(COL_MERGE, 0) AS COL_MERGE
+    		, GRID_NO
+    		, COL_CALC
+    		, DECODE(COL_EXCEL, 'N', 0, 'Y', 1, COL_EXCEL) COL_EXCEL
+    		, DECODE(COL_TYPE, 'Button', NVL(COL_ENUM, COL_NM), '') BTN_TEXT
+    	  FROM CM_GRID_COLS A
+    	<where>
+    	  <if test="gridNo != null and gridNo != ''">
+		  AND GRID_NO = #{gridNo}
+		  </if>
+
+          <if test="gridList != null and gridList != ''">
+          <choose>
+        	<when test="gridList.size != 0">
+            AND GRID_NO IN
+		        <foreach collection="gridList" item="item" index="index" separator="," open="(" close=")">
+		        	#{item}
+		        </foreach>
+            </when>
+           </choose>
+           </if>
+        </where>
+    	ORDER BY COL_ORD
+    </select>
+  
+    <!-- 첨부파일관리번호 추출 -->
+	<select id="selectAtthNo" parameterType="map" statementType="CALLABLE" resultType="String" >
+		/* ComMapper.selectAtthNo */
+ 		{
+ 			CALL P_GET_ATTH_NO( #{atthType}, #{atthNo, mode=OUT, jdbcType=VARCHAR, javaType=String} )
+ 		}
+    </select>
+
+    <!-- 시퀀스번호 추출 -->
+	<select id="selectSeqNo" parameterType="map" resultType="String" >
+		/* ComMapper.selectSeqNo */
+ 		SELECT F_GET_YEAR_SEQ(#{bussGbn}, #{year}) SEQ_NO
+          FROM DUAL
+    </select>
+
+
+ 	<!-- 즐겨찾기 현황 -->
+	<select id="selectUserMenuFavList" parameterType="map" resultType="camelMap" >
+		/* ComMapper.selectUserMenuFavList */
+		SELECT A.USER_ID
+		     , B.MENU_CD
+		     , B.PARENT_CD
+		     , B.MENU_NM
+		     , B.MENU_PATH
+		     , B.MENU_STEP
+		     , B.MENU_PAGE
+		  FROM CM_MENU_FAV A
+		     , CM_MENU B
+		 WHERE A.MENU_CD = B.MENU_CD
+		   AND A.USER_ID = #{userId}
+		   AND B.USE_YN = 'Y'
+		   AND B.MENU_YN = 'Y'
+		   AND A.FAV_YN = 'Y'
+    </select>
+
+ 	<!-- 즐겨찾기 추가 -->
+	<insert id="insertUserMenuFav" parameterType="Map"  >
+		/* ComMapper.insertUserMenuFav */
+		MERGE
+		 INTO CM_MENU_FAV A
+		USING DUAL
+		  ON (
+		  	A.USER_ID = #{userId}
+		    AND A.MENU_CD = #{menuCd}
+		  )
+		 WHEN MATCHED THEN
+		      UPDATE SET FAV_YN = DECODE(FAV_YN, 'Y', 'N', 'N', 'Y', 'N')
+		 WHEN NOT MATCHED THEN
+		     INSERT (USER_ID, MENU_CD, FAV_YN)
+		     VALUES (#{userId}, #{menuCd}, 'Y')
+	</insert>
+
+
+	<!--기준일 영업일 여부 조회-->
+	<select id="seletWorkDay" parameterType="Map" resultType="camelMap">
+		/* ComMapper.seletWorkDay*/
+		SELECT F_GET_WORK_DAY(#{baseDt}, NVL(#{addDay}, 0)) WORK_DT
+          FROM DUAL
+	</select>
+
+	<!--기타코드 조회-->
+	<select id="selectCodeEtcCd" parameterType="Map" resultType="String">
+		/* ComMapper.selectCodeEtcCd*/
+		SELECT F_GET_ETC_CD(#{cdType}, #{cd}) ETC_CD FROM DUAL
+	</select>
+
+	<!-- 모바일 로그인 조합원 조회 -->
+    <select id="selectMembById" parameterType="Map" resultType="camelMap">
+    	/* ComMapper.selectMembById */
+    	SELECT USER_ID
+    		 , USER_PW
+    		 , MEMB_NO
+		FROM MB_MASTER
+		WHERE USER_ID = #{userId}
+    </select>
+
+
+</mapper>

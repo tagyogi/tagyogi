@@ -53,10 +53,10 @@
 			var fnSearchCallBack = function(resData){
 
 				//양도전좌수, 양도전금액 계산 => resData.invtTransData.transAmt : investCd 30(양도양수했던 좌수) + membData.investAmt (현재 조합원의 출자좌수, 즉 반환후의 좌수)
-				resData.membData.transBfAmt = com.addComma(Number(resData.membData.investAmt)-Number(resData.invtTransData.transAmt));
-				resData.membData.transBfNum = com.addComma(Number(resData.membData.investNum)-Number(resData.invtTransData.transNum));
-				resData.invtTransData.transAmt = com.addComma(resData.invtTransData.transAmt);
-				resData.membData.investAmt = com.addComma(resData.membData.investAmt);
+				resData.membData.transBfAmt = com.aprojomma(Number(resData.membData.investAmt)-Number(resData.invtTransData.transAmt));
+				resData.membData.transBfNum = com.aprojomma(Number(resData.membData.investNum)-Number(resData.invtTransData.transNum));
+				resData.invtTransData.transAmt = com.aprojomma(resData.invtTransData.transAmt);
+				resData.membData.investAmt = com.aprojomma(resData.membData.investAmt);
 
 				//값세팅
 				com.fnSetKeyVal(resData.invtTransData);
@@ -71,7 +71,7 @@
 
 				//콤마추가 클래스들 세팅
 				//$.each($(".setCommaCls"), function(idx,item){
-				//	$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
+				//	$(item).text($(item).text() === null ? "0":com.aprojomma($(item).text()));
 				//});
 
 			};

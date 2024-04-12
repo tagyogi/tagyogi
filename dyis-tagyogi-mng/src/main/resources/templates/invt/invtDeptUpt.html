@@ -233,7 +233,7 @@
 				
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));	
+					$(item).text($(item).text() === null ? "0":com.aprojomma($(item).text()));	
 				});
 				
 				$.each($("div[id^='docSubmitDt']"), function(idx, item){
@@ -485,8 +485,8 @@
 					
 					var paramsArray = [
 					  $("#ele_membNm").text()                   //조합원명
-					  ,com.addComma(Number(setTotalAmt))        //예수입금 혹은 환급금액
-					  ,com.addComma(Number(sumTotalAmt))        //총예수금잔액
+					  ,com.aprojomma(Number(setTotalAmt))        //예수입금 혹은 환급금액
+					  ,com.aprojomma(Number(sumTotalAmt))        //총예수금잔액
 					];
 					
 					// 배열을 콜론으로 구분된 문자열로 합치기

@@ -39,7 +39,7 @@
 			var fnSearch = function(){
 				//상세정보 조회
 			    var membNo = /*[[${paramMap.membNo}]]*/;
-			    membNo = membNo.toString(); // 한국콘텐츠공제조합처럼 0한자리수는 동적쿼리 조건문 string으로 인식안되어서 스킵됨, string처리
+			    membNo = membNo.toString(); // 동양정보서비스처럼 0한자리수는 동적쿼리 조건문 string으로 인식안되어서 스킵됨, string처리
 			    
 			    var atthType = /*[[${menuInfo.atthType}]]*/;
 			    var param = {membNo : membNo, atthType: atthType, billStat: '10'};
@@ -59,16 +59,16 @@
 				resData.memb.assTotalNum = Number(resData.memb.assGetNum)-Number(resData.memb.assSetNum);
 				
 				//포맷
-				//resData.memb[0].investNum = com.addComma(resData.memb[0].investNum);
-				//resData.memb[0].investAmt = com.addComma(resData.memb[0].investAmt);
-				//resData.memb[0].mortNum = com.addComma(resData.memb[0].mortNum);
-				//resData.memb[0].mortAmt = com.addComma(resData.memb[0].mortAmt);
-				//resData.memb[0].assGetNum = com.addComma(resData.memb[0].assGetNum);
-				//resData.memb[0].assGetAmt = com.addComma(resData.memb[0].assGetAmt);
-				//resData.memb[0].assSetNum = com.addComma(resData.memb[0].assSetNum);
-				//resData.memb[0].assSetAmt = com.addComma(resData.memb[0].assSetAmt);
-				//resData.memb[0].assTotalAmt = com.addComma(resData.memb[0].assTotalAmt);
-				//resData.memb[0].assTotalNum = com.addComma(resData.memb[0].assTotalNum);
+				//resData.memb[0].investNum = com.aprojomma(resData.memb[0].investNum);
+				//resData.memb[0].investAmt = com.aprojomma(resData.memb[0].investAmt);
+				//resData.memb[0].mortNum = com.aprojomma(resData.memb[0].mortNum);
+				//resData.memb[0].mortAmt = com.aprojomma(resData.memb[0].mortAmt);
+				//resData.memb[0].assGetNum = com.aprojomma(resData.memb[0].assGetNum);
+				//resData.memb[0].assGetAmt = com.aprojomma(resData.memb[0].assGetAmt);
+				//resData.memb[0].assSetNum = com.aprojomma(resData.memb[0].assSetNum);
+				//resData.memb[0].assSetAmt = com.aprojomma(resData.memb[0].assSetAmt);
+				//resData.memb[0].assTotalAmt = com.aprojomma(resData.memb[0].assTotalAmt);
+				//resData.memb[0].assTotalNum = com.aprojomma(resData.memb[0].assTotalNum);
 				
 				//값세팅
 				com.fnSetKeyVal(resData.memb);
@@ -78,7 +78,7 @@
 				
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).val($(item).val() === null ? "0":com.addComma($(item).val()));	
+					$(item).val($(item).val() === null ? "0":com.aprojomma($(item).val()));	
 				});
 				
 				//메뉴탭 조합원명세팅

@@ -1,7 +1,7 @@
 <!--
-	파일정보 : acciGuarDdcProgList.html
-	파일명 : acciGuarDdcProg현황
-	업무명 : acciGuarDdcProg공제금지급현황 조회
+	파일정보 : acciGuarprojProgList.html
+	파일명 : acciGuarprojProg현황
+	업무명 : acciGuarprojProg공제금지급현황 조회
 	생성자 : 최진호
 	생성일 : 2023-04-13
 -->
@@ -49,7 +49,7 @@
 			//현황 조회
 			var fnSearch = function(){
 				param = JSON.stringify($("#serchFrm").serializeObject());
-				com.fnIbsSearch("/acciGuar/selectAcciGuarDdcProgList.do", param); //param, sheetId 생략 가능
+				com.fnIbsSearch("/acciGuar/selectAcciGuarprojProgList.do", param); //param, sheetId 생략 가능
 			};
 
 			//엑셀 다운로드

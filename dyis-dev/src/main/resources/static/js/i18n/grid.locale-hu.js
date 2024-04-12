@@ -62,7 +62,7 @@ $.jgrid.regional["hu"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "Új tétel",
+		aprojaption: "Új tétel",
 		editCaption: "Tétel szerkesztése",
 		bSubmit: "Mentés",
 		bCancel: "Mégse",

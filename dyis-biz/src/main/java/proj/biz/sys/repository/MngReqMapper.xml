@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="proj.biz.sys.repository.MngReqMapper">
+
+	<!-- 보안요청관리 정보 조회 -->
+	<select id="selectMngReqList" parameterType="Map" resultType="camelMap">
+		/* MngReqMapper.selectMngReqList */
+		SELECT
+			REQ_YM
+			, REQ_SEQ
+			, REQ_TYPE
+			, REQ_WORK
+			, REQ_STAT
+			, TO_CHAR(REQ_DTM, 'YYYY-MM-DD HH24:MI:SS') REQ_DTM
+			, REQ_NM
+			, F_GET_CRYPT_DEC(REQ_TEL_NO) REQ_TEL_NO
+			, REQ_TITL
+			, ACPT_DT
+			, PROC_DT
+			, PROC_NM
+			, F_GET_CRYPT_DEC(PROC_TEL_NO) PROC_TEL_NO
+			, DEL_YN
+			, ATTH_NO
+		  FROM CM_MNG_REQ
+		 WHERE NVL(DEL_YN, 'N') = 'N'
+		<if test="sReqYm != null and sReqYm  != ''">
+		AND REQ_YM = #{sReqYm}
+		</if>
+		<if test="sReqSeq != null and sReqSeq  != ''">
+		AND REQ_SEQ = #{sReqSeq}
+		</if>
+		<if test="sReqType != null and sReqType  != ''">
+		AND REQ_TYPE = #{sReqType}
+		</if>
+		<if test="sReqWork != null and sReqWork  != ''">
+		AND REQ_WORK = #{sReqWork}
+		</if>
+		<if test="sReqStat != null and sReqStat  != ''">
+		AND REQ_STAT = #{sReqStat}
+		</if>
+		<if test="sReqNm != null and sReqNm  != ''">
+		AND REQ_NM like '%' || #{sReqNm} || '%'
+		</if>
+		<if test="sReqTitl != null and sReqTitl  != ''">
+		AND REQ_TITL like '%' || #{sReqTitl} || '%'
+		</if>
+
+		<!-- 현황에 따른 일정 조건 -->
+		<if test="sSerchStaDt != null and sSerchStaDt  != ''">
+		AND TO_CHAR(REQ_DTM, 'YYYYMMDD') &gt;= REPLACE(#{sSerchStaDt}, '-')
+		</if>
+		<if test="sSerchEndDt != null and sSerchEndDt  != ''">
+		AND TO_CHAR(REQ_DTM, 'YYYYMMDD')  &lt;= REPLACE(#{sSerchEndDt}, '-')
+		</if>
+		ORDER BY REQ_YM DESC, REQ_SEQ DESC
+	</select>
+
+	<!-- 보안요청관리 상세 조회 -->
+	<!-- 게시판 상세 조회 -->
+ 	<resultMap id="mngReqMap" type="camelMap">
+		<result property="REQ_YM" column="REQ_YM" />
+		<result property="REQ_SEQ" column="REQ_SEQ" />
+		<result property="REQ_TYPE" column="REQ_TYPE" />
+		<result property="REQ_TYPE_NM" column="REQ_TYPE_NM" />
+		<result property="REQ_WORK" column="REQ_WORK" />
+		<result property="REQ_WORK_NM" column="REQ_WORK_NM" />
+		<result property="REQ_STAT" column="REQ_STAT" />
+		<result property="REQ_STAT_NM" column="REQ_STAT_NM" />
+		<result property="REQ_DTM" column="REQ_DTM" />
+		<result property="REQ_NM" column="REQ_NM" />
+		<result property="REQ_TEL_NO" column="REQ_TEL_NO" />
+		<result property="REQ_TITL" column="REQ_TITL" />
+		<result property="REQ_CONT" column="REQ_CONT" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="REQ_COMMENT" column="REQ_COMMENT" />
+		<result property="ACPT_DT" column="ACPT_DT" />
+		<result property="PROC_DT" column="PROC_DT" />
+		<result property="PROC_NM" column="PROC_NM" />
+		<result property="PROC_TEL_NO" column="PROC_TEL_NO" />
+		<result property="PROC_CONT" column="PROC_CONT" />
+		<result property="ATTH_NO" column="ATTH_NO" />
+	</resultMap>
+	<select id="selectMngReq" parameterType="Map" resultMap="mngReqMap">
+		/* MngReqMapper.selectMngReq*/
+		SELECT
+			REQ_YM
+			, REQ_SEQ
+			, F_GET_CD_NM('MR01', REQ_TYPE) REQ_TYPE_NM
+			, F_GET_CD_NM('MR02', REQ_WORK) REQ_WORK_NM
+			, REQ_STAT
+			, F_GET_CD_NM('MR03', REQ_STAT) REQ_STAT_NM
+			, TO_CHAR(REQ_DTM, 'YYYY-MM-DD HH24:MI:SS') REQ_DTM
+			, REQ_NM
+			, F_GET_CRYPT_DEC(REQ_TEL_NO) REQ_TEL_NO
+			, REQ_TITL
+			, REQ_CONT
+			, REQ_COMMENT
+			, F_GET_PATTERN(ACPT_DT, 'DT') ACPT_DT
+			, F_GET_PATTERN(PROC_DT, 'DT') PROC_DT
+			, PROC_NM
+			, F_GET_CRYPT_DEC(PROC_TEL_NO ) PROC_TEL_NO
+			, PROC_CONT
+			, ATTH_NO
+		  FROM CM_MNG_REQ
+		 WHERE REQ_YM = #{reqYm}
+		   AND REQ_SEQ = #{reqSeq}
+
+	</select>
+
+	<!-- 보안요청관리 등록 처리 -->
+	<insert id="insertMngReq" parameterType="Map"  >
+		/* MngReqMapper.insertMngReq */
+		<selectKey resultType="java.lang.String" keyProperty="reqSeq" order="BEFORE">
+          SELECT NVL(MAX(REQ_SEQ), 0) + 1 REQ_SEQ
+            FROM CM_MNG_REQ
+           WHERE REQ_YM = TO_CHAR(SYSDATE, 'YYYYMM')
+	    </selectKey>
+		INSERT INTO CM_MNG_REQ (
+			REQ_YM
+			, REQ_SEQ
+			, REQ_TYPE
+			, REQ_WORK
+			, REQ_STAT
+			, REQ_DTM
+			, REQ_NM
+			, REQ_TEL_NO
+			, REQ_TITL
+			, REQ_CONT
+			, REQ_COMMENT
+			, DEL_YN
+			, ATTH_NO
+		) VALUES (
+			TO_CHAR(SYSDATE, 'YYYYMM')
+			, #{reqSeq}
+			, #{reqType}
+			, #{reqWork}
+			, '10'
+			, SYSDATE
+			, #{userNm}
+			, F_GET_CRYPT_ENC(#{reqTelNo})
+			, #{reqTitl}
+			, #{reqCont}
+			, #{reqComment}
+			, 'N'
+			, #{atthNo}
+		)
+	</insert>
+
+	<!-- 보안요청관리 수정 처리 -->
+	<update id="updateMngReqProc" parameterType="Map"  >
+		/* MngReqMapper.updateMngReqProc */
+		UPDATE CM_MNG_REQ
+		SET
+			REQ_STAT 		= #{reqStat}
+			, ACPT_DT 		= DECODE(#{reqStat}, '20', TO_CHAR(SYSDATE, 'YYYYMMDD'), ACPT_DT)
+			, PROC_DT 		= DECODE(#{reqStat}, '40', TO_CHAR(SYSDATE, 'YYYYMMDD'), '45', TO_CHAR(SYSDATE, 'YYYYMMDD'), PROC_DT)
+			, PROC_NM 		= DECODE(#{reqStat}, '40', #{userNm}, '45', #{userNm}, PROC_NM)
+			, PROC_TEL_NO 	= DECODE(#{reqStat}, '40', #{userTelNo}, '45', #{userTelNo}, PROC_TEL_NO)
+			, PROC_CONT 	= #{procCont}
+		WHERE REQ_YM 		= #{reqYm}
+		  AND REQ_SEQ 		= #{reqSeq}
+	</update>
+
+	<!-- 보안요청관리 삭제 처리 -->
+	<delete id="deleteMngReq" parameterType="Map"  >
+		/* MngReqMapper.deleteMngReq */
+		UPDATE CM_MNG_REQ
+		   SET DEL_YN 	= 'Y'
+		 WHERE REQ_YM 	= #{reqYm}
+		   AND REQ_SEQ 	= #{reqSeq}
+	</delete>
+
+</mapper>

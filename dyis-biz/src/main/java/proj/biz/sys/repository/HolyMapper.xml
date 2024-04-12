@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="proj.biz.sys.repository.HolyMapper"> 
+
+	<!-- 공휴일 정보 조회 --> 
+	<select id="selectHolyList" parameterType="Map" resultType="camelMap"> 
+		/* HolyMapper.selectHolyList */ 
+		SELECT 
+			HOLI_YEAR 
+			, HOLI_DT 
+			, HOLI_NM 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		  FROM CM_HOLIDAY 
+		<where> 
+		<if test="sHoliYear != null and sHoliYear  != ''"> 
+		AND HOLI_YEAR = #{sHoliYear} 
+		</if> 
+		</where> 
+		ORDER BY HOLI_YEAR DESC, HOLI_DT DESC
+	</select> 
+
+	<!-- 공휴일 등록 처리 --> 
+	<insert id="insertHoly" parameterType="Map"  > 
+		/* HolyMapper.insertHoly */ 
+		INSERT INTO CM_HOLIDAY ( 
+			HOLI_YEAR 
+			, HOLI_DT 
+			, HOLI_NM 
+			, REG_DTM 
+			, REG_NM 
+			, MOD_DTM 
+			, MOD_NM 
+		) VALUES ( 
+			#{holiYear} 
+			, REPLACE(#{holiDt}, '-', '') 
+			, #{holiNm} 
+			, SYSDATE
+			, #{userNm} 
+			, SYSDATE 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 공휴일 수정 처리 --> 
+	<update id="updateHoly" parameterType="Map"  > 
+		/* HolyMapper.updateHoly */ 
+		UPDATE CM_HOLIDAY 
+		SET 
+			HOLI_YEAR = #{holiYear} 
+			, HOLI_DT = REPLACE(#{holiDt}, '-', '') 
+			, HOLI_NM = #{holiNm} 
+			, MOD_DTM = SYSDATE 
+			, MOD_NM = #{modNm} 
+		WHERE HOLI_YEAR = #{holiYear} 
+		  AND HOLI_DT = REPLACE(#{holiDt}, '-', '') 
+	</update> 
+
+	<!-- 공휴일 삭제 처리 --> 
+	<delete id="deleteHoly" parameterType="Map"  > 
+		/* HolyMapper.deleteHoly */ 
+		DELETE FROM CM_HOLIDAY 
+		WHERE HOLI_YEAR = #{holiYear} 
+		  AND HOLI_DT = REPLACE(#{holiDt}, '-', '') 
+	</delete> 
+	
+</mapper>

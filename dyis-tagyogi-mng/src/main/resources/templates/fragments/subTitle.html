@@ -7,7 +7,7 @@
 				if($(".mypage").hasClass("on") === true){
 					$(".mypage").removeClass("on");
 				}else{
-					$(".mypage").addClass("on");
+					$(".mypage").aprojlass("on");
 				}
 				
 				var param = {menuCd : /*[[${menuInfo.menuCd}]]*/}
@@ -33,7 +33,7 @@
 			$(document).ready(function(){
 				var favYn = /*[[${menuInfo.favYn}]]*/;
 				if(favYn === "Y"){
-					$(".mypage").addClass("on");
+					$(".mypage").aprojlass("on");
 				}
 			});
 			

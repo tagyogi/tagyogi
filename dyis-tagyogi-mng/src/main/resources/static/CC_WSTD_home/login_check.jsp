@@ -86,11 +86,11 @@
 		            WebApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext());
 		            SqlMapClient sqlMap = (SqlMapClient)ctx.getBean("sqlMapClient");
 
-		            HashMap param = new HashMap();
+		            HashMap<String, Object>param = new HashMap();
 		            param.put("user_dn", userDN);
 		            param.put("cert_sn", CCertificate.serial);
 
-		            HashMap certData = (HashMap)sqlMap.queryForObject("Main.getCertInfo", param);
+		            HashMap<String, Object>certData = (HashMap)sqlMap.queryForObject("Main.getCertInfo", param);
 
 		            if(certData == null || certData.isEmpty()) {
 	                    %>
@@ -266,9 +266,9 @@
 	        SqlMapClient sqlMap = (SqlMapClient)ctx.getBean("sqlMapClient");
 
 	        //조합원정보조회
-	        HashMap param = new HashMap();
+	        HashMap<String, Object>param = new HashMap();
 	        param.put("memb_no", membNo);
-	        HashMap membData = (HashMap)sqlMap.queryForObject("Main.getMemberData", param);
+	        HashMap<String, Object>membData = (HashMap)sqlMap.queryForObject("Main.getMemberData", param);
 
 	        SessionUtil.setSessionValue("s_memb_no", membData.get("MEMB_NO"), request);
 	        SessionUtil.setSessionValue("s_memb_nm", membData.get("MEMB_NM"), request);

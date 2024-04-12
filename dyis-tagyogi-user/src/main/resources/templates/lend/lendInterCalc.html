@@ -47,8 +47,8 @@
 					html += '	<td class="alignC">' + item.lendTypeNm + '</td>'; 		//대출종류
 					html += '	<td class="alignC">' + com.fnDateFormat(item.lendDt) + '</td>'; 	//대출일자
 					html += '	<td class="alignC">' + com.fnDateFormat(item.repayPreDt) + '</td>'; //상환기한
-					html += '	<td class="alignR">' + com.addComma(com.fnNvlChk(item.lendAmt, 0)) + '</td>'; 		//대출금액
-					html += '	<td class="alignR">' + com.addComma(com.fnNvlChk(item.totRepayAmt, 0)) + '</td>'; 	//상환금액
+					html += '	<td class="alignR">' + com.aprojomma(com.fnNvlChk(item.lendAmt, 0)) + '</td>'; 		//대출금액
+					html += '	<td class="alignR">' + com.aprojomma(com.fnNvlChk(item.totRepayAmt, 0)) + '</td>'; 	//상환금액
 					html += '</tr>';
 				$("#ele_lendList").append(html);
 			});

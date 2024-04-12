@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="proj.biz.sys.repository.GridMapper"> 
+
+	<sql id="cols"> 
+		GRID_NO 
+		, GRID_NM 
+		, GRID_TBL
+	</sql> 
+	
+	
+	<!-- 그리드 정보 조회 --> 
+	<select id="selectGridList" parameterType="Map" resultType="camelMap"> 
+		/* GridMapper.selectGridList */ 
+		SELECT 
+		  		<include refid="cols" /> 
+		  FROM CM_GRID 
+		<where> 
+		<if test="sGridNm != null and sGridNm != ''"> 
+		AND GRID_NM LIKE '%' || #{sGridNm} || '%' 
+		</if> 
+		</where> 
+		ORDER BY GRID_NO 
+	</select> 
+
+	
+
+	<!-- 그리드 등록 처리 --> 
+	<insert id="insertGrid" parameterType="Map"  > 
+		/* GridMapper.insertGrid */ 
+		INSERT INTO CM_GRID ( 
+			<include refid="cols" />
+		) VALUES ( 
+			#{gridNo} 
+			, #{gridNm} 
+			, #{gridTbl} 
+		) 
+	</insert> 
+
+	<!-- 그리드 수정 처리 --> 
+	<update id="updateGrid" parameterType="Map"  > 
+		/* GridMapper.updateGrid */ 
+		UPDATE CM_GRID 
+		SET 
+			GRID_NO 	= #{gridNo} 
+			, GRID_NM 	= #{gridNm} 
+			, GRID_TBL 	= #{gridTbl} 
+		WHERE GRID_NO 	= #{gridNo} 
+	</update> 
+
+	<!-- 그리드 삭제 처리 --> 
+	<delete id="deleteGrid" parameterType="Map"  > 
+		/* GridMapper.deleteGrid */ 
+		DELETE FROM CM_GRID 
+		WHERE GRID_NO = #{gridNo} 
+	</delete> 
+	
+	<sql id="dtlCols"> 
+		GRID_NO 
+		, SEQ
+		, COL_ORD 
+		, COL_NM
+		, COL_ID
+		, COL_TYPE
+		, COL_ALIGN
+		, COL_WIDTH
+		, COL_FORMT
+		, COL_COLOR
+		, COL_REQUR
+		, COL_VISIBLE
+		, COL_EDIT
+		, COL_ENUM
+		, COL_MERGE
+		, COL_EXCEL
+		, COL_CALC
+	</sql> 
+
+	<!-- 그리드 상세 조회 --> 
+	<select id="selectGridDtlList" parameterType="Map" resultType="camelMap"> 
+		/* GridMapper.selectGridDtlList*/ 
+		SELECT 
+		  		<include refid="dtlCols" /> 
+		  FROM CM_GRID_COLS 
+		<where> 
+		<if test="gridNo != null and gridNo != ''"> 
+		AND GRID_NO = #{gridNo} 
+		</if> 
+		</where> 
+		ORDER BY GRID_NO, COL_ORD
+	</select> 
+	
+	<!-- 그리드 열 등록 처리 --> 
+	<insert id="insertGridCols" parameterType="Map"  > 
+		/* GridMapper.insertGridCols */ 
+		<selectKey resultType="java.lang.String" keyProperty="seq" order="BEFORE">
+	          SELECT NVL(MAX(SEQ), 0) + 1 AS SEQ 
+	            FROM CM_GRID_COLS 
+	           WHERE GRID_NO = #{gridNo} 
+	    </selectKey> 
+	    INSERT INTO CM_GRID_COLS ( 
+			<include refid="dtlCols" />
+		) VALUES ( 
+			#{gridNo} 
+			, #{seq}
+			, #{colOrd}
+			, #{colNm}
+			, #{colId}
+			, #{colType}
+			, #{colAlign}
+			, #{colWidth}
+			, #{colFormt}
+			, #{colColor}
+			, DECODE(#{colRequr}, 'N', 0, 'Y', 1, #{colRequr})
+			, DECODE(#{colVisible}, 'N', 0, 'Y', 1, #{colVisible})
+			, DECODE(#{colEdit}, 'N', 0, 'Y', 1, #{colEdit})
+			, #{colEnum}
+			, #{colMerge}
+			, NVL(#{colExcel}, 1)
+			, #{colCalc}
+		) 
+	</insert> 
+
+	<!-- 그리드 열 수정 처리 --> 
+	<update id="updateGridCols" parameterType="Map"  > 
+		/* GridMapper.updateGridCols */ 
+		UPDATE CM_GRID_COLS 
+		SET 
+			COL_ORD			= #{colOrd}
+			, COL_NM		= #{colNm}
+			, COL_ID		= #{colId}
+			, COL_TYPE		= #{colType}
+			, COL_ALIGN		= #{colAlign}
+			, COL_WIDTH		= #{colWidth}
+			, COL_FORMT		= #{colFormt}
+			, COL_COLOR		= #{colColor}
+			, COL_REQUR		= DECODE(#{colRequr}, 'N', 0, 'Y', 1, #{colRequr})
+			, COL_VISIBLE	= DECODE(#{colVisible}, 'N', 0, 'Y', 1, #{colVisible})
+			, COL_EDIT		= DECODE(#{colEdit}, 'N', 0, 'Y', 1, #{colEdit})
+			, COL_ENUM		= #{colEnum}
+			, COL_MERGE		= #{colMerge}
+			, COL_EXCEL		= #{colExcel}
+			, COL_CALC		= #{colCalc}
+		WHERE GRID_NO 		= #{gridNo} 
+		  AND SEQ     		= #{seq}
+	</update> 
+
+	<!-- 그리드 열 삭제 처리 --> 
+	<delete id="deleteGridCols" parameterType="Map"  > 
+		/* GridMapper.deleteGridCols */ 
+		DELETE FROM CM_GRID_COLS 
+		WHERE GRID_NO 	= #{gridNo} 
+		  AND SEQ 		= #{seq}
+	</delete> 
+	
+	<!-- 그리드 열 초기 생성 -->
+	<insert id="createGridCols" parameterType="Map"  >
+		/* DevDbMapper.createGridCols */
+		INSERT INTO CM_GRID_COLS
+		( 
+			GRID_NO
+			, SEQ
+			, COL_ORD
+			, COL_NM
+			, COL_ID
+			, COL_TYPE
+			, COL_ALIGN
+			, COL_WIDTH
+			, COL_EDIT
+			, COL_REQUR
+			, COL_EXCEL
+		)
+		(
+		 SELECT #{gridNo}
+		       , B.COLUMN_ID
+		       , B.COLUMN_ID
+		       , C.COMMENTS
+		       , SUBSTR(REPLACE(INITCAP('z'||B.COLUMN_NAME), '_'), 2)
+		       , CASE WHEN B.DATA_TYPE = 'NUMBER' THEN 'Int'
+		              ELSE 'Text' END
+		       , CASE WHEN B.DATA_TYPE = 'NUMBER' THEN 'Right'
+		              WHEN B.DATA_LENGTH &gt; 10 THEN 'Left' 
+		              ELSE 'Center' END
+		       , CASE WHEN B.DATA_LENGTH &gt; 50 THEN '200' 
+		              ELSE '100' END
+		       , 0
+		       , 0
+		       , 1
+		    FROM COLS B
+		       , USER_COL_COMMENTS C
+		   WHERE B.TABLE_NAME = C.TABLE_NAME
+		     AND B.COLUMN_NAME = C.COLUMN_NAME
+		     AND B.TABLE_NAME = #{gridTbl}
+		)
+ 	</insert>
+ 	
+	
+
+</mapper>

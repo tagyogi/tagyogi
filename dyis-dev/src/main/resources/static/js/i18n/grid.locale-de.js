@@ -76,7 +76,7 @@ $.jgrid.regional["de"] = {
 		delrule : "Regel löschen"
 	},
 	edit : {
-		addCaption: "Datensatz hinzufügen",
+		aprojaption: "Datensatz hinzufügen",
 		editCaption: "Datensatz bearbeiten",
 		bSubmit: "Speichern",
 		bCancel: "Abbrechen",

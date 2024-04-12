@@ -32,7 +32,7 @@
 				com.fnCodeSelectBox("GR06", "guarIssueCd", 0, ""); //발급형태
 				com.fnCodeSelectBox("GR07", "orderCd", 1, ""); 		//피공제기관
 				com.fnCodeRadio("GR08", "ele_contrCdArea", "contrCd", false, "E"); //계약방식
-				//com.fnCodeRadio("GR09", "ele_guarAddCdArea", "guarAddCd", false, "0"); //보증기간가산
+				//com.fnCodeRadio("GR09", "ele_guarAprojdArea", "guarAprojd", false, "0"); //보증기간가산
 
 				com.fnCodeSelectBox("GR05", "procStat", 1, "22"); //처리상태
 				com.fnCodeSelectBox("GR02", "guarStat", 1, ""); //보증상태
@@ -43,15 +43,15 @@
 				com.fnCodeSelectBox("CM01", "payWay", 1, ""); 	//납부방법
 				com.fnSetBankAccList("selBank", 1);				//조합계좌설정
 				
-				$("input[name=guarAddCd]").on("click",function() {	//보증기간가산 클릭 이벤트
+				$("input[name=guarAprojd]").on("click",function() {	//보증기간가산 클릭 이벤트
 				    if($("#guarBegDt").val().length !== 10 || $("#guarExpDt").val().length !== 10) 	return;
 
-					var addCd = Number($(this).val());
-					$("#guarAddDays").val(addCd);
+					var aprojd = Number($(this).val());
+					$("#guarAddDays").val(aprojd);
 				    if(tmpGuarExpDt === undefined) 	tmpGuarExpDt = $("#guarExpDt").val();
 
 				    // 보증종료일계산
-				    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, addCd));
+				    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, aprojd));
 				});
 
 				com.fnCodeSelectBox("MB02", "genreCd", 1, ""); 	//장르
@@ -99,7 +99,7 @@
 				
 				//3. 체크박스, radio 체크 처리
 				com.checkBoxCheckValue(resData.guar.contrCd, "contrCd");	//계약방식
-				com.checkBoxCheckValue(resData.guar.guarAddCd, "guarAddCd");	//보증기간가산
+				com.checkBoxCheckValue(resData.guar.guarAprojd, "guarAprojd");	//보증기간가산
 				com.checkBoxCheckValue(resData.guar.specContrs, "specContrs");	//특약
 				com.checkBoxCheckValue(resData.guar.g2bContCheck, "g2bContCheck");	//실제이행기일
 				com.checkBoxCheckValue(resData.guar.koccaYn, "koccaYn");		//공공기관지원사업 여부
@@ -597,7 +597,7 @@
 										<span id = "ele_guarBegDt"></span>&nbsp;~&nbsp;<span id = "ele_guarExpDt"></span>&nbsp;(&nbsp;<span id = "ele_guarAddDays"></span>&nbsp;일)	
 									</td>
 									<th>보증기간가산</th>
-									<td ><span id="ele_guarAddCdNm"></span></td>
+									<td ><span id="ele_guarAprojdNm"></span></td>
 								</tr>
 
 								<th:block th:if="${#strings.equals(paramMap.guarReqCd, '2')}">	<!-- 보증변경등록 수정일때만 -->

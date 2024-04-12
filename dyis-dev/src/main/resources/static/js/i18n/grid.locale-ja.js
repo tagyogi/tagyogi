@@ -75,7 +75,7 @@ $.jgrid.regional["ja"] = {
 		delrule : "Delete rule"		
 	},
 	edit : {
-	    addCaption: "\u30ec\u30b3\u30fc\u30c9\u8ffd\u52a0",
+	    aprojaption: "\u30ec\u30b3\u30fc\u30c9\u8ffd\u52a0",
 	    editCaption: "\u30ec\u30b3\u30fc\u30c9\u7de8\u96c6",
 	    bSubmit: "\u9001\u4fe1",
 	    bCancel: "\u30ad\u30e3\u30f3\u30bb\u30eb",

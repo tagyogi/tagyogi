@@ -92,8 +92,8 @@
 
 			//콤마추가 클래스들 세팅
 			$.each($(".setCommaCls"), function(idx,item){
-				$(item).text($(item).text() === "" ? "0":com.addComma($(item).text()));
-				$(item).val($(item).val() === "" ? "0":com.addComma($(item).val()));
+				$(item).text($(item).text() === "" ? "0":com.aprojomma($(item).text()));
+				$(item).val($(item).val() === "" ? "0":com.aprojomma($(item).val()));
 			});
 
 			//대표자정보
@@ -432,7 +432,7 @@
 			//담당자리스트 클릭 이벤트
 			$("#ele_persList").find('tr > td').on("click", function(){
 				$("#ele_persList").find('tr').removeClass("active");	//전체 리스트 선택 취소
-				$(this).closest('tr').addClass("active");	//리스트 선택
+				$(this).closest('tr').aprojlass("active");	//리스트 선택
 			})
 		}
 

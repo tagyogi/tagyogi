@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="proj.service.repository.SampleMapper">
+	
+	<sql id="cols">
+		SQL_COLS
+	</sql>
+	
+	<!-- jobContent 정보 조회 -->
+	<select id="selectSampleList" parameterType="Map" resultType="camelMap">
+		/* SampleMapper.selectSampleList */
+		SELECT *
+		  FROM SAMPLE
+		 WHERE TABLE_NAME = #{sTblId}
+	</select>
+	
+	<!-- jobContent 상세 정보 조회 -->
+	<select id="selectSample" parameterType="Map" resultType="camelMap">
+		/* SampleMapper.selectSample */
+		SELECT *
+		  FROM SAMPLE
+		 WHERE TABLE_NAME = #{sTblId}
+	</select>
+	
+	<!-- jobContent 등록 처리-->
+	<insert id="insertSample" parameterType="Map"  >
+		/* SampleMapper.insertSample */
+		INSERT INTO SAMPLE
+		(
+			TBL_SN, TBL_NM, TBL_CMT, USE_AT
+		)
+		(
+		 SELECT ROWNUM, A.TABLE_NAME, B.COMMENTS, '1'
+		   FROM USER_TABLES A
+		      , USER_TAB_COMMENTS B
+		  WHERE A.TABLE_NAME = B.TABLE_NAME(+)
+		)
+ 	</insert>
+ 	
+ 	<!-- jobContent 수정 처리-->
+	<update id="updateSample" parameterType="Map"  >
+		/* SampleMapper.updateSample */
+		UPDATE SAMPLE
+		(
+			TBL_SN, TBL_NM, TBL_CMT, USE_AT
+		)
+		(
+		 SELECT ROWNUM, A.TABLE_NAME, B.COMMENTS, '1'
+		   FROM USER_TABLES A
+		      , USER_TAB_COMMENTS B
+		  WHERE A.TABLE_NAME = B.TABLE_NAME(+)
+		)
+ 	</update>
+ 	
+ 	<!-- jobContent 삭제 처리-->
+	<delete id="deleteSample" parameterType="Map"  >
+		/* SampleMapper.deleteSample */
+		DELETE FROM SAMPLE
+		WHERE 
+ 	</delete>
+    
+</mapper>

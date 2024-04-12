@@ -147,7 +147,7 @@
 					
 					var useAmt = resData.contr["useAmt" + item];
 					if(useAmt === null) useAmt = 0;
-					$("#lendUseAmt"+item).val(com.addComma(useAmt));
+					$("#lendUseAmt"+item).val(com.aprojomma(useAmt));
 			  	});
 			  	
 			  	fnSumLimit(); //합계계산
@@ -225,8 +225,8 @@
 				$("#doubleNum15").val(resData.confLend.claimRate);
 				
 				//지분액
-				$("#dealAmt").val(com.addComma(resData.confInvt.dealAmt));
-				$("#lendEachMul").val(com.addComma(resData.confRisk.lendEachMul)); //개별한도
+				$("#dealAmt").val(com.aprojomma(resData.confInvt.dealAmt));
+				$("#lendEachMul").val(com.aprojomma(resData.confRisk.lendEachMul)); //개별한도
                 $("#lendLimitMul").val(resData.confRisk.lendLimitMul); //융자한도배수
 			}
 			
@@ -238,10 +238,10 @@
 				$("input[name='lendTypes']").each(function(idx) {
 					var cd = $(this).attr("id").replace("lendTypes", ""); //상품id
 					if(overChk){
-						$("#limitAmt"+cd).addClass("readonly").attr("readonly", false);	
+						$("#limitAmt"+cd).aprojlass("readonly").attr("readonly", false);	
 						$("#limitOptYn").val("Y");
 					}else{
-						$("#limitAmt"+cd).addClass("readonly").attr("readonly", true);
+						$("#limitAmt"+cd).aprojlass("readonly").attr("readonly", true);
 						$("#limitOptYn").val("N");
 					}
 				});
@@ -316,7 +316,7 @@
 					}else if(chkYn && contrNum !== "" && doubleNum !== ""){
 						limitAmt = contrNum * dealAmt * doubleNum;
 						
-						$('input[name="limitAmt"]')[idx].value = com.addComma(limitAmt);
+						$('input[name="limitAmt"]')[idx].value = com.aprojomma(limitAmt);
 								
 					}else{
 						$('input[name="limitAmt"]')[idx].value = "";
@@ -329,7 +329,7 @@
 					
 				});
 				$("#sumDoubleNum").val(sumNum);
-    			$("#sumLimitAmt").val(com.addComma(sumAmt));
+    			$("#sumLimitAmt").val(com.aprojomma(sumAmt));
 				
 			}
 			
@@ -358,13 +358,13 @@
 			//보증인 추가 콜백
 			var fnSureCallBack = function(obj){
 				var param = {sheetId: sheetSure, mapRow: selSureRow, rnVal: obj, ifVal: "sureNm:sureSeq"}
-				com.fnIbsAddChgRow(param);
+				com.fnIbsAprojhgRow(param);
 			}
 			
 			//담보 추가 콜백
 			var fnMortCallBack = function(obj){
 				var param = {sheetId: sheetMort, mapRow: selMortRow, rnVal: obj, ifVal: "sureNm:mortSeq"}
-				com.fnIbsAddChgRow(param);
+				com.fnIbsAprojhgRow(param);
 			} 
 			
 			//행 추가

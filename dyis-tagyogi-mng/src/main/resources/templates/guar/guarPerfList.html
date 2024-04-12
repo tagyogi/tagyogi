@@ -79,10 +79,10 @@
 						guarCom.fnIbsStyleSet(sheet, row); //필드색상정의
 					}
 
-					$("#statTot").html(com.addComma(sheet.getTotalRowCount()) + " <em>건</em>");
-					$("#statMembTot").html(com.addComma(membs.length) + " <em>건</em>");
-					$("#statGuarAmt").html(com.addComma(prfAmt) + " <em>원</em>");
-					$("#statFeeAmt").html(com.addComma(feeAmt) + " <em>원</em>");
+					$("#statTot").html(com.aprojomma(sheet.getTotalRowCount()) + " <em>건</em>");
+					$("#statMembTot").html(com.aprojomma(membs.length) + " <em>건</em>");
+					$("#statGuarAmt").html(com.aprojomma(prfAmt) + " <em>원</em>");
+					$("#statFeeAmt").html(com.aprojomma(feeAmt) + " <em>원</em>");
 				});
 			});
 

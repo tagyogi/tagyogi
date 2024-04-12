@@ -92,7 +92,7 @@
 				
 				$("#befGuarNo").val(resData.guar.guarNo);
 				if(!com.fnIsEmpty(resData.guar.guarClassCont))	$("#ele_guarClassContArea").show();	//보증문구 보이기
-				if(com.fnIsEmpty(resData.guar.commAmt))			$("#commAmt").eq(0).val(com.addComma(guarCom.fnGetMinCommAmt("Y")));	//기재변경 보증료 7000원
+				if(com.fnIsEmpty(resData.guar.commAmt))			$("#commAmt").eq(0).val(com.aprojomma(guarCom.fnGetMinCommAmt("Y")));	//기재변경 보증료 7000원
 
 				//3-2. (보증신청정보) 전자공고 영역 변경
 				guarCom.fnGuarIssueChg(resData.guar.guarIssueCd);	//해당사항없음 or text + 검색 조회 버튼
@@ -351,7 +351,7 @@
 									<td colspan="3"><span id="ele_guarBegDt"></span><span>&nbsp;~&nbsp;</span><span id="ele_guarExpDt"></span>&nbsp;(<span id="ele_guarDays"></span>일)</td>
 									<th>보증기간가산</th>
 									<td>
-										<span id="ele_guarAddCdNm"></span>
+										<span id="ele_guarAprojdNm"></span>
 										<span id="ele_realImpChk" style="display:none">&nbsp;&nbsp;<input type="checkbox" name="realImpChk" value="Y" disabled="disabled" />&nbsp;실제이행기일</span>
 									</td>
 								</tr>

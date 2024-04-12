@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="proj.biz.sys.repository.UnitTestCaseMapper"> 
+
+	<!-- 단위테스트현황 정보 조회 --> 
+	<select id="selectUnitTestCaseList" parameterType="Map" resultType="camelMap"> 
+		/* UnitTestCaseMapper.selectUnitTestCaseList */ 
+		SELECT 
+			MENU_CD 
+			, CASE_SEQ 
+			, CASE_TYPE 
+			, CASE_CONT 
+			, DEV_YN 
+			, DEV_NM 
+			, DEV_DT 
+			, TEST_YN 
+			, TEST_NM 
+			, TEST_DT 
+			, CHK_YN 
+			, CHK_NM 
+			, CHK_DT 
+		  FROM CM_UNIT_CASE 
+		<where> 
+		<if test="sMenuCd != null and sMenuCd  != ''"> 
+		AND MENU_CD = #{sMenuCd} 
+		</if> 
+		<if test="sCaseSeq != null and sCaseSeq  != ''"> 
+		AND CASE_SEQ = #{sCaseSeq} 
+		</if> 
+		</where> 
+		ORDER BY MENU_CD DESC, CASE_SEQ DESC
+	</select> 
+
+	<!-- 단위테스트현황 등록 처리 --> 
+	<insert id="insertUnitTestCase" parameterType="Map"  > 
+		/* UnitTestCaseMapper.insertUnitTestCase */ 
+		INSERT INTO CM_UNIT_CASE ( 
+			MENU_CD 
+			, CASE_SEQ 
+			, CASE_TYPE 
+			, CASE_CONT 
+			, DEV_YN 
+			, DEV_NM 
+			, DEV_DT 
+			, TEST_YN 
+			, TEST_NM 
+			, TEST_DT 
+			, CHK_YN 
+			, CHK_NM 
+			, CHK_DT 
+		) VALUES ( 
+			#{menuCd} 
+			, (SELECT NVL(MAX(CASE_SEQ), 0) + 1 FROM CM_UNIT_CASE WHERE MENU_CD = #{menuCd})
+			, #{caseType} 
+			, #{caseCont} 
+			, #{devYn} 
+			, #{devNm} 
+			, REPLACE(#{devDt}, '-', '') 
+			, #{testYn} 
+			, #{testNm} 
+			, REPLACE(#{testDt}, '-', '') 
+			, #{chkYn} 
+			, #{chkNm} 
+			, REPLACE(#{chkDt}, '-', '') 
+		) 
+	</insert> 
+
+	<!-- 단위테스트현황 수정 처리 --> 
+	<update id="updateUnitTestCase" parameterType="Map"  > 
+		/* UnitTestCaseMapper.updateUnitTestCase */ 
+		UPDATE CM_UNIT_CASE 
+		SET 
+			MENU_CD = #{menuCd} 
+			, CASE_SEQ = #{caseSeq} 
+			, CASE_TYPE = #{caseType} 
+			, CASE_CONT = #{caseCont} 
+			, DEV_YN = #{devYn} 
+			, DEV_NM = #{devNm} 
+			, DEV_DT = REPLACE(#{devDt}, '-', '') 
+			, TEST_YN = #{testYn} 
+			, TEST_NM = #{testNm} 
+			, TEST_DT = REPLACE(#{testDt}, '-', '') 
+			, CHK_YN = #{chkYn} 
+			, CHK_NM = #{chkNm} 
+			, CHK_DT = REPLACE(#{chkDt}, '-', '') 
+		WHERE MENU_CD = #{menuCd} 
+		  AND CASE_SEQ = #{caseSeq} 
+	</update> 
+
+	<!-- 단위테스트현황 삭제 처리 --> 
+	<delete id="deleteUnitTestCase" parameterType="Map"  > 
+		/* UnitTestCaseMapper.deleteUnitTestCase */ 
+		DELETE FROM CM_UNIT_CASE 
+		WHERE MENU_CD = #{menuCd} 
+		  AND CASE_SEQ = #{caseSeq} 
+	</delete> 
+
+</mapper>

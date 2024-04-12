@@ -62,7 +62,7 @@
 				var html  = '<tr>';
 					html += '<td class="alignC">'+ Number(index + 1)  + '</td>'; //순번
 					html += '<td class="alignC">'+ item.guarTypeNm + '</td>'; //민원발급명
-					html += '<td class="alignR">'+ com.addComma(item.commAmt) + '</td>'; //결제금액
+					html += '<td class="alignR">'+ com.aprojomma(item.commAmt) + '</td>'; //결제금액
 					html += '<td class="alignC">'+ item.payWayNm +'</td>'; //약정좌수
 					html += '<td class="alignC">'+ com.fnDateFormat(item.payDt) +'</td>'; //약정상태
 					html += '<td class="alignL">'+ com.fnNvlChk(item.payNm) +'</td>'; //결제자

@@ -62,7 +62,7 @@ $.jgrid.regional["tw"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "新增記錄",
+		aprojaption: "新增記錄",
 		editCaption: "編輯記錄",
 		bSubmit: "提交",
 		bCancel: "取消",

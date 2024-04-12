@@ -59,7 +59,7 @@ subprojects {
 	    implementation 'org.springframework.boot:spring-boot-configuration-processor'
 	    implementation 'org.springframework:spring-context-support'
 		implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.2'
-		//implementation group: 'com.oracle.database.jdbc', name: 'ojdbc6', version: '11.2.0.4'
+		implementation group: 'com.oracle.database.jdbc', name: 'ojdbc6', version: '11.2.0.4'
 	    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 		developmentOnly 'org.springframework.boot:spring-boot-devtools'
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -61,7 +61,7 @@ $.jgrid.regional["el"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-	    addCaption: "Εισαγωγή Εγγραφής",
+	    aprojaption: "Εισαγωγή Εγγραφής",
 	    editCaption: "Επεξεργασία Εγγραφής",
 	    bSubmit: "Καταχώρηση",
 	    bCancel: "Άκυρο",

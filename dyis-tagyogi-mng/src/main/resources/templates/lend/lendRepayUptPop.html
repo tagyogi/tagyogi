@@ -79,11 +79,11 @@
 				var totDelayInterAmt = Number(com.rmComma(com.fnNvlChk(resData.lend.totDelayInterAmt,0)));	//총 연체납입액
 				var delayInterAmt 	= Number(com.rmComma(com.fnNvlChk(resData.lendRepay.delayInterAmt,0)));	//연체납입액
 
-				$("#totDelayInterAmt").val(com.addComma(totDelayInterAmt - delayInterAmt));	//기연체금액 = 대출 연체납입액 총액 - 현재 연체납입액
-				$("#ele_befRemainLendAmt").text(com.addComma(remainLendAmt + repayAmt + repRepayAmt));	//처리전 대출잔액 = 대출잔액 + 실상황금 + 대체상환금
-				$("#totRepayAmt").val(com.addComma(repayAmt + repRepayAmt));	//상환금액(A+B) = 대출잔액 + 실상황금 + 대체상환금
-				$("#remainAmt").val(com.addComma(remainLendAmt));	//상환후잔액 = 대출잔액
-				$("#repayDelayAmt").val(com.addComma(delayInterAmt));	//연체금액 = 연체납입액
+				$("#totDelayInterAmt").val(com.aprojomma(totDelayInterAmt - delayInterAmt));	//기연체금액 = 대출 연체납입액 총액 - 현재 연체납입액
+				$("#ele_befRemainLendAmt").text(com.aprojomma(remainLendAmt + repayAmt + repRepayAmt));	//처리전 대출잔액 = 대출잔액 + 실상황금 + 대체상환금
+				$("#totRepayAmt").val(com.aprojomma(repayAmt + repRepayAmt));	//상환금액(A+B) = 대출잔액 + 실상황금 + 대체상환금
+				$("#remainAmt").val(com.aprojomma(remainLendAmt));	//상환후잔액 = 대출잔액
+				$("#repayDelayAmt").val(com.aprojomma(delayInterAmt));	//연체금액 = 연체납입액
 
 				//fnTotPayCalc();	//총납입금액 계산
 
@@ -141,8 +141,8 @@
 					$("#delayDays").val(delayDays);	//연체기간 차수
 
 					let repayDelayAmt = Math.floor((remainLendAmt * delayRate / 100 / 365 * delayDays/10))*10;
-					$("#repayDelayAmt").val(com.addComma(repayDelayAmt));	//연체금액
-					$("#delayInterAmt").val(com.addComma(repayDelayAmt - totDelayInterAmt));	//연체납입액
+					$("#repayDelayAmt").val(com.aprojomma(repayDelayAmt));	//연체금액
+					$("#delayInterAmt").val(com.aprojomma(repayDelayAmt - totDelayInterAmt));	//연체납입액
 				}
 			}
 
@@ -190,10 +190,10 @@
 					return;
 				}
 
-				$("#totRepayAmt").val(com.addComma(totRepayAmt)); //상환금액(a+b)
+				$("#totRepayAmt").val(com.aprojomma(totRepayAmt)); //상환금액(a+b)
 
 				reRemainLendAmt = remainLendAmt - totRepayAmt; //최종 잔여대출금
-				$("#remainAmt").val(com.addComma(reRemainLendAmt)); //상환후잔액
+				$("#remainAmt").val(com.aprojomma(reRemainLendAmt)); //상환후잔액
 
 				//fnTotPayCalc();
 			}
@@ -203,7 +203,7 @@
 			//	let delayInterAmt = com.rmComma($("#delayInterAmt").val());	//연체납입액(E)
 			//	let totRepayAmt   = com.rmComma($("#totRepayAmt").val());	//상환금액(A+B)
 
-			//	$("#totPayAmt").val( com.addComma( Number(delayInterAmt) + Number(totRepayAmt) ) );
+			//	$("#totPayAmt").val( com.aprojomma( Number(delayInterAmt) + Number(totRepayAmt) ) );
 			//}
 
 			//저장

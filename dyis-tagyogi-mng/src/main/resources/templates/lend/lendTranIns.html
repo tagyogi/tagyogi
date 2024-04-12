@@ -140,7 +140,7 @@
 				
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).text(com.addComma($(item).text()));
+					$(item).text(com.aprojomma($(item).text()));
 				});
 				
 				//양도 양수 조합검색
@@ -254,14 +254,14 @@
 					var tranAmt = lendTranSet["lendAmt" + item]; //양도금액
 					if(tranAmt !== undefined){
 						if(limitAmt < Number(useAmt) + Number(tranAmt) ){
-							$("#ele_lendAmt" + item).html("<font color='red'>" + com.addComma(tranAmt) + "</font>" +  " ( " + lendTranSet["lendCnt" + item] + "건" +  " ) " );
+							$("#ele_lendAmt" + item).html("<font color='red'>" + com.aprojomma(tranAmt) + "</font>" +  " ( " + lendTranSet["lendCnt" + item] + "건" +  " ) " );
 							
 							limitOverYn++;	
 							
 							//if(limitOverMsg === "") limitOverMsg =  lendTypeNm[idx] + "상품 한도초과 ( 한도 : " + limitAmt + " / 양도 합 : " + Number(useAmt) + Number(tranAmt) + ")";
 							//else limitOverMsg += "\n" + lendTypeNm[idx] + "상품 한도초과 ( 한도 : " + limitAmt + " / 양도 합 : " + Number(useAmt) + Number(tranAmt) + ")";
 						}else{
-							$("#ele_lendAmt" + item).html(com.addComma(tranAmt) + " ( " + lendTranSet["lendCnt" + item]+"건)");
+							$("#ele_lendAmt" + item).html(com.aprojomma(tranAmt) + " ( " + lendTranSet["lendCnt" + item]+"건)");
 						}
 							
 					}
@@ -270,7 +270,7 @@
 				});
 				
 				$("#ele_lendCntTot").html(lendTranSetTot["lendCnt"]);				
-				$("#ele_lendAmtTot").html(com.addComma(lendTranSetTot["lendAmt"]));				
+				$("#ele_lendAmtTot").html(com.aprojomma(lendTranSetTot["lendAmt"]));				
 			};
 			
 			

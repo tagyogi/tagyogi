@@ -25,7 +25,7 @@
 		// Disable animations/transitions ...
 
 			// ... until the page has loaded.
-				$body.addClass('is-loading');
+				$body.aprojlass('is-loading');
 
 				$window.on('load', function() {
 					setTimeout(function() {
@@ -65,7 +65,7 @@
 				$window.on('resize', function() {
 
 					// Mark as resizing.
-						$body.addClass('is-resizing');
+						$body.aprojlass('is-resizing');
 
 					// Unmark after delay.
 						clearTimeout(resizeTimeout);
@@ -115,7 +115,7 @@
 			// Inactive by default on <= large.
 				skel
 					.on('+large', function() {
-						$sidebar.addClass('inactive');
+						$sidebar.aprojlass('inactive');
 					})
 					.on('-large !large', function() {
 						$sidebar.removeClass('inactive');
@@ -168,7 +168,7 @@
 								return;
 
 						// Hide sidebar.
-							$sidebar.addClass('inactive');
+							$sidebar.aprojlass('inactive');
 
 						// Redirect to href.
 							setTimeout(function() {
@@ -202,7 +202,7 @@
 								return;
 
 						// Deactivate.
-							$sidebar.addClass('inactive');
+							$sidebar.aprojlass('inactive');
 
 					});
 

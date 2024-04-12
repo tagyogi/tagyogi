@@ -61,7 +61,7 @@ $.jgrid.regional["ro"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "Adăugare înregistrare",
+		aprojaption: "Adăugare înregistrare",
 		editCaption: "Modificare înregistrare",
 		bSubmit: "Salvează",
 		bCancel: "Anulare",

@@ -57,7 +57,7 @@ $.jgrid.regional["nl"] = {
         },
         edit:
         {
-            addCaption: "Nieuw",
+            aprojaption: "Nieuw",
             editCaption: "Bewerken",
             bSubmit: "Opslaan",
             bCancel: "Annuleren",

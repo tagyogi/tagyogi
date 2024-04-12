@@ -145,7 +145,7 @@
 			    $("#orderNm").val(resData.orderNm);			//입찰건명
 			    $("#orderBizNo").val(resData.orderBizNo);	//사업자번호
 				$("#servNm").val(resData.servNm);			//입찰건명
-			    $("#contrAmt").val(com.addComma(resData.contrAmt));		//입찰금액
+			    $("#contrAmt").val(com.aprojomma(resData.contrAmt));		//입찰금액
 
 		     	//계약,하자,선급금, 이행지급, 채무, 성능이행, 인허가, 상품판매, 지급보증기간 계약기간
 				if(guarType === "12" || guarType === "13" || guarType === "14" || guarType === "15" || guarType === "31" || guarType === "32" || guarType === "33" || guarType === "34"){
@@ -181,7 +181,7 @@
 			}
 
 			//계약일수,약정일수 입력 이벤트
-			var fnAddContrDay = function(){
+			var fnAprojontrDay = function(){
 				if($("#contrBegDt").val() === "") {
 		            alert("시작일자를 입력해 주십시오.");
 		            $("#contrDays").val("");
@@ -294,7 +294,7 @@
                     	&nbsp;~
                     	<input type="text" name="contrExpDt" id="contrExpDt" title="계약종료일" maxlength="10" style="width:100px" value=""onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetContrDays();" onblur="com.fnDateValiChk(this);com.fnDateFromToChk('contrBegDt','contrExpDt','T');guarCom.fnSetContrDays();" autocomplete="off"/>
                     	<img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'contrExpDt', 'yyyy-mm-dd', 'contrBegDt', 2, guarCom.fnSetContrDays)" />
-						(<input type="search" name="contrDays" id="contrDays" title="계약일수" maxlength="4" style="width:60px" onkeyup="com.fnOnlyNum(this);fnAddContrDay();"/>&nbsp;일)
+						(<input type="search" name="contrDays" id="contrDays" title="계약일수" maxlength="4" style="width:60px" onkeyup="com.fnOnlyNum(this);fnAprojontrDay();"/>&nbsp;일)
 					</td>
 				</tr>
 				</th:block>

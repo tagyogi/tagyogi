@@ -114,12 +114,12 @@
 			let remainAmtTot = 0;
 			
 			for(i = 11; i <= 15; i ++){
-				$("#ele_doubleNum"+ i).text(com.addComma(contrLimit["doubleNum"+i]));	
-				$("#ele_limitAmt"+ i).text(com.addComma(contrLimit["limitAmt"+i]));
-				$("#ele_useAmt"+ i).text(com.addComma(contrLimit["useAmt"+i]));
+				$("#ele_doubleNum"+ i).text(com.aprojomma(contrLimit["doubleNum"+i]));	
+				$("#ele_limitAmt"+ i).text(com.aprojomma(contrLimit["limitAmt"+i]));
+				$("#ele_useAmt"+ i).text(com.aprojomma(contrLimit["useAmt"+i]));
 				
 				remainAmt =  Number(contrLimit["limitAmt"+i]) - Number(contrLimit["useAmt"+i]);
-				$("#ele_remainAmt"+ i).text(com.addComma(remainAmt));
+				$("#ele_remainAmt"+ i).text(com.aprojomma(remainAmt));
 				
 				if(i < 14){ //이행
 					doubleNumTot += contrLimit["doubleNum"+i];
@@ -128,10 +128,10 @@
 					remainAmtTot += Number(contrLimit["limitAmt"+i]) - Number(contrLimit["useAmt"+i]);
 				}else{ //지급
 					if( i == 14 ){ //선급시작
-						$("#ele_doubleNumTot1").text(com.addComma(doubleNumTot));	
-						$("#ele_limitAmtTot1").text(com.addComma(limitAmtTot));
-						$("#ele_useAmtTot1").text(com.addComma(useAmtTot));
-						$("#ele_remainAmtTot1").text(com.addComma(remainAmtTot));
+						$("#ele_doubleNumTot1").text(com.aprojomma(doubleNumTot));	
+						$("#ele_limitAmtTot1").text(com.aprojomma(limitAmtTot));
+						$("#ele_useAmtTot1").text(com.aprojomma(useAmtTot));
+						$("#ele_remainAmtTot1").text(com.aprojomma(remainAmtTot));
 						
 						doubleNumTot = 0;
 						limitAmtTot = 0;
@@ -146,10 +146,10 @@
 				}
 			}
 			
-			$("#ele_doubleNumTot2").text(com.addComma(doubleNumTot));	
-			$("#ele_limitAmtTot2").text(com.addComma(limitAmtTot));
-			$("#ele_useAmtTot2").text(com.addComma(useAmtTot));
-			$("#ele_remainAmtTot2").text(com.addComma(remainAmtTot));
+			$("#ele_doubleNumTot2").text(com.aprojomma(doubleNumTot));	
+			$("#ele_limitAmtTot2").text(com.aprojomma(limitAmtTot));
+			$("#ele_useAmtTot2").text(com.aprojomma(useAmtTot));
+			$("#ele_remainAmtTot2").text(com.aprojomma(remainAmtTot));
 			
 		}
 		

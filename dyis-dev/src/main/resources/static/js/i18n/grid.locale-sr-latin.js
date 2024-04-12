@@ -61,7 +61,7 @@ $.jgrid.regional["sr-latin"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "Dodaj zapis",
+		aprojaption: "Dodaj zapis",
 		editCaption: "Izmeni zapis",
 		bSubmit: "Pošalji",
 		bCancel: "Odustani",

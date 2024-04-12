@@ -113,7 +113,7 @@
 				if(resData.guar.payYn === "Y" && resData.guar.afterPayYn === "N"){
 					resData.guar.payAmtSum = resData.guar.commAmt //미수건이아니고 완납이 된경우 납입금액은 보증료금액과 같음
 				}
-				resData.guar.remainCommAmt = com.addComma(resData.guar.remainCommAmt);
+				resData.guar.remainCommAmt = com.aprojomma(resData.guar.remainCommAmt);
 				com.fnSetKeyVal(resData.guar);
 
 				//조합원정보
@@ -151,9 +151,9 @@
 				if(guarType === "31")	typeValue = "13";
 				if(guarType === "32")	typeValue = "12";
 				if(guarType === "33" || guarType === "34")	typeValue = "15";
-				$("#ele_limitAmt").text(com.addComma(resData.contr["limitAmt"+typeValue]));	//한도금액
-				$("#ele_useAmt").text(com.addComma(resData.contr["useAmt"+typeValue]));		//사용액
-				$("#ele_remainAmt").text(com.addComma(resData.contr["remainAmt"+typeValue]));	//가능액
+				$("#ele_limitAmt").text(com.aprojomma(resData.contr["limitAmt"+typeValue]));	//한도금액
+				$("#ele_useAmt").text(com.aprojomma(resData.contr["useAmt"+typeValue]));		//사용액
+				$("#ele_remainAmt").text(com.aprojomma(resData.contr["remainAmt"+typeValue]));	//가능액
 
 				//4. 보증상품정보 목록(한도금액)
 				guarCom.fnSetGuarLimitView("GR22", "tbl_guarLimit", resData.contr);

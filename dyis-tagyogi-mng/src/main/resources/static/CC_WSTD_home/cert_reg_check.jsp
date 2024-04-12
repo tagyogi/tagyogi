@@ -237,9 +237,9 @@
             try {
             	sqlMap.startTransaction();
             	
-                HashMap param = new HashMap();
+                HashMap<String, Object>param = new HashMap();
 
-                HashMap membData = new HashMap();
+                HashMap<String, Object>membData = new HashMap();
 
                 //out.println("idn >> "+idn);
 
@@ -271,7 +271,7 @@
                 param.put("user_dn", userDN);
                 param.put("cert_sn", certSerial);
 
-                HashMap certData = (HashMap)sqlMap.queryForObject("Main.getCertInfo", param);
+                HashMap<String, Object>certData = (HashMap)sqlMap.queryForObject("Main.getCertInfo", param);
 
                 if(certData != null && !certData.isEmpty() && !"".equals(certData.get("MEMB_NO"))) {
                 	%>

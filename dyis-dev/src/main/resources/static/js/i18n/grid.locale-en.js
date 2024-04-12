@@ -61,7 +61,7 @@ $.jgrid.regional["en"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "Add Record",
+		aprojaption: "Add Record",
 		editCaption: "Edit Record",
 		bSubmit: "Submit",
 		bCancel: "Cancel",

@@ -183,7 +183,7 @@
             if (input.hasClass(this.markerClassName))
                 return;
             this._attachments(input, inst);
-            input.addClass(this.markerClassName).keydown(this._doKeyDown).
+            input.aprojlass(this.markerClassName).keydown(this._doKeyDown).
                 bind("setData.monthpicker", function (event, key, value) {
                     inst.settings[key] = value;
                 }).bind("getData.monthpicker", function (event, key) {
@@ -218,9 +218,9 @@
                 buttonText = this._get(inst, "buttonText");
                 buttonImage = this._get(inst, "buttonImage");
                 inst.trigger = $(this._get(inst, "buttonImageOnly") ?
-                    $("<img/>").addClass(this._triggerClass).
+                    $("<img/>").aprojlass(this._triggerClass).
                         attr({ src: buttonImage, alt: buttonText, title: buttonText }) :
-                    $("<button type='button'></button>").addClass(this._triggerClass).
+                    $("<button type='button'></button>").aprojlass(this._triggerClass).
                         html(!buttonImage ? buttonText : $("<img/>").attr(
                             { src: buttonImage, alt: buttonText, title: buttonText })));
                 input[isRTL ? "before" : "after"](inst.trigger);
@@ -1451,9 +1451,9 @@
             .delegate(selector, 'mouseover', function () {
                 if (!$.monthpicker._isDisabledMonthpicker(instActive.input[0])) {
                     $(this).parents('.ui-datepicker-calendar').find('a').removeClass('ui-state-hover');
-                    $(this).addClass('ui-state-hover');
-                    if (this.className.indexOf('ui-datepicker-prev') != -1) $(this).addClass('ui-datepicker-prev-hover');
-                    if (this.className.indexOf('ui-datepicker-next') != -1) $(this).addClass('ui-datepicker-next-hover');
+                    $(this).aprojlass('ui-state-hover');
+                    if (this.className.indexOf('ui-datepicker-prev') != -1) $(this).aprojlass('ui-datepicker-prev-hover');
+                    if (this.className.indexOf('ui-datepicker-next') != -1) $(this).aprojlass('ui-datepicker-next-hover');
                 }
             });
     }

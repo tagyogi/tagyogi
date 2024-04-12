@@ -48,7 +48,7 @@
 
 					$("#sureDt").val(sureDt);//설정일자
 					$("#sureCanDt").val(sureCanDt);//해제일자
-					$("#sureAmt").val(com.addComma($("#sureAmt").val()));
+					$("#sureAmt").val(com.aprojomma($("#sureAmt").val()));
 					
 					$("#sureCd > option").attr("disabled", true);
 					$("#juminNo").attr("readonly", true);
@@ -131,7 +131,7 @@
 				if(mortCd === "20"){
 					$("#objAmt").removeClass("readonly").attr("readonly", false);
 				}else{
-					$("#objAmt").addClass("readonly").attr("readonly", true);
+					$("#objAmt").aprojlass("readonly").attr("readonly", true);
 				}
 
 				//내용 초기화
@@ -150,9 +150,9 @@
 
 				//담보기보증액
 				if(mortCd === "10"){
-					$("#preAmt").val(com.addComma($("#restPreAmt").val()));
+					$("#preAmt").val(com.aprojomma($("#restPreAmt").val()));
 				}else{
-					$("#preAmt").val(com.addComma($("#compPreAmt").val()));
+					$("#preAmt").val(com.aprojomma($("#compPreAmt").val()));
 				}
 			}
 
@@ -210,8 +210,8 @@
 				var preAmt = Number(com.rmComma($("#preAmt").val()));
 
 			    if($("#restPriceAmt").val() !== "") {
-			        $("#objAmt").val(com.addComma(objAmt));
-			        $("#sureAmt").val(com.addComma(objAmt * suretyMul - preAmt));
+			        $("#objAmt").val(com.aprojomma(objAmt));
+			        $("#sureAmt").val(com.aprojomma(objAmt * suretyMul - preAmt));
 			    } else {
 			        $("#obj_amt").val("");
 			        $("#sure_amt").val("");
@@ -227,7 +227,7 @@
 				var preAmt = Number(com.rmComma($("#preAmt").val()));
 
 			    if($("#objAmt").val() !== "") {
-			        $("#sureAmt").val(com.addComma(objAmt * suretyMul - preAmt));
+			        $("#sureAmt").val(com.aprojomma(objAmt * suretyMul - preAmt));
 			    } else {
 			        $("#sureAmt").val("");
 			    }
@@ -255,8 +255,8 @@
 			            objAmt = 10000000;
 			        }
 
-			        $("#objAmt").val(com.addComma(objAmt));
-			        $("#sureAmt").val(com.addComma(objAmt * suretyMul - preAmt));
+			        $("#objAmt").val(com.aprojomma(objAmt));
+			        $("#sureAmt").val(com.aprojomma(objAmt * suretyMul - preAmt));
 			    } else {
 			        $("#obj_amt").val("");
 			        $("#sure_amt").val("");

@@ -61,7 +61,7 @@ $.jgrid.regional["th"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "เพิ่มข้อมูล",
+		aprojaption: "เพิ่มข้อมูล",
 		editCaption: "แก้ไขข้อมูล",
 		bSubmit: "บันทึก",
 		bCancel: "ยกเลิก",

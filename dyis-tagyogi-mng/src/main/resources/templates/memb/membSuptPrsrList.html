@@ -72,7 +72,7 @@
 				var setObj = Object.keys(obj);
 				var spliceObj = setObj.splice(10,2);
 
-				fnAddCols(setObj);
+				fnAprojols(setObj);
 
 				sheet.rerender();
 				
@@ -80,12 +80,12 @@
 			};
 			
 			// 그리드 동적 생성
-			var fnAddCols = function(result) {
+			var fnAprojols = function(result) {
 
 				var obj = result;
 					
 				for(var j=0; j < obj.length; j++) {
-					sheet.addCol(obj[j], 1, -1, {Type:"Int",Header:obj[j],Width:130, MinWidth:130, FormulaRow:"Sum", Align: "Right", excelYn:"1"}, true, false );  
+					sheet.aprojol(obj[j], 1, -1, {Type:"Int",Header:obj[j],Width:130, MinWidth:130, FormulaRow:"Sum", Align: "Right", excelYn:"1"}, true, false );  
 					excelCols.push(obj[j]);
 				}
 			};

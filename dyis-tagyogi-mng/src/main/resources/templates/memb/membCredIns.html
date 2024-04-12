@@ -47,7 +47,7 @@
 		                target = $this.attr('href');
 
 		            others.removeClass('active');
-		            $this.addClass('active');
+		            $this.aprojlass('active');
 		            $(tabgroup).children('div').hide();
 		            $(target).show();
 
@@ -273,7 +273,7 @@
 				$("[id^=finVal]").each(function(idx, item){
 					var obj = $(item).val();
 					//$(item).attr("readonly", true);
-					$(item).val(com.addComma(obj));
+					$(item).val(com.aprojomma(obj));
 				});
 
 				$("#ele_inGrade").text(fncInfo.inGrade);
@@ -413,7 +413,7 @@
 
 					if($("#finVal10").val() !== "" && $("#finVal18").val() !== "" && $("#finVal19").val() !== "") {
 						var tmpVal03 = Number($("#finVal10").val().replace(/,/g,"")) + Number($("#finVal18").val().replace(/,/g,"")) - Number($("#finVal19").val().replace(/,/g,""));
-						$("#finVal03").val(com.addComma(tmpVal03));
+						$("#finVal03").val(com.aprojomma(tmpVal03));
 					}
 
 					var smallScore = sheetFnc.getValue(rowId, "idxVal1");

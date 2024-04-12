@@ -73,7 +73,7 @@
 				//좌당지분액 정보
 				$("#faceAmt").val(data.faceAmt);	//액면가
 
-				var faceAmt = com.addComma(data.faceAmt);
+				var faceAmt = com.aprojomma(data.faceAmt);
 				$("#ele_faceAmt").text('(1좌당 '+faceAmt+'만원)');	//최초출자좌수
 			}
 
@@ -82,7 +82,7 @@
 			    var investCnt = Number(com.rmComma(val));
 			    var faceAmt = Number($("#faceAmt").val());
 			    var investAmt = investCnt * faceAmt;
-			    $("#investAmt").val(com.addComma(investAmt));
+			    $("#investAmt").val(com.aprojomma(investAmt));
 			}
 			
 			//가입완료일때만 알림톡정보 UI표출
@@ -151,7 +151,7 @@
 					if($("#procStat").val() === "90"){
 						//저장성공시 알림톡발송
 						/*
-						param1 조합원의 한국콘텐츠공제조합 가입이 완료되었습니다.
+						param1 조합원의 동양정보서비스 가입이 완료되었습니다.
 						*/
 						var paramsArray = [
 						  $("#membNm").val(), //조합원명

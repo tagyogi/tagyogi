@@ -95,7 +95,7 @@
 			}
 
 			//계약일수,약정일수 입력 이벤트
-			var fnAddContrDay = function(){
+			var fnAprojontrDay = function(){
 				if($("#contrBegDt").val() === "") {
 		            alert("시작일자를 입력해 주십시오.");
 		            $("#contrDays").val("");
@@ -207,7 +207,7 @@
 		                                <input type="text" name="contrExpDt" id="contrExpDt" value="" class="w-100" title="계약기간 종료일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetContrDays();" onblur="com.fnDateValiChk(this);" autocomplete="off" />
                                         <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'contrExpDt', 'yyyy-mm-dd','contrBegDt', 2, guarCom.fnSetContrDays)" />
 		                            </div>
-		                            (<input type="text" name="contrDays" id="contrDays" title="계약일수" maxlength="4" style="width:60px" onkeyup="com.fnOnlyNum(this);fnAddContrDay()"/>일)
+		                            (<input type="text" name="contrDays" id="contrDays" title="계약일수" maxlength="4" style="width:60px" onkeyup="com.fnOnlyNum(this);fnAprojontrDay()"/>일)
 		                        </div>
 							</td>
 						</tr>
@@ -316,7 +316,7 @@
 							<td><span id="ele_guarBegDt"></span><span>&nbsp;~&nbsp;</span><span id="ele_guarExpDt"></span>&nbsp;(<span id="ele_guarDays"></span>일)</td>
 							<th>보증기간가산</th>
 							<td>
-								<span id="ele_guarAddCdNm"></span>
+								<span id="ele_guarAprojdNm"></span>
 								<span id="ele_realImpChk" style="display:none">&nbsp;&nbsp;<input type="checkbox" name="realImpChk" value="Y" disabled="disabled" />&nbsp;실제이행기일</span>
 							</td>
 						</tr>

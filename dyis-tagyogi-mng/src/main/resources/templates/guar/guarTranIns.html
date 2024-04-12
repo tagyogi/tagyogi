@@ -134,7 +134,7 @@
 
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).text(com.addComma($(item).text()));
+					$(item).text(com.aprojomma($(item).text()));
 				});
 
 				//양도 양수 조합검색
@@ -248,7 +248,7 @@
 
 					if(limitAmt < Number(useAmt) + Number(tranAmt) ){
 						$("#ele_guarCnt" + item).html(guarTranSet["guarCnt" + item]);
-						$("#ele_guarAmt" + item).html("<font color='red'>" + com.addComma(tranAmt) + "</font>");
+						$("#ele_guarAmt" + item).html("<font color='red'>" + com.aprojomma(tranAmt) + "</font>");
 
 						limitOverYn++;
 
@@ -256,14 +256,14 @@
 						//else limitOverMsg += "\n" + guarTypeNm[idx] + "상품 한도초과 ( 한도 : " + limitAmt + " / 양도 합 : " + Number(useAmt) + Number(tranAmt) + ")";
 					}else{
 						$("#ele_guarCnt" + item).html(guarTranSet["guarCnt" + item]);
-						$("#ele_guarAmt" + item).html(com.addComma(tranAmt));
+						$("#ele_guarAmt" + item).html(com.aprojomma(tranAmt));
 					}
 
 				//	console.log(guarTranSet);
 				});
 
 				$("#ele_guarCntTot").html(guarTranSetTot["guarCnt"]);
-				$("#ele_guarAmtTot").html(com.addComma(guarTranSetTot["guarAmt"]));
+				$("#ele_guarAmtTot").html(com.aprojomma(guarTranSetTot["guarAmt"]));
 			};
 
 

@@ -168,7 +168,7 @@
 
 				//쉽표 붙여서 값 set
 			  	$.each(sumObj, function(name, value) {
-					$("#"+name).val(com.addComma(value));
+					$("#"+name).val(com.aprojomma(value));
 				});
 
 				
@@ -307,11 +307,11 @@
 				//guarCom.fnConfSet(confGuar);
 
 				//지분액
-				$("#dealAmt").val(com.addComma(resData.confInvt.dealAmt));
+				$("#dealAmt").val(com.aprojomma(resData.confInvt.dealAmt));
 
-				$("#guarEachMul").val(com.addComma(resData.confRisk.guarEachMul)); //개별한도
+				$("#guarEachMul").val(com.aprojomma(resData.confRisk.guarEachMul)); //개별한도
                 $("#suretyMul").val(resData.confRisk.suretyMul); //연대보증인
-                $("#smallAmt").val(com.addComma(resData.confRisk.smallAmt)); //소액공제금
+                $("#smallAmt").val(com.aprojomma(resData.confRisk.smallAmt)); //소액공제금
 
                 $("#sumImplRate").val(resData.confGuar.sumImplRate); //이행합계 한도배수율
                 $("#sumPayRate").val(resData.confGuar.sumPayRate); 	 //지급합계 한도배수율
@@ -324,7 +324,7 @@
     			//$("#sumDoubleNum").val(resData.confGuar.sumRate);		//총합계 고정
     			//$("#totDoubleNum").val(resData.confGuar.sumRate);		//총합계 고정
     			
-    			$("#totLimitAmt").val(com.addComma(resData.confGuar.sumRate * resData.confInvt.dealAmt * contrNum)); //총합계금액
+    			$("#totLimitAmt").val(com.aprojomma(resData.confGuar.sumRate * resData.confInvt.dealAmt * contrNum)); //총합계금액
 
                 //guarCom.fnSumLimit(); //한도금산출
 			}
@@ -336,10 +336,10 @@
 				//상품배수율 설정
 				confGuar = resData.confGuar;
 
-				$("#dealAmt").val(com.addComma(resData.confInvt.dealAmt));	//지분액
-				$("#guarEachMul").val(com.addComma(resData.confRisk.guarEachMul)); //개별한도
+				$("#dealAmt").val(com.aprojomma(resData.confInvt.dealAmt));	//지분액
+				$("#guarEachMul").val(com.aprojomma(resData.confRisk.guarEachMul)); //개별한도
                 $("#suretyMul").val(resData.confRisk.suretyMul); //연대보증인
-                $("#smallAmt").val(com.addComma(resData.confRisk.smallAmt)); //소액공제금
+                $("#smallAmt").val(com.aprojomma(resData.confRisk.smallAmt)); //소액공제금
 
                 $("#sumImplRate").val(resData.confGuar.sumImplRate); //이행합계 한도배수율
                 $("#sumPayRate").val(resData.confGuar.sumPayRate); 	 //지급합계 한도배수율
@@ -355,7 +355,7 @@
 				else $("#rdo_limitOptYn").css("display", "none");
 
 				//출자면제 구분
-				if(contrType === "13") $("#contrNum").addClass("readonly").attr("readonly", true).val("");
+				if(contrType === "13") $("#contrNum").aprojlass("readonly").attr("readonly", true).val("");
 				else $("#contrNum").removeClass("readonly").attr("readonly", false);
 
 				//상품정보 화면 컨트롤
@@ -371,22 +371,22 @@
 						//$("#doubleNum"+cd).removeClass("readonly").attr("readonly", false);
 
 						if(chkYn){
-							$("#limitAmt"+cd).addClass("readonly").attr("readonly", false);
+							$("#limitAmt"+cd).aprojlass("readonly").attr("readonly", false);
 						}else{
-							$("#limitAmt"+cd).addClass("readonly").attr("readonly", true);
+							$("#limitAmt"+cd).aprojlass("readonly").attr("readonly", true);
 						}
 
 					}else if(contrType === "13"){ //출자면제
-						$("#doubleNum"+cd).addClass("readonly").attr("readonly", true);
+						$("#doubleNum"+cd).aprojlass("readonly").attr("readonly", true);
 						if(chkYn){
 							$("#limitAmt"+cd).removeClass("readonly").attr("readonly", false);
 						}else{
-							$("#limitAmt"+cd).addClass("readonly").attr("readonly", true);
+							$("#limitAmt"+cd).aprojlass("readonly").attr("readonly", true);
 						}
 
 					}else{
 						$("#doubleNum"+cd).removeClass("readonly").attr("readonly", true);
-						$("#limitAmt"+cd).addClass("readonly").attr("readonly", true);
+						$("#limitAmt"+cd).aprojlass("readonly").attr("readonly", true);
 					}
 
 					//상품정보 초기화
@@ -436,13 +436,13 @@
 			//보증인 추가 콜백
 			var fnSureCallBack = function(obj){
 				var param = {sheetId: sheetSure, mapRow: selSureRow, rnVal: obj, ifVal: "sureNm:sureSeq"}
-				com.fnIbsAddChgRow(param);
+				com.fnIbsAprojhgRow(param);
 			}
 
 			//담보 추가 콜백
 			var fnMortCallBack = function(obj){
 				var param = {sheetId: sheetMort, mapRow: selMortRow, rnVal: obj, ifVal: "sureNm:mortSeq"}
-				com.fnIbsAddChgRow(param);
+				com.fnIbsAprojhgRow(param);
 			}
 
 

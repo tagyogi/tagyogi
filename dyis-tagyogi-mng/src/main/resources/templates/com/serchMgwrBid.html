@@ -68,14 +68,14 @@
 				if(data.contrMeanCd === "02") $("#ele_contrMeanCd").text("제한경쟁"); //계약방법
 				if(data.contrMeanCd === "03") $("#ele_contrMeanCd").text("실적경쟁"); //계약방법
 
-				$("#ele_budgAmt").text(com.addComma(data.budgAmt)); //공사예정금액
-				$("#ele_EstiAmt").text(com.addComma(data.estiAmt)); //추정가격
-				$("#ele_baseAmt").text(com.addComma(data.baseAmt)); //기초금액
-				$("#ele_suplAmt").text(com.addComma(data.suplAmt)); //도급자관급금액
-				$("#ele_govAmt").text(com.addComma(data.govAmt)); 	//관급자관급금액
-				$("#ele_VatAmt").text(com.addComma(data.vatAmt)); 	//부가세
-				$("#ele_etcAmt").text(com.addComma(data.etcAmt)); 	//기타금액
-				$("#ele_bidPartFeeAmt").text(com.addComma(data.bidPartFeeAmt)); //입찰참가수수료
+				$("#ele_budgAmt").text(com.aprojomma(data.budgAmt)); //공사예정금액
+				$("#ele_EstiAmt").text(com.aprojomma(data.estiAmt)); //추정가격
+				$("#ele_baseAmt").text(com.aprojomma(data.baseAmt)); //기초금액
+				$("#ele_suplAmt").text(com.aprojomma(data.suplAmt)); //도급자관급금액
+				$("#ele_govAmt").text(com.aprojomma(data.govAmt)); 	//관급자관급금액
+				$("#ele_VatAmt").text(com.aprojomma(data.vatAmt)); 	//부가세
+				$("#ele_etcAmt").text(com.aprojomma(data.etcAmt)); 	//기타금액
+				$("#ele_bidPartFeeAmt").text(com.aprojomma(data.bidPartFeeAmt)); //입찰참가수수료
 				$("#ele_rebidYn").text(data.rebidYn); 				//재입찰허용여부
 				$("#ele_otherEmpNm").text(data.otherEmpNm); 		//담당자명
 				$("#ele_otherTelNo").text(data.otherTelNo); 		//담당자전화번호

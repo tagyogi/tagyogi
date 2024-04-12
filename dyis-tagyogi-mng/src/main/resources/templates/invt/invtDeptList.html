@@ -104,8 +104,8 @@
 					formulRow = sheet.getRowById("FormulaRow");
 					
 					$("#ele_membCnt").text(sheet.getTotalRowCount());
-					$("#ele_depositAmt").text(com.addComma(formulRow.depositAmt));
-					$("#ele_completedAmt").text(com.addComma(formulRow.totalDepositAmt));
+					$("#ele_depositAmt").text(com.aprojomma(formulRow.depositAmt));
+					$("#ele_completedAmt").text(com.aprojomma(formulRow.totalDepositAmt));
 					
 					
 				});
@@ -175,7 +175,7 @@
 
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).text($(item).text() === "" ? "0":com.addComma($(item).text()));
+					$(item).text($(item).text() === "" ? "0":com.aprojomma($(item).text()));
 				});
 			};
 

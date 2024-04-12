@@ -49,10 +49,10 @@
 				com.fnSetKeyVal(resData.memb);
 
 				//0-1. 출자정보
-				$("#ele_investAmt").text(com.addComma(resData.memb.investAmt));	//출자금액
-				$("#ele_mortAmt").text(com.addComma(resData.memb.mortAmt));		//담보금액
-				$("#ele_assGetNumSum").text(com.addComma(Number(resData.memb.assGetNum) - Number(resData.memb.assSetNum)));	//배정좌수
-				$("#ele_assGetAmtSum").text(com.addComma(Number(resData.memb.assGetAmt) - Number(resData.memb.assSetAmt)));	//배정금액
+				$("#ele_investAmt").text(com.aprojomma(resData.memb.investAmt));	//출자금액
+				$("#ele_mortAmt").text(com.aprojomma(resData.memb.mortAmt));		//담보금액
+				$("#ele_assGetNumSum").text(com.aprojomma(Number(resData.memb.assGetNum) - Number(resData.memb.assSetNum)));	//배정좌수
+				$("#ele_assGetAmtSum").text(com.aprojomma(Number(resData.memb.assGetAmt) - Number(resData.memb.assSetAmt)));	//배정금액
 
 				//1. 업무거래 정보 (신용평가정보 + 보증정보 + 대출정보)
 				com.fnSetKeyVal(resData.workDtl);

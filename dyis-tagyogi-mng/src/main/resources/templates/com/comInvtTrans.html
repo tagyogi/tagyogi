@@ -230,8 +230,8 @@
 			    if(targetVal === 1){
 					var billNum = evtParam.sheet.getValue(evtParam.row, "billNum");
 					var billAmt = evtParam.sheet.getValue(evtParam.row, "billAmt");
-					$("#sepmerNum").val(com.addComma(billNum));
-					$("#sepmerAmt").val(com.addComma(billAmt));
+					$("#sepmerNum").val(com.aprojomma(billNum));
+					$("#sepmerAmt").val(com.aprojomma(billAmt));
 				}
 			    
 			}
@@ -262,9 +262,9 @@
 				
 				for(var j=0; j< codeList.length; j++) {
 					if(codeList[j].cd === sepmerNum) {
-						$("#sepmerNum").val(com.addComma(sepmerNum)); //병합선택좌수
-						$("#sepmerAmt").val(com.addComma(sepmerAmt)); //병합선택금액
-						$("#sepmerBillType").val(com.addComma(sepmerNum)); //병합권종	
+						$("#sepmerNum").val(com.aprojomma(sepmerNum)); //병합선택좌수
+						$("#sepmerAmt").val(com.aprojomma(sepmerAmt)); //병합선택금액
+						$("#sepmerBillType").val(com.aprojomma(sepmerNum)); //병합권종	
 						break;
 					} else {
 						if(sepmerNum === 0) {
@@ -272,8 +272,8 @@
 						} else if(sepmerAmt === 0) {
 							$("#sepmerAmt").val("");
 						} else {
-							$("#sepmerNum").val(com.addComma(sepmerNum)); //병합선택좌수
-							$("#sepmerAmt").val(com.addComma(sepmerAmt)); //병합선택금액
+							$("#sepmerNum").val(com.aprojomma(sepmerNum)); //병합선택좌수
+							$("#sepmerAmt").val(com.aprojomma(sepmerAmt)); //병합선택금액
 							$("#sepmerBillType").val(""); //병합권종	
 						}
 					}
@@ -294,8 +294,8 @@
 						mortAmt = mortAmt + rows[i].billAmt;
 					}
 				}
-				$("#transNum").val(com.addComma(mortNum)); //담보좌수
-				$("#transAmt").val(com.addComma(mortAmt)); //담보금액
+				$("#transNum").val(com.aprojomma(mortNum)); //담보좌수
+				$("#transAmt").val(com.aprojomma(mortAmt)); //담보금액
 			}
 			
 			//출자증권목록 선택버튼(전체선택/전체해제)

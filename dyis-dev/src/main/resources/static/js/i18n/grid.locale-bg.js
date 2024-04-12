@@ -61,7 +61,7 @@ $.jgrid.regional["bg"] = {
 		delrule : "Изтрий правило"
 	},
 	edit : {
-		addCaption: "Нов Запис",
+		aprojaption: "Нов Запис",
 		editCaption: "Редакция Запис",
 		bSubmit: "Запиши",
 		bCancel: "Изход",

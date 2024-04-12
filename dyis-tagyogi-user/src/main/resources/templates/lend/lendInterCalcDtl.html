@@ -38,12 +38,12 @@
 			//원금정보
 			var delayData = resData.delayData;
 			for(var key in delayData){
-				$("#area_repay #ele_"+key).text( com.addComma(delayData[key]) );
+				$("#area_repay #ele_"+key).text( com.aprojomma(delayData[key]) );
 			}
 
-			$("#area_repay #ele_sumLendDelayAmt").text( com.addComma( delayData.lendAmt + delayData.delayAmt  ) );		//산출합계
-			$("#area_repay #ele_sumRepayAmt").text( com.addComma( delayData.repayAmt + delayData.repayInterAmt ) );		//납입합계
-			$("#area_repay #ele_sumRemainAmt").text( com.addComma( delayData.remainAmt + delayData.remainInterAmt ) );	//미납합계
+			$("#area_repay #ele_sumLendDelayAmt").text( com.aprojomma( delayData.lendAmt + delayData.delayAmt  ) );		//산출합계
+			$("#area_repay #ele_sumRepayAmt").text( com.aprojomma( delayData.repayAmt + delayData.repayInterAmt ) );		//납입합계
+			$("#area_repay #ele_sumRemainAmt").text( com.aprojomma( delayData.remainAmt + delayData.remainInterAmt ) );	//미납합계
 
 			//이자정보 변수
 			var interObj = {
@@ -84,24 +84,24 @@
 				var html  = '<tr>';
 					html += '	<td class="alignC">'+ item.interSeq  + '</td>'; //번호
 					html += '	<td class="alignC">'+ item.interTermDt + '(' + item.interDays + '일)</td>'; //이자납입기간
-					html += '	<td class="alignR">'+ com.addComma(item.interAmt) + '</td>'; //이자금액
-					html += '	<td class="alignR">'+ com.addComma(com.fnNvlChk(item.payAmt, 0)) + '</td>'; //납입금액
-					html += '	<td class="alignR">'+ com.addComma(item.remainAmt) + '</td>'; 	//이자잔액
-					html += '	<td class="alignR">'+ com.addComma(com.fnNvlChk(item.delayAmt, 0)) + '</td>';			//연체금액
-					html += '	<td class="alignR">'+ com.addComma(com.fnNvlChk(item.delayPayAmt, 0)) + '</td>'; 		//연체납입액
-					html += '	<td class="alignR">'+ com.addComma(com.fnNvlChk(item.delayAmt, 0) - com.fnNvlChk(item.delayPayAmt, 0)) + '</td>'; //연체잔액
+					html += '	<td class="alignR">'+ com.aprojomma(item.interAmt) + '</td>'; //이자금액
+					html += '	<td class="alignR">'+ com.aprojomma(com.fnNvlChk(item.payAmt, 0)) + '</td>'; //납입금액
+					html += '	<td class="alignR">'+ com.aprojomma(item.remainAmt) + '</td>'; 	//이자잔액
+					html += '	<td class="alignR">'+ com.aprojomma(com.fnNvlChk(item.delayAmt, 0)) + '</td>';			//연체금액
+					html += '	<td class="alignR">'+ com.aprojomma(com.fnNvlChk(item.delayPayAmt, 0)) + '</td>'; 		//연체납입액
+					html += '	<td class="alignR">'+ com.aprojomma(com.fnNvlChk(item.delayAmt, 0) - com.fnNvlChk(item.delayPayAmt, 0)) + '</td>'; //연체잔액
 					html += '</tr>';
 				$("#ele_lendInterList").append(html);
 			});
 
 			//이자정보 변수 쉼표 붙혀 화면처리
 			$.each(interObj, function(name, value) {
-				$("#ele_"+name).text(com.addComma(value));
+				$("#ele_"+name).text(com.aprojomma(value));
 			});
 
-			$("#ele_totalInterAmt").text( com.addComma(interObj.monthInterAmt + interObj.totalDelayAmt + interObj.thisMonthInterAmt) );			//이자산출합계
-			$("#ele_totalInterPayAmt").text( com.addComma(interObj.monthPayAmt + interObj.totalDelayPayAmt + interObj.thisMonthPayAmt) );		//이자납입합계
-			$("#ele_totalInterRemainAmt").text( com.addComma(interObj.monthRemainAmt + interObj.totalDelayRemainAmt + interObj.thisMonthRemainAmt) );	//이자미납합계
+			$("#ele_totalInterAmt").text( com.aprojomma(interObj.monthInterAmt + interObj.totalDelayAmt + interObj.thisMonthInterAmt) );			//이자산출합계
+			$("#ele_totalInterPayAmt").text( com.aprojomma(interObj.monthPayAmt + interObj.totalDelayPayAmt + interObj.thisMonthPayAmt) );		//이자납입합계
+			$("#ele_totalInterRemainAmt").text( com.aprojomma(interObj.monthRemainAmt + interObj.totalDelayRemainAmt + interObj.thisMonthRemainAmt) );	//이자미납합계
 		}
 
 		//목록이동

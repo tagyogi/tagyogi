@@ -4,7 +4,7 @@
 	<property name="LOGS_PATH" value="/home/kocfc/logs"/>
 	<appender name="ROLLINGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${LOGS_PATH}/home.log</file>
-		<filter class="ddc.core.filter.LogBackFilter"/>
+		<filter class="proj.core.filter.LogBackFilter"/>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<fileNamePattern>${LOGS_PATH}/home/%d{yyyyMM}/home_%d{yyyyMMdd}_%i.log</fileNamePattern>
 			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">

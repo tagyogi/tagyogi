@@ -17,7 +17,7 @@
     </settings>
 	
 	<typeAliases>
-		<typeAlias alias="camelMap" type="ddc.core.domain.mapToCamel"/>
+		<typeAlias alias="camelMap" type="proj.core.domain.mapToCamel"/>
 	</typeAliases>
 	
     <typeHandlers>

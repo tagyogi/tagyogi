@@ -62,10 +62,10 @@
 			var fnSearchCallBack = function(resData){
 				console.log(resData);
 				//양도전좌수, 양도전금액 계산 => resData.invtTransData.transAmt : investCd 30(양도양수했던 좌수) + membData.investAmt (현재 조합원의 출자좌수, 즉 반환후의 좌수)
-				resData.membData.transBfAmt = com.addComma(Number(resData.invtTransData.transAmt)+Number(resData.membData.investAmt));
-				resData.membData.transBfNum = com.addComma(Number(resData.invtTransData.transNum)+Number(resData.membData.investNum));
-				resData.invtTransData.transAmt = com.addComma(resData.invtTransData.transAmt);
-				resData.membData.investAmt = com.addComma(resData.membData.investAmt);
+				resData.membData.transBfAmt = com.aprojomma(Number(resData.invtTransData.transAmt)+Number(resData.membData.investAmt));
+				resData.membData.transBfNum = com.aprojomma(Number(resData.invtTransData.transNum)+Number(resData.membData.investNum));
+				resData.invtTransData.transAmt = com.aprojomma(resData.invtTransData.transAmt);
+				resData.membData.investAmt = com.aprojomma(resData.membData.investAmt);
 
 				//지분취득사유
 				if(resData.invtTransData.takeType === '90') $("#remark").show();
@@ -104,7 +104,7 @@
 
 				//콤마추가 클래스들 세팅
 				//$.each($(".setCommaCls"), function(idx,item){
-				//	$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
+				//	$(item).text($(item).text() === null ? "0":com.aprojomma($(item).text()));
 				//});
 
 			};
@@ -221,7 +221,7 @@
 			<input type="hidden" name="transMembNo"   id="transMembNo" th:value="${paramMap.transMembNo}"/>
 			<input type="hidden" name="transMembNm"   id="transMembNm" th:value="${paramMap.mainMembNm}"/>
 			<input type="hidden" name="takeMembNo"    id="takeMembNo"  value="0"/>
-			<input type="hidden" name="takeMembNm"    id="takeMembNm"  value="한국콘텐츠공제조합"/>
+			<input type="hidden" name="takeMembNm"    id="takeMembNm"  value="동양정보서비스"/>
 			<input type="hidden" name="faceAmt"       id="faceAmt" />
     		<input type="hidden" name="dealAmt"       id="dealAmt" />
 			<div class="contents flex">

@@ -60,7 +60,7 @@ $.jgrid.regional["is"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-	    addCaption: "Bæta við færslu",
+	    aprojaption: "Bæta við færslu",
 	    editCaption: "Breyta færslu",
 	    bSubmit: "Vista",
 	    bCancel: "Hætta við",

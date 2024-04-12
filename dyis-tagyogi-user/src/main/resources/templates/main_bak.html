@@ -33,10 +33,10 @@
 				//로그인버튼
 				if(membNo === null){
 					$("#btnLogin, #btnLogin-m").removeClass("hide");
-					$("#btnLogout, #btnMypage, #btnLogout-m, #m-name, #btnMypage-m").addClass("hide");
+					$("#btnLogout, #btnMypage, #btnLogout-m, #m-name, #btnMypage-m").aprojlass("hide");
 				}else{
 					$("#btnLogout, #btnMypage, #btnLogout-m, #m-name, #btnMypage-m").removeClass("hide");
-					$("#btnLogin, #btnLogin-m").addClass("hide");
+					$("#btnLogin, #btnLogin-m").aprojlass("hide");
 				}
 
 	            const swiper = new Swiper('.swiper', {
@@ -148,7 +148,7 @@
 
 	            //메인팝업
 	            if(getCookie("swiperPopArea1") !=="Y" || $("#swiperPopArea1 .swiper-slide").length != 0 ){
-					$("header").addClass("pop");
+					$("header").aprojlass("pop");
 		            $("#swiperPopArea1").show();
 		        }else{
 					$("header").removeClass("pop");
@@ -167,7 +167,7 @@
 
             //gnb 검색창
             var fnMainSearchOut = function() {
-                $('#mainSearch').addClass('hid');
+                $('#mainSearch').aprojlass('hid');
                 $('nav').css('pointer-events','auto');
                 $('#keyword').val('');
             }
@@ -217,14 +217,14 @@
 					var brdTopMenuCd = brdRef.substr(0, 3);
 
 					$('#lnb > ul[id= \'lnb' + brdTopMenuCd + '\']').removeClass('on');
-					$('#lnb > ul[id= \'lnb' + brdTopMenuCd + '\']').addClass('on');
+					$('#lnb > ul[id= \'lnb' + brdTopMenuCd + '\']').aprojlass('on');
 
 					pageTitle = $('#' + brdRef).text();
 					$('h3').text($('#topMenu' + brdTopMenuCd).text());
 
 				}else {
 
-					$('#lnb > ul[id= \'lnb' + menuInfo.topMenuCd + '\']').addClass('on');
+					$('#lnb > ul[id= \'lnb' + menuInfo.topMenuCd + '\']').aprojlass('on');
 					$('#lnb > ul[id!= \'lnb' + menuInfo.topMenuCd + '\']').removeClass('on');
 
 					pageTitle = $('h2').text();
@@ -235,9 +235,9 @@
 		        		return $(this).text() === pageTitle;
 	    			})
 
-				    pageActive.addClass('on');
-				    pageActive.parents('.lnb-dept1').addClass('active');
-				    pageActive.parents('.lnb-dept2').addClass('on');
+				    pageActive.aprojlass('on');
+				    pageActive.parents('.lnb-dept1').aprojlass('active');
+				    pageActive.parents('.lnb-dept2').aprojlass('on');
 
 		    		//lnb h3 이름세팅 (좌측 상단 메뉴 타이틀)
 		    		$('h3').text(menuInfo.menuPath.split('>')[0]);
@@ -247,7 +247,7 @@
 			    //lnb 현재페이지 active (lnb-dept2없을 때)
 			    $('.lnb-dept1 a').each(function(index,item){
 			        if($(this).text() === pageTitle){
-			            $(this).closest('li').addClass('active');
+			            $(this).closest('li').aprojlass('active');
 			        }
 			    });
 
@@ -387,7 +387,7 @@
 					</div>
 	                <div id="gnb" class="gnb flex-box">
 	                    <h1 class="logo">
-	                        <a href="/main.do"><img src="../images/logo.png" alt="logo-한국콘텐츠공제조합"></a>
+	                        <a href="/main.do"><img src="../images/logo.png" alt="logo-동양정보서비스"></a>
 	                    </h1>
 	                    <nav>
 							<ul class="flex-box menu-dept1">
@@ -414,7 +414,7 @@
 	                        <button class="site-map" type="button"></button>
 	                        <div class="generalMenu_cont">
 	                            <div class="gMbg_head">
-	                                <p class="generalMenu_txt">함께 담고 함께 쓰는 콘텐츠계의 큰 마중물 그릇<span>한국콘텐츠공제조합!</span></p>
+	                                <p class="generalMenu_txt">함께 담고 함께 쓰는 콘텐츠계의 큰 마중물 그릇<span>동양정보서비스!</span></p>
 	                                <div class="menu_sort"></div>
 	                                <div class="menu-box">
 	                                    <div class="generalMenu_list">

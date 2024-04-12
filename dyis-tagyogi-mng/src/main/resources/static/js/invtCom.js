@@ -106,7 +106,7 @@ invtCom.calcByBillNum = function(billType) {
     var calBillNum = Number(com.rmComma($("#billCnt" + billType).val()));
     
     if(calBillNum == 0) $("#billAmt" + billType).val("");
-    else $("#billAmt" + billType).val(com.addComma(calDealAmt * calBillNum));
+    else $("#billAmt" + billType).val(com.aprojomma(calDealAmt * calBillNum));
     
     invtCom.sumBillData();
 }
@@ -123,8 +123,8 @@ invtCom.sumBillData = function() {
 		}
 	});
     
-    $("#sumBillCnt").val(com.addComma(sumBillNum));
-    $("#sumBillAmt").val(com.addComma(sumBillAmt));
+    $("#sumBillCnt").val(com.aprojomma(sumBillNum));
+    $("#sumBillAmt").val(com.aprojomma(sumBillAmt));
 	
 	//출자등록시
 	if($("#investNum").length){
@@ -160,8 +160,8 @@ invtCom.fnCalfaceDeal = function(cdType, dealList){
 	
 	//출자증권발행정보에 액면가세팅
 	$.each(resList, function(idx, item){
-		$("#faceAmt" + item.cd).val(com.addComma(Number(dealList.faceAmt) * item.cd));
-		$("#dealAmt" + item.cd).val(com.addComma(Number(dealList.faceAmt) * item.cd));
+		$("#faceAmt" + item.cd).val(com.aprojomma(Number(dealList.faceAmt) * item.cd));
+		$("#dealAmt" + item.cd).val(com.aprojomma(Number(dealList.faceAmt) * item.cd));
 	});
 	
 }
@@ -248,8 +248,8 @@ invtCom.fnFaceDealCallBack = function(resData){
 		var fAmt = resData.data.faceAmt;
 		var dAmt = resData.data.dealAmt;
 		
-		$('#faceAmt').val(com.addComma(fAmt));
-		$('#dealAmt').val(com.addComma(dAmt));
+		$('#faceAmt').val(com.aprojomma(fAmt));
+		$('#dealAmt').val(com.aprojomma(dAmt));
 		
 		//권종별 액면가 계산 세팅
 		invtCom.fnCalfaceDeal("IV03",resData.data);
@@ -311,7 +311,7 @@ invtCom.fnCalcByNum = function() {
 	var dealAmt = Number(com.rmComma($("#dealAmt").val()));
 	var investNum = Number(com.rmComma($("#investNum").val()));
 	
-	$("#investAmt").val(com.addComma(dealAmt * investNum));
+	$("#investAmt").val(com.aprojomma(dealAmt * investNum));
 }
 
 //결제은행설정
@@ -690,8 +690,8 @@ invtCom.fnSetAssign = function(sheetid){
 		}
 	}
 	
-	$("#assignNum").val(com.addComma(assignNum == 0 ? "" : assignNum));
-	$("#assignAmt").val(com.addComma(assignAmt == 0 ? "" : assignAmt));
+	$("#assignNum").val(com.aprojomma(assignNum == 0 ? "" : assignNum));
+	$("#assignAmt").val(com.aprojomma(assignAmt == 0 ? "" : assignAmt));
 	
 	$("#setTtNum").val($("#assignNum").val());
 	

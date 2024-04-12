@@ -34,10 +34,10 @@
 			//console.log(resData.contr);
 			com.fnSetKeyVal(resData.contr);
 			
-			$("#ele_limitAmt").text(com.addComma(resData.contr["limitAmt"+lendType]));
-			$("#ele_useAmt").text(com.addComma(resData.contr["useAmt"+lendType]));
+			$("#ele_limitAmt").text(com.aprojomma(resData.contr["limitAmt"+lendType]));
+			$("#ele_useAmt").text(com.aprojomma(resData.contr["useAmt"+lendType]));
 			let remainAmt = Number(resData.contr["limitAmt"+lendType]) - Number(resData.contr["useAmt"+lendType]);
-			$("#ele_remainAmt").text(com.addComma(remainAmt));
+			$("#ele_remainAmt").text(com.aprojomma(remainAmt));
 			
 			//대출정보
 			com.fnSetKeyVal(resData.data);
@@ -65,10 +65,10 @@
 					}else{
 						html += '<td class="alignC"></td>';
 					}
-					html += '<td class="alignR">'+ com.addComma(item.interAmt) + '</td>'; //이자금액
+					html += '<td class="alignR">'+ com.aprojomma(item.interAmt) + '</td>'; //이자금액
 					html += '<td class="alignC">'+ com.fnDateFormat(item.payDt) +'</td>'; //납입일자
-					html += '<td class="alignR">'+ com.addComma(item.totPayAmt) + '</td>'; //이자납입액
-					html += '<td class="alignR">'+ com.addComma(item.interDefaultAmt) + '</td>'; //이자미납액
+					html += '<td class="alignR">'+ com.aprojomma(item.totPayAmt) + '</td>'; //이자납입액
+					html += '<td class="alignR">'+ com.aprojomma(item.interDefaultAmt) + '</td>'; //이자미납액
 					//연체기간
 					if(item.delayBegDt !== null){
 						html += '<td class="alignC">'+ com.fnDateFormat(item.delayBegDt) + " ~ " + com.fnDateFormat(item.delayEndDt) +'</td>'; //연체기간
@@ -83,23 +83,23 @@
 					}
 					//연체이자액
 					if(item.delayAmt !== null && item.delayAmt > 0){
-						html += '<td class="alignR">'+ com.addComma(item.delayAmt) + '</td>';
+						html += '<td class="alignR">'+ com.aprojomma(item.delayAmt) + '</td>';
 					}else{
 						html += '<td class="alignR"></td>';
 					}
-					html += '<td class="alignR">'+ com.addComma(item.delayPayAmt) + '</td>'; //연체납입액
+					html += '<td class="alignR">'+ com.aprojomma(item.delayPayAmt) + '</td>'; //연체납입액
 					html += '</tr>';
 					
 					if(index === resData.list.length -1){
 						html += '<tr>'
 						html += '<th colspan="3">합계</td>';
-						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.addComma(sumInterAmt) + '</td>'; //이자금액 합계
+						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.aprojomma(sumInterAmt) + '</td>'; //이자금액 합계
 						html += '<td class="alignC"></td>';
-						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.addComma(sumPayAmt) + '</td>'; //이자납입액 합계
-						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.addComma(sumRemainAmt) + '</td>'; //이자미납액 합계
+						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.aprojomma(sumPayAmt) + '</td>'; //이자납입액 합계
+						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.aprojomma(sumRemainAmt) + '</td>'; //이자미납액 합계
 						html += '<th colspan="2"></td>';
-						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.addComma(sumDelayAmt) + '</td>'; //연체이자액 합계
-						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.addComma(sumDelayPayAmt) + '</td>'; //연체납입액 합계
+						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.aprojomma(sumDelayAmt) + '</td>'; //연체이자액 합계
+						html += '<td class="alignR" style="font-size:14px;font-weight:bold">'+ com.aprojomma(sumDelayPayAmt) + '</td>'; //연체납입액 합계
 						html += '</tr>';
 					}
 					

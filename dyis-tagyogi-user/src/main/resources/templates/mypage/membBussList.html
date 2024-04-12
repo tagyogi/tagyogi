@@ -31,9 +31,9 @@
 			com.fnSetKeyVal(resData.memb);
 			
 			//출자정보
-			$("#ele_investAmt").text(com.addComma(resData.memb.investAmt));
-			$("#ele_mortAmt").text(com.addComma(resData.memb.mortAmt));
-			$("#ele_assignAmt").text(com.addComma(resData.memb.assignAmt));
+			$("#ele_investAmt").text(com.aprojomma(resData.memb.investAmt));
+			$("#ele_mortAmt").text(com.aprojomma(resData.memb.mortAmt));
+			$("#ele_assignAmt").text(com.aprojomma(resData.memb.assignAmt));
 			
 			//출자증권현황
 			if(resData.invtList.length === 0) $("#ele_invtList").append('<tr><td colspan=7">출자증권 정보가 없습니다..</td></tr>');
@@ -43,7 +43,7 @@
 					html += '<td class="alignC">'+ com.fnDateFormat(item.investDt)+ '</td>'; //출자일자
 					html += '<td class="alignC">'+ item.billTypeNm+ '</td>'; //권종
 					html += '<td class="alignC">'+ item.billNo +'</td>'; //증권번호
-					html += '<td class="alignC">'+ com.addComma(item.billAmt) +'</td>'; //증권금액
+					html += '<td class="alignC">'+ com.aprojomma(item.billAmt) +'</td>'; //증권금액
 					html += '<td class="alignC">'+ item.mortYnNm +'</td>'; //담보여부
 					
 					if(item.assignYn === "Y") html += '<td class="alignC">배정</td>'; //배정여부

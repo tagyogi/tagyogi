@@ -89,9 +89,9 @@
 				if(guarType === "31")	typeValue = "13";
 				if(guarType === "32")	typeValue = "12";
 				if(guarType === "33" || guarType === "34")	typeValue = "15";
-				$("#ele_limitAmt").text(com.addComma(resData.contr["limitAmt"+typeValue]));	//한도금액
-				$("#ele_useAmt").text(com.addComma(resData.contr["useAmt"+typeValue]));		//사용액
-				$("#ele_remainAmt").text(com.addComma(resData.contr["remainAmt"+typeValue]));	//가능액
+				$("#ele_limitAmt").text(com.aprojomma(resData.contr["limitAmt"+typeValue]));	//한도금액
+				$("#ele_useAmt").text(com.aprojomma(resData.contr["useAmt"+typeValue]));		//사용액
+				$("#ele_remainAmt").text(com.aprojomma(resData.contr["remainAmt"+typeValue]));	//가능액
 
 				//7. 첨부파일
 				com.fnIbsUploadView($("#docFile"), resData.fileList);
@@ -190,7 +190,7 @@
 				if(paramMap.type === "CANUPT" && paramMap.guarStat === '32'){
 					com.fnSetKeyVal(resData.guarPart);
 
-					$("#ele_totCommAmt").text(com.addComma(resData.guar.commAmt));	//총보증료
+					$("#ele_totCommAmt").text(com.aprojomma(resData.guar.commAmt));	//총보증료
 					$("#preCommAmt").text(resData.guar.commAmt);					//기존보증료
 					$("#befCommRate").val(resData.guarPart.commRate);				//기존수수료요율
 					$("#befGuarAmt").val(resData.guarPart.befGuarAmt);				//기존보증금액
@@ -254,12 +254,12 @@
 				var canGuarDays = $("#guarDays").val();
 
 				if(guarStat === "30") {
-					$("#befCommAmt").val(com.addComma($("#ele_totCommAmt").text()));
-					$("#ele_befCommAmt").text(com.addComma($("#ele_totCommAmt").text()));
+					$("#befCommAmt").val(com.aprojomma($("#ele_totCommAmt").text()));
+					$("#ele_befCommAmt").text(com.aprojomma($("#ele_totCommAmt").text()));
 					befCommAmt = $("#ele_totCommAmt").val();
 				} else {
-					$("#befCommAmt").val(com.addComma($("#ele_commAmt").val()));
-					$("#ele_befCommAmt").text(com.addComma($("#ele_commAmt").text()));
+					$("#befCommAmt").val(com.aprojomma($("#ele_commAmt").val()));
+					$("#ele_befCommAmt").text(com.aprojomma($("#ele_commAmt").text()));
 					befCommAmt = $("#ele_commAmt").val();
 				}
 
@@ -273,10 +273,10 @@
 				if(guarExpDt <= canGuarDate) {
 					befCommAmt = $("#befCommAmt").val();
 
-					$("#modCommAmt").val(com.addComma($("#ele_totCommAmt").text()));
+					$("#modCommAmt").val(com.aprojomma($("#ele_totCommAmt").text()));
 					$("#calcExpDt").val($("#ele_guarExpDt").text());
 					$("#guarDays").val(guarDays);
-					$("#ele_calcAmt").val(com.addComma(befCommAmt));
+					$("#ele_calcAmt").val(com.aprojomma(befCommAmt));
 					$("#sRetCommAmt").val("0");
 					$("#guarDays").val(com.fnDateTerm($("#guarBegDt").val(), $("#calcExpDt").val()));
 
@@ -301,11 +301,11 @@
 				if($("#canGuarStat option:selected").val() === "31") {
 					$("#modCommAmt").val("0");
 					$("#ele_modCanCommAmt").text("0");
-					$("#sRetCommAmt").val(com.addComma(befCommAmt));
+					$("#sRetCommAmt").val(com.aprojomma(befCommAmt));
 				} else if(calcBegDt === calcExpDt){
 					$("#modCommAmt").val("0");
 					$("#ele_modCanCommAmt").text("0");
-					$("#sRetCommAmt").val(com.addComma(befCommAmt));
+					$("#sRetCommAmt").val(com.aprojomma(befCommAmt));
 				} else {
 					var orgCommAmt = totCommAmt;
 					var orgGuarAmt = Number($("#ele_canGuarAmt").text().replace(/,/g, ''));
@@ -320,9 +320,9 @@
 					if(newCommAmt >= 0 && newCommAmt < 7000) {
 						newCommAmt = 7000;
 					}
-					$("#modCommAmt").val(com.addComma(newCommAmt));
-					$("#ele_modCanCommAmt").text(com.addComma(newCommAmt));
-					$("#sRetCommAmt").val(com.addComma(orgCommAmt - newCommAmt));
+					$("#modCommAmt").val(com.aprojomma(newCommAmt));
+					$("#ele_modCanCommAmt").text(com.aprojomma(newCommAmt));
+					$("#sRetCommAmt").val(com.aprojomma(orgCommAmt - newCommAmt));
 				}
 
 			};
@@ -344,7 +344,7 @@
 					return;
 				}
 
-				$("#remRepayAmt").val(com.addComma(befRepayAmt - canRepayAmt));
+				$("#remRepayAmt").val(com.aprojomma(befRepayAmt - canRepayAmt));
 
 				//보증일부해제금액 계산
 				fnCalcPartCanGuarAmt();
@@ -367,7 +367,7 @@
 
 				var sumBefGuarAmt = $("#sumBefGuarAmt").val();
 
-				$("#remGuarAmt").val(com.addComma(befGuarAmt - canGuarAmt));
+				$("#remGuarAmt").val(com.aprojomma(befGuarAmt - canGuarAmt));
 
 				fnCalcBefCommAmt();
 			}
@@ -400,12 +400,12 @@
 
 				//보증일부해제금액
 				var partCanAmt = Math.floor(canRepayAmt + (canRepayAmt * contrInterRate / 365 * aftCanGuarDays));
-				$("#partCanAmt").val(com.addComma(partCanAmt));
+				$("#partCanAmt").val(com.aprojomma(partCanAmt));
 
 				//보증잔여액
 				var remRepayAmt = Number($("#remRepayAmt").val().replace(/,/g, ''));
 				var remGuarAmt = Math.floor(remRepayAmt + (remRepayAmt * contrInterRate / 365 * aftCanGuarDays));
-				$("#remGuarAmt").val(com.addComma(remGuarAmt));
+				$("#remGuarAmt").val(com.aprojomma(remGuarAmt));
 
 				//재산출보증료 계산
 				fnCalcBefCommAmt();
@@ -486,12 +486,12 @@
 				//기존보증료 - (이전 + 이후 보증료)
 				var modCommAmt = Math.floor(befCanCommAmt + aftCanCommAmt);
 
-				$("#modCommAmt").val(com.addComma(modCommAmt));
-				$("#ele_modCanCommAmt").text(com.addComma(modCommAmt));
+				$("#modCommAmt").val(com.aprojomma(modCommAmt));
+				$("#ele_modCanCommAmt").text(com.aprojomma(modCommAmt));
 
 				var retCommAmt = Math.floor(canTotCommAmt - modCommAmt);
 				if(retCommAmt < 7000) retCommAmt = "0";
-				$("#sRetCommAmt").val(com.addComma(retCommAmt));
+				$("#sRetCommAmt").val(com.aprojomma(retCommAmt));
 
 			}
 
@@ -725,7 +725,7 @@
 										</td>
 										<th>환불금액</th>
 										<td>
-											<input type="text" name="sRetCommAmt" id="sRetCommAmt" style="width:105px" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);com.addComma();" />
+											<input type="text" name="sRetCommAmt" id="sRetCommAmt" style="width:105px" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);com.aprojomma();" />
 										</td>
 									</tr>
 									<tr>

@@ -61,7 +61,7 @@ $.jgrid.regional["vi"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "Thêm bản ghi",
+		aprojaption: "Thêm bản ghi",
 		editCaption: "Sửa bản ghi",
 		bSubmit: "Gửi",
 		bCancel: "Hủy bỏ",

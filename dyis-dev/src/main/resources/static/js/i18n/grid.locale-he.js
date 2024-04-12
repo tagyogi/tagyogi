@@ -61,7 +61,7 @@ $.jgrid.regional["he"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-		addCaption: "הוסף רשומה",
+		aprojaption: "הוסף רשומה",
 		editCaption: "ערוך רשומה",
 		bSubmit: "שלח",
 		bCancel: "בטל",

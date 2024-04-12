@@ -116,7 +116,7 @@
 				
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).text(com.addComma($(item).text()));
+					$(item).text(com.aprojomma($(item).text()));
 				});
 				
 				//검색한게 양도조합원이면  출자증권정보세팅하기
@@ -281,7 +281,7 @@
     		<input type="hidden" name="dealAmt"   id="dealAmt" />
     		<!---->
     		<input type="hidden" name="sTakeMembNo" id="sTakeMembNo" value="0" />
-    		<input type="hidden" name="sTakeMembNm" id="sTakeMembNm" value="한국콘텐츠공제조합" />	
+    		<input type="hidden" name="sTakeMembNm" id="sTakeMembNm" value="동양정보서비스" />	
 			<!--조합원 공통검색용-->
 			<input type="hidden" name="sMembNo"    id="sMembNo" value=""/> 
 			<input type="hidden" name="sMembNm"    id="sMembNm" value=""/>

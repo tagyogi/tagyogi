@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<mapper namespace="proj.biz.sys.repository.CodeMapper"> 
+
+	<sql id="cols"> 
+		CD_TYPE 
+		, CD 
+		, CD_NM 
+		, USE_YN 
+		, SEQ 
+		, ETC_CD 
+		, ETC_DESC 
+		, REF_VAL1
+		, REMARK 
+		, REG_DTM 
+		, REG_NM 
+		, MOD_DTM 
+		, MOD_NM 
+	</sql> 
+
+	<!-- 공통코드 정보 조회 --> 
+	<select id="selectCodeList" parameterType="Map" resultType="camelMap"> 
+		/* CodeMapper.selectCodeList */ 
+		SELECT 
+			<include refid="cols" /> 
+		  FROM CM_CODE 
+		 WHERE CD_TYPE = 'ROOT'
+		<if test="sCd != null and sCd != ''"> 
+		AND CD = #{sCd} 
+		</if> 
+		<if test="sCdNm != null and sCdNm != ''"> 
+		AND CD_NM LIKE '%' || #{sCdNm}|| '%' 
+		</if> 
+		ORDER BY CD
+	</select> 
+
+	<!-- 공통코드 상세 조회 --> 
+	<select id="selectCodeDtlList" parameterType="Map" resultType="camelMap"> 
+		/* CodeMapper.selectCodeDtlList */ 
+		SELECT 
+			<include refid="cols" /> 
+		  FROM CM_CODE 
+		 WHERE CD_TYPE = #{cdType}
+		ORDER BY SEQ 
+	</select> 
+
+	<!-- 공통코드 등록 처리 --> 
+	<insert id="insertCode" parameterType="Map"  > 
+		/* CodeMapper.insertCode */ 
+		INSERT INTO CM_CODE ( 
+			<include refid="cols" /> 
+		) VALUES ( 
+			#{cdType} 
+			, #{cd} 
+			, #{cdNm} 
+			, #{useYn} 
+			, #{seq} 
+			, #{etcCd} 
+			, #{etcDesc} 
+			, #{refVal1} 
+			, #{remark} 
+			, REPLACE(#{regDtm}, '-', '') 
+			, #{userNm} 
+			, REPLACE(#{modDtm}, '-', '') 
+			, #{userNm} 
+		) 
+	</insert> 
+
+	<!-- 공통코드 수정 처리 --> 
+	<update id="updateCode" parameterType="Map"  > 
+		/* CodeMapper.updateCode */ 
+		UPDATE CM_CODE 
+		SET 
+			CD_NM = #{cdNm} 
+			, USE_YN = #{useYn} 
+			, SEQ = #{seq} 
+			, ETC_CD = #{etcCd} 
+			, ETC_DESC = #{etcDesc} 
+			, REF_VAL1 = #{refVal1} 
+			, REMARK = #{remark} 
+			, MOD_DTM = SYSDATE 
+			, MOD_NM = #{userNm} 
+		WHERE CD_TYPE = #{cdType} 
+		  AND CD = #{cd} 
+	</update> 
+
+	<!-- 공통코드 삭제 처리 --> 
+	<delete id="deleteCode" parameterType="Map"  > 
+		/* CodeMapper.deleteCode */ 
+		DELETE FROM CM_CODE 
+		WHERE CD_TYPE = #{cdType} 
+		  AND CD = #{cd} 
+	</delete> 
+
+</mapper>

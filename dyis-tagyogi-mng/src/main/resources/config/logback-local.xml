@@ -8,7 +8,7 @@
 	
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		
-		<filter class="ddc.core.filter.LogBackFilter"/> 
+		<filter class="proj.core.filter.LogBackFilter"/> 
 		<encoder>
 			<!--
 			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>-->
@@ -19,7 +19,7 @@
 	<property name="LOGS_PATH" value="D:/logs/kocfc/admin"/>
 	<appender name="ROLLINGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${LOGS_PATH}/admin.log</file>
-		<filter class="ddc.core.filter.LogBackFilter"/>
+		<filter class="proj.core.filter.LogBackFilter"/>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<fileNamePattern>${LOGS_PATH}/admin/%d{yyyyMM}/admin_%d{yyyyMMdd}_%i.log</fileNamePattern>
 			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">

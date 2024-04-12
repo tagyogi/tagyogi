@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="proj.biz.sys.repository.LogProcMapper">
+
+	<!-- 로그인이력 정보 조회 -->
+ 	<resultMap id="loginMap" type="camelMap">
+		<result property="USER_ID" column="USER_ID" />
+		<result property="USER_NM" column="USER_NM" />
+		<result property="CONN_DTM" column="CONN_DTM" javaType="java.util.Date"/>
+		<result property="CONN_REF" column="CONN_REF" />
+		<result property="CONN_IP" column="CONN_IP" />
+		<result property="CONN_MAC" column="CONN_MAC" />
+	</resultMap>
+
+	<!-- 로그인이력 정보 조회 -->
+	<select id="selectLogLoginList" parameterType="Map" resultMap="loginMap">
+		/* LogProcMapper.selectLogLoginList */
+		SELECT
+			A.USER_ID
+			, B.USER_NM
+			, TO_CHAR(CONN_DTM, 'YYYY-MM-DD HH24:MI:SS') CONN_DTM
+			, A.CONN_REF
+			, A.CONN_IP
+			, A.CONN_MAC
+		FROM
+			CM_LOG_LOGIN A,
+			CM_EMPLOYEE B
+		WHERE A.USER_ID = B.USER_ID
+
+		<if test="sLogStaDt != null">
+        AND TO_CHAR(A.CONN_DTM,'YYYYMMDD') &gt;= REPLACE(#{sLogStaDt},'-','')
+        </if>
+        <if test="sLogEndDt != null">
+        AND TO_CHAR(A.CONN_DTM,'YYYYMMDD') &lt;= REPLACE(#{sLogEndDt},'-','')
+        </if>
+
+		ORDER BY A.CONN_DTM DESC
+	</select>
+
+	<!-- 업무로그이력 정보 조회 -->
+ 	<resultMap id="logMap" type="camelMap">
+		<result property="USER_ID" column="USER_ID" />
+		<result property="USER_NM" column="USER_NM" />
+		<result property="PROC_DTM" column="PROC_DTM" />
+		<result property="PROC_MTH" column="PROC_MTH" />
+		<result property="PROC_VAL" column="PROC_VAL" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="CONN_REF" column="CONN_REF" />
+		<result property="CONN_IP" column="CONN_IP" />
+
+	</resultMap>
+
+	<!-- 업무로그이력 정보 조회 -->
+	<select id="selectLogProcList" parameterType="Map" resultMap="logMap">
+		/* LogProcMapper.selectLogProcList */
+		SELECT
+			B.USER_ID
+			, B.USER_NM
+			, TO_CHAR(A.PROC_DTM, 'YYYY-MM-DD HH24:MI:SS') PROC_DTM
+			, A.PROC_MTH
+			, A.PROC_VAL
+			, A.CONN_REF
+			, A.CONN_IP
+		FROM
+			CM_LOG_PROC A,
+			CM_EMPLOYEE B
+		WHERE A.USER_ID = B.USER_NM
+		<if test="sUserId != null and sUserId  != ''">
+        AND B.USER_ID LIKE '%' || #{sUserId} || '%'
+        </if>
+        <if test="sUserNm != null and sUserNm  != ''">
+        AND B.USER_NM LIKE '%' || #{sUserNm} || '%'
+        </if>
+        <if test="sLogStaDt != null">
+        AND TO_CHAR(A.PROC_DTM,'YYYYMMDD') &gt;= REPLACE(#{sLogStaDt},'-','')
+        </if>
+        <if test="sLogEndDt != null">
+        AND TO_CHAR(A.PROC_DTM,'YYYYMMDD') &lt;= REPLACE(#{sLogEndDt},'-','')
+        </if>
+
+		ORDER BY A.PROC_DTM DESC
+	</select>
+
+	<!-- 처리로그 상세 조회 -->
+	<select id="selectLogProc" parameterType="Map" resultType="camelMap">
+		/* LogProcMapper.selectLogProc*/
+		SELECT
+			USER_ID
+			, TO_CHAR(PROC_DTM, 'YYYY-MM-DD HH24:MI:SS') PROC_DTM
+			, PROC_MTH
+			, PROC_VAL
+			, CONN_REF
+			, CONN_IP
+		  FROM CM_LOG_PROC
+		<where>
+		</where>
+	</select>
+
+	<!-- 처리로그 등록 처리 -->
+	<insert id="insertLogProc" parameterType="Map"  >
+		/* LogProcMapper.insertLogProc */
+		INSERT INTO CM_LOG_PROC (
+			USER_ID
+			, PROC_DTM
+			, PROC_MTH
+			, PROC_VAL
+			, CONN_REF
+			, CONN_IP
+		) VALUES (
+			#{userNm}
+			, SYSDATE
+			, #{procMth}
+			, #{procVal}
+			, #{connRef}
+			, #{connIp}
+		)
+	</insert>
+
+	<!-- 업무처리오류로그 정보 조회 -->
+ 	<resultMap id="errMap" type="camelMap">
+		<result property="USER_ID" column="USER_ID" />
+		<result property="USER_NM" column="USER_NM" />
+		<result property="ERR_DTM" column="ERR_DTM" />
+		<result property="ERR_VAL" column="ERR_VAL" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="ERR_MSG" column="ERR_MSG" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="CONN_REF" column="CONN_REF" />
+	</resultMap>
+
+	<!-- 업무처리오류로그 현황 조회 -->
+	<select id="selectLogErrList" parameterType="Map" resultMap="errMap">
+		/* LogProcMapper.selectLogErrList*/
+		SELECT
+			USER_ID
+			, TO_CHAR(ERR_DTM, 'YYYY-MM-DD HH24:MI:SS') ERR_DTM
+			, ERR_VAL
+			, ERR_MSG
+			, CONN_REF
+		  FROM CM_LOG_ERR
+		 WHERE TO_CHAR(ERR_DTM,'YYYYMMDD') &gt;= REPLACE(#{sSerchStaDt},'-','')
+		   AND TO_CHAR(ERR_DTM,'YYYYMMDD') &lt;= REPLACE(#{sSerchEndDt},'-','')
+		   
+         ORDER BY ERR_DTM DESC
+	</select>
+
+	<!-- 업무처리오류로그 등록 처리 -->
+	<insert id="insertLogErr" parameterType="Map"  >
+		/* LogProcMapper.insertLogErr */
+		INSERT INTO CM_LOG_ERR (
+			USER_ID
+			, ERR_DTM
+			, ERR_MTH
+			, ERR_VAL
+			, ERR_MSG
+			, CONN_REF
+			, CONN_IP
+		) VALUES (
+			#{userNm}
+			, SYSDATE
+			, #{errMth}
+			, #{errVal}
+			, #{errMsg}
+			, #{connRef}
+			, #{connIp}
+		)
+	</insert>
+
+
+	<!-- ################################### 배치로그관리 -->
+	<!-- ################################### 배치로그관리 시작-->
+	<!-- 배치처리로그 정보 조회 -->
+	<select id="selectLogBatchList" parameterType="Map" resultType="camelMap">
+		/* LogProcMapper.selectLogBatchList */
+		SELECT A.BATCH_NO
+	         , B.BATCH_NM
+	         , A.PROC_SEQ
+	         , A.PROC_STAT
+	         , A.PROC_CONT
+	         , TO_CHAR(A.BEG_DTM, 'YYYY-MM-DD HH24:MI:SS') BEG_DTM
+	         , TO_CHAR(A.END_DTM, 'YYYY-MM-DD HH24:MI:SS') END_DTM
+	         , A.BATCH_SERV
+	      FROM CM_LOG_BATCH A
+	         , CM_BATCH B
+	    WHERE A.BATCH_NO = B.BATCH_NO
+	    <if test="sLogStaDt != null">
+        AND TO_CHAR(A.BEG_DTM,'YYYYMMDD') &gt;= REPLACE(#{sLogStaDt},'-','')
+        </if>
+        <if test="sLogEndDt != null">
+        AND TO_CHAR(A.BEG_DTM,'YYYYMMDD') &lt;= REPLACE(#{sLogEndDt},'-','')
+        </if>
+        <if test="sBatchNm != null and sBatchNm  != ''">
+        AND B.BATCH_NM LIKE '%' || #{sBatchNm} || '%'
+        </if>
+
+	    ORDER BY A.BEG_DTM DESC
+	</select>
+
+	<!-- 배치처리 등록 처리 -->
+	<insert id="insertLogBatch" parameterType="Map"  >
+		/* LogProcMapper.insertLogBatch */
+		<selectKey resultType="java.lang.String" keyProperty="procSeq" order="BEFORE">
+	          SELECT NVL(MAX(PROC_SEQ), 0) + 1 AS PROC_SEQ
+	            FROM CM_LOG_BATCH
+	           WHERE BATCH_NO = #{batchNo}
+	    </selectKey>
+		INSERT INTO CM_LOG_BATCH (
+			BATCH_NO
+			, PROC_SEQ
+			, PROC_STAT
+			, PROC_CONT
+			, BEG_DTM
+			, BATCH_SERV
+		) VALUES (
+			#{batchNo}
+			, #{procSeq}
+			, DECODE(#{procStat}, NULL, 'P', #{procStat})
+			, CASE WHEN LENGTH(#{procCont}) > 4000 THEN SUBSTR(#{procCont}, 0, 4000) ELSE  #{procCont} END
+			, SYSDATE
+			, #{batchServ}
+		)
+
+	</insert>
+
+	<!-- 배치처리 수정 처리 -->
+	<update id="updateLogBatch" parameterType="Map"  >
+		/* LogProcMapper.updateLogBatch */
+		UPDATE CM_LOG_BATCH
+		   SET PROC_STAT = #{procStat}
+		     , PROC_CONT = #{procCont}
+		     , END_DTM 	= SYSDATE
+		 WHERE BATCH_NO = #{batchNo}
+		   AND PROC_SEQ = #{procSeq}
+	</update>
+
+
+</mapper>

@@ -52,7 +52,7 @@
 			    IBSheet.create({ id: "sheetSure", el: "sheetDivSure", options: gridOptList[0] });
 			    IBSheet.create({ id: "sheetMort", el: "sheetDivMort", options: gridOptList[1] });
 			    IBSheet.create({ id: "sheetEnq", el: "sheetDivEnq", options: gridOptList[2] }); //사고조사
-			    IBSheet.create({ id: "sheetDdc", el: "sheetDivDdc", options: gridOptList[3] }); //공제급지급
+			    IBSheet.create({ id: "sheetproj", el: "sheetDivproj", options: gridOptList[3] }); //공제급지급
 			    IBSheet.create({ id: "sheetPrp", el: "sheetDivPrp", options: gridOptList[4] }); //재산조사
 			    IBSheet.create({ id: "sheetLaw", el: "sheetDivLaw", options: gridOptList[5] }); //법적절차
 			    IBSheet.create({ id: "sheetRcv", el: "sheetDivRcv", options: gridOptList[6] }); //회수처리
@@ -60,20 +60,20 @@
 			    
 			    
 			    //20231222 KSM 배서현 대리 요청으로 잔액 계산
-			    sheetDdc.bind("onAfterChange", function(obj){
+			    sheetproj.bind("onAfterChange", function(obj){
 					rowData = this.getFocusedRow();				//포커스 행
-					rowId = sheetDdc.getRowById(rowData.id);	//포커스된 rowId
+					rowId = sheetproj.getRowById(rowData.id);	//포커스된 rowId
 					
-					payAmt = sheetDdc.getValue(rowId, "payAmt");	//실지급금액
-					offsetAmt = sheetDdc.getValue(rowId, "offsetAmt");	//상계금액
+					payAmt = sheetproj.getValue(rowId, "payAmt");	//실지급금액
+					offsetAmt = sheetproj.getValue(rowId, "offsetAmt");	//상계금액
 					balAmt = payAmt - offsetAmt; //잔액
 					
 					if(obj.col === "payAmt") {
-						sheetDdc.setValue(rowId, "balAmt", balAmt);
+						sheetproj.setValue(rowId, "balAmt", balAmt);
 					}
 					
 					if(obj.col === "offsetAmt") {
-						sheetDdc.setValue(rowId, "balAmt", balAmt);
+						sheetproj.setValue(rowId, "balAmt", balAmt);
 					}
 				});
 			});
@@ -137,7 +137,7 @@
 					if(confirm("저장 처리 하시겠습니까?")){
 						var param = $("#saveFrm").serializeObject();
 						param.enq = sheetEnq.getSaveJson(); //사고조사
-						param.ddc = sheetDdc.getSaveJson(); //공제금지급
+						param.proj = sheetproj.getSaveJson(); //공제금지급
 						param.prp = sheetPrp.getSaveJson(); //재산조사
 						param.law = sheetLaw.getSaveJson(); //법적절차
 						param.rcv = sheetRcv.getSaveJson(); //회수처리
@@ -175,7 +175,7 @@
 			//행 추가
 			var fnRowAdd = function(sheetId){
 				var prpCnt = sheetPrp.getTotalRowCount();
-				var ddcCnt = sheetDdc.getTotalRowCount();
+				var projCnt = sheetproj.getTotalRowCount();
 				
 				initData = {};
 				if(sheetId.id === "sheetEnq") { //배서현대리 요청사항 20231220 KSM 처리
@@ -184,7 +184,7 @@
 					if(sheetId.id === "sheetPrp" && prpCnt >= 5) {
 						alert("재산조사는 최대 5행까지만 가능합니다");
 						return;
-					} else if(sheetId.id === "sheetDdc" && ddcCnt >= 3) {
+					} else if(sheetId.id === "sheetproj" && projCnt >= 3) {
 						alert("공제금지급은 최대 3행까지만 가능합니다");
 						return;
 					} else {
@@ -209,7 +209,7 @@
 		
 			//		console.log(tabgroup);
 		            others.removeClass('active');
-		            $this.addClass('active');
+		            $this.aprojlass('active');
 		            $(tabgroup).children('div').hide();
 		            $(target).show();
 		
@@ -307,7 +307,7 @@
 										</td>
 										<th><span class="reqMark">*</span>청구금액</th>
 										<td >
-											<input type="search" name="claimAmt" id ="claimAmt" title="청구금액" style="text-align:right; width:130px;" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);com.addComma();"/>
+											<input type="search" name="claimAmt" id ="claimAmt" title="청구금액" style="text-align:right; width:130px;" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);com.aprojomma();"/>
 										</td>
 									</tr>
 									<tr>
@@ -368,7 +368,7 @@
 										</td>
 										<th>출자금상계금액</th>
 										<td >
-											<input type="search" name="investAmt" id ="investAmt" title="출자금상계금액" style="text-align:right; width:150px;" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);com.addComma();"/>
+											<input type="search" name="investAmt" id ="investAmt" title="출자금상계금액" style="text-align:right; width:150px;" maxlength="15" onkeyup="com.fnOnlyNum(this);com.makeComma(this);com.aprojomma();"/>
 										</td>
 									</tr>
 								</tbody>
@@ -551,11 +551,11 @@
 										<h4 class="title">공제금지급</h4>
 									</div>
 									<div class="fr">
-										<button type="button" onclick="javascript:fnRowAdd(sheetDdc);" class="btn small style08">행추가</button>
-										<button type="button" onclick="javascript:com.fnIbsRowDel(sheetDdc);" class="btn small style08">행삭제</button>
+										<button type="button" onclick="javascript:fnRowAdd(sheetproj);" class="btn small style08">행추가</button>
+										<button type="button" onclick="javascript:com.fnIbsRowDel(sheetproj);" class="btn small style08">행삭제</button>
 									</div>
 								</section>
-								<div id="sheetDivDdc" style="width:100%;height:200px"></div>
+								<div id="sheetDivproj" style="width:100%;height:200px"></div>
 								<!-- 
 								<section class="area mt5">
 									<div class="fl">

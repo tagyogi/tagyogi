@@ -737,7 +737,7 @@ $.Widget.prototype = {
 		this.hoverable = this.hoverable.add( element );
 		this._on( element, {
 			mouseenter: function( event ) {
-				$( event.currentTarget ).addClass( "ui-state-hover" );
+				$( event.currentTarget ).aprojlass( "ui-state-hover" );
 			},
 			mouseleave: function( event ) {
 				$( event.currentTarget ).removeClass( "ui-state-hover" );
@@ -749,7 +749,7 @@ $.Widget.prototype = {
 		this.focusable = this.focusable.add( element );
 		this._on( element, {
 			focusin: function( event ) {
-				$( event.currentTarget ).addClass( "ui-state-focus" );
+				$( event.currentTarget ).aprojlass( "ui-state-focus" );
 			},
 			focusout: function( event ) {
 				$( event.currentTarget ).removeClass( "ui-state-focus" );
@@ -988,7 +988,7 @@ $.widget("ui.draggable", $.ui.mouse, {
 	version: "1.10.3",
 	widgetEventPrefix: "drag",
 	options: {
-		addClasses: true,
+		aprojlasses: true,
 		appendTo: "parent",
 		axis: false,
 		connectToSortable: false,
@@ -1023,11 +1023,11 @@ $.widget("ui.draggable", $.ui.mouse, {
 		if (this.options.helper === "original" && !(/^(?:r|a|f)/).test(this.element.css("position"))) {
 			this.element[0].style.position = "relative";
 		}
-		if (this.options.addClasses){
-			this.element.addClass("ui-draggable");
+		if (this.options.aprojlasses){
+			this.element.aprojlass("ui-draggable");
 		}
 		if (this.options.disabled){
-			this.element.addClass("ui-draggable-disabled");
+			this.element.aprojlass("ui-draggable-disabled");
 		}
 
 		this._mouseInit();
@@ -1075,7 +1075,7 @@ $.widget("ui.draggable", $.ui.mouse, {
 		//Create and append the visible helper
 		this.helper = this._createHelper(event);
 
-		this.helper.addClass("ui-draggable-dragging");
+		this.helper.aprojlass("ui-draggable-dragging");
 
 		//Cache the helper size
 		this._cacheHelperProportions();
@@ -1938,7 +1938,7 @@ $.widget("ui.droppable", {
 	options: {
 		accept: "*",
 		activeClass: false,
-		addClasses: true,
+		aprojlasses: true,
 		greedy: false,
 		hoverClass: false,
 		scope: "default",
@@ -1970,7 +1970,7 @@ $.widget("ui.droppable", {
 		$.ui.ddmanager.droppables[o.scope] = $.ui.ddmanager.droppables[o.scope] || [];
 		$.ui.ddmanager.droppables[o.scope].push(this);
 
-		(o.addClasses && this.element.addClass("ui-droppable"));
+		(o.aprojlasses && this.element.aprojlass("ui-droppable"));
 
 	},
 
@@ -2000,7 +2000,7 @@ $.widget("ui.droppable", {
 	_activate: function(event) {
 		var draggable = $.ui.ddmanager.current;
 		if(this.options.activeClass) {
-			this.element.addClass(this.options.activeClass);
+			this.element.aprojlass(this.options.activeClass);
 		}
 		if(draggable){
 			this._trigger("activate", event, this.ui(draggable));
@@ -2028,7 +2028,7 @@ $.widget("ui.droppable", {
 
 		if (this.accept.call(this.element[0],(draggable.currentItem || draggable.element))) {
 			if(this.options.hoverClass) {
-				this.element.addClass(this.options.hoverClass);
+				this.element.aprojlass(this.options.hoverClass);
 			}
 			this._trigger("over", event, this.ui(draggable));
 		}
@@ -2325,7 +2325,7 @@ $.widget("ui.resizable", $.ui.mouse, {
 		var n, i, handle, axis, hname,
 			that = this,
 			o = this.options;
-		this.element.addClass("ui-resizable");
+		this.element.aprojlass("ui-resizable");
 
 		$.extend(this, {
 			_aspectRatio: !!(o.aspectRatio),
@@ -2396,7 +2396,7 @@ $.widget("ui.resizable", $.ui.mouse, {
 
 				//TODO : What's going on here?
 				if ("se" === handle) {
-					axis.addClass("ui-icon ui-icon-gripsmall-diagonal-se");
+					axis.aprojlass("ui-icon ui-icon-gripsmall-diagonal-se");
 				}
 
 				//Insert into internal handles object and append to element
@@ -2466,7 +2466,7 @@ $.widget("ui.resizable", $.ui.mouse, {
 		if (o.autoHide) {
 			this._handles.hide();
 			$(this.element)
-				.addClass("ui-resizable-autohide")
+				.aprojlass("ui-resizable-autohide")
 				.mouseenter(function() {
 					if (o.disabled) {
 						return;
@@ -2479,7 +2479,7 @@ $.widget("ui.resizable", $.ui.mouse, {
 						return;
 					}
 					if (!that.resizing) {
-						$(this).addClass("ui-resizable-autohide");
+						$(this).aprojlass("ui-resizable-autohide");
 						that._handles.hide();
 					}
 				});
@@ -2575,7 +2575,7 @@ $.widget("ui.resizable", $.ui.mouse, {
 		cursor = $(".ui-resizable-" + this.axis).css("cursor");
 		$("body").css("cursor", cursor === "auto" ? this.axis + "-resize" : cursor);
 
-		el.addClass("ui-resizable-resizing");
+		el.aprojlass("ui-resizable-resizing");
 		this._propagate("start", event);
 		return true;
 	},
@@ -2845,7 +2845,7 @@ $.widget("ui.resizable", $.ui.mouse, {
 
 			this.helper = this.helper || $("<div style='overflow:hidden;'></div>");
 
-			this.helper.addClass(this._helper).css({
+			this.helper.aprojlass(this._helper).css({
 				width: this.element.outerWidth() - 1,
 				height: this.element.outerHeight() - 1,
 				position: "absolute",
@@ -3155,8 +3155,8 @@ $.ui.plugin.add("resizable", "ghost", {
 		that.ghost = that.originalElement.clone();
 		that.ghost
 			.css({ opacity: 0.25, display: "block", position: "relative", height: cs.height, width: cs.width, margin: 0, left: 0, top: 0 })
-			.addClass("ui-resizable-ghost")
-			.addClass(typeof o.ghost === "string" ? o.ghost : "");
+			.aprojlass("ui-resizable-ghost")
+			.aprojlass(typeof o.ghost === "string" ? o.ghost : "");
 
 		that.ghost.appendTo(that.helper);
 
@@ -3260,14 +3260,14 @@ $.widget("ui.selectable", $.ui.mouse, {
 		var selectees,
 			that = this;
 
-		this.element.addClass("ui-selectable");
+		this.element.aprojlass("ui-selectable");
 
 		this.dragged = false;
 
 		// cache selectee children based on filter
 		this.refresh = function() {
 			selectees = $(that.options.filter, that.element[0]);
-			selectees.addClass("ui-selectee");
+			selectees.aprojlass("ui-selectee");
 			selectees.each(function() {
 				var $this = $(this),
 					pos = $this.offset();
@@ -3287,7 +3287,7 @@ $.widget("ui.selectable", $.ui.mouse, {
 		};
 		this.refresh();
 
-		this.selectees = selectees.addClass("ui-selectee");
+		this.selectees = selectees.aprojlass("ui-selectee");
 
 		this._mouseInit();
 
@@ -3336,7 +3336,7 @@ $.widget("ui.selectable", $.ui.mouse, {
 			if (!event.metaKey && !event.ctrlKey) {
 				selectee.$element.removeClass("ui-selected");
 				selectee.selected = false;
-				selectee.$element.addClass("ui-unselecting");
+				selectee.$element.aprojlass("ui-unselecting");
 				selectee.unselecting = true;
 				// selectable UNSELECTING callback
 				that._trigger("unselecting", event, {
@@ -3352,7 +3352,7 @@ $.widget("ui.selectable", $.ui.mouse, {
 				doSelect = (!event.metaKey && !event.ctrlKey) || !selectee.$element.hasClass("ui-selected");
 				selectee.$element
 					.removeClass(doSelect ? "ui-unselecting" : "ui-selected")
-					.addClass(doSelect ? "ui-selecting" : "ui-unselecting");
+					.aprojlass(doSelect ? "ui-selecting" : "ui-unselecting");
 				selectee.unselecting = !doSelect;
 				selectee.selecting = doSelect;
 				selectee.selected = doSelect;
@@ -3418,7 +3418,7 @@ $.widget("ui.selectable", $.ui.mouse, {
 					selectee.unselecting = false;
 				}
 				if (!selectee.selecting) {
-					selectee.$element.addClass("ui-selecting");
+					selectee.$element.aprojlass("ui-selecting");
 					selectee.selecting = true;
 					// selectable SELECTING callback
 					that._trigger("selecting", event, {
@@ -3431,13 +3431,13 @@ $.widget("ui.selectable", $.ui.mouse, {
 					if ((event.metaKey || event.ctrlKey) && selectee.startselected) {
 						selectee.$element.removeClass("ui-selecting");
 						selectee.selecting = false;
-						selectee.$element.addClass("ui-selected");
+						selectee.$element.aprojlass("ui-selected");
 						selectee.selected = true;
 					} else {
 						selectee.$element.removeClass("ui-selecting");
 						selectee.selecting = false;
 						if (selectee.startselected) {
-							selectee.$element.addClass("ui-unselecting");
+							selectee.$element.aprojlass("ui-unselecting");
 							selectee.unselecting = true;
 						}
 						// selectable UNSELECTING callback
@@ -3451,7 +3451,7 @@ $.widget("ui.selectable", $.ui.mouse, {
 						selectee.$element.removeClass("ui-selected");
 						selectee.selected = false;
 
-						selectee.$element.addClass("ui-unselecting");
+						selectee.$element.aprojlass("ui-unselecting");
 						selectee.unselecting = true;
 						// selectable UNSELECTING callback
 						that._trigger("unselecting", event, {
@@ -3481,7 +3481,7 @@ $.widget("ui.selectable", $.ui.mouse, {
 		});
 		$(".ui-selecting", this.element[0]).each(function() {
 			var selectee = $.data(this, "selectable-item");
-			selectee.$element.removeClass("ui-selecting").addClass("ui-selected");
+			selectee.$element.removeClass("ui-selecting").aprojlass("ui-selected");
 			selectee.selecting = false;
 			selectee.selected = true;
 			selectee.startselected = true;
@@ -3558,7 +3558,7 @@ $.widget("ui.sortable", $.ui.mouse, {
 
 		var o = this.options;
 		this.containerCache = {};
-		this.element.addClass("ui-sortable");
+		this.element.aprojlass("ui-sortable");
 
 		//Get the items
 		this.refresh();
@@ -3775,7 +3775,7 @@ $.widget("ui.sortable", $.ui.mouse, {
 
 		this.dragging = true;
 
-		this.helper.addClass("ui-sortable-helper");
+		this.helper.aprojlass("ui-sortable-helper");
 		this._mouseDrag(event); //Execute the drag once - this causes the helper not to be visible before getting its correct position
 		return true;
 
@@ -4251,7 +4251,7 @@ $.widget("ui.sortable", $.ui.mouse, {
 
 					var nodeName = that.currentItem[0].nodeName.toLowerCase(),
 						element = $( "<" + nodeName + ">", that.document[0] )
-							.addClass(className || that.currentItem[0].className+" ui-sortable-placeholder")
+							.aprojlass(className || that.currentItem[0].className+" ui-sortable-placeholder")
 							.removeClass("ui-sortable-helper");
 
 					if ( nodeName === "tr" ) {
@@ -5602,14 +5602,14 @@ $.effects.animateClass = function( value, duration, easing, callback ) {
 };
 
 $.fn.extend({
-	addClass: (function( orig ) {
+	aprojlass: (function( orig ) {
 		return function( classNames, speed, easing, callback ) {
 			return speed ?
 				$.effects.animateClass.call( this,
 					{ add: classNames }, speed, easing, callback ) :
 				orig.apply( this, arguments );
 		};
-	})( $.fn.addClass ),
+	})( $.fn.aprojlass ),
 
 	removeClass: (function( orig ) {
 		return function( classNames, speed, easing, callback ) {
@@ -5730,7 +5730,7 @@ $.extend( $.effects, {
 				"float": element.css( "float" )
 			},
 			wrapper = $( "<div></div>" )
-				.addClass( "ui-effects-wrapper" )
+				.aprojlass( "ui-effects-wrapper" )
 				.css({
 					fontSize: "100%",
 					background: "transparent",
@@ -6084,7 +6084,7 @@ $.widget( "ui.accordion", {
 	_create: function() {
 		var options = this.options;
 		this.prevShow = this.prevHide = $();
-		this.element.addClass( "ui-accordion ui-widget ui-helper-reset" )
+		this.element.aprojlass( "ui-accordion ui-widget ui-helper-reset" )
 			// ARIA
 			.attr( "role", "tablist" );
 
@@ -6113,12 +6113,12 @@ $.widget( "ui.accordion", {
 		var icons = this.options.icons;
 		if ( icons ) {
 			$( "<span>" )
-				.addClass( "ui-accordion-header-icon ui-icon " + icons.header )
+				.aprojlass( "ui-accordion-header-icon ui-icon " + icons.header )
 				.prependTo( this.headers );
 			this.active.children( ".ui-accordion-header-icon" )
 				.removeClass( icons.header )
-				.addClass( icons.activeHeader );
-			this.headers.addClass( "ui-accordion-icons" );
+				.aprojlass( icons.activeHeader );
+			this.headers.aprojlass( "ui-accordion-icons" );
 		}
 	},
 
@@ -6285,10 +6285,10 @@ $.widget( "ui.accordion", {
 
 	_processPanels: function() {
 		this.headers = this.element.find( this.options.header )
-			.addClass( "ui-accordion-header ui-helper-reset ui-state-default ui-corner-all" );
+			.aprojlass( "ui-accordion-header ui-helper-reset ui-state-default ui-corner-all" );
 
 		this.headers.next()
-			.addClass( "ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom" )
+			.aprojlass( "ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom" )
 			.filter(":not(.ui-accordion-content-active)")
 			.hide();
 	},
@@ -6302,10 +6302,10 @@ $.widget( "ui.accordion", {
 				(this.element.attr( "id" ) || ++uid);
 
 		this.active = this._findActive( options.active )
-			.addClass( "ui-accordion-header-active ui-state-active ui-corner-top" )
+			.aprojlass( "ui-accordion-header-active ui-state-active ui-corner-top" )
 			.removeClass( "ui-corner-all" );
 		this.active.next()
-			.addClass( "ui-accordion-content-active" )
+			.aprojlass( "ui-accordion-content-active" )
 			.show();
 
 		this.headers
@@ -6470,22 +6470,22 @@ $.widget( "ui.accordion", {
 		if ( options.icons ) {
 			active.children( ".ui-accordion-header-icon" )
 				.removeClass( options.icons.activeHeader )
-				.addClass( options.icons.header );
+				.aprojlass( options.icons.header );
 		}
 
 		if ( !clickedIsActive ) {
 			clicked
 				.removeClass( "ui-corner-all" )
-				.addClass( "ui-accordion-header-active ui-state-active ui-corner-top" );
+				.aprojlass( "ui-accordion-header-active ui-state-active ui-corner-top" );
 			if ( options.icons ) {
 				clicked.children( ".ui-accordion-header-icon" )
 					.removeClass( options.icons.header )
-					.addClass( options.icons.activeHeader );
+					.aprojlass( options.icons.activeHeader );
 			}
 
 			clicked
 				.next()
-				.addClass( "ui-accordion-content-active" );
+				.aprojlass( "ui-accordion-content-active" );
 		}
 	},
 
@@ -6597,7 +6597,7 @@ $.widget( "ui.accordion", {
 			.removeClass( "ui-accordion-content-active" )
 			.prev()
 				.removeClass( "ui-corner-top" )
-				.addClass( "ui-corner-all" );
+				.aprojlass( "ui-corner-all" );
 
 		// Work around for rendering bug in IE (#5421)
 		if ( toHide.length ) {
@@ -6668,7 +6668,7 @@ $.widget( "ui.autocomplete", {
 		this.isNewMenu = true;
 
 		this.element
-			.addClass( "ui-autocomplete-input" )
+			.aprojlass( "ui-autocomplete-input" )
 			.attr( "autocomplete", "off" );
 
 		this._on( this.element, {
@@ -6790,7 +6790,7 @@ $.widget( "ui.autocomplete", {
 
 		this._initSource();
 		this.menu = $( "<ul>" )
-			.addClass( "ui-autocomplete ui-front" )
+			.aprojlass( "ui-autocomplete ui-front" )
 			.appendTo( this._appendTo() )
 			.menu({
 				// disable ARIA support, the live region takes care of that
@@ -6893,7 +6893,7 @@ $.widget( "ui.autocomplete", {
 				role: "status",
 				"aria-live": "polite"
 			})
-			.addClass( "ui-helper-hidden-accessible" )
+			.aprojlass( "ui-helper-hidden-accessible" )
 			.insertBefore( this.element );
 
 		// turning off autocomplete prevents the browser from remembering the
@@ -7009,7 +7009,7 @@ $.widget( "ui.autocomplete", {
 
 	_search: function( value ) {
 		this.pending++;
-		this.element.addClass( "ui-autocomplete-loading" );
+		this.element.aprojlass( "ui-autocomplete-loading" );
 		this.cancelSearch = false;
 
 		this.source( { term: value }, this._response() );
@@ -7274,14 +7274,14 @@ $.widget( "ui.button", {
 		this._hoverable( this.buttonElement );
 
 		this.buttonElement
-			.addClass( baseClasses )
+			.aprojlass( baseClasses )
 			.attr( "role", "button" )
 			.bind( "mouseenter" + this.eventNamespace, function() {
 				if ( options.disabled ) {
 					return;
 				}
 				if ( this === lastActive ) {
-					$( this ).addClass( "ui-state-active" );
+					$( this ).aprojlass( "ui-state-active" );
 				}
 			})
 			.bind( "mouseleave" + this.eventNamespace, function() {
@@ -7300,7 +7300,7 @@ $.widget( "ui.button", {
 		this.element
 			.bind( "focus" + this.eventNamespace, function() {
 				// no need to check disabled, focus won't be triggered anyway
-				that.buttonElement.addClass( focusClass );
+				that.buttonElement.aprojlass( focusClass );
 			})
 			.bind( "blur" + this.eventNamespace, function() {
 				that.buttonElement.removeClass( focusClass );
@@ -7346,7 +7346,7 @@ $.widget( "ui.button", {
 				if ( options.disabled || clickDragged ) {
 					return false;
 				}
-				$( this ).addClass( "ui-state-active" );
+				$( this ).aprojlass( "ui-state-active" );
 				that.buttonElement.attr( "aria-pressed", "true" );
 
 				var radio = that.element[ 0 ];
@@ -7364,7 +7364,7 @@ $.widget( "ui.button", {
 					if ( options.disabled ) {
 						return false;
 					}
-					$( this ).addClass( "ui-state-active" );
+					$( this ).aprojlass( "ui-state-active" );
 					lastActive = this;
 					that.document.one( "mouseup", function() {
 						lastActive = null;
@@ -7381,7 +7381,7 @@ $.widget( "ui.button", {
 						return false;
 					}
 					if ( event.keyCode === $.ui.keyCode.SPACE || event.keyCode === $.ui.keyCode.ENTER ) {
-						$( this ).addClass( "ui-state-active" );
+						$( this ).aprojlass( "ui-state-active" );
 					}
 				})
 				// see #8559, we bind to blur here in case the button element loses
@@ -7433,11 +7433,11 @@ $.widget( "ui.button", {
 					this.buttonElement = ancestor.find( labelSelector );
 				}
 			}
-			this.element.addClass( "ui-helper-hidden-accessible" );
+			this.element.aprojlass( "ui-helper-hidden-accessible" );
 
 			checked = this.element.is( ":checked" );
 			if ( checked ) {
-				this.buttonElement.addClass( "ui-state-active" );
+				this.buttonElement.aprojlass( "ui-state-active" );
 			}
 			this.buttonElement.prop( "aria-pressed", checked );
 		} else {
@@ -7487,7 +7487,7 @@ $.widget( "ui.button", {
 			radioGroup( this.element[0] ).each(function() {
 				if ( $( this ).is( ":checked" ) ) {
 					$( this ).button( "widget" )
-						.addClass( "ui-state-active" )
+						.aprojlass( "ui-state-active" )
 						.attr( "aria-pressed", "true" );
 				} else {
 					$( this ).button( "widget" )
@@ -7498,7 +7498,7 @@ $.widget( "ui.button", {
 		} else if ( this.type === "checkbox" ) {
 			if ( this.element.is( ":checked" ) ) {
 				this.buttonElement
-					.addClass( "ui-state-active" )
+					.aprojlass( "ui-state-active" )
 					.attr( "aria-pressed", "true" );
 			} else {
 				this.buttonElement
@@ -7517,7 +7517,7 @@ $.widget( "ui.button", {
 		}
 		var buttonElement = this.buttonElement.removeClass( typeClasses ),
 			buttonText = $( "<span></span>", this.document[0] )
-				.addClass( "ui-button-text" )
+				.aprojlass( "ui-button-text" )
 				.html( this.options.label )
 				.appendTo( buttonElement.empty() )
 				.text(),
@@ -7548,7 +7548,7 @@ $.widget( "ui.button", {
 		} else {
 			buttonClasses.push( "ui-button-text-only" );
 		}
-		buttonElement.addClass( buttonClasses.join( " " ) );
+		buttonElement.aprojlass( buttonClasses.join( " " ) );
 	}
 });
 
@@ -7559,7 +7559,7 @@ $.widget( "ui.buttonset", {
 	},
 
 	_create: function() {
-		this.element.addClass( "ui-buttonset" );
+		this.element.aprojlass( "ui-buttonset" );
 	},
 
 	_init: function() {
@@ -7589,10 +7589,10 @@ $.widget( "ui.buttonset", {
 			})
 				.removeClass( "ui-corner-all ui-corner-left ui-corner-right" )
 				.filter( ":first" )
-					.addClass( rtl ? "ui-corner-right" : "ui-corner-left" )
+					.aprojlass( rtl ? "ui-corner-right" : "ui-corner-left" )
 				.end()
 				.filter( ":last" )
-					.addClass( rtl ? "ui-corner-left" : "ui-corner-right" )
+					.aprojlass( rtl ? "ui-corner-left" : "ui-corner-right" )
 				.end()
 			.end();
 	},
@@ -7773,7 +7773,7 @@ $.extend(Datepicker.prototype, {
 			return;
 		}
 		this._attachments(input, inst);
-		input.addClass(this.markerClassName).keydown(this._doKeyDown).
+		input.aprojlass(this.markerClassName).keydown(this._doKeyDown).
 			keypress(this._doKeyPress).keyup(this._doKeyUp);
 		this._autoSize(inst);
 		$.data(target, PROP_NAME, inst);
@@ -7811,9 +7811,9 @@ $.extend(Datepicker.prototype, {
 			buttonText = this._get(inst, "buttonText");
 			buttonImage = this._get(inst, "buttonImage");
 			inst.trigger = $(this._get(inst, "buttonImageOnly") ?
-				$("<img/>").addClass(this._triggerClass).
+				$("<img/>").aprojlass(this._triggerClass).
 					attr({ src: buttonImage, alt: buttonText, title: buttonText }) :
-				$("<button type='button'></button>").addClass(this._triggerClass).
+				$("<button type='button'></button>").aprojlass(this._triggerClass).
 					html(!buttonImage ? buttonText : $("<img/>").attr(
 					{ src:buttonImage, alt:buttonText, title:buttonText })));
 			input[isRTL ? "before" : "after"](inst.trigger);
@@ -7865,7 +7865,7 @@ $.extend(Datepicker.prototype, {
 		if (divSpan.hasClass(this.markerClassName)) {
 			return;
 		}
-		divSpan.addClass(this.markerClassName).append(inst.dpDiv);
+		divSpan.aprojlass(this.markerClassName).append(inst.dpDiv);
 		$.data(target, PROP_NAME, inst);
 		this._setDate(inst, this._getDefaultDate(inst), true);
 		this._updateDatepicker(inst);
@@ -7922,7 +7922,7 @@ $.extend(Datepicker.prototype, {
 		this._dialogInput.css("left", (this._pos[0] + 20) + "px").css("top", this._pos[1] + "px");
 		inst.settings.onSelect = onSelect;
 		this._inDialog = true;
-		this.dpDiv.addClass(this._dialogClass);
+		this.dpDiv.aprojlass(this._dialogClass);
 		this._showDatepicker(this._dialogInput[0]);
 		if ($.blockUI) {
 			$.blockUI(this.dpDiv);
@@ -8006,7 +8006,7 @@ $.extend(Datepicker.prototype, {
 				filter("img").css({opacity: "0.5", cursor: "default"});
 		} else if (nodeName === "div" || nodeName === "span") {
 			inline = $target.children("." + this._inlineClass);
-			inline.children().addClass("ui-state-disabled");
+			inline.children().aprojlass("ui-state-disabled");
 			inline.find("select.ui-datepicker-month, select.ui-datepicker-year").
 				prop("disabled", true);
 		}
@@ -8375,7 +8375,7 @@ $.extend(Datepicker.prototype, {
 
 		inst.dpDiv.removeClass("ui-datepicker-multi-2 ui-datepicker-multi-3 ui-datepicker-multi-4").width("");
 		if (cols > 1) {
-			inst.dpDiv.addClass("ui-datepicker-multi-" + cols).css("width", (width * cols) + "em");
+			inst.dpDiv.aprojlass("ui-datepicker-multi-" + cols).css("width", (width * cols) + "em");
 		}
 		inst.dpDiv[(numMonths[0] !== 1 || numMonths[1] !== 1 ? "add" : "remove") +
 			"Class"]("ui-datepicker-multi");
@@ -9575,12 +9575,12 @@ function bindHover(dpDiv) {
 		.delegate(selector, "mouseover", function(){
 			if (!$.datepicker._isDisabledDatepicker( instActive.inline ? dpDiv.parent()[0] : instActive.input[0])) {
 				$(this).parents(".ui-datepicker-calendar").find("a").removeClass("ui-state-hover");
-				$(this).addClass("ui-state-hover");
+				$(this).aprojlass("ui-state-hover");
 				if (this.className.indexOf("ui-datepicker-prev") !== -1) {
-					$(this).addClass("ui-datepicker-prev-hover");
+					$(this).aprojlass("ui-datepicker-prev-hover");
 				}
 				if (this.className.indexOf("ui-datepicker-next") !== -1) {
-					$(this).addClass("ui-datepicker-next-hover");
+					$(this).aprojlass("ui-datepicker-next-hover");
 				}
 			}
 		});
@@ -9729,7 +9729,7 @@ $.widget( "ui.dialog", {
 		this.element
 			.show()
 			.removeAttr("title")
-			.addClass("ui-dialog-content ui-widget-content")
+			.aprojlass("ui-dialog-content ui-widget-content")
 			.appendTo( this.uiDialog );
 
 		this._createTitlebar();
@@ -9898,7 +9898,7 @@ $.widget( "ui.dialog", {
 
 	_createWrapper: function() {
 		this.uiDialog = $("<div>")
-			.addClass( "ui-dialog ui-widget ui-widget-content ui-corner-all ui-front " +
+			.aprojlass( "ui-dialog ui-widget ui-widget-content ui-corner-all ui-front " +
 				this.options.dialogClass )
 			.hide()
 			.attr({
@@ -9954,7 +9954,7 @@ $.widget( "ui.dialog", {
 		var uiDialogTitle;
 
 		this.uiDialogTitlebar = $("<div>")
-			.addClass("ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix")
+			.aprojlass("ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix")
 			.prependTo( this.uiDialog );
 		this._on( this.uiDialogTitlebar, {
 			mousedown: function( event ) {
@@ -9976,7 +9976,7 @@ $.widget( "ui.dialog", {
 				},
 				text: false
 			})
-			.addClass("ui-dialog-titlebar-close")
+			.aprojlass("ui-dialog-titlebar-close")
 			.appendTo( this.uiDialogTitlebar );
 		this._on( this.uiDialogTitlebarClose, {
 			click: function( event ) {
@@ -9987,7 +9987,7 @@ $.widget( "ui.dialog", {
 
 		uiDialogTitle = $("<span>")
 			.uniqueId()
-			.addClass("ui-dialog-title")
+			.aprojlass("ui-dialog-title")
 			.prependTo( this.uiDialogTitlebar );
 		this._title( uiDialogTitle );
 
@@ -10005,10 +10005,10 @@ $.widget( "ui.dialog", {
 
 	_createButtonPane: function() {
 		this.uiDialogButtonPane = $("<div>")
-			.addClass("ui-dialog-buttonpane ui-widget-content ui-helper-clearfix");
+			.aprojlass("ui-dialog-buttonpane ui-widget-content ui-helper-clearfix");
 
 		this.uiButtonSet = $("<div>")
-			.addClass("ui-dialog-buttonset")
+			.aprojlass("ui-dialog-buttonset")
 			.appendTo( this.uiDialogButtonPane );
 
 		this._createButtons();
@@ -10049,7 +10049,7 @@ $.widget( "ui.dialog", {
 				.button( buttonOptions )
 				.appendTo( that.uiButtonSet );
 		});
-		this.uiDialog.addClass("ui-dialog-buttons");
+		this.uiDialog.aprojlass("ui-dialog-buttons");
 		this.uiDialogButtonPane.appendTo( this.uiDialog );
 	},
 
@@ -10069,7 +10069,7 @@ $.widget( "ui.dialog", {
 			handle: ".ui-dialog-titlebar",
 			containment: "document",
 			start: function( event, ui ) {
-				$( this ).addClass("ui-dialog-dragging");
+				$( this ).aprojlass("ui-dialog-dragging");
 				that._blockFrames();
 				that._trigger( "dragStart", event, filteredUi( ui ) );
 			},
@@ -10118,7 +10118,7 @@ $.widget( "ui.dialog", {
 			minHeight: this._minHeight(),
 			handles: resizeHandles,
 			start: function( event, ui ) {
-				$( this ).addClass("ui-dialog-resizing");
+				$( this ).aprojlass("ui-dialog-resizing");
 				that._blockFrames();
 				that._trigger( "resizeStart", event, filteredUi( ui ) );
 			},
@@ -10189,7 +10189,7 @@ $.widget( "ui.dialog", {
 		if ( key === "dialogClass" ) {
 			uiDialog
 				.removeClass( this.options.dialogClass )
-				.addClass( value );
+				.aprojlass( value );
 		}
 
 		if ( key === "disabled" ) {
@@ -10354,7 +10354,7 @@ $.widget( "ui.dialog", {
 		}
 
 		this.overlay = $("<div>")
-			.addClass("ui-widget-overlay ui-front")
+			.aprojlass("ui-widget-overlay ui-front")
 			.appendTo( this._appendTo() );
 		this._on( this.overlay, {
 			mousedown: "_keepFocus"
@@ -10766,7 +10766,7 @@ $.effects.effect.explode = function( o, done ) {
 			// select the wrapper - make it overflow: hidden and absolute positioned based on
 			// where the original was located +left and +top equal to the size of pieces
 				.parent()
-				.addClass( "ui-effects-explode" )
+				.aprojlass( "ui-effects-explode" )
 				.css({
 					position: "absolute",
 					overflow: "hidden",
@@ -11407,7 +11407,7 @@ $.effects.effect.transfer = function( o, done ) {
 		startPosition = elem.offset(),
 		transfer = $( "<div class='ui-effects-transfer'></div>" )
 			.appendTo( document.body )
-			.addClass( o.className )
+			.aprojlass( o.className )
 			.css({
 				top: startPosition.top - fixTop ,
 				left: startPosition.left - fixLeft ,
@@ -11453,7 +11453,7 @@ $.widget( "ui.menu", {
 		this.mouseHandled = false;
 		this.element
 			.uniqueId()
-			.addClass( "ui-menu ui-widget ui-widget-content ui-corner-all" )
+			.aprojlass( "ui-menu ui-widget ui-widget-content ui-corner-all" )
 			.toggleClass( "ui-menu-icons", !!this.element.find( ".ui-icon" ).length )
 			.attr({
 				role: this.options.role,
@@ -11469,7 +11469,7 @@ $.widget( "ui.menu", {
 
 		if ( this.options.disabled ) {
 			this.element
-				.addClass( "ui-state-disabled" )
+				.aprojlass( "ui-state-disabled" )
 				.attr( "aria-disabled", "true" );
 		}
 
@@ -11695,7 +11695,7 @@ $.widget( "ui.menu", {
 
 		// Initialize nested menus
 		submenus.filter( ":not(.ui-menu)" )
-			.addClass( "ui-menu ui-widget ui-widget-content ui-corner-all" )
+			.aprojlass( "ui-menu ui-widget ui-widget-content ui-corner-all" )
 			.hide()
 			.attr({
 				role: this.options.role,
@@ -11706,7 +11706,7 @@ $.widget( "ui.menu", {
 				var menu = $( this ),
 					item = menu.prev( "a" ),
 					submenuCarat = $( "<span>" )
-						.addClass( "ui-menu-icon ui-icon " + icon )
+						.aprojlass( "ui-menu-icon ui-icon " + icon )
 						.data( "ui-menu-submenu-carat", true );
 
 				item
@@ -11719,11 +11719,11 @@ $.widget( "ui.menu", {
 
 		// Don't refresh list items that are already adapted
 		menus.children( ":not(.ui-menu-item):has(a)" )
-			.addClass( "ui-menu-item" )
+			.aprojlass( "ui-menu-item" )
 			.attr( "role", "presentation" )
 			.children( "a" )
 				.uniqueId()
-				.addClass( "ui-corner-all" )
+				.aprojlass( "ui-corner-all" )
 				.attr({
 					tabIndex: -1,
 					role: this._itemRole()
@@ -11734,7 +11734,7 @@ $.widget( "ui.menu", {
 			var item = $( this );
 			// hyphen, em dash, en dash
 			if ( !/[^\-\u2014\u2013\s]/.test( item.text() ) ) {
-				item.addClass( "ui-widget-content ui-menu-divider" );
+				item.aprojlass( "ui-widget-content ui-menu-divider" );
 			}
 		});
 
@@ -11758,7 +11758,7 @@ $.widget( "ui.menu", {
 		if ( key === "icons" ) {
 			this.element.find( ".ui-menu-icon" )
 				.removeClass( this.options.icons.submenu )
-				.addClass( value.submenu );
+				.aprojlass( value.submenu );
 		}
 		this._super( key, value );
 	},
@@ -11770,7 +11770,7 @@ $.widget( "ui.menu", {
 		this._scrollIntoView( item );
 
 		this.active = item.first();
-		focused = this.active.children( "a" ).addClass( "ui-state-focus" );
+		focused = this.active.children( "a" ).aprojlass( "ui-state-focus" );
 		// Only update aria-activedescendant if there's a role
 		// otherwise we assume focus is managed elsewhere
 		if ( this.options.role ) {
@@ -11782,7 +11782,7 @@ $.widget( "ui.menu", {
 			.parent()
 			.closest( ".ui-menu-item" )
 			.children( "a:first" )
-			.addClass( "ui-state-active" );
+			.aprojlass( "ui-state-active" );
 
 		if ( event && event.type === "keydown" ) {
 			this._close();
@@ -12537,7 +12537,7 @@ $.widget( "ui.progressbar", {
 		this.oldValue = this.options.value = this._constrainedValue();
 
 		this.element
-			.addClass( "ui-progressbar ui-widget ui-widget-content ui-corner-all" )
+			.aprojlass( "ui-progressbar ui-widget ui-widget-content ui-corner-all" )
 			.attr({
 				// Only set static values, aria-valuenow and aria-valuemax are
 				// set inside _refreshValue()
@@ -12687,7 +12687,7 @@ $.widget( "ui.slider", $.ui.mouse, {
 		this._mouseInit();
 
 		this.element
-			.addClass( "ui-slider" +
+			.aprojlass( "ui-slider" +
 				" ui-slider-" + this.orientation +
 				" ui-widget" +
 				" ui-widget-content" +
@@ -12709,7 +12709,7 @@ $.widget( "ui.slider", $.ui.mouse, {
 	_createHandles: function() {
 		var i, handleCount,
 			options = this.options,
-			existingHandles = this.element.find( ".ui-slider-handle" ).addClass( "ui-state-default ui-corner-all" ),
+			existingHandles = this.element.find( ".ui-slider-handle" ).aprojlass( "ui-state-default ui-corner-all" ),
 			handle = "<a class='ui-slider-handle ui-state-default ui-corner-all' href='#'></a>",
 			handles = [];
 
@@ -12765,7 +12765,7 @@ $.widget( "ui.slider", $.ui.mouse, {
 					});
 			}
 
-			this.range.addClass( classes +
+			this.range.aprojlass( classes +
 				( ( options.range === "min" || options.range === "max" ) ? " ui-slider-range-" + options.range : "" ) );
 		} else {
 			this.range = $([]);
@@ -12833,7 +12833,7 @@ $.widget( "ui.slider", $.ui.mouse, {
 		this._handleIndex = index;
 
 		closestHandle
-			.addClass( "ui-state-active" )
+			.aprojlass( "ui-state-active" )
 			.focus();
 
 		offset = closestHandle.offset();
@@ -13071,7 +13071,7 @@ $.widget( "ui.slider", $.ui.mouse, {
 				this._detectOrientation();
 				this.element
 					.removeClass( "ui-slider-horizontal ui-slider-vertical" )
-					.addClass( "ui-slider-" + this.orientation );
+					.aprojlass( "ui-slider-" + this.orientation );
 				this._refreshValue();
 				break;
 			case "value":
@@ -13242,7 +13242,7 @@ $.widget( "ui.slider", $.ui.mouse, {
 					event.preventDefault();
 					if ( !this._keySliding ) {
 						this._keySliding = true;
-						$( event.target ).addClass( "ui-state-active" );
+						$( event.target ).aprojlass( "ui-state-active" );
 						allowed = this._start( event, index );
 						if ( allowed === false ) {
 							return;
@@ -13484,7 +13484,7 @@ $.widget( "ui.spinner", {
 
 	_draw: function() {
 		var uiSpinner = this.uiSpinner = this.element
-			.addClass( "ui-spinner-input" )
+			.aprojlass( "ui-spinner-input" )
 			.attr( "autocomplete", "off" )
 			.wrap( this._uiSpinnerHtml() )
 			.parent()
@@ -13667,10 +13667,10 @@ $.widget( "ui.spinner", {
 		if ( key === "icons" ) {
 			this.buttons.first().find( ".ui-icon" )
 				.removeClass( this.options.icons.up )
-				.addClass( value.up );
+				.aprojlass( value.up );
 			this.buttons.last().find( ".ui-icon" )
 				.removeClass( this.options.icons.down )
-				.addClass( value.down );
+				.aprojlass( value.down );
 		}
 
 		this._super( key, value );
@@ -13827,7 +13827,7 @@ $.widget( "ui.tabs", {
 		this.running = false;
 
 		this.element
-			.addClass( "ui-tabs ui-widget ui-widget-content ui-corner-all" )
+			.aprojlass( "ui-tabs ui-widget ui-widget-content ui-corner-all" )
 			.toggleClass( "ui-tabs-collapsible", options.collapsible )
 			// Prevent users from focusing disabled tabs via click
 			.delegate( ".ui-tabs-nav > li", "mousedown" + this.eventNamespace, function( event ) {
@@ -14132,7 +14132,7 @@ $.widget( "ui.tabs", {
 			this.tabs.eq( 0 ).attr( "tabIndex", 0 );
 		} else {
 			this.active
-				.addClass( "ui-tabs-active ui-state-active" )
+				.aprojlass( "ui-tabs-active ui-state-active" )
 				.attr({
 					"aria-selected": "true",
 					tabIndex: 0
@@ -14150,11 +14150,11 @@ $.widget( "ui.tabs", {
 		var that = this;
 
 		this.tablist = this._getList()
-			.addClass( "ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" )
+			.aprojlass( "ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" )
 			.attr( "role", "tablist" );
 
 		this.tabs = this.tablist.find( "> li:has(a[href])" )
-			.addClass( "ui-state-default ui-corner-top" )
+			.aprojlass( "ui-state-default ui-corner-top" )
 			.attr({
 				role: "tab",
 				tabIndex: -1
@@ -14163,7 +14163,7 @@ $.widget( "ui.tabs", {
 		this.anchors = this.tabs.map(function() {
 				return $( "a", this )[ 0 ];
 			})
-			.addClass( "ui-tabs-anchor" )
+			.aprojlass( "ui-tabs-anchor" )
 			.attr({
 				role: "presentation",
 				tabIndex: -1
@@ -14207,7 +14207,7 @@ $.widget( "ui.tabs", {
 		});
 
 		this.panels
-			.addClass( "ui-tabs-panel ui-widget-content ui-corner-bottom" )
+			.aprojlass( "ui-tabs-panel ui-widget-content ui-corner-bottom" )
 			.attr( "role", "tabpanel" );
 	},
 
@@ -14219,7 +14219,7 @@ $.widget( "ui.tabs", {
 	_createPanel: function( id ) {
 		return $( "<div>" )
 			.attr( "id", id )
-			.addClass( "ui-tabs-panel ui-widget-content ui-corner-bottom" )
+			.aprojlass( "ui-tabs-panel ui-widget-content ui-corner-bottom" )
 			.data( "ui-tabs-destroy", true );
 	},
 
@@ -14236,7 +14236,7 @@ $.widget( "ui.tabs", {
 		for ( var i = 0, li; ( li = this.tabs[ i ] ); i++ ) {
 			if ( disabled === true || $.inArray( i, disabled ) !== -1 ) {
 				$( li )
-					.addClass( "ui-state-disabled" )
+					.aprojlass( "ui-state-disabled" )
 					.attr( "aria-disabled", "true" );
 			} else {
 				$( li )
@@ -14365,7 +14365,7 @@ $.widget( "ui.tabs", {
 		}
 
 		function show() {
-			eventData.newTab.closest( "li" ).addClass( "ui-tabs-active ui-state-active" );
+			eventData.newTab.closest( "li" ).aprojlass( "ui-tabs-active ui-state-active" );
 
 			if ( toShow.length && that.options.show ) {
 				that._show( toShow, that.options.show, complete );
@@ -14570,7 +14570,7 @@ $.widget( "ui.tabs", {
 		// jQuery <1.8 returns false if the request is canceled in beforeSend,
 		// but as of 1.8, $.ajax() always returns a jqXHR object.
 		if ( this.xhr && this.xhr.statusText !== "canceled" ) {
-			tab.addClass( "ui-tabs-loading" );
+			tab.aprojlass( "ui-tabs-loading" );
 			panel.attr( "aria-busy", "true" );
 
 			this.xhr
@@ -14963,10 +14963,10 @@ $.widget( "ui.tooltip", {
 					id: id,
 					role: "tooltip"
 				})
-				.addClass( "ui-tooltip ui-widget ui-corner-all ui-widget-content " +
+				.aprojlass( "ui-tooltip ui-widget ui-corner-all ui-widget-content " +
 					( this.options.tooltipClass || "" ) );
 		$( "<div>" )
-			.addClass( "ui-tooltip-content" )
+			.aprojlass( "ui-tooltip-content" )
 			.appendTo( tooltip );
 		tooltip.appendTo( this.document[0].body );
 		this.tooltips[ id ] = element;

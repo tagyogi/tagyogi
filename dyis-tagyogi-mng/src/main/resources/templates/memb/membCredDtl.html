@@ -46,7 +46,7 @@
 		                target = $this.attr('href');
 
 		            others.removeClass('active');
-		            $this.addClass('active');
+		            $this.aprojlass('active');
 		            $(tabgroup).children('div').hide();
 		            $(target).show();
 
@@ -127,7 +127,7 @@
 				$("[id^=ele_finVal]").each(function(idx, item){
 					var obj = $(item).text();
 					//$(item).attr("readonly", true);
-					$(item).text(com.addComma(obj));
+					$(item).text(com.aprojomma(obj));
 				});
 
 				$("#balYear").prop("disabled", true);

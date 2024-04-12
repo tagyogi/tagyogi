@@ -17,17 +17,17 @@
 
 				//radioBox
 				if(guarType === "21") com.fnCodeRadio("GR13", "ele_repayCd", "repayCd", false, "10"); //채무보증방법
-				com.fnCodeRadio("GR09", "ele_guarAddCdArea", "guarAddCd", false, "0"); //보증기간가산
+				com.fnCodeRadio("GR09", "ele_guarAprojdArea", "guarAprojd", false, "0"); //보증기간가산
 				//보증기간가산 클릭 이벤트
-				$("input[name=guarAddCd]").on("click",function(){
+				$("input[name=guarAprojd]").on("click",function(){
 				    if($("#guarBegDt").val().length !== 10 || $("#guarExpDt").val().length !== 10) 	return;
 
-					var addCd = Number($(this).val());
-					$("#guarAddDays").val(addCd);
+					var aprojd = Number($(this).val());
+					$("#guarAddDays").val(aprojd);
 				    if(tmpGuarExpDt === undefined) 	tmpGuarExpDt = $("#guarExpDt").val();
 
 				    // 보증종료일계산
-				    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, addCd));
+				    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, aprojd));
 
 				    // 보증일수 계산
 				    guarCom.fnSetGuarDays();
@@ -71,7 +71,7 @@
 
 			//수정페이지(기존 데이터 체크박스,라디오박스 값 체크)
 			var fnUptCheckValGuar = function(guar){
-				com.checkBoxCheckValue(guar.guarAddCd, "guarAddCd");	//보증기간가산
+				com.checkBoxCheckValue(guar.guarAprojd, "guarAprojd");	//보증기간가산
 				com.checkBoxCheckValue(guar.specContrs, "specContrs");	//특약
 				com.checkBoxCheckValue(guar.g2bContCheck, "g2bContCheck");	//실제이행기일
 				com.checkBoxCheckValue(guar.koccaYn, "koccaYn");		//공공기관지원사업 여부
@@ -152,7 +152,7 @@
 				<tr>
 					<th><span class="reqMark">*</span>보증기간가산</th>
 					<td colspan="5">
-						<div id="ele_guarAddCdArea"></div>
+						<div id="ele_guarAprojdArea"></div>
 					</td>
 				</tr>
 				</th:block>

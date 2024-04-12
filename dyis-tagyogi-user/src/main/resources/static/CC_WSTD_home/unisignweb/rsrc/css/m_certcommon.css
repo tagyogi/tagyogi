@@ -79,7 +79,7 @@
 .m-us-layout-storage-more-wrap ul li button .m-us-layout-lbl-storage{display:block;text-align:center;font-size:8px;color:#454545;letter-spacing:-1px;font-weight:bold;margin:2px 0 0 0;font-family:'돋움',Dotum,Sans-serif;line-height:11px;}
 .m-us-layout-storage-more-wrap ul li:first-child button,
 .m-us-layout-storage-more-wrap ul li.line-first button{background-image:none;}
-.m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-on{background:#bddcf2;border:1px solid #fff;border-radius:2px;-moz-border-radius:2px;-ms-border-radius:2px;-o-border-radius:2px;-webkit-border-radius:2px;}
+.m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-on{background:#bprojf2;border:1px solid #fff;border-radius:2px;-moz-border-radius:2px;-ms-border-radius:2px;-o-border-radius:2px;-webkit-border-radius:2px;}
 .m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-none .m-us-drive-select{display:none;}
 .m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-none{cursor:default;}
 .m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-none .m-us-layout-lbl-storage{color:#9e9e9e;}
@@ -385,7 +385,7 @@
 .m-us-layout-embed-storage .m-us-layout-storage-more-wrap .m-us-layout-embed-storage-more img{width:15px;height:15px;vertical-align:top;padding:0;margin:0;}
 
 /* ##### [emedded - storage more] ##### */
-.m-us-layout-embed-storage .m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-on{background:#bddcf2;}
+.m-us-layout-embed-storage .m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-on{background:#bprojf2;}
 .m-us-layout-embed-storage .m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-on .m-us-drive-select{background:url(../img/mobile/m_media_drive_off.png) 0 0 no-repeat;background-size:15px 9px;}
 .m-us-layout-embed-storage .m-us-layout-storage-more-wrap ul li button.m-us-layout-storage-btn-on .m-us-layout-lbl-storage{color:#454545;}
 

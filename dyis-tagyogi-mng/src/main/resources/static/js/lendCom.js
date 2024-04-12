@@ -124,9 +124,9 @@ lendCom.fnSetLendLimitView = function(cdType, tblId, lendLimit){
 			var html = '<tr>';
 				html += '<td class="tal"  >'+ item.cdNm + '</td>'; //상품
 				html += '<td class="tar">' + getNum + '배</td>'; //배수
-				html += '<td class="tar">' + com.addComma(getLimit) + '</td>'; //한도
-				html += '<td class="tar">' + com.addComma(getUse) + '</td>'; //사용
-				html += '<td class="tar">' + com.addComma(getRemain) + '<input type="hidden" name="remainAmt" id="remainAmt'+item.cd+'" value="'+getRemain+'" readonly></td>'; //잔액
+				html += '<td class="tar">' + com.aprojomma(getLimit) + '</td>'; //한도
+				html += '<td class="tar">' + com.aprojomma(getUse) + '</td>'; //사용
+				html += '<td class="tar">' + com.aprojomma(getRemain) + '<input type="hidden" name="remainAmt" id="remainAmt'+item.cd+'" value="'+getRemain+'" readonly></td>'; //잔액
 				html += '</tr>';
 
 			$("#" + tblId + " > tbody:last").append(html);
@@ -137,9 +137,9 @@ lendCom.fnSetLendLimitView = function(cdType, tblId, lendLimit){
 		footHtml += 	'<tr>';
 		footHtml += 	'<th class="tac" scope="colgroup">합계</th>';
 		footHtml += 	'<td class="tar">' + totNum + '배</td>';
-		footHtml += 	'<td class="tar" id="totalLimitSum">' + com.addComma(totLimit) + '</td>';
-		footHtml += 	'<td class="tar">' + com.addComma(totUse) + '</td>';
-		footHtml += 	'<td class="tar">' + com.addComma(totRemain) + '</td>';
+		footHtml += 	'<td class="tar" id="totalLimitSum">' + com.aprojomma(totLimit) + '</td>';
+		footHtml += 	'<td class="tar">' + com.aprojomma(totUse) + '</td>';
+		footHtml += 	'<td class="tar">' + com.aprojomma(totRemain) + '</td>';
 		footHtml += '</tfoot>';
 	$("#" + tblId + " > tbody").after(footHtml);
 

@@ -46,9 +46,9 @@
 			//console.log(resData.data);
 			var memb = resData.memb; //총출자금, 출자담보금
 			
-			$("#investAmt").text(com.addComma(memb.investAmt));
+			$("#investAmt").text(com.aprojomma(memb.investAmt));
 			$("#investNum").text(memb.investNum);
-			$("#mortAmt").text(com.addComma(memb.mortAmt));
+			$("#mortAmt").text(com.aprojomma(memb.mortAmt));
 			$("#mortNum").text(memb.mortNum);
 			
 			$("#ele_invtReq").empty();//초기화
@@ -62,9 +62,9 @@
 					html += '<td class="alignC">'+ Number(index + 1)  + '</td>'; //순번
 					html += '<td class="alignC">'+ item.investNm + '</td>'; //출자구분
 					html += '<td class="alignC">'+ com.fnDateFormat(item.investDt) + '</td>'; //출자일자
-					html += '<td class="alignR">'+ com.addComma(item.dealAmt) +'원</td>'; //좌당액면가
+					html += '<td class="alignR">'+ com.aprojomma(item.dealAmt) +'원</td>'; //좌당액면가
 					html += '<td class="alignR">'+ item.investNum +'좌</td>'; //출자좌수
-					html += '<td class="alignR">'+ com.addComma(item.investAmt) +'원</td>'; //출자금액
+					html += '<td class="alignR">'+ com.aprojomma(item.investAmt) +'원</td>'; //출자금액
 					html += '<td class="alignC">'+ com.fnNvlChk(com.fnDateFormat(item.procDt)) +'</td>'; //처리일자
 					html += '<td class="alignC">'+ item.procStat +'</td>'; //처리상태
 					html += '</tr>';

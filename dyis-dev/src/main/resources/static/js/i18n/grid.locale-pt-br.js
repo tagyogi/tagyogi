@@ -70,7 +70,7 @@ $.jgrid.regional["pt-br"] = {
 		delrule : "Delete rule"
 	},
 	edit : {
-	    addCaption: "Incluir",
+	    aprojaption: "Incluir",
 	    editCaption: "Alterar",
 	    bSubmit: "Enviar",
 	    bCancel: "Cancelar",

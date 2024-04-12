@@ -62,10 +62,10 @@
 		            html += '<td>'+ item.lendTypeNm +'</td>';
 					html += '<td>'+ com.fnNvlChk(item.lendStatNm)+'</td>';
 					html += '<td>'+ com.fnDateFormat(item.lendDt)+'</td>';
-					html += '<td>'+ com.addComma(item.lendAmt) +'</td>';
+					html += '<td>'+ com.aprojomma(item.lendAmt) +'</td>';
 					html += '<td>'+ com.fnDateFormat(item.repayPreDt) +'</td>';
-					html += '<td>'+ com.addComma(item.sumPayAmt) +'</td>';
-					html += '<td>'+ com.addComma(item.remainAmt) +'</td>';
+					html += '<td>'+ com.aprojomma(item.sumPayAmt) +'</td>';
+					html += '<td>'+ com.aprojomma(item.remainAmt) +'</td>';
 					html += '</tr>';
 					
 				$("#lendList").append(html);

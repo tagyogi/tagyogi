@@ -79,7 +79,7 @@
 
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).text($(item).text() === null ? "0":com.addComma($(item).text()));
+					$(item).text($(item).text() === null ? "0":com.aprojomma($(item).text()));
 				});
 
 				//실적순위
@@ -119,8 +119,8 @@
 					var html = '<tr>';
 						html += '<td class="tac">' + item.cdNm + '</td>'; //삼품
 						html += '<td class="tac">' + item.cnt + '</td>'; //건수
-						html += '<td class="tar">' + com.addComma(item.guarAmt) + '</td>'; //실적
-						html += '<td class="tar">' + com.addComma(item.commAmt) + '</td>'; //수수료
+						html += '<td class="tar">' + com.aprojomma(item.guarAmt) + '</td>'; //실적
+						html += '<td class="tar">' + com.aprojomma(item.commAmt) + '</td>'; //수수료
 
 						html += '</tr>';
 
@@ -160,7 +160,7 @@
 							<span class="logoArea"></span>
 							<div>
 								<em>함께 담고 함께 쓰는 콘텐츠계의 큰 마중물 그릇</em>
-								<span><strong>한국콘텐츠공제조합 관리자시스템</strong>에 오신걸 환영합니다.</span>
+								<span><strong>동양정보서비스 관리자시스템</strong>에 오신걸 환영합니다.</span>
 							</div>
 						</div><!--wrapBox-->
 
@@ -266,7 +266,7 @@
 										</dl>
 										<dl>
 											<dt><em>(전년)</em>순증</dt>
-											<dd><b><span id="ele_befAddCnt" style="color:blue"></span></b>&nbsp;건</dd>
+											<dd><b><span id="ele_befAprojnt" style="color:blue"></span></b>&nbsp;건</dd>
 										</dl>
 										<dl>
 											<dt><em>(금년)</em>가입</dt>
@@ -278,7 +278,7 @@
 										</dl>
 										<dl>
 											<dt><em>(금년)</em>순증</dt>
-											<dd><b><span id="ele_nowAddCnt" style="color:blue"></span></b>&nbsp;건</dd>
+											<dd><b><span id="ele_nowAprojnt" style="color:blue"></span></b>&nbsp;건</dd>
 										</dl>
 										<!--
 										<dl>
@@ -291,7 +291,7 @@
 										</dl>
 										<dl>
 											<dt><em>(누적)</em>순증</dt>
-											<dd><b><span id="ele_totAddCnt" style="color:blue"></span></b>&nbsp;건</dd>
+											<dd><b><span id="ele_totAprojnt" style="color:blue"></span></b>&nbsp;건</dd>
 										</dl>
 										-->
 									</div>

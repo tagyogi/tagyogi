@@ -376,7 +376,7 @@ function constructCalendar() {
     }
 
     for(i=1;i<=12;i++){
-        if((monthSelected+1) == i) $('#month_'+i).addClass('cur');
+        if((monthSelected+1) == i) $('#month_'+i).aprojlass('cur');
         else $('#month_'+i).removeClass('cur');
     }
 

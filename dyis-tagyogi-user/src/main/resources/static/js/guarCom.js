@@ -119,9 +119,9 @@ guarCom.fnSetGuarLimitView = function(cdType, tblId, guarSum){
 			var html = '<tr>';
 				html += '<td class="tal"  >'+ item.cdNm + '</td>'; //상품
 				html += '<td class="tar">' + getNum + '배</td>'; //배수
-				html += '<td class="tar">' + com.addComma(getLimit) + '</td>'; //한도
-				html += '<td class="tar">' + com.addComma(getUse) + '</td>'; //사용
-				html += '<td class="tar">' + com.addComma(getRemain) + '</td>'; //잔액
+				html += '<td class="tar">' + com.aprojomma(getLimit) + '</td>'; //한도
+				html += '<td class="tar">' + com.aprojomma(getUse) + '</td>'; //사용
+				html += '<td class="tar">' + com.aprojomma(getRemain) + '</td>'; //잔액
 				html += '</tr>';
 
 			$("#" + tblId + " > tbody:last").append(html);
@@ -132,9 +132,9 @@ guarCom.fnSetGuarLimitView = function(cdType, tblId, guarSum){
 		footHtml += 	'<tr>';
 		footHtml += 	'<th class="tac" scope="colgroup">합계</th>';
 		footHtml += 	'<td class="tar">' + totNum + '배</td>';
-		footHtml += 	'<td class="tar">' + com.addComma(totLimit) + '</td>';
-		footHtml += 	'<td class="tar">' + com.addComma(totUse) + '</td>';
-		footHtml += 	'<td class="tar">' + com.addComma(totRemain) + '</td>';
+		footHtml += 	'<td class="tar">' + com.aprojomma(totLimit) + '</td>';
+		footHtml += 	'<td class="tar">' + com.aprojomma(totUse) + '</td>';
+		footHtml += 	'<td class="tar">' + com.aprojomma(totRemain) + '</td>';
 		footHtml += '</tfoot>';
 	$("#" + tblId + " > tbody").after(footHtml);
 
@@ -151,9 +151,9 @@ guarCom.fnMembInfoSet = function(resData){
 
 	var data = resData.amtData;
 
-	$("#ele_limitAmt").text((com.addComma(data.limitAmt)));
-	$("#ele_useAmt").text((com.addComma(data.useAmt)));
-	$("#ele_curAmt").text(com.addComma(((parseInt(data.limitAmt) - parseInt(data.useAmt)).toString())));
+	$("#ele_limitAmt").text((com.aprojomma(data.limitAmt)));
+	$("#ele_useAmt").text((com.aprojomma(data.useAmt)));
+	$("#ele_curAmt").text(com.aprojomma(((parseInt(data.limitAmt) - parseInt(data.useAmt)).toString())));
 };
 
 
@@ -194,7 +194,7 @@ guarCom.fnSelCpSelectBox = function(persList, value){
 var tmpGuarExpDt;	//마감일
 //tmpGuarExpDt값 초기화
 guarCom.fnInitTempGuarExpDt = function(){
-	tmpGuarExpDt = com.fnDateGet($("#guarExpDt").val(), -1 * $("input[name=guarAddCd]:checked").val());
+	tmpGuarExpDt = com.fnDateGet($("#guarExpDt").val(), -1 * $("input[name=guarAprojd]:checked").val());
 }
 
 //보증수수료율 조회
@@ -342,7 +342,7 @@ guarCom.fnCalcCommAmt = function(){
     if(guarType !== "11")	commAmt = commAmt * guarDays / 365;
 
 	//2. 결과(화면)에 표시될 최종값 변수
-	var pgCommAmtVal = com.addComma(guarCom.fnGetPayGateCommAmt(Math.floor(commAmt)));	//PG수수료
+	var pgCommAmtVal = com.aprojomma(guarCom.fnGetPayGateCommAmt(Math.floor(commAmt)));	//PG수수료
 	var commCalcVal = "";	//보증료산식
 	var commAmtVal = 0;		//보증료
 
@@ -355,16 +355,16 @@ guarCom.fnCalcCommAmt = function(){
 	var contrInterRate = parseFloat(Number($("#contrInterRate").val() / 100).toFixed(5));	//약정이자율
 
 	if(guarType === "11"){
-		commCalcVal  = com.addComma(guarAmt) + " X " + commRate + " = " +com.addComma(Math.floor(commAmt));	//보증료산식
+		commCalcVal  = com.aprojomma(guarAmt) + " X " + commRate + " = " +com.aprojomma(Math.floor(commAmt));	//보증료산식
 	}else if(guarType === "14"){	//이행선금급
-		commCalcVal = "{ " + com.addComma(repayAmt) + " + ( " + com.addComma(repayAmt) + " X " + contrInterRate + " / 365 X" + guarDays + " ) } X " + commRate + " X " + guarDays + " / 365 = " + com.addComma(Math.floor(commAmt));
+		commCalcVal = "{ " + com.aprojomma(repayAmt) + " + ( " + com.aprojomma(repayAmt) + " X " + contrInterRate + " / 365 X" + guarDays + " ) } X " + commRate + " X " + guarDays + " / 365 = " + com.aprojomma(Math.floor(commAmt));
 	}else{
-		commCalcVal = com.addComma(guarAmt) + " X " + commRate + " / 365 X " + guarDays + " = " + com.addComma(Math.floor(commAmt));
+		commCalcVal = com.aprojomma(guarAmt) + " X " + commRate + " / 365 X " + guarDays + " = " + com.aprojomma(Math.floor(commAmt));
 	}
 
 	//보증료 PG 포함인지 아닌지 구분(체크박스 이벤트와 동일하게 변경) -> 기존 : pg 수수료도 반올림, 변경 : 보증료 반올림 후 pg 수수료 더함
-	if($("input[name=pgAddYn]").is(":checked")) 	commAmtVal = com.addComma( guarCom.fnToNumber(pgCommAmtVal) + guarCom.fnTrunc(guarCom.fnToNumber(commAmtVal), 100, "round") );
-	else 											commAmtVal = com.addComma( guarCom.fnTrunc(commAmtVal, 100, "round") ); // 2014.03.07 : 10원단위에서 반올림하여 100원단위 징수
+	if($("input[name=pgAddYn]").is(":checked")) 	commAmtVal = com.aprojomma( guarCom.fnToNumber(pgCommAmtVal) + guarCom.fnTrunc(guarCom.fnToNumber(commAmtVal), 100, "round") );
+	else 											commAmtVal = com.aprojomma( guarCom.fnTrunc(commAmtVal, 100, "round") ); // 2014.03.07 : 10원단위에서 반올림하여 100원단위 징수
 
 	//화면 표시
     $("#pgCommAmt").val(pgCommAmtVal);	//PG 수수료
@@ -427,7 +427,7 @@ guarCom.fnSetGuarAmt = function(){
 	    if(guarRate === 0 || contrAmt === 0) return;
 
 	    var repayAmt = guarRate * contrAmt / 100;
-	    $("#repayAmt").val(com.addComma(Math.floor(repayAmt)));
+	    $("#repayAmt").val(com.aprojomma(Math.floor(repayAmt)));
 
 	    // 약정이자액 계산
 	    guarCom.fnSetContrInterAmt();
@@ -437,7 +437,7 @@ guarCom.fnSetGuarAmt = function(){
 	    var guarRate = guarCom.fnToNumber($("#guarRate").val());		// 보증금율
 	    var guarAmt = Math.floor(contrAmt * guarRate / 100);		// 보증금액계산옵션
 
-	    $("#guarAmt").val(com.addComma(guarAmt));	//보증금액
+	    $("#guarAmt").val(com.aprojomma(guarAmt));	//보증금액
 
 	    // 수수료계산호출
 	    guarCom.fnCalcCommAmt();
@@ -468,7 +468,7 @@ guarCom.fnPgAddYnChange = function(){
     var pgCommAmt = guarCom.fnToNumber($("#pgCommAmt").val());
     if(commAmt === 0 || pgCommAmt === 0) return;
 
-    if($("input[name=pgAddYn]").is(":checked")) 	$("#commAmt").val(com.addComma(commAmt + pgCommAmt));
+    if($("input[name=pgAddYn]").is(":checked")) 	$("#commAmt").val(com.aprojomma(commAmt + pgCommAmt));
     else 											guarCom.fnCalcCommAmt();
 }
 
@@ -583,11 +583,11 @@ guarCom.fnSetContrInterAmt = function(){
     var contrInterRate = parseFloat(Number(guarCom.fnToNumber($("#contrInterRate").val()) / 100).toFixed(5)) ;
     var contrInterAmt  = Math.floor(repayAmt * contrInterRate / 365 * Number(guarDays));
 
-    $("#contrInterAmt").val(com.addComma(guarCom.fnTrunc(contrInterAmt, 10, "ceil")));
+    $("#contrInterAmt").val(com.aprojomma(guarCom.fnTrunc(contrInterAmt, 10, "ceil")));
 
     // 보증금액
     var guarAmt = Math.floor(repayAmt + contrInterAmt);
-    $("#guarAmt").val(com.addComma(guarCom.fnTrunc(guarAmt, 10, "ceil")));
+    $("#guarAmt").val(com.aprojomma(guarCom.fnTrunc(guarAmt, 10, "ceil")));
 
     // 수수료계산호출
     guarCom.fnCalcCommAmt();
@@ -615,7 +615,7 @@ guarCom.fnCalcCommAmtMod = function(){
     if(guarType !== "11")	commAmt = commAmt * guarDays / 365;
 
 	//결과(화면)에 표시될 최종값 변수
-	var pgCommAmtVal = com.addComma(guarCom.fnGetPayGateCommAmt(Math.floor(commAmt)));	//PG수수료
+	var pgCommAmtVal = com.aprojomma(guarCom.fnGetPayGateCommAmt(Math.floor(commAmt)));	//PG수수료
 	//console.log("pgCommAmt : " + pgCommAmtVal);
 	var commCalcVal = "";	//보증료산식
 	var commAmtVal = 0;		//보증료
@@ -625,7 +625,7 @@ guarCom.fnCalcCommAmtMod = function(){
 	else										commAmt = Math.floor(commAmt);
 
 	//변경신청시 처리사항
-    $("#curCommAmt").val(com.addComma(guarCom.fnTrunc(commAmt, 100, "round")));	//재산출보증료
+    $("#curCommAmt").val(com.aprojomma(guarCom.fnTrunc(commAmt, 100, "round")));	//재산출보증료
 
     if(guarType != "32" && ($("#contrAmt").val() === "0" || $("#contrAmt").val() === "")){
         alert("계약금액을 확인해주십시오.");
@@ -657,14 +657,14 @@ guarCom.fnCalcCommAmtMod = function(){
         if(tmpCommAmt > 0 && tmpCommAmt < 10) tmpCommAmt = 0;
         //else if(tmpCommAmt >= 10 && tmpCommAmt < getMinCommAmt()) tmpCommAmt = getMinCommAmt();		//2021.02.26  변경신청시 최소수수료 미만 계산된금액으로 변경
 
-        if(guarType === "12") 		pgCommAmtVal = com.addComma(guarCom.fnGetPayGateCommAmt(commAmt));	//12
-        else if(guarType === "14")	pgCommAmtVal = com.addComma(guarCom.fnGetPayGateCommAmt(tmpCommAmt));	//14
+        if(guarType === "12") 		pgCommAmtVal = com.aprojomma(guarCom.fnGetPayGateCommAmt(commAmt));	//12
+        else if(guarType === "14")	pgCommAmtVal = com.aprojomma(guarCom.fnGetPayGateCommAmt(tmpCommAmt));	//14
         else if(guarType === "15" || guarType === "21")	pgCommAmtVal = 0;	//15
 
 		//console.log("guarType : " + guarType + " / pgCommAmtVal: " + pgCommAmtVal + " / tmpCommAmt:" + tmpCommAmt + " / commAmt: " + commAmt );
 
-        commAmtVal = com.addComma(guarCom.fnTrunc(tmpCommAmt, 100, "round"));
-        commCalcVal = "( " + com.addComma(guarAmt) + " X "+  commRate  + " / 365 X "+ guarDays  + " = "+ com.addComma(commAmt) +" ) - "  + com.addComma(befCommAmt) + " = " +  com.addComma(Number(commAmt) - Number(befCommAmt));
+        commAmtVal = com.aprojomma(guarCom.fnTrunc(tmpCommAmt, 100, "round"));
+        commCalcVal = "( " + com.aprojomma(guarAmt) + " X "+  commRate  + " / 365 X "+ guarDays  + " = "+ com.aprojomma(commAmt) +" ) - "  + com.aprojomma(befCommAmt) + " = " +  com.aprojomma(Number(commAmt) - Number(befCommAmt));
 
 		//보증료가 감소하면 환불 제거
         //$("#retCommAmt").val("");
@@ -679,10 +679,10 @@ guarCom.fnCalcCommAmtMod = function(){
 
         //최소수수료
         if(tmpCommAmt === 0) commAmtVal = 0;
-        else				commAmtVal = "-" + com.addComma(guarCom.fnTrunc(tmpCommAmt, 100, "round"))
+        else				commAmtVal = "-" + com.aprojomma(guarCom.fnTrunc(tmpCommAmt, 100, "round"))
 
         pgCommAmtVal = 0;
-        commCalcVal = com.addComma(befCommAmt) + "- { (" + com.addComma(guarAmt) + " X " + commRate + " / 365 X " + guarDays + ") = " + com.addComma(commAmt) + " } = -" + com.addComma(Number(befCommAmt) - Number(commAmt));
+        commCalcVal = com.aprojomma(befCommAmt) + "- { (" + com.aprojomma(guarAmt) + " X " + commRate + " / 365 X " + guarDays + ") = " + com.aprojomma(commAmt) + " } = -" + com.aprojomma(Number(befCommAmt) - Number(commAmt));
 
         //보증료가 감소하면 환불 추가
         //$("#retCommAmt").val(guarCom.fnTrunc(tmpCommAmt, 100, "round"));
@@ -696,8 +696,8 @@ guarCom.fnCalcCommAmtMod = function(){
 	}
 
 	//보증료 PG 포함인지 아닌지 구분(체크박스 이벤트와 동일하게 변경- 체크시 반올림 삭제)
-	if($("input[name=pgAddYn]").is(":checked")) 	commAmtVal = com.addComma( guarCom.fnToNumber(pgCommAmtVal) + guarCom.fnTrunc(guarCom.fnToNumber(commAmtVal), 100, "round") );
-	else 											commAmtVal = com.addComma( guarCom.fnTrunc(guarCom.fnToNumber(commAmtVal), 100, "round") ); // 2014.03.07 : 10원단위에서 반올림하여 100원단위 징수
+	if($("input[name=pgAddYn]").is(":checked")) 	commAmtVal = com.aprojomma( guarCom.fnToNumber(pgCommAmtVal) + guarCom.fnTrunc(guarCom.fnToNumber(commAmtVal), 100, "round") );
+	else 											commAmtVal = com.aprojomma( guarCom.fnTrunc(guarCom.fnToNumber(commAmtVal), 100, "round") ); // 2014.03.07 : 10원단위에서 반올림하여 100원단위 징수
 
 	//기재변경일때는 보증료 산식이 필요없음.
 	if(guarType === "12" || guarType === "13"){		//guarType 13은 여기에 없어도 됨
@@ -865,7 +865,7 @@ guarCom.fnGuarClassCdChange = function(){
 		$("#chgAmtDn").prop("checked", false);
 	}
 
-    $("#chgGuarAmt").val(com.addComma(guarAmt - befGuarAmt));
+    $("#chgGuarAmt").val(com.aprojomma(guarAmt - befGuarAmt));
 
     if(classCd.length < 2) 	classCd += 0;
     $("#guarClassCd").val(classCd);

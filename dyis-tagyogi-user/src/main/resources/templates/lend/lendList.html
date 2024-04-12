@@ -64,8 +64,8 @@
 					html += '<td class="alignC">'+ item.lendTypeNm + '</td>'; //대출종류
 					html += '<td class="alignC">'+ com.fnDateFormat(item.lendDt) +'</td>'; //대출일자
 					html += '<td class="alignC">'+ com.fnDateFormat(item.repayPreDt) +'</td>'; //상환기한
-					html += '<td class="alignR">'+ com.addComma(item.lendAmt) + '</td>'; //대출금액
-					html += '<td class="alignR">'+ com.addComma(item.sumRepayAmt) + '</td>'; //상환금액
+					html += '<td class="alignR">'+ com.aprojomma(item.lendAmt) + '</td>'; //대출금액
+					html += '<td class="alignR">'+ com.aprojomma(item.sumRepayAmt) + '</td>'; //상환금액
 					html += '<td class="alignC">'+ com.fnDateFormat(item.repayDt) +'</td>'; //상환일자
 					html += '<td class="alignC">'+ item.lendStatNm + '</td>'; //대출상태
 					html += '</tr>';

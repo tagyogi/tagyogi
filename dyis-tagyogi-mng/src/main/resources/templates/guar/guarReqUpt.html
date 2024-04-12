@@ -201,7 +201,7 @@
 
 				    //출자면제보증한도체크
 				    if($("#contrType").val() === "13" && guarCom.fnToNumber($("#guarAmt").val()) > guarCom.fnToNumber($("#exemLimitAmt").val())) {
-				    	alert("보증금액이 출자면제약정 건당 한도액(" + com.addComma($("#exemLimitAmt").val()) + ")을 초과하였습니다.");
+				    	alert("보증금액이 출자면제약정 건당 한도액(" + com.aprojomma($("#exemLimitAmt").val()) + ")을 초과하였습니다.");
 				        return false;
 				    }
 

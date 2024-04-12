@@ -103,7 +103,7 @@
 				
 				//콤마추가 클래스들 세팅
 				$.each($(".setCommaCls"), function(idx,item){
-					$(item).text(com.addComma($(item).text()));
+					$(item).text(com.aprojomma($(item).text()));
 				});
 				
 				$("#transNum, #transAmt").val(0); //조합원 재조회시 조합보유 출자증권목록 재조회되었을경우, 체크되어있는 증권과 금액다름 방지
@@ -244,7 +244,7 @@
     		<input type="hidden" name="dealAmt"   id="dealAmt" />
     		<!---->
     		<input type="hidden" name="sTransMembNo" id="sTransMembNo" value="0" />
-    		<input type="hidden" name="sTransMembNm" id="sTransMembNm" value="한국콘텐츠공제조합" />	
+    		<input type="hidden" name="sTransMembNm" id="sTransMembNm" value="동양정보서비스" />	
 			
 			<!--알림톡-->
 			<input type="hidden" name="totalNum"    id="totalNum" value=""/>

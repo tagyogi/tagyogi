@@ -54,7 +54,7 @@ $.jgrid.regional["sq"] = {
 
 	},
 	edit : {
-		addCaption: "Shto rresht",
+		aprojaption: "Shto rresht",
 		editCaption: "Fshi rresht",
 		bSubmit: "Vendos",
 		bCancel: "Anullo",

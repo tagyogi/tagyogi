@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="proj.biz.com.repository.FileMapper">
+	
+    <!-- 첨부파일관리번호 추출 -->
+    <select id="selectMaxFileNo" parameterType="HashMap" statementType="CALLABLE" >
+		/* FileMapper.selectMaxFileNo */
+ 		{
+ 			CALL P_GET_ATTH_NO( #{atthType}, #{atthNo, mode=OUT, jdbcType=VARCHAR, javaType=String} )
+ 		}
+    </select>
+ 	
+ 	<!-- 파일목록조회 -->
+	<select id="selectFileList" parameterType="HashMap" resultType="camelMap" >
+		/* FileMapper.selectFileList */
+		SELECT ATTH_TYPE
+		     , ATTH_NO
+		     , ATTH_SEQ
+		     , FILE_PATH
+		     , FILE_ORG_NM
+		     , FILE_MNG_NM
+		     , FILE_SIZE
+		     , DOC_CD
+		     , F_GET_CD_NM('GR21', DOC_CD) DOC_NM
+		     , SUBMIT_YN
+		     , F_GET_CD_NM('MB33', SUBMIT_YN) SUBMIT_NM
+		     , F_GET_PATTERN(SUBMIT_DT, 'DT') SUBMIT_DT
+		     , REF_NO
+		     , REMARK
+		     , DEL_YN
+		     , TO_CHAR(REG_DTM, 'YYYYMMDDHH24MISS') REG_DTM
+		     , REG_NM
+		     , MOD_DTM
+		     , MOD_NM
+		  FROM CM_ATTH
+		 WHERE ATTH_TYPE= #{atthType}
+		   AND ATTH_NO 	= #{atthNo}
+		   AND NVL(DEL_YN, 'N') = 'N' 
+		 ORDER BY ATTH_SEQ
+    </select>
+    
+    <!-- 파일상세조회 -->
+	<select id="selectFile" parameterType="HashMap" resultType="camelMap" >
+		/* FileMapper.selectFile */
+		SELECT ATTH_TYPE
+		     , ATTH_NO
+		     , ATTH_SEQ
+		     , FILE_PATH
+		     , FILE_ORG_NM
+		     , FILE_MNG_NM
+		     , FILE_SIZE
+		     , DEL_YN
+		     , TO_CHAR(REG_DTM, 'YYYYMMDD') REG_DT
+		     , REG_NM
+		     , MOD_DTM
+		     , MOD_NM
+		  FROM CM_ATTH
+		 WHERE ATTH_TYPE= #{atthType}
+		   AND ATTH_NO 	= #{atthNo}
+		   AND ATTH_SEQ = #{atthSeq}
+    </select>
+    
+ 	<!-- 파일등록처리 -->
+	<insert id="insertFile" parameterType="HashMap" >
+		/* FileMapper.insertFile */
+		<selectKey resultType="java.lang.String" keyProperty="atthSeq" order="BEFORE">
+          SELECT TRIM(TO_CHAR(NVL(MAX(ATTH_SEQ), 0) + 1)) AS ATTH_SEQ 
+            FROM CM_ATTH 
+           WHERE ATTH_TYPE = #{atthType}
+             AND ATTH_NO   = #{atthNo}
+	    </selectKey> 
+ 		INSERT INTO CM_ATTH
+ 		(
+ 			ATTH_TYPE
+ 			, ATTH_NO
+ 			, ATTH_SEQ
+ 			, FILE_PATH
+ 			, FILE_ORG_NM
+ 			, FILE_MNG_NM
+ 			, FILE_SIZE
+ 			, DOC_CD
+		    , SUBMIT_YN
+		    , SUBMIT_DT
+		    , REF_NO
+		    , REMARK
+		    , DEL_YN
+ 			, REG_DTM
+ 			, REG_NM
+ 			, MOD_DTM
+ 			, MOD_NM
+ 		)
+ 		VALUES
+ 		(
+ 			#{atthType}
+ 			, #{atthNo}
+ 			, #{atthSeq}
+ 			, #{filePath}
+ 			, #{fileOrgNm}
+ 			, #{fileMngNm}
+ 			, #{fileSize}
+ 			, #{docCd}
+ 			, #{submitYn}
+ 			, REPLACE(#{submitDt}, '-', '') 
+ 			, #{refNo}
+ 			, #{remark}
+ 			, #{delYn}
+ 			, SYSDATE
+ 			, #{userNm}
+ 			, SYSDATE
+ 			, #{userNm}
+ 		)
+ 		
+    </insert>
+    
+    <!-- 파일단순정보처리 -->
+    <update id="updateFile" parameterType="Map"  > 
+		/* InvtMapper.updateFile */ 
+		UPDATE CM_ATTH 
+		SET 
+			SUBMIT_DT = REPLACE(#{submitDt}, '-', '') 
+			, SUBMIT_YN = #{submitYn}
+			, REMARK = #{remark}
+			, MOD_DTM = SYSDATE
+			, MOD_NM = #{modNm}
+		WHERE ATTH_TYPE= #{atthType}
+		   AND ATTH_NO 	= #{atthNo}
+		   AND ATTH_SEQ = #{atthSeq}
+	</update> 
+ 	
+ 	<!-- 파일삭제처리 -->
+	<update id="deleteFile" parameterType="HashMap" >
+		/* FileMapper.deleteFile */
+		UPDATE CM_ATTH
+		   SET DEL_YN 	= 'Y'
+		     , MOD_DTM 	= SYSDATE
+		     , MOD_NM 	= #{userNm}
+		 WHERE ATTH_TYPE= #{atthType}
+		   AND ATTH_NO 	= #{atthNo}
+		   AND ATTH_SEQ = #{atthSeq}
+		   
+    </update>
+ 	
+</mapper>

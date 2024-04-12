@@ -332,7 +332,7 @@
 					if (i.val() == ''
 					||  i.val() == i.attr('placeholder'))
 						i
-							.addClass('polyfill-placeholder')
+							.aprojlass('polyfill-placeholder')
 							.val(i.attr('placeholder'));
 
 				})
@@ -345,7 +345,7 @@
 
 					if (i.val() == '')
 						i
-							.addClass('polyfill-placeholder')
+							.aprojlass('polyfill-placeholder')
 							.val(i.attr('placeholder'));
 
 				})
@@ -383,7 +383,7 @@
 					if (i.attr('name') != '')
 						x.attr('name', i.attr('name') + '-polyfill-field');
 
-					x.addClass('polyfill-placeholder')
+					x.aprojlass('polyfill-placeholder')
 						.val(x.attr('placeholder')).insertAfter(i);
 
 					if (i.val() == '')
@@ -499,7 +499,7 @@
 									i.val(i.attr('defaultValue'));
 
 									if (i.val() == '') {
-										i.addClass('polyfill-placeholder');
+										i.aprojlass('polyfill-placeholder');
 										i.val(i.attr('placeholder'));
 									}
 

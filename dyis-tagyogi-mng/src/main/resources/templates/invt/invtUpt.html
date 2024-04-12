@@ -82,7 +82,7 @@
 				var resBillList = resData.data;
 				$.each(resBillList, function(idx, item){
 					var type = item.billType;
-					$("#dealAmt"+type).val(item.dealAmt === null ? "":com.addComma(item.dealAmt));	
+					$("#dealAmt"+type).val(item.dealAmt === null ? "":com.aprojomma(item.dealAmt));	
 					$("#billAmt"+type).val(item.billAmt === null ? "":item.billAmt);	
 					$("#billCnt"+type).val(item.billCnt === null ? "":item.billCnt);	
 					$("#remark"+type).val(item.remark === null ? "":item.remark);	

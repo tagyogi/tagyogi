@@ -102,9 +102,9 @@
 				if(guarType === "31")	typeValue = "13";
 				if(guarType === "32")	typeValue = "12";
 				if(guarType === "33" || guarType === "34")	typeValue = "15";
-				$("#ele_limitAmt").text(com.addComma(resData.contr["limitAmt"+typeValue]));	//한도금액
-				$("#ele_useAmt").text(com.addComma(resData.contr["useAmt"+typeValue]));		//사용액
-				$("#ele_remainAmt").text(com.addComma(resData.contr["remainAmt"+typeValue]));	//가능액
+				$("#ele_limitAmt").text(com.aprojomma(resData.contr["limitAmt"+typeValue]));	//한도금액
+				$("#ele_useAmt").text(com.aprojomma(resData.contr["useAmt"+typeValue]));		//사용액
+				$("#ele_remainAmt").text(com.aprojomma(resData.contr["remainAmt"+typeValue]));	//가능액
 
 				//4. 보증상품정보 목록(한도금액)
 				guarCom.fnSetGuarLimitView("GR22", "tbl_guarLimit", resData.contr);
@@ -226,9 +226,9 @@
 				if(resData.guarHistList !== undefined){
 					$("#canGuarStat").val(resData.guar.guarStat); //해제상태
 					$("#guarCanType").val(resData.guar.guarCanType);
-					$("#ele_befCommAmt").text(com.addComma(resData.guar.payCommAmt));
-					$("#ele_canModCommAmt").text(com.addComma(resData.guar.modCommAmt));
-					$("#ele_canRetCommAmt").text(com.addComma(resData.guar.retCommAmt));
+					$("#ele_befCommAmt").text(com.aprojomma(resData.guar.payCommAmt));
+					$("#ele_canModCommAmt").text(com.aprojomma(resData.guar.modCommAmt));
+					$("#ele_canRetCommAmt").text(com.aprojomma(resData.guar.retCommAmt));
 					$("#ele_calcBegDt").text(resData.guar.guarBegDt);
 					$("#ele_calcExpDt").text(resData.guar.retDt);
 					$("#ele_canGuarAmt").text(resData.guar.guarAmt);

@@ -60,25 +60,25 @@
 				//sheet 조회 완료 후
 				sheet.bind("onSearchFinish" , function(obj) {
 					data = sheet.getRowById("FormulaRow");
-					$("#statGuarPerf").text(com.addComma(data.perfGuarAmt));
+					$("#statGuarPerf").text(com.aprojomma(data.perfGuarAmt));
 				});
 				
 				//sheetComm 조회 완료 후
 				sheetComm.bind("onSearchFinish" , function(obj) {
 					data = sheetComm.getRowById("FormulaRow");
-					$("#statGuarComm").text(com.addComma(data.perfCommAmt));
+					$("#statGuarComm").text(com.aprojomma(data.perfCommAmt));
 				});
 				
 				//sheetCnt 조회 완료 후
 				sheetCnt.bind("onSearchFinish" , function(obj) {
 					data = sheetCnt.getRowById("FormulaRow");
-					$("#statGuarCnt").text(com.addComma(data.perfCnt));
+					$("#statGuarCnt").text(com.aprojomma(data.perfCnt));
 				});
 				
 				//shesheetRepayetComm 조회 완료 후
 				sheetRepay.bind("onSearchFinish" , function(obj) {
 					data = sheetRepay.getRowById("FormulaRow");
-					$("#statGuarRepay").text(com.addComma(data.retCommAmt));
+					$("#statGuarRepay").text(com.aprojomma(data.retCommAmt));
 				});
 			});
 

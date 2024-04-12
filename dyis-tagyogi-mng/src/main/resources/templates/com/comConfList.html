@@ -71,11 +71,11 @@
 					$("#ele_lawNo").text(rowData.lawNo);							//법인번호
 					$("#ele_bizNo").text(rowData.bizNo);							//사업자번호
 					$("#ele_lendNo").text(rowData.lendNo);							//대출관리번호
-					$("#ele_lendAmt").text(com.addComma(rowData.lendAmt));			//대출금액
+					$("#ele_lendAmt").text(com.aprojomma(rowData.lendAmt));			//대출금액
 					$("#ele_lendDt").text(com.fnDateFormat(rowData.lendDt));		//대출일자
 					$("#ele_repayPreDt").text(com.fnDateFormat(rowData.repayPreDt));//만기일자
-					$("#ele_totRepayAmt").text(com.addComma(rowData.repayAmt));	    //상환금액
-					$("#ele_remainAmt").text(com.addComma(rowData.remainAmt));		//잔액
+					$("#ele_totRepayAmt").text(com.aprojomma(rowData.repayAmt));	    //상환금액
+					$("#ele_remainAmt").text(com.aprojomma(rowData.remainAmt));		//잔액
 					$("#ele_mainBussCdNm").text(com.fnInputText("MB02", rowData.mainBussCdNm));	//주장르
 					$("#ele_belong").text(rowData.belong);							//소속단체
 					$("#contrNo").val(rowData.contrNo);		                        //약정번호
@@ -180,11 +180,11 @@
 				$("#ele_lawNo").text(resData.lawNo);							//법인번호
 				$("#ele_lendNo").text(resData.lendNo);							//대출관리번호
 				$("#lendNo").val(resData.lendNo);								//대출관리번호
-				$("#ele_lendAmt").text(com.addComma(resData.lendAmt));			//대출금액
+				$("#ele_lendAmt").text(com.aprojomma(resData.lendAmt));			//대출금액
 				$("#ele_lendDt").text(com.fnDateFormat(resData.lendDt));		//대출일자
 				$("#ele_repayPreDt").text(com.fnDateFormat(resData.repayPreDt));//만기일자
-				$("#ele_totRepayAmt").text(com.addComma(resData.totRepayAmt));	//상환금액
-				$("#ele_remainAmt").text(com.addComma(resData.remainAmt));		//잔액
+				$("#ele_totRepayAmt").text(com.aprojomma(resData.totRepayAmt));	//상환금액
+				$("#ele_remainAmt").text(com.aprojomma(resData.remainAmt));		//잔액
 			};
 
 

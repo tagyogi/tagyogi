@@ -26,18 +26,18 @@
 			com.fnCodeSelectBox("GR01", "guarType", 1, ""); 	//보증상품
 			com.fnCodeSelectBox("MB30", "finalGrade", 1, "");	//등급
 			$("#finalGrade").find("option[value='N']").remove();	//없음 삭제
-			com.fnCodeRadio("GR09", "ele_guarAddCdArea", "guarAddCd", false, "0"); //보증기간가산
+			com.fnCodeRadio("GR09", "ele_guarAprojdArea", "guarAprojd", false, "0"); //보증기간가산
 
 			//보증기간가산 클릭 이벤트
-			$("input[name=guarAddCd]").on("click",function(){
+			$("input[name=guarAprojd]").on("click",function(){
 			    if($("#guarBegDt").val().length !== 10 || $("#guarExpDt").val().length !== 10) 	return;
 
-				var addCd = Number($(this).val());
-				$("#guarAddDays").val(addCd);
+				var aprojd = Number($(this).val());
+				$("#guarAddDays").val(aprojd);
 			    if(tmpGuarExpDt === undefined) 	tmpGuarExpDt = $("#guarExpDt").val();
 
 			    // 보증종료일계산
-			    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, addCd));
+			    $("#guarExpDt").val(com.fnDateGet(tmpGuarExpDt, aprojd));
 
 			    // 보증일수 계산
 			    guarCom.fnSetGuarDays();
@@ -50,7 +50,7 @@
 				$("#reqDt").val(/*[[${today}]]*/);					//신청일자
 				$("input[name=koccaYn]").attr("disabled", false);	//공공기관지원사업 여부(선택가능)
 				$("input[name=koccaYn]").prop("checked", false);	//공공기관지원사업 여부(체크해제)
-				$("input[name=guarAddCd]").eq(0).click();		//보증기간가산 없음 체크
+				$("input[name=guarAprojd]").eq(0).click();		//보증기간가산 없음 체크
 				tmpGuarExpDt = undefined;
 
 				$("tr[id^='area_']").show();
@@ -128,7 +128,7 @@
 		}
 
 		//계약일수,약정일수 입력 이벤트
-		var fnAddContrDay = function(){
+		var fnAprojontrDay = function(){
 			if($("#contrBegDt").val() === "") {
 	            alert("시작일자를 입력해 주십시오.");
 	            $("#contrDays").val("");
@@ -262,7 +262,7 @@
 									                                <input type="text" name="contrExpDt" id="contrExpDt" value="" class="w-100" title="계약기간 종료일" placeholder="YYYY-MM-DD" maxlength="10" onkeyup="com.fnOnlyNum(this);com.fnDateMakeForm(this);guarCom.fnSetContrDays();" onblur="com.fnDateValiChk(this);" style="width:120px" autocomplete="off" />
                                                                     <img src="../images/icon_calendar.png" alt="달력" class="calendar-box" onclick="calendar(this, 'contrExpDt', 'yyyy-mm-dd','contrBegDt', 2, guarCom.fnSetContrDays)" />
 									                            </div>
-									                            (<input type="text" name="contrDays" id="contrDays" title="계약일수" maxlength="4" style="width:60px" onkeyup="fnAddContrDay()"/>일)
+									                            (<input type="text" name="contrDays" id="contrDays" title="계약일수" maxlength="4" style="width:60px" onkeyup="fnAprojontrDay()"/>일)
 									                        </div>
 														</td>
 													</tr>
@@ -328,7 +328,7 @@
 														</td>
 
 														<th>보증기간가산</th>
-														<td><div id="ele_guarAddCdArea"></div></td>
+														<td><div id="ele_guarAprojdArea"></div></td>
 													</tr>
 
 													<tr>	<!-- class="reqGuarDelArea" -->
