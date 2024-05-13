@@ -98,7 +98,7 @@
 		</where> 
 		ORDER BY TBL_NM, TBL_SN
 	</select>
-	
+		
 	<!-- 데이터베이스 상세 정보 -->
 	<select id="selectDevDbMasInfo" parameterType="Map" resultType="camelMap">
 		/* DevDbMapper.selectDevDbMasInfo */
@@ -127,7 +127,7 @@
 			#{keyVal}, #{tblNm}, #{tblCmt} 
 		)
  	</insert>
- 	
+ 
  	<!-- 데이터베이스 현황 수정-->
 	<update id="updateDevDbMas" parameterType="Map"  >
 		/* DevDbMapper.updateDevDbMas */
@@ -151,25 +151,24 @@
 	<!-- 데이터베이스 상세 현황 조회 -->
 	<select id="selectDevDbDtlList" parameterType="Map" resultType="camelMap">
 		/* DevDbMapper.selectDevDbDtlList */
-		SELECT ROWNUM SEQ
-		    , A.TBL_SN
-		    , A.COL_SN
-			, A.COL_NM
-			, A.COL_CMT
-			, A.COL_TYPE
-			, TO_CHAR(A.COL_LEN) COL_LEN
-			, A.COL_PRE
-			, A.PK_AT
-			, A.NULL_AT
-			, CASE WHEN A.COL_TYPE = 'NUMBER' THEN NVL(TRIM(A.DEF_VAL), 0)
-			       ELSE NVL(TRIM(A.DEF_VAL), '')
-			       END DEF_VAL
-			, A.RMK
-		  FROM DEV_DB_DTL A
-		     , DEV_DB_MAS B
-		 WHERE A.TBL_SN = B.TBL_SN
-		   AND A.TBL_SN = #{tblSn}
-		 ORDER BY A.COL_SN
+	SELECT ROW_NUMBER() OVER () AS SEQ,
+       A.TBL_SN,
+       A.COL_SN,
+       A.COL_NM,
+       A.COL_CMT,
+       A.COL_TYPE,
+       CAST(A.COL_LEN AS VARCHAR) AS COL_LEN,
+       A.COL_PRE,
+       A.PK_AT,
+       A.NULL_AT,
+       CASE WHEN A.COL_TYPE = 'NUMBER' THEN COALESCE(TRIM(A.DEF_VAL), '0')
+            ELSE COALESCE(TRIM(A.DEF_VAL), '')
+       END AS DEF_VAL,
+       A.RMK
+		FROM DEV_DB_DTL A
+		JOIN DEV_DB_MAS B ON A.TBL_SN = B.TBL_SN
+		WHERE A.TBL_SN = #{tblSn}
+		ORDER BY A.COL_SN;
 	</select>
 	
 	<!-- 데이터베이스 상세 현황 등록-->
@@ -205,7 +204,7 @@
 		)
 		
  	</insert>
- 	
+ 
  	<!-- 데이터베이스 상세 현황 수정-->
 	<update id="updateDevDbDtl" parameterType="Map"  >
 		/* DevDbMapper.updateDevDbDtl */
@@ -272,6 +271,6 @@
 			</foreach>
 		SELECT * FROM DUAL
  	</insert>
-    
+   
     
 </mapper>

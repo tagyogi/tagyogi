@@ -42,16 +42,11 @@ public class TomcatEmbdded {
                 defaultResource.setName("KocfcPool");
                 defaultResource.setType(DataSource.class.getName());
                 defaultResource.setProperty("factory", "org.apache.commons.dbcp2.BasicDataSourceFactory");
-                //defaultResource.setProperty("driverClassName", "net.sf.log4jdbc.sql.jdbcapi.DriverSpy");
-                defaultResource.setProperty("driverClassName", "oracle.jdbc.OracleDriver");
-                //defaultResource.setProperty("url", "jdbc:log4jdbc:oracle:thin:@175.125.91.25:1531/KOCFC");
-                defaultResource.setProperty("url", "jdbc:oracle:thin:@192.168.50.128:1521/KOCFC");
-                defaultResource.setProperty("username", "kocfcdev");
-                defaultResource.setProperty("password", "zhsxpscm^2023");
+                defaultResource.setProperty("driverClassName", "org.h2.Driver");
+                defaultResource.setProperty("url", "jdbc:h2:tcp://localhost/~/test");
+                defaultResource.setProperty("username", "sa");
+                defaultResource.setProperty("password", "");
                 
-                //defaultResource.setProperty("url", "jdbc:oracle:thin:@175.125.91.25:1531/KOCFC");
-                //defaultResource.setProperty("username", "kocfcdev");
-                //defaultResource.setProperty("password", "kocfcdev3#");
                 context.getNamingResources().addResource(defaultResource);
             }
         };
